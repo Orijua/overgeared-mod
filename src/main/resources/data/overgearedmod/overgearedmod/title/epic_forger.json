@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.epic_forger" },
+  "description": { "translate": "title.overgearedmod.epic_forger.desc" },
+  "goal": { "type": "forge", "min_rating": "epic", "count": 1 },
+  "bonus_stats": { "dexterity": 2 }
+}

@@ -1,0 +1,79 @@
+package com.orijua.overgearedmod.client;
+
+import com.mojang.blaze3d.platform.InputConstants;
+import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.client.tab.SatisfyTabs;
+import com.orijua.overgearedmod.network.UseSkillPayload;
+import com.orijua.overgearedmod.registry.ModMenus;
+import com.orijua.overgearedmod.skill.PlayerSkills;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
+import org.lwjgl.glfw.GLFW;
+
+import java.util.List;
+
+/** Client-only entry point: never loaded on a dedicated server, so it may use client classes freely. */
+@Mod(value = Overgearedmod.MODID, dist = Dist.CLIENT)
+public class OvergearedmodClient {
+    private static final String KEY_CATEGORY = "key.categories.overgearedmod";
+
+    public static final KeyMapping OPEN_STATUS = key("status", GLFW.GLFW_KEY_K);
+    /** One key per skill slot; the HUD shows their bound letters. */
+    public static final List<KeyMapping> SKILL_KEYS = List.of(
+            key("skill_1", GLFW.GLFW_KEY_Z),
+            key("skill_2", GLFW.GLFW_KEY_X),
+            key("skill_3", GLFW.GLFW_KEY_C));
+
+    public OvergearedmodClient(IEventBus modEventBus, ModContainer modContainer) {
+        modEventBus.addListener(OvergearedmodClient::onRegisterKeys);
+        modEventBus.addListener(OvergearedmodClient::onRegisterScreens);
+        modEventBus.addListener(OvergearedmodClient::onRegisterGuiLayers);
+        NeoForge.EVENT_BUS.addListener(OvergearedmodClient::onClientTick);
+    }
+
+    private static KeyMapping key(String name, int defaultKey) {
+        return new KeyMapping("key.overgearedmod." + name, KeyConflictContext.IN_GAME,
+                InputConstants.Type.KEYSYM, defaultKey, KEY_CATEGORY);
+    }
+
+    private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
+        event.register(OPEN_STATUS);
+        SKILL_KEYS.forEach(event::register);
+    }
+
+    private static void onRegisterScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenus.SMITHING_ANVIL.get(), SmithingAnvilScreen::new);
+    }
+
+    private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, Overgearedmod.id("mana"), new ManaHudLayer());
+        event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), new SkillSlotsHudLayer());
+    }
+
+    private static void onClientTick(ClientTickEvent.Post event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return;
+        }
+        while (OPEN_STATUS.consumeClick()) {
+            minecraft.setScreen(SatisfyTabs.createScreen());
+        }
+        for (int slot = 0; slot < PlayerSkills.SLOT_COUNT; slot++) {
+            while (SKILL_KEYS.get(slot).consumeClick()) {
+                PacketDistributor.sendToServer(new UseSkillPayload(slot));
+            }
+        }
+    }
+}

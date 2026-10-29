@@ -1,0 +1,11 @@
+{
+  "name": { "translate": "skill.overgearedmod.flame_bolt" },
+  "description": { "translate": "skill.overgearedmod.flame_bolt.desc" },
+  "mana_cost": 8,
+  "cooldown_ticks": 40,
+  "effect": {
+    "type": "projectile",
+    "count": 3,
+    "speed": 1.2
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "option.overgearedmod.sharpness" },
+  "weight": 30,
+  "min": 0.5,
+  "max": 3.0,
+  "effect": { "type": "attribute", "attribute": "minecraft:generic.attack_damage" }
+}

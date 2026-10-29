@@ -1,0 +1,53 @@
+package com.orijua.overgearedmod.gametest;
+
+import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.quest.QuestService;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+@GameTestHolder(Overgearedmod.MODID)
+@PrefixGameTestTemplate(false)
+public final class QuestTests {
+    private static final ResourceLocation ZOMBIE_PLAGUE = Overgearedmod.id("zombie_plague");
+
+    private QuestTests() {
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void onlyKillsAfterAcceptingCount(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        for (int i = 0; i < 3; i++) {
+            GoalTracker.onKill(player, EntityType.ZOMBIE); // before accepting: must not count
+        }
+        helper.assertTrue(QuestService.accept(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "quest should be acceptable");
+        helper.assertTrue(QuestService.claim(player, ZOMBIE_PLAGUE) == QuestService.Result.NOT_DONE, "no kills since accepting yet");
+
+        for (int i = 0; i < 5; i++) {
+            GoalTracker.onKill(player, EntityType.ZOMBIE);
+        }
+        helper.assertTrue(QuestService.claim(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "5 kills complete the quest");
+        helper.assertTrue(player.getInventory().countItem(Items.BREAD) == 3, "reward bread should be in the inventory");
+        helper.assertTrue(ProgressionService.get(player).level() > 1, "100 XP should level the player up");
+        helper.assertTrue(QuestService.accept(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "zombie_plague is repeatable");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void nonRepeatableQuestCannotBeRetaken(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ResourceLocation path = Overgearedmod.id("path_of_the_adventurer");
+        QuestService.accept(player, path);
+        ProgressionService.awardXp(player, 500); // level goal: absolute, not counted from acceptance
+        helper.assertTrue(QuestService.claim(player, path) == QuestService.Result.SUCCESS, "reaching level 3 completes it");
+        helper.assertTrue(QuestService.accept(player, path) == QuestService.Result.NOT_AVAILABLE, "non-repeatable quest stays done");
+        helper.succeed();
+    }
+}

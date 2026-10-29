@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "class.overgearedmod.warrior" },
+  "description": { "translate": "class.overgearedmod.warrior.desc" },
+  "bonus_stats": { "strength": 3, "stamina": 2 },
+  "skills": ["overgearedmod:pagma_link"]
+}
