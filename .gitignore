@@ -19,3 +19,19 @@ hs_err_pid*
 
 # Common working directory
 run
+
+# Personal notes and research (kept local, not published)
+docs/*
+# ...except the template guide, which documents the mod itself
+!docs/Plantilla_Satisfy.md
+
+# Local Claude Code instructions (point at the personal docs above)
+CLAUDE.MD
+CLAUDE.md
+
+# Output of `gradlew publish` (local maven repo)
+repo/
+
+# Gradle/IDE extras
+*.log
+.vscode/
