@@ -41,6 +41,6 @@ Cada uno introduce un patrón de Minecraft que la plantilla todavía no tiene.
 - [x] **Mineral y material propios** (Medio). Mitril: menas de piedra y pizarra profunda generadas por datapack, mitril en bruto (fortuna y toque de seda como el hierro) y lingote por fundición. Sustituye al "Lingote de prueba" en la forja y las recetas.
 - [x] **NPC herrero o de misiones** (Alto). Herrero con el modelo de aldeano y textura propia: comercia (piedras de mejora, pergaminos, libros de habilidad, compra mitril) y, agachado, abre la pestaña Misiones. Se coloca con huevo de generación. GeckoLib queda para cuando haga falta animación.
 - [x] **Efectos de estado propios** (Bajo). Sangrado (`overgearedmod:bleeding`): daño por segundo que ignora la armadura. Lo aplican la opción de arma `apply_effect` y las habilidades con `target_effects` (Corte desgarrador).
-- [ ] **Generación de datos (datagen)** (Medio). Generar desde Java los JSON de traducciones, modelos, recetas y tags. No es una mecánica, pero facilita mantener la plantilla a medida que crece.
+- [x] **Generación de datos (datagen)** (Medio). `gradlew runData` genera desde Java (`datagen/`) los modelos, blockstates, loot tables, tags y recetas (también las de forja). Las traducciones siguen en JSON a mano para editarlas fácilmente.
 
-Orden sugerido: monstruos con nivel → mineral propio → efectos de estado → datagen → NPC.
+Todos hechos (PR #6 a #10). El siguiente paso es elegir cuál perfeccionar o pasar a texturas propias.

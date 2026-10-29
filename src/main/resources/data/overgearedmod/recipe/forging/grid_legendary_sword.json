@@ -1,9 +1,0 @@
-{
-  "type": "overgearedmod:forging",
-  "material": { "item": "minecraft:diamond" },
-  "material_count": 4,
-  "handle": { "item": "minecraft:blaze_rod" },
-  "result": { "id": "overgearedmod:grid_legendary_sword", "count": 1 },
-  "smithing_xp": 60,
-  "requirements": { "level": 10, "stats": { "strength": 8 } }
-}

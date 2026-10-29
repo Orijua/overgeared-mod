@@ -1,8 +1,0 @@
-{
-  "type": "overgearedmod:forging",
-  "material": { "item": "minecraft:iron_ingot" },
-  "material_count": 2,
-  "handle": { "item": "minecraft:stick" },
-  "result": { "id": "minecraft:iron_sword", "count": 1 },
-  "smithing_xp": 10
-}

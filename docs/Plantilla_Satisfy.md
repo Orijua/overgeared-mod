@@ -7,7 +7,8 @@ Plantilla de partida del mod: varios sistemas pequeños y funcionales, todos con
 | Qué | Cómo |
 |---|---|
 | Jugar en desarrollo | `gradlew runClient` (o la configuración *client* de IntelliJ) |
-| Tests en juego | `gradlew runGameTestServer`: arranca un servidor real, ejecuta los tests de `gametest/` y termina. Si todo va bien, debe decir *All 19 required tests passed*. |
+| Tests en juego | `gradlew runGameTestServer`: arranca un servidor real, ejecuta los tests de `gametest/` y termina. Si todo va bien, debe decir *All 38 required tests passed*. |
+| Regenerar modelos, recetas, loot y tags | `gradlew runData`: escribe en `src/generated/resources` desde las clases de `datagen/` |
 | Ajustar el equilibrio | `saves/<mundo>/serverconfig/overgearedmod-server.toml` (curva de XP, XP por muerte, maná, probabilidades de mejora…). Se aplica por mundo y se sincroniza con los clientes |
 | Subir de nivel rápido | `/satisfy xp 500` (requiere trucos/op) |
 | Reiniciar todo (clase incluida) | `/satisfy reset` |
@@ -23,9 +24,9 @@ Recorrido rápido para probarlo todo:
 
 1. **K → Perfil:** elige una clase. El Guerrero empieza con *Link*, el Herrero con *Guardia de hierro* y el Mago con *Saeta de llamas*.
 2. **K → Misiones:** acepta *Primer encargo* y *Plaga de zombis*.
-3. Fabrica **Lingotes de prueba** (lingote de hierro + lingote de cobre) y el **Yunque de herrero** (3 bloques de hierro arriba, 1 lingote de prueba en el centro y 3 abajo).
-4. En el yunque, pon 2 lingotes de prueba arriba y 1 palo abajo, y recoge la **Espada de Jaffa**. Sale con rango, opciones al azar y requisitos: nivel 2 y 2 de STR. Si no los cumples, la espada no te deja atacar.
-5. Pon la espada arriba y una **Piedra de mejora** abajo (lingote de prueba + fragmento de amatista), y pulsa **Mejorar**.
+3. Busca **mena de mitril** (bajo tierra, alrededor de la altura 0, con pico de hierro), funde el mitril en bruto en **Lingotes de mitril** y fabrica el **Yunque de herrero** (3 bloques de hierro arriba, 1 lingote de mitril en el centro y 3 abajo).
+4. En el yunque, pon 2 lingotes de mitril arriba y 1 palo abajo, y recoge la **Espada de Jaffa**. Sale con rango, opciones al azar y requisitos: nivel 2 y 2 de STR. Si no los cumples, la espada no te deja atacar.
+5. Pon la espada arriba y una **Piedra de mejora** abajo (lingote de mitril + fragmento de amatista), y pulsa **Mejorar**.
 6. Mata zombis con Z/X/C. Ganarás XP, avanzarás en la misión y conseguirás el título *Cazador de zombis* a los 10.
 7. Desde el inventario creativo (pestaña *Overgeared*) tienes un libro por habilidad y todos los objetos.
 
@@ -74,7 +75,7 @@ Ideas clave, comparadas con .NET:
 | Habilidades | `skill/*.json` | attachments `player_skills` y `mana` | Habilidades, HUD |
 | Rango y opciones | `item_option/*.json` | componentes `item_rating`, `item_options` | tooltip |
 | Requisitos y mejora | `requirements` en la receta de forja | componentes `requirements`, `enhancement` | tooltip, yunque |
-| Herrería | `../recipe/forging/*.json` | nada (como la mesa de crafteo) | yunque |
+| Herrería | `../recipe/forging/*.json` (generadas en `ModRecipeProvider`) | nada (como la mesa de crafteo) | yunque |
 | Clases | `player_class/*.json` | attachment `player_identity` | Perfil |
 | Títulos | `title/*.json` | `player_identity` + `player_counters` | Perfil |
 | Misiones | `quest/*.json` | attachment `player_quests` | Misiones |
@@ -126,7 +127,7 @@ Estadísticas (diseño propio, se ajustan en `StatEffects` y en `Balance`):
   "effect": { "type": "attribute", "attribute": "minecraft:generic.attack_knockback" } }
 ```
 
-**Receta de forja:** `data/overgearedmod/recipe/forging/<id>.json`. `handle` y `requirements` son opcionales.
+**Receta de forja:** las del mod se generan en `ModRecipeProvider.forging()` con una línea `forge(...)`. Un datapack puede añadir más con un JSON en `data/<namespace>/recipe/forging/<id>.json`. `handle` y `requirements` son opcionales.
 
 ```json
 {
@@ -153,7 +154,9 @@ Los objetivos (`goal`) son de tres tipos:
 | `forge` | `{ "type": "forge", "min_rating": "unique", "count": 1 }` |
 | `level` | `{ "type": "level", "level": 10 }` |
 
-**Mineral (generación del mundo):** el mitril es el ejemplo. `worldgen/configured_feature/ore_mithril.json` define la veta (tamaño y bloques que sustituye), `worldgen/placed_feature/ore_mithril.json` cuántas por chunk y a qué altura, y `neoforge/biome_modifier/add_ore_mithril.json` en qué biomas aparece. Los bloques se registran en `ModBlocks`, y su caída (fortuna y toque de seda) está en `loot_table/blocks/`.
+**Mineral (generación del mundo):** el mitril es el ejemplo. `worldgen/configured_feature/ore_mithril.json` define la veta (tamaño y bloques que sustituye), `worldgen/placed_feature/ore_mithril.json` cuántas por chunk y a qué altura, y `neoforge/biome_modifier/add_ore_mithril.json` en qué biomas aparece. Los bloques se registran en `ModBlocks`, y su caída (fortuna y toque de seda) se genera en `ModBlockLoot`.
+
+**Datagen.** Los modelos, blockstates, loot tables, tags y recetas no se escriben a mano: salen de las clases de `datagen/` al ejecutar `gradlew runData`, que los deja en `src/generated/resources` (no edites esos JSON, se sobrescriben). Un objeto nuevo suele necesitar una línea en `ModItemModelProvider` (o `ModBlockStateProvider` si es un bloque), en `ModBlockLoot` si es un bloque y en `ModRecipeProvider` si se fabrica. Lo que sigue a mano en `src/main/resources`: traducciones, texturas, los JSON de Satisfy (habilidades, misiones…), la generación del mundo y el tipo de daño.
 
 Recuerda añadir las traducciones en `assets/overgearedmod/lang/es_es.json` y `en_us.json`.
 
@@ -184,7 +187,6 @@ Siguiendo el criterio de `Fuentes_Overgeared_Conocimiento.md` §4:
 
 ## Limitaciones conocidas
 
-- **Aspecto provisional.** El yunque usa el modelo vanilla y la interfaz del horno, y los objetos reutilizan texturas vanilla. Los huecos de habilidad muestran la inicial, no un icono.
-- **Listas sin desplazamiento.** Las pestañas Habilidades y Misiones muestran como mucho 7 filas, y Perfil caben unos 9 títulos. Con más contenido harán falta páginas o scroll.
-- **Sin probar en el juego.** Los tests prueban la lógica en un servidor real, pero las pantallas, el HUD y las teclas hay que probarlos a mano con `runClient`.
+- **Aspecto provisional.** El yunque usa el modelo vanilla y la interfaz del horno. Varias texturas son vanilla reutilizadas o teñidas (mitril, icono de Sangrado, piedra de mejora, pergamino, libro), y el herrero usa el modelo de aldeano. Las teñidas se sustituyen poniendo un PNG con el mismo nombre en `textures/`; las vanilla, cambiando su línea `vanillaTexture` por `basicItem` en `ModItemModelProvider`.
+- **Sin probar en el juego.** Los tests prueban la lógica en un servidor real, pero las pantallas, el HUD, las teclas, el nombre de los mobs y el herrero hay que probarlos a mano con `runClient`.
 - **Dos idiomas.** `es_es.json` lleva la mezcla de nombres elegida (Status Window, Rare/Epic…) y `en_us.json` está todo en inglés. Al añadir una clave, añádela en los dos archivos.

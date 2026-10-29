@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod;
 
 import com.mojang.logging.LogUtils;
+import com.orijua.overgearedmod.datagen.ModDataGenerators;
 import com.orijua.overgearedmod.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.mob.MobLevelEvents;
 import com.orijua.overgearedmod.network.ModNetwork;
@@ -47,11 +48,12 @@ public class Overgearedmod {
         ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
-        // Mod bus events (JSON registries, networking, creative tabs, entity attributes).
+        // Mod bus events (JSON registries, networking, creative tabs, entity attributes, datagen).
         modEventBus.addListener(ModDatapackRegistries::register);
         modEventBus.addListener(ModNetwork::register);
         modEventBus.addListener(ModCreativeTabs::addToVanillaTabs);
         modEventBus.addListener(ModEntities::registerAttributes);
+        modEventBus.addListener(ModDataGenerators::gatherData);
 
         // Game bus events (gameplay: kills, ticks, item attributes...).
         EquipmentEvents.register(NeoForge.EVENT_BUS);
