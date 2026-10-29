@@ -41,6 +41,7 @@ public class OvergearedmodClient {
         modEventBus.addListener(OvergearedmodClient::onRegisterScreens);
         modEventBus.addListener(OvergearedmodClient::onRegisterGuiLayers);
         NeoForge.EVENT_BUS.addListener(OvergearedmodClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
     }
 
     private static KeyMapping key(String name, int defaultKey) {

@@ -29,6 +29,8 @@
   "option.overgearedmod.fortitude": "Fortaleza",
   "option.overgearedmod.bleeding": "Sangrado al golpear",
   "effect.overgearedmod.bleeding": "Sangrado",
+  "entity.overgearedmod.level": "[Nv %s] %s",
+  "entity.overgearedmod.elite_level": "★ Élite [Nv %s] %s",
   "death.attack.overgearedmod.bleeding": "%1$s se desangró",
   "death.attack.overgearedmod.bleeding.player": "%1$s se desangró por culpa de %2$s",
 

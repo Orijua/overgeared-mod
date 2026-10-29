@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.registry;
 import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.goal.PlayerCounters;
+import com.orijua.overgearedmod.mob.MobLevel;
 import com.orijua.overgearedmod.progression.PlayerIdentity;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.quest.PlayerQuests;
@@ -46,6 +47,10 @@ public final class ModAttachments {
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
+
+    /** On hostile mobs: level and elite flag. Saved with the mob and synced to every client that sees it (for the name tag). */
+    public static final Supplier<AttachmentType<MobLevel>> MOB_LEVEL = ATTACHMENT_TYPES.register("mob_level",
+            () -> AttachmentType.builder(() -> MobLevel.NONE).serialize(MobLevel.CODEC).sync(MobLevel.STREAM_CODEC).build());
 
     private ModAttachments() {
     }

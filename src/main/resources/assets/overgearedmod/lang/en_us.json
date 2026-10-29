@@ -29,6 +29,8 @@
   "option.overgearedmod.fortitude": "Fortitude",
   "option.overgearedmod.bleeding": "Bleed on Hit",
   "effect.overgearedmod.bleeding": "Bleeding",
+  "entity.overgearedmod.level": "[Lv %s] %s",
+  "entity.overgearedmod.elite_level": "★ Elite [Lv %s] %s",
   "death.attack.overgearedmod.bleeding": "%1$s bled to death",
   "death.attack.overgearedmod.bleeding.player": "%1$s bled to death whilst fighting %2$s",
 
