@@ -51,4 +51,15 @@ public final class ProgressionTests {
         helper.assertTrue(refunded.level() == 5, "level is untouched");
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void killXpRewardsStrengthAndPunishesSpawners(GameTestHelper helper) {
+        int zombie = ProgressionRules.killXp(Balance.DEFAULT, new ProgressionRules.Victim(20, 3, 2, false));
+        int armoredBrute = ProgressionRules.killXp(Balance.DEFAULT, new ProgressionRules.Victim(20, 8, 10, false));
+        int farmedZombie = ProgressionRules.killXp(Balance.DEFAULT, new ProgressionRules.Victim(20, 3, 2, true));
+        helper.assertTrue(zombie == 28, "default zombie should give 28, got " + zombie);
+        helper.assertTrue(armoredBrute > zombie, "a harder-hitting, armored mob gives more XP");
+        helper.assertTrue(farmedZombie == 7, "spawner zombie gives a quarter (7), got " + farmedZombie);
+        helper.succeed();
+    }
 }

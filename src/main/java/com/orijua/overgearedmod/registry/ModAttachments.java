@@ -43,6 +43,10 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<PlayerQuests>> PLAYER_QUESTS =
             playerData("player_quests", () -> PlayerQuests.EMPTY, PlayerQuests.CODEC, PlayerQuests.STREAM_CODEC, true);
 
+    /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
+    public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",
+            () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
+
     private ModAttachments() {
     }
 

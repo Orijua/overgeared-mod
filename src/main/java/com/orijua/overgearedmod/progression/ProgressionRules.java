@@ -17,9 +17,17 @@ public final class ProgressionRules {
         return balance.xpBase() + balance.xpPerLevel() * level;
     }
 
-    /** XP for killing a mob, from its max health (with the defaults a zombie, 20 HP, gives 30). */
-    public static int killXp(Balance balance, float victimMaxHealth) {
-        return Math.max(1, (int) Math.round(victimMaxHealth * balance.killXpMultiplier()));
+    /** What a mob was like when it died, as far as XP is concerned. */
+    public record Victim(float maxHealth, double attackDamage, int armor, boolean fromSpawner) {
+    }
+
+    /** XP for a kill: tougher and harder-hitting mobs give more; spawner mobs give less (anti-farming). */
+    public static int killXp(Balance balance, Victim victim) {
+        double strength = victim.maxHealth()
+                + victim.attackDamage() * balance.killXpPerAttackDamage()
+                + victim.armor() * balance.killXpPerArmor();
+        double xp = strength * balance.killXpMultiplier() * (victim.fromSpawner() ? balance.spawnerXpMultiplier() : 1.0);
+        return Math.max(1, (int) Math.round(xp));
     }
 
     public static int smithingLevel(int smithingXp) {
