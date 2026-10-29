@@ -1,6 +1,9 @@
 {
   "itemGroup.overgearedmod": "Overgeared",
-  "item.overgearedmod.test_ingot": "Lingote de prueba",
+  "item.overgearedmod.raw_mithril": "Mitril en bruto",
+  "item.overgearedmod.mithril_ingot": "Lingote de mitril",
+  "block.overgearedmod.mithril_ore": "Mena de mitril",
+  "block.overgearedmod.deepslate_mithril_ore": "Mena de mitril de pizarra profunda",
   "item.overgearedmod.jaffa_sword": "Espada de Jaffa",
   "item.overgearedmod.grid_legendary_sword": "Espada legendaria de Grid",
   "item.overgearedmod.skill_book": "Libro de habilidad",

@@ -8,7 +8,7 @@
   ],
   "key": {
     "I": { "item": "minecraft:iron_block" },
-    "i": { "item": "overgearedmod:test_ingot" }
+    "i": { "item": "overgearedmod:mithril_ingot" }
   },
   "result": { "id": "overgearedmod:smithing_anvil", "count": 1 }
 }

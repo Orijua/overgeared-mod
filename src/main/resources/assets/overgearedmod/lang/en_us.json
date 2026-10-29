@@ -1,6 +1,9 @@
 {
   "itemGroup.overgearedmod": "Overgeared",
-  "item.overgearedmod.test_ingot": "Test Ingot",
+  "item.overgearedmod.raw_mithril": "Raw Mithril",
+  "item.overgearedmod.mithril_ingot": "Mithril Ingot",
+  "block.overgearedmod.mithril_ore": "Mithril Ore",
+  "block.overgearedmod.deepslate_mithril_ore": "Deepslate Mithril Ore",
   "item.overgearedmod.jaffa_sword": "Jaffa Sword",
   "item.overgearedmod.grid_legendary_sword": "Grid's Legendary Sword",
   "item.overgearedmod.skill_book": "Skill Book",

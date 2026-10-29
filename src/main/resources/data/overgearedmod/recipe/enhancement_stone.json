@@ -2,7 +2,7 @@
   "type": "minecraft:crafting_shapeless",
   "category": "misc",
   "ingredients": [
-    { "item": "overgearedmod:test_ingot" },
+    { "item": "overgearedmod:mithril_ingot" },
     { "item": "minecraft:amethyst_shard" }
   ],
   "result": { "id": "overgearedmod:enhancement_stone", "count": 2 }

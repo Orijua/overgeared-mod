@@ -13,8 +13,11 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Overgearedmod.MODID);
 
-    // Original project content (placeholder material).
-    public static final DeferredItem<Item> TEST_INGOT = ITEMS.registerSimpleItem("test_ingot");
+    // Mithril: ore -> raw mithril -> (smelt) ingot -> forging material.
+    public static final DeferredItem<BlockItem> MITHRIL_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.MITHRIL_ORE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_MITHRIL_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.DEEPSLATE_MITHRIL_ORE);
+    public static final DeferredItem<Item> RAW_MITHRIL = ITEMS.registerSimpleItem("raw_mithril");
+    public static final DeferredItem<Item> MITHRIL_INGOT = ITEMS.registerSimpleItem("mithril_ingot");
 
     // Original project content. Forged at the smithing anvil, so it usually carries a rating.
     public static final DeferredItem<SwordItem> JAFFA_SWORD = ITEMS.register("jaffa_sword",

@@ -150,6 +150,8 @@ Los objetivos (`goal`) son de tres tipos:
 | `forge` | `{ "type": "forge", "min_rating": "unique", "count": 1 }` |
 | `level` | `{ "type": "level", "level": 10 }` |
 
+**Mineral (generación del mundo):** el mitril es el ejemplo. `worldgen/configured_feature/ore_mithril.json` define la veta (tamaño y bloques que sustituye), `worldgen/placed_feature/ore_mithril.json` cuántas por chunk y a qué altura, y `neoforge/biome_modifier/add_ore_mithril.json` en qué biomas aparece. Los bloques se registran en `ModBlocks`, y su caída (fortuna y toque de seda) está en `loot_table/blocks/`.
+
 Recuerda añadir las traducciones en `assets/overgearedmod/lang/es_es.json` y `en_us.json`.
 
 ## Cómo añadir un tipo nuevo (Java)
