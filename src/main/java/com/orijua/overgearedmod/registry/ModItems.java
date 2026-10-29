@@ -21,6 +21,11 @@ public final class ModItems {
             () -> new SwordItem(Tiers.IRON, new Item.Properties()
                     .attributes(SwordItem.createAttributes(Tiers.IRON, 3, -2.4f))));
 
+    // Grid's legendary sword (Extras). Forged from diamonds; stronger than a diamond sword but needs level 10 and 8 STR.
+    public static final DeferredItem<SwordItem> GRID_LEGENDARY_SWORD = ITEMS.register("grid_legendary_sword",
+            () -> new SwordItem(Tiers.DIAMOND, new Item.Properties()
+                    .attributes(SwordItem.createAttributes(Tiers.DIAMOND, 5, -2.4f))));
+
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
 
     public static final DeferredItem<Item> ENHANCEMENT_STONE = ITEMS.registerSimpleItem("enhancement_stone");
