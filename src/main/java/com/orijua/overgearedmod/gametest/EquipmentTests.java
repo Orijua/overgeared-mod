@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.EquipRequirements;
 import com.orijua.overgearedmod.equipment.EquipmentRules;
+import com.orijua.overgearedmod.equipment.EquipmentService;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.equipment.RatingRoller;
 import com.orijua.overgearedmod.equipment.option.RolledOption;
@@ -66,6 +67,18 @@ public final class EquipmentTests {
         sword.set(ModDataComponents.ENHANCEMENT, 3);
         TestSupport.assertClose(helper, 3 * EquipmentRules.ATTACK_PER_ENHANCEMENT, TestSupport.attackBonusOver(helper, sword), "+3 enhancement");
         helper.assertTrue(EquipmentRules.enhancementChance(Balance.DEFAULT, 9, 0) < EquipmentRules.enhancementChance(Balance.DEFAULT, 0, 0), "higher levels must be harder");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void nameShowsEnhancementInRatingColor(GameTestHelper helper) {
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        sword.set(ModDataComponents.ITEM_RATING, ItemRating.EPIC);
+        sword.set(ModDataComponents.ENHANCEMENT, 3);
+        EquipmentService.refreshName(sword);
+        helper.assertTrue(sword.getHoverName().getString().endsWith(" +3"), "name should end in +3: " + sword.getHoverName().getString());
+        helper.assertTrue(ItemRating.EPIC.color().getColor().equals(sword.getHoverName().getStyle().getColor().getValue()),
+                "name should use the epic color");
         helper.succeed();
     }
 
