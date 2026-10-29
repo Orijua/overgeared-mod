@@ -3,5 +3,6 @@
   "weight": 30,
   "min": 0.5,
   "max": 3.0,
+  "applies_to": "overgearedmod:weapons",
   "effect": { "type": "attribute", "attribute": "minecraft:generic.attack_damage" }
 }

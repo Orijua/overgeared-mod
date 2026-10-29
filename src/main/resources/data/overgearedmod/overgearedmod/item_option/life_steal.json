@@ -3,5 +3,6 @@
   "weight": 10,
   "min": 0.02,
   "max": 0.10,
+  "applies_to": "overgearedmod:weapons",
   "effect": { "type": "life_steal" }
 }

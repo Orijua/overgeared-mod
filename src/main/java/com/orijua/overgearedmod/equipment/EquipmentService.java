@@ -31,7 +31,9 @@ public final class EquipmentService {
         ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), random.nextDouble());
         stack.set(ModDataComponents.ITEM_RATING, rating);
 
-        List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(smith.level(), ModDatapackRegistries.ITEM_OPTION);
+        List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(smith.level(), ModDatapackRegistries.ITEM_OPTION).stream()
+                .filter(e -> e.value().canRollOn(stack))
+                .toList();
         List<RolledOption> options = EquipmentRules.pickWeighted(pool, e -> e.value().weight(), EquipmentRules.optionCount(rating), random::nextDouble)
                 .stream()
                 .map(e -> new RolledOption(e.id(), EquipmentRules.rollValue(e.value().min(), e.value().max(), rating, random.nextDouble())))
