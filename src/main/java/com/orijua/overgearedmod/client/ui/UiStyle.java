@@ -12,6 +12,7 @@ public final class UiStyle {
     public static final int GOOD = 0x55FF55;
     public static final int BAD = 0xFF5555;
     public static final int MANA = 0xFF3F8CFF;
+    public static final int XP = 0xFF55CC55;
     public static final int COOLDOWN = 0xFFFFC23F;
 
     private static final int PANEL = 0xD0101018;

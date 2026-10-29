@@ -56,6 +56,8 @@
   "screen.overgearedmod.titles": "Titles",
   "screen.overgearedmod.smithing_bonus": "+%s smithing level",
   "screen.overgearedmod.level": "Level %s",
+  "screen.overgearedmod.xp": "%s / %s XP",
+  "hud.overgearedmod.xp": "Lv %s · %s/%s XP",
   "screen.overgearedmod.mana": "Mana %s / %s",
   "screen.overgearedmod.smithing": "Smithing lv. %s",
   "screen.overgearedmod.free_points": "Free points: %s",
