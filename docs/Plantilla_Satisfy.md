@@ -118,6 +118,6 @@ Siguiendo el criterio de `Fuentes_Overgeared_Conocimiento.md` §4:
 ## Limitaciones conocidas y siguientes pasos
 
 - **Aspecto provisional:** el yunque usa el modelo del yunque vanilla y la interfaz de forja usa la textura del horno. Sustitúyelos con Blockbench y una textura propia en `textures/gui/`.
-- **El maná solo se ve en la Status Window.** Un siguiente paso sencillo es una barra en el HUD con `RegisterGuiLayersEvent`.
+- **HUD:** la barra azul encima de la comida es el maná. La línea amarilla de debajo es el enfriamiento de la habilidad del arma que llevas, y se vacía hasta que puedes volver a usarla. Está en `client/ManaHudLayer` y se registra encima de la capa vanilla `FOOD_LEVEL`. Igual que la vida y la comida, se oculta en creativo.
 - **Solo hay traducción en `en_us.json`,** con la mezcla de nombres elegida. Si juegas en español sin `es_es.json`, el juego usa esa misma.
 - **La interfaz no tiene pruebas automáticas.** Los tests prueban la lógica en un servidor real. Las pantallas, el tooltip y las teclas hay que probarlos a mano con `runClient`.

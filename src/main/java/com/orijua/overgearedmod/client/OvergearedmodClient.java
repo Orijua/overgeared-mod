@@ -11,8 +11,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -34,6 +36,7 @@ public class OvergearedmodClient {
     public OvergearedmodClient(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(OvergearedmodClient::onRegisterKeys);
         modEventBus.addListener(OvergearedmodClient::onRegisterScreens);
+        modEventBus.addListener(OvergearedmodClient::onRegisterGuiLayers);
         NeoForge.EVENT_BUS.addListener(OvergearedmodClient::onClientTick);
     }
 
@@ -44,6 +47,10 @@ public class OvergearedmodClient {
 
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.SMITHING_ANVIL.get(), SmithingAnvilScreen::new);
+    }
+
+    private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, Overgearedmod.id("mana"), new ManaHudLayer());
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {
