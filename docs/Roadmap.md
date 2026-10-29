@@ -24,8 +24,8 @@ Orden de trabajo: primero mejorar lo que ya existe y después añadir sistemas n
 
 ### P3: más profundidad
 
-- [ ] **Clases al estilo canon** (Alto). En la novela una clase se consigue con una misión, no se elige. Depende de que las misiones estén pulidas.
-- [ ] **Penalización por muerte** (Bajo-Medio). Da peso a morir. Antes hay que confirmar en la novela cómo funciona.
+- [x] **Clases al estilo canon** (Alto). Clases básicas elegibles y clases avanzadas solo por misión (`selectable`, `required_class`, `class_reward`). Ejemplo: El legado de Pagma.
+- [x] **Penalización por muerte** (Bajo-Medio). Se pierde un 10 % (configurable) de la XP del nivel actual, sin bajar de nivel. Falta confirmar en la novela cómo funciona en el canon.
 - [ ] **Texturas e interfaz propias** (Medio). Sustituir las texturas vanilla provisionales por PNG propios.
 - [ ] **Recetas de forja en JEI** (Medio). Mejora la experiencia, pero añade una dependencia externa que mantener.
 
