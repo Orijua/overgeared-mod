@@ -1,7 +1,7 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.rating.ItemRating;
+import com.orijua.overgearedmod.equipment.ItemRating;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.neoforged.neoforge.registries.DeferredHolder;

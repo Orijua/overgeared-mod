@@ -2,8 +2,8 @@ package com.orijua.overgearedmod.smithing;
 
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionService;
-import com.orijua.overgearedmod.rating.ItemRating;
-import com.orijua.overgearedmod.rating.RatingRoller;
+import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.equipment.RatingRoller;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModMenus;

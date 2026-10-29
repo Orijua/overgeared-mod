@@ -1,4 +1,4 @@
-package com.orijua.overgearedmod.rating;
+package com.orijua.overgearedmod.equipment;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.registry.ModDataComponents;

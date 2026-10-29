@@ -1,4 +1,4 @@
-package com.orijua.overgearedmod.rating;
+package com.orijua.overgearedmod.equipment;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;

@@ -3,7 +3,7 @@ package com.orijua.overgearedmod;
 import com.mojang.logging.LogUtils;
 import com.orijua.overgearedmod.network.ModNetwork;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
-import com.orijua.overgearedmod.rating.RatingEvents;
+import com.orijua.overgearedmod.equipment.RatingEvents;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModCreativeTabs;

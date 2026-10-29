@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.client.tab.SatisfyTabs;
 import com.orijua.overgearedmod.network.UseSkillPayload;
 import com.orijua.overgearedmod.registry.ModMenus;
 import net.minecraft.client.KeyMapping;
@@ -59,7 +60,7 @@ public class OvergearedmodClient {
             return;
         }
         while (OPEN_STATUS.consumeClick()) {
-            minecraft.setScreen(new StatusScreen());
+            minecraft.setScreen(SatisfyTabs.createScreen());
         }
         while (USE_SKILL.consumeClick()) {
             PacketDistributor.sendToServer(UseSkillPayload.INSTANCE);

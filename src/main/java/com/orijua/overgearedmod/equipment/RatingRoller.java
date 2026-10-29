@@ -1,4 +1,4 @@
-package com.orijua.overgearedmod.rating;
+package com.orijua.overgearedmod.equipment;
 
 /**
  * Pure game rule (no Minecraft state): picks the rating of a freshly forged item.

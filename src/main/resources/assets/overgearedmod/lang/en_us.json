@@ -20,6 +20,7 @@
   "stat.overgearedmod.dexterity": "Destreza (DEX)",
 
   "screen.overgearedmod.status": "Status Window",
+  "tab.overgearedmod.status": "Estado",
   "screen.overgearedmod.level": "Nivel %s",
   "screen.overgearedmod.xp": "XP %s / %s",
   "screen.overgearedmod.mana": "Maná %s / %s",
