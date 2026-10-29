@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.quest;
 
 import com.orijua.overgearedmod.goal.Goal;
 import com.orijua.overgearedmod.goal.PlayerCounters;
+import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
@@ -37,8 +38,12 @@ public final class QuestService {
         return progress(quest.goal(), baseline, player.getData(ModAttachments.PLAYER_COUNTERS), ProgressionService.get(player));
     }
 
-    public static boolean canAccept(PlayerQuests quests, ResourceLocation id, QuestDefinition quest) {
-        return !quests.isActive(id) && (quest.repeatable() || !quests.isCompleted(id));
+    /** Not already active, not done (unless repeatable), and the player has the required class if there is one. */
+    public static boolean canAccept(Player player, ResourceLocation id, QuestDefinition quest) {
+        PlayerQuests quests = get(player);
+        return !quests.isActive(id)
+                && (quest.repeatable() || !quests.isCompleted(id))
+                && quest.allowsClass(player.getData(ModAttachments.PLAYER_IDENTITY).playerClass());
     }
 
     public static Result accept(ServerPlayer player, ResourceLocation id) {
@@ -46,10 +51,10 @@ public final class QuestService {
         if (quest.isEmpty()) {
             return Result.UNKNOWN_QUEST;
         }
-        PlayerQuests quests = get(player);
-        if (!canAccept(quests, id, quest.get())) {
+        if (!canAccept(player, id, quest.get())) {
             return Result.NOT_AVAILABLE;
         }
+        PlayerQuests quests = get(player);
         Goal goal = quest.get().goal();
         int baseline = goal.cumulative()
                 ? goal.progress(player.getData(ModAttachments.PLAYER_COUNTERS), ProgressionService.get(player))
@@ -95,6 +100,7 @@ public final class QuestService {
         if (quest.xpReward() > 0) {
             ProgressionService.awardXp(player, quest.xpReward());
         }
+        quest.classReward().ifPresent(classId -> ClassService.grant(player, classId));
         player.displayClientMessage(Component.translatable("message.overgearedmod.quest_completed", quest.name()), false);
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.8f, 1.5f);
         return Result.SUCCESS;

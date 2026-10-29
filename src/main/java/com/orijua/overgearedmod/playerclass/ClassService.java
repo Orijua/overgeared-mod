@@ -14,24 +14,45 @@ import net.minecraft.sounds.SoundSource;
 
 import java.util.Optional;
 
-/** Choosing a class: once per character (reset with /satisfy reset). Grants the class skills and bonuses. */
+/**
+ * How a player gets a class: choosing a basic one once from the Profile tab, or being granted
+ * one (usually advanced) by a quest. Either way the class skills are learned and bonuses applied.
+ */
 public final class ClassService {
     private ClassService() {
     }
 
-    /** @return false if the player already has a class or the class doesn't exist. */
+    public static Optional<ResourceLocation> current(ServerPlayer player) {
+        return player.getData(ModAttachments.PLAYER_IDENTITY).playerClass();
+    }
+
+    /** @return false if the player already has a class, or the class doesn't exist or isn't a selectable basic class. */
     public static boolean choose(ServerPlayer player, ResourceLocation classId) {
-        PlayerIdentity identity = player.getData(ModAttachments.PLAYER_IDENTITY);
         Optional<PlayerClassDefinition> definition = Definitions.get(player.level(), ModDatapackRegistries.PLAYER_CLASS, classId);
-        if (identity.playerClass().isPresent() || definition.isEmpty()) {
+        if (current(player).isPresent() || definition.isEmpty() || !definition.get().selectable()) {
             return false;
         }
+        apply(player, classId, definition.get(), "message.overgearedmod.class_chosen");
+        return true;
+    }
+
+    /** Sets the class regardless of how it is obtained, replacing the current one. Skills already learned are kept. */
+    public static boolean grant(ServerPlayer player, ResourceLocation classId) {
+        Optional<PlayerClassDefinition> definition = Definitions.get(player.level(), ModDatapackRegistries.PLAYER_CLASS, classId);
+        if (definition.isEmpty()) {
+            return false;
+        }
+        apply(player, classId, definition.get(), "message.overgearedmod.class_granted");
+        return true;
+    }
+
+    private static void apply(ServerPlayer player, ResourceLocation classId, PlayerClassDefinition definition, String messageKey) {
+        PlayerIdentity identity = player.getData(ModAttachments.PLAYER_IDENTITY);
         player.setData(ModAttachments.PLAYER_IDENTITY, identity.withClass(classId));
-        definition.get().skills().forEach(skill -> SkillService.learn(player, skill));
+        definition.skills().forEach(skill -> SkillService.learn(player, skill));
         ProgressionService.refreshEffects(player);
 
-        player.displayClientMessage(Component.translatable("message.overgearedmod.class_chosen", definition.get().name()), false);
+        player.displayClientMessage(Component.translatable(messageKey, definition.name()), false);
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 0.8f);
-        return true;
     }
 }

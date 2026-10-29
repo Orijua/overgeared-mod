@@ -4,21 +4,25 @@ import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.QuestActionPayload;
+import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.quest.QuestDefinition;
 import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.Definitions;
+import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /** Every quest with its state: accept it, follow its progress, claim it when done. */
@@ -78,8 +82,11 @@ public class QuestsTab extends SatisfyTab {
             enabled = isDone(entry, state);
             action = QuestActionPayload.Action.CLAIM;
         } else {
-            boolean available = QuestService.canAccept(state, entry.id(), entry.value());
-            label = available ? Component.translatable("screen.overgearedmod.quest_accept") : Component.literal("✔");
+            boolean available = QuestService.canAccept(player(), entry.id(), entry.value());
+            boolean classLocked = !entry.value().allowsClass(player().getData(ModAttachments.PLAYER_IDENTITY).playerClass());
+            label = available ? Component.translatable("screen.overgearedmod.quest_accept")
+                    : classLocked ? Component.translatable("screen.overgearedmod.quest_locked")
+                    : Component.literal("✔");
             enabled = available;
             action = QuestActionPayload.Action.ACCEPT;
         }
@@ -141,6 +148,14 @@ public class QuestsTab extends SatisfyTab {
         List<FormattedCharSequence> lines = new ArrayList<>(font().split(quest.description(), 180));
         lines.add(quest.goal().describe().getVisualOrderText());
         lines.add(Component.translatable("screen.overgearedmod.quest_reward", quest.xpReward(), quest.itemRewards().size()).getVisualOrderText());
+        quest.requiredClass().flatMap(QuestsTab::className).ifPresent(name ->
+                lines.add(Component.translatable("screen.overgearedmod.quest_requires_class", name).getVisualOrderText()));
+        quest.classReward().flatMap(QuestsTab::className).ifPresent(name ->
+                lines.add(Component.translatable("screen.overgearedmod.quest_class_reward", name).getVisualOrderText()));
         return lines;
+    }
+
+    private static Optional<Component> className(ResourceLocation classId) {
+        return Definitions.get(player().level(), ModDatapackRegistries.PLAYER_CLASS, classId).map(PlayerClassDefinition::name);
     }
 }

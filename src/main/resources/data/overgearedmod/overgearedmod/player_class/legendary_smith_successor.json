@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "class.overgearedmod.legendary_smith_successor" },
+  "description": { "translate": "class.overgearedmod.legendary_smith_successor.desc" },
+  "selectable": false,
+  "bonus_stats": { "dexterity": 8, "stamina": 4, "strength": 3 },
+  "smithing_bonus": 15,
+  "skills": ["overgearedmod:iron_guard", "overgearedmod:pagma_link"]
+}

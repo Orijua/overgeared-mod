@@ -8,7 +8,7 @@ Plantilla de partida del mod: varios sistemas pequeños y funcionales, todos con
 |---|---|
 | Jugar en desarrollo | `gradlew runClient` (o la configuración *client* de IntelliJ) |
 | Tests en juego | `gradlew runGameTestServer`: arranca un servidor real, ejecuta los tests de `gametest/` y termina. Si todo va bien, debe decir *All 19 required tests passed*. |
-| Ajustar el equilibrio | `saves/<mundo>/serverconfig/overgearedmod-server.toml` (curva de XP, maná, probabilidades de mejora…). Se aplica por mundo y se sincroniza con los clientes |
+| Ajustar el equilibrio | `saves/<mundo>/serverconfig/overgearedmod-server.toml` (curva de XP, XP por muerte, maná, probabilidades de mejora…). Se aplica por mundo y se sincroniza con los clientes |
 | Subir de nivel rápido | `/satisfy xp 500` (requiere trucos/op) |
 | Reiniciar todo (clase incluida) | `/satisfy reset` |
 
@@ -132,11 +132,11 @@ Estadísticas (diseño propio, se ajustan en `StatEffects` y en `Balance`):
 }
 ```
 
-**Clase:** `player_class/<id>.json`, con `bonus_stats`, `smithing_bonus` y `skills`.
+**Clase:** `player_class/<id>.json`, con `bonus_stats`, `smithing_bonus` y `skills`. Las clases básicas se eligen desde Perfil; con `"selectable": false` es una clase avanzada que solo se consigue con una misión (`class_reward`).
 
 **Título:** `title/<id>.json`, con un `goal` y `bonus_stats`.
 
-**Misión:** `quest/<id>.json`, con un `goal`, `xp_reward`, `item_rewards` y `repeatable`.
+**Misión:** `quest/<id>.json`, con un `goal`, `xp_reward`, `item_rewards` y `repeatable`. Opcionales: `required_class` (solo la acepta quien tenga esa clase) y `class_reward` (al reclamarla, cambia la clase y conserva las habilidades aprendidas). Ejemplo: `pagma_legacy.json`.
 
 Los objetivos (`goal`) son de tres tipos:
 
@@ -164,7 +164,9 @@ Siguiendo el criterio de `Fuentes_Overgeared_Conocimiento.md` §4:
 |---|---|---|
 | Rangos Normal → Myth | Canon (sistema de rangos de Satisfy) | Confirmar la lista exacta y el orden en la novela |
 | STR/STA/AGI/INT/DEX | Canon (Satisfy tiene estas y muchas más) | Faltan estadísticas como Dignidad o Insight |
-| Status Window, títulos y clases | Inspiración (son sistemas de Satisfy) | Las clases canon se obtienen con misiones, no eligiéndolas |
+| Status Window y títulos | Inspiración (son sistemas de Satisfy) | — |
+| Clases básicas elegibles y avanzadas por misión | Inspiración (en el canon las clases llegan por misiones o eventos) | La clase *Sucesor del herrero legendario* está inspirada en la de Grid: confirmar el nombre exacto en la novela |
+| Pérdida de XP al morir | Diseño propio | Confirmar cómo castiga Satisfy la muerte en la novela |
 | Mejora +1..+10 con fallo | Inspiración (la mejora de equipo de Satisfy) | Confirmar las reglas canon de fallo |
 | *Pagma's Swordsmanship: Link* | Inspiración: el nombre viene del canon, el efecto es propio | Verificar el nombre y el capítulo en Wuxiaworld |
 | Opciones, requisitos y forja según la destreza | Inspiración (los objetos de Grid) | — |

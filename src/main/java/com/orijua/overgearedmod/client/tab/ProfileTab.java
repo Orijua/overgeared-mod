@@ -50,7 +50,9 @@ public class ProfileTab extends SatisfyTab {
         if (!showingClassButtons) {
             return;
         }
-        List<Definitions.Entry<PlayerClassDefinition>> classes = Definitions.all(player().level(), ModDatapackRegistries.PLAYER_CLASS);
+        List<Definitions.Entry<PlayerClassDefinition>> classes = Definitions.all(player().level(), ModDatapackRegistries.PLAYER_CLASS).stream()
+                .filter(entry -> entry.value().selectable())
+                .toList();
         int buttonWidth = classes.isEmpty() ? 0 : (width - (classes.size() - 1) * 4) / classes.size();
         for (int i = 0; i < classes.size(); i++) {
             Definitions.Entry<PlayerClassDefinition> entry = classes.get(i);
