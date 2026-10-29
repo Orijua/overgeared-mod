@@ -59,6 +59,7 @@ public class OvergearedmodClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, Overgearedmod.id("mana"), new ManaHudLayer());
+        event.registerAbove(Overgearedmod.id("mana"), Overgearedmod.id("xp"), new XpHudLayer());
         event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), new SkillSlotsHudLayer());
         event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), new QuestTrackerHudLayer());
     }

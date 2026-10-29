@@ -66,6 +66,14 @@ public final class Config {
             .defineInRange("minChance", D.enhanceMinChance(), 0.0, 1.0);
 
     static {
+        BUILDER.pop().push("death");
+    }
+
+    private static final ModConfigSpec.DoubleValue DEATH_XP_LOSS = BUILDER
+            .comment("Fraction of the current level's XP lost on death (0.1 = 10%). Never drops a level.")
+            .defineInRange("xpLoss", D.deathXpLoss(), 0.0, 1.0);
+
+    static {
         BUILDER.pop();
     }
 
@@ -84,6 +92,7 @@ public final class Config {
                 SPAWNER_XP_MULTIPLIER.get(), XP_BASE.get(), XP_PER_LEVEL.get(),
                 BASE_MANA.get().floatValue(), MANA_PER_INTELLIGENCE.get().floatValue(),
                 BASE_MANA_REGEN.get().floatValue(), MANA_REGEN_PER_INTELLIGENCE.get().floatValue(),
-                ENHANCE_BASE_CHANCE.get(), ENHANCE_LOSS_PER_LEVEL.get(), ENHANCE_PER_DEXTERITY.get(), ENHANCE_MIN_CHANCE.get());
+                ENHANCE_BASE_CHANCE.get(), ENHANCE_LOSS_PER_LEVEL.get(), ENHANCE_PER_DEXTERITY.get(), ENHANCE_MIN_CHANCE.get(),
+                DEATH_XP_LOSS.get());
     }
 }

@@ -65,7 +65,10 @@ public class StatusTab extends SatisfyTab {
 
         UiStyle.heading(graphics, font(), Component.translatable("screen.overgearedmod.level", stats.level()), left, top);
         int xpNeeded = ProgressionRules.xpToNextLevel(Balance.current(), stats.level());
-        UiStyle.bar(graphics, half, top + 2, width / 2, 4, stats.xp() / (float) xpNeeded, 0xFF55CC55);
+        Component xpText = Component.translatable("screen.overgearedmod.xp", stats.xp(), xpNeeded);
+        int xpTextX = left + width - font().width(xpText);
+        UiStyle.bar(graphics, half, top + 2, xpTextX - 6 - half, 4, stats.xp() / (float) xpNeeded, UiStyle.XP);
+        UiStyle.text(graphics, font(), xpText, xpTextX, top, UiStyle.TEXT);
 
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.mana", (int) mana, (int) ProgressionRules.maxMana(Balance.current(), effective.intelligence())), left, top + 16, UiStyle.TEXT);
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.smithing", ProgressionService.effectiveSmithingLevel(player())), half, top + 16, UiStyle.MUTED);
