@@ -13,20 +13,19 @@ public final class SkillEvents {
     }
 
     public static void register(IEventBus gameBus) {
-        gameBus.addListener(SkillEvents::onPlayerTick);
+        gameBus.addListener(SkillEvents::regenerateMana);
     }
 
-    /** Mana regen, once per second. Only writes (and so syncs) when the value actually changes. */
-    private static void onPlayerTick(PlayerTickEvent.Post event) {
+    /** Once per second; only writes (and syncs) when the value changes. */
+    private static void regenerateMana(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 20 != 0) {
             return;
         }
         PlayerStats stats = ProgressionService.get(player);
-        SkillState state = player.getData(ModAttachments.SKILL_STATE);
-        float max = stats.maxMana();
-        float mana = Math.min(max, state.mana() + ProgressionRules.manaRegenPerSecond(stats.intelligence()));
-        if (mana != state.mana()) {
-            player.setData(ModAttachments.SKILL_STATE, state.withMana(mana));
+        float current = player.getData(ModAttachments.MANA);
+        float regenerated = Math.min(stats.maxMana(), current + ProgressionRules.manaRegenPerSecond(stats.intelligence()));
+        if (regenerated != current) {
+            player.setData(ModAttachments.MANA, regenerated);
         }
     }
 }

@@ -2,6 +2,7 @@
   "itemGroup.overgearedmod": "Overgeared",
   "item.overgearedmod.test_ingot": "Lingote de prueba",
   "item.overgearedmod.jaffa_sword": "Espada de Jaffa",
+  "item.overgearedmod.skill_book": "Libro de habilidad",
   "block.overgearedmod.smithing_anvil": "Yunque de herrero",
   "container.overgearedmod.smithing_anvil": "Yunque de herrero",
 
@@ -21,21 +22,35 @@
 
   "screen.overgearedmod.status": "Status Window",
   "tab.overgearedmod.status": "Estado",
+  "tab.overgearedmod.skills": "Habilidades",
   "screen.overgearedmod.level": "Nivel %s",
   "screen.overgearedmod.xp": "XP %s / %s",
   "screen.overgearedmod.mana": "Maná %s / %s",
   "screen.overgearedmod.smithing": "Herrería nv. %s",
   "screen.overgearedmod.free_points": "Puntos libres: %s",
+  "screen.overgearedmod.no_skills": "Aún no conoces ninguna habilidad. Lee un libro de habilidad.",
+  "screen.overgearedmod.skills_header": "Habilidades aprendidas",
+  "screen.overgearedmod.skill_cost": "%s maná · %ss",
 
   "skill.overgearedmod.pagma_link": "Pagma's Swordsmanship: Link",
+  "skill.overgearedmod.pagma_link.desc": "Corte en abanico frente a ti. Escala con STR y DEX. Requiere espada.",
+  "skill.overgearedmod.iron_guard": "Guardia de hierro",
+  "skill.overgearedmod.iron_guard.desc": "Resistencia II y absorción durante unos segundos.",
+  "skill.overgearedmod.flame_bolt": "Saeta de llamas",
+  "skill.overgearedmod.flame_bolt.desc": "Lanza tres bolas de fuego pequeñas hacia donde miras.",
 
   "message.overgearedmod.level_up": "¡Nivel %s alcanzado!",
   "message.overgearedmod.cooldown": "%s: enfriamiento %ss",
   "message.overgearedmod.no_mana": "%s: maná insuficiente",
+  "message.overgearedmod.wrong_item": "%s: no puedes usarla con lo que llevas en la mano",
+  "message.overgearedmod.learned": "Has aprendido %s",
+  "message.overgearedmod.already_known": "Ya conoces esa habilidad",
   "message.overgearedmod.forged": "Has forjado %s [%s]",
   "message.overgearedmod.reset": "Progresión de Satisfy reiniciada",
 
   "key.categories.overgearedmod": "Overgeared",
   "key.overgearedmod.status": "Abrir Status Window",
-  "key.overgearedmod.use_skill": "Usar habilidad del arma"
+  "key.overgearedmod.skill_1": "Habilidad 1",
+  "key.overgearedmod.skill_2": "Habilidad 2",
+  "key.overgearedmod.skill_3": "Habilidad 3"
 }

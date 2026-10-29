@@ -8,6 +8,7 @@ import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModCreativeTabs;
 import com.orijua.overgearedmod.registry.ModDataComponents;
+import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.registry.ModRecipes;
@@ -41,7 +42,8 @@ public class Overgearedmod {
         ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
-        // Mod bus events (lifecycle, networking setup, creative tabs).
+        // Mod bus events (JSON registries, networking, creative tabs).
+        modEventBus.addListener(ModDatapackRegistries::register);
         modEventBus.addListener(ModNetwork::register);
         modEventBus.addListener(ModCreativeTabs::addToVanillaTabs);
 

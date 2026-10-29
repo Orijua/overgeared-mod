@@ -9,7 +9,8 @@ import java.util.function.Supplier;
 /** The tabs of the Satisfy window, in display order. Add a page by writing a SatisfyTab and listing it here. */
 public final class SatisfyTabs {
     private static final List<Supplier<SatisfyTab>> TABS = List.of(
-            StatusTab::new);
+            StatusTab::new,
+            SkillsTab::new);
 
     private SatisfyTabs() {
     }

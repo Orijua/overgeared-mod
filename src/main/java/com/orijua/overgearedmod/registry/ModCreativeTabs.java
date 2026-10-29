@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.skill.SkillBookItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
@@ -23,6 +24,9 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.SMITHING_ANVIL);
                         output.accept(ModItems.TEST_INGOT);
                         output.accept(ModItems.JAFFA_SWORD);
+                        // One book per skill defined in the loaded datapacks.
+                        parameters.holders().lookup(ModDatapackRegistries.SKILL).ifPresent(skills -> skills.listElementIds()
+                                .forEach(key -> output.accept(SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), key.location()))));
                     })
                     .build());
 

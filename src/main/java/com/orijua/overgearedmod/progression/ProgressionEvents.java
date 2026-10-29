@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.progression;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.orijua.overgearedmod.Config;
+import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -60,6 +61,7 @@ public final class ProgressionEvents {
                 .then(Commands.literal("reset")
                         .executes(ctx -> {
                             ServerPlayer player = ctx.getSource().getPlayerOrException();
+                            ModAttachments.resetAll(player);
                             ProgressionService.set(player, PlayerStats.DEFAULT);
                             ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.reset"), false);
                             return 1;

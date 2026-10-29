@@ -56,7 +56,7 @@ public class StatusTab extends SatisfyTab {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         PlayerStats stats = stats();
-        float mana = player().getData(ModAttachments.SKILL_STATE).mana();
+        float mana = player().getData(ModAttachments.MANA);
         int half = left + width / 2;
 
         UiStyle.heading(graphics, font(), Component.translatable("screen.overgearedmod.level", stats.level()), left, top);

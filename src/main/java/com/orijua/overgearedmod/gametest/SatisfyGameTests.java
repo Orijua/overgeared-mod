@@ -15,6 +15,7 @@ import com.orijua.overgearedmod.skill.SkillService;
 import com.orijua.overgearedmod.smithing.ForgingRecipeInput;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
@@ -38,7 +39,8 @@ import java.util.UUID;
 @GameTestHolder(Overgearedmod.MODID)
 @PrefixGameTestTemplate(false)
 public final class SatisfyGameTests {
-    private static final String EMPTY = "empty"; // data/overgearedmod/structure/empty.nbt
+    static final String EMPTY = "empty"; // data/overgearedmod/structure/empty.nbt
+    private static final ResourceLocation PAGMA_LINK = Overgearedmod.id("pagma_link");
 
     private SatisfyGameTests() {
     }
@@ -116,24 +118,43 @@ public final class SatisfyGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY)
-    public static void pagmaLinkHitsMobInFront(GameTestHelper helper) {
-        // FakePlayer: a ServerPlayer with a no-op connection, so attachment syncing is simply ignored.
+    /** FakePlayer: a ServerPlayer with a no-op connection, so attachment syncing is simply ignored. */
+    static ServerPlayer fakePlayer(GameTestHelper helper) {
         ServerPlayer player = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "satisfy-test"));
         Vec3 origin = helper.absoluteVec(new Vec3(0.5, 1, 0.5));
-        // yaw 0 = looking towards +Z
-        player.moveTo(origin.x, origin.y, origin.z, 0.0f, 0.0f);
+        player.moveTo(origin.x, origin.y, origin.z, 0.0f, 0.0f); // yaw 0 = looking towards +Z
         player.setYHeadRot(0.0f);
+        return player;
+    }
+
+    @GameTest(template = EMPTY)
+    public static void learnedSkillFillsFirstFreeSlot(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper);
+        helper.assertTrue(SkillService.learn(player, PAGMA_LINK), "pagma_link should be defined in the datapack");
+        helper.assertTrue(SkillService.learn(player, Overgearedmod.id("iron_guard")), "iron_guard should be defined");
+        helper.assertFalse(SkillService.learn(player, PAGMA_LINK), "learning twice must fail");
+        helper.assertTrue(SkillService.get(player).slot(1).filter(Overgearedmod.id("iron_guard")::equals).isPresent(),
+                "second skill should land in slot 2");
+
+        SkillService.Result noSword = SkillService.use(player, 0);
+        helper.assertTrue(noSword == SkillService.Result.WRONG_ITEM, "pagma_link needs a sword, got " + noSword);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY)
+    public static void pagmaLinkHitsMobInFront(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper);
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        SkillService.learn(player, PAGMA_LINK);
 
         Zombie zombie = helper.spawn(EntityType.ZOMBIE, new Vec3(0.5, 1, 2.5));
         zombie.setNoAi(true);
 
-        SkillService.Result result = SkillService.tryUseHeldSkill(player);
+        SkillService.Result result = SkillService.use(player, 0);
         helper.assertTrue(result == SkillService.Result.SUCCESS, "skill should fire, got " + result);
         helper.assertTrue(zombie.getHealth() < zombie.getMaxHealth(), "zombie in front should be hit");
 
-        SkillService.Result again = SkillService.tryUseHeldSkill(player);
+        SkillService.Result again = SkillService.use(player, 0);
         helper.assertTrue(again == SkillService.Result.ON_COOLDOWN, "second use should be on cooldown, got " + again);
         helper.succeed();
     }

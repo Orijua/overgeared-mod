@@ -15,7 +15,13 @@ final class ServerPayloadHandler {
 
     static void useSkill(UseSkillPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
-            SkillService.tryUseHeldSkill(player);
+            SkillService.use(player, payload.slot());
+        }
+    }
+
+    static void assignSkill(AssignSkillPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            SkillService.assign(player, payload.slot(), payload.skill());
         }
     }
 
