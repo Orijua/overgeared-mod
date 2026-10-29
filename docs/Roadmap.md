@@ -19,8 +19,8 @@ Orden de trabajo: primero mejorar lo que ya existe y después añadir sistemas n
 - [x] **Explicar las estadísticas en la ventana** (Bajo). Al pasar el ratón por STR, DEX…, mostrar qué hace cada punto.
 - [x] **Reasignar puntos y abandonar misiones** (Bajo). Pergamino de reasignación (devuelve los puntos asignados) y botón ✖ en las misiones activas.
 - [x] **Equilibrar la XP** (Bajo-Medio). La XP cuenta vida, daño y armadura del mob, y los mobs de spawner dan un 25 %. La curva sigue siendo configurable y falta probarla jugando.
-- [ ] **Iconos de habilidad** (Medio). Un campo `icon` en el JSON para que los huecos del HUD muestren algo mejor que una inicial.
-- [ ] **Misión activa en el HUD** (Medio). Ver el progreso sin abrir la ventana.
+- [x] **Iconos de habilidad** (Medio). Un campo `icon` en el JSON para que los huecos del HUD muestren algo mejor que una inicial.
+- [x] **Misión activa en el HUD** (Medio). Ver el progreso sin abrir la ventana.
 
 ### P3: más profundidad
 
