@@ -17,8 +17,8 @@ Orden de trabajo: primero mejorar lo que ya existe y después añadir sistemas n
 
 - [x] **"+N" en el nombre y color por rango** (Bajo). Es lo primero que ve el jugador y muy propio de Satisfy; hoy solo aparece en el tooltip.
 - [x] **Explicar las estadísticas en la ventana** (Bajo). Al pasar el ratón por STR, DEX…, mostrar qué hace cada punto.
-- [ ] **Reasignar puntos y abandonar misiones** (Bajo). Ahora la única salida es `/satisfy reset`, que lo borra todo.
-- [ ] **Equilibrar la XP** (Bajo-Medio). La XP depende solo de la vida del mob: se puede abusar con granjas y la curva no está probada jugando.
+- [x] **Reasignar puntos y abandonar misiones** (Bajo). Pergamino de reasignación (devuelve los puntos asignados) y botón ✖ en las misiones activas.
+- [x] **Equilibrar la XP** (Bajo-Medio). La XP cuenta vida, daño y armadura del mob, y los mobs de spawner dan un 25 %. La curva sigue siendo configurable y falta probarla jugando.
 - [ ] **Iconos de habilidad** (Medio). Un campo `icon` en el JSON para que los huecos del HUD muestren algo mejor que una inicial.
 - [ ] **Misión activa en el HUD** (Medio). Ver el progreso sin abrir la ventana.
 
