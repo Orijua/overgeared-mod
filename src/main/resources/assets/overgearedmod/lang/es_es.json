@@ -31,6 +31,11 @@
   "stat.overgearedmod.agility": "Agilidad (AGI)",
   "stat.overgearedmod.intelligence": "Inteligencia (INT)",
   "stat.overgearedmod.dexterity": "Destreza (DEX)",
+  "stat.overgearedmod.strength.desc": "Por punto: +%s de daño de ataque. Aumenta el daño de las habilidades de área.",
+  "stat.overgearedmod.stamina.desc": "Por punto: +%s de vida máxima.",
+  "stat.overgearedmod.agility.desc": "Por punto: +%s%% de velocidad de movimiento.",
+  "stat.overgearedmod.intelligence.desc": "Por punto: +%s de maná máximo y +%s de maná por segundo.",
+  "stat.overgearedmod.dexterity.desc": "Por punto: +%s%% de velocidad de ataque. Mejora el rango al forjar y la probabilidad de mejora.",
 
   "screen.overgearedmod.status": "Status Window",
   "tab.overgearedmod.status": "Estado",

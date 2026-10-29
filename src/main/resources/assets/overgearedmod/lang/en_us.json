@@ -31,6 +31,11 @@
   "stat.overgearedmod.agility": "Agility (AGI)",
   "stat.overgearedmod.intelligence": "Intelligence (INT)",
   "stat.overgearedmod.dexterity": "Dexterity (DEX)",
+  "stat.overgearedmod.strength.desc": "Per point: +%s attack damage. Boosts area skill damage.",
+  "stat.overgearedmod.stamina.desc": "Per point: +%s max health.",
+  "stat.overgearedmod.agility.desc": "Per point: +%s%% movement speed.",
+  "stat.overgearedmod.intelligence.desc": "Per point: +%s max mana and +%s mana per second.",
+  "stat.overgearedmod.dexterity.desc": "Per point: +%s%% attack speed. Improves forging ratings and enhancement odds.",
 
   "screen.overgearedmod.status": "Status Window",
   "tab.overgearedmod.status": "Status",
