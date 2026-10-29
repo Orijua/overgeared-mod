@@ -24,6 +24,7 @@ run
 docs/*
 # ...except the template guide, which documents the mod itself
 !docs/Plantilla_Satisfy.md
+!docs/Roadmap.md
 
 # Local Claude Code instructions (point at the personal docs above)
 CLAUDE.MD
