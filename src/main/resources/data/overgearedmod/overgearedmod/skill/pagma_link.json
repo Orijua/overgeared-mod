@@ -1,6 +1,7 @@
 {
   "name": { "translate": "skill.overgearedmod.pagma_link" },
   "description": { "translate": "skill.overgearedmod.pagma_link.desc" },
+  "icon": "minecraft:iron_sword",
   "mana_cost": 10,
   "cooldown_ticks": 100,
   "required_item": "minecraft:swords",

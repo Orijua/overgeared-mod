@@ -114,10 +114,11 @@ public class SkillsTab extends SatisfyTab {
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);
             int y = rowY(i);
-            UiStyle.text(graphics, font(), row.skill().name(), left, y, UiStyle.TEXT);
+            graphics.renderItem(row.skill().iconStack(), left, y + 1);
+            UiStyle.text(graphics, font(), row.skill().name(), left + 20, y, UiStyle.TEXT);
             UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.skill_cost",
-                    (int) row.skill().manaCost(), row.skill().cooldownTicks() / 20), left + 120, y, UiStyle.MUTED);
-            if (mouseX >= left && mouseX < left + 115 && mouseY >= y - 2 && mouseY < y + ROW - 4) {
+                    (int) row.skill().manaCost(), row.skill().cooldownTicks() / 20), left + 20, y + 10, UiStyle.MUTED);
+            if (mouseX >= left && mouseX < left + 180 && mouseY >= y - 2 && mouseY < y + ROW - 4) {
                 hovered = row;
             }
         }

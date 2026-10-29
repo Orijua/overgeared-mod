@@ -1,6 +1,7 @@
 {
   "name": { "translate": "skill.overgearedmod.flame_bolt" },
   "description": { "translate": "skill.overgearedmod.flame_bolt.desc" },
+  "icon": "minecraft:fire_charge",
   "mana_cost": 8,
   "cooldown_ticks": 40,
   "effect": {

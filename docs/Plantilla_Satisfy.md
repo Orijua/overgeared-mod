@@ -101,6 +101,7 @@ Estadísticas (diseño propio, se ajustan en `StatEffects` y en `Balance`):
 {
   "name": { "translate": "skill.overgearedmod.whirlwind" },
   "description": { "translate": "skill.overgearedmod.whirlwind.desc" },
+  "icon": "minecraft:iron_axe",
   "mana_cost": 20,
   "cooldown_ticks": 200,
   "required_item": "minecraft:axes",
@@ -108,7 +109,7 @@ Estadísticas (diseño propio, se ajustan en `StatEffects` y en `Balance`):
 }
 ```
 
-Tipos de efecto: `area_damage`, `self_buff` (`"effects": [{ "id": "minecraft:speed", "amplifier": 1, "duration": 200 }]`) y `projectile` (`count`, `speed`).
+`icon` es opcional: cualquier objeto, cuya textura se ve en el HUD y en la pestaña Habilidades. Tipos de efecto: `area_damage`, `self_buff` (`"effects": [{ "id": "minecraft:speed", "amplifier": 1, "duration": 200 }]`) y `projectile` (`count`, `speed`).
 
 **Opción de equipo:** `item_option/<id>.json`. El tipo es `attribute` (cualquier atributo vanilla, con `operation` opcional) o `life_steal`. `applies_to` es opcional: limita la opción a un tag de objetos (`overgearedmod:weapons`, `overgearedmod:armor` o cualquier otro). Sin él, puede salir en cualquier objeto.
 

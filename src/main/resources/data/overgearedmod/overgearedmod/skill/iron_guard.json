@@ -1,6 +1,7 @@
 {
   "name": { "translate": "skill.overgearedmod.iron_guard" },
   "description": { "translate": "skill.overgearedmod.iron_guard.desc" },
+  "icon": "minecraft:shield",
   "mana_cost": 15,
   "cooldown_ticks": 400,
   "effect": {

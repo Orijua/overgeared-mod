@@ -54,4 +54,12 @@ public final class SkillTests {
         helper.assertTrue(again == SkillService.Result.ON_COOLDOWN, "second use should be on cooldown, got " + again);
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void skillIconIsReadFromJson(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        helper.assertTrue(SkillService.definition(player, PAGMA_LINK).flatMap(def -> def.icon()).filter(Items.IRON_SWORD::equals).isPresent(),
+                "pagma_link should use the iron sword as icon");
+        helper.succeed();
+    }
 }
