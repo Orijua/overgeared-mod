@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.client.tab;
 
 import com.orijua.overgearedmod.client.OvergearedmodClient;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
+import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.AssignSkillPayload;
 import com.orijua.overgearedmod.registry.Definitions;
@@ -25,13 +26,14 @@ import java.util.function.Consumer;
 public class SkillsTab extends SatisfyTab {
     private static final int ROW = 22;
     private static final int LIST_TOP = 16;
-    private static final int MAX_ROWS = 7;
+    private static final int VISIBLE_ROWS = 7;
     private static final int SLOT_BUTTON = 18;
 
     private record Row(ResourceLocation id, SkillDefinition skill, List<Button> slotButtons) {
     }
 
     private final List<Row> rows = new ArrayList<>();
+    private final ScrollList scroll = new ScrollList(VISIBLE_ROWS);
     private int shownLearnedCount;
 
     public SkillsTab() {
@@ -47,7 +49,8 @@ public class SkillsTab extends SatisfyTab {
         rows.clear();
         List<ResourceLocation> learned = skills().learned();
         shownLearnedCount = learned.size();
-        for (int i = 0; i < Math.min(learned.size(), MAX_ROWS); i++) {
+        scroll.clamp(learned.size());
+        for (int i = scroll.first(); i < scroll.end(learned.size()); i++) {
             ResourceLocation id = learned.get(i);
             Optional<SkillDefinition> skill = Definitions.get(player().level(), ModDatapackRegistries.SKILL, id);
             if (skill.isEmpty()) {
@@ -79,6 +82,11 @@ public class SkillsTab extends SatisfyTab {
     @Override
     public boolean needsRebuild() {
         return skills().learned().size() != shownLearnedCount;
+    }
+
+    @Override
+    public boolean mouseScrolled(double wheel) {
+        return scroll.scroll(wheel, skills().learned().size());
     }
 
     /** Marks the slot(s) where each skill is equipped with a check. */
@@ -113,6 +121,7 @@ public class SkillsTab extends SatisfyTab {
                 hovered = row;
             }
         }
+        scroll.renderBar(graphics, left + width + 3, top + LIST_TOP - 2, VISIBLE_ROWS * ROW - 4, shownLearnedCount);
         if (hovered != null) {
             graphics.renderTooltip(font(), font().split(hovered.skill().description(), 180), mouseX, mouseY);
         }
