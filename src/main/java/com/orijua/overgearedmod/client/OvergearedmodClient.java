@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.client.tab.SatisfyTabs;
 import com.orijua.overgearedmod.network.UseSkillPayload;
+import com.orijua.overgearedmod.registry.ModEntities;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.skill.PlayerSkills;
 import net.minecraft.client.KeyMapping;
@@ -13,6 +14,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -40,6 +42,7 @@ public class OvergearedmodClient {
         modEventBus.addListener(OvergearedmodClient::onRegisterKeys);
         modEventBus.addListener(OvergearedmodClient::onRegisterScreens);
         modEventBus.addListener(OvergearedmodClient::onRegisterGuiLayers);
+        modEventBus.addListener(OvergearedmodClient::onRegisterRenderers);
         NeoForge.EVENT_BUS.addListener(OvergearedmodClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
     }
@@ -56,6 +59,10 @@ public class OvergearedmodClient {
 
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.SMITHING_ANVIL.get(), SmithingAnvilScreen::new);
+    }
+
+    private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.BLACKSMITH.get(), BlacksmithRenderer::new);
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
