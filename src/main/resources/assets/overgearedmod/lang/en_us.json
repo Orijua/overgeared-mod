@@ -1,7 +1,40 @@
 {
-  "itemGroup.overgearedmod": "Example Mod Tab",
-  "block.overgearedmod.example_block": "Example Block",
-  "item.overgearedmod.example_item": "Example Item",
-  "item.overgearedmod.lingote_prueba": "Lingote de prueba",
-  "item.overgearedmod.espada_jaffa": "Espada de Jaffa"
+  "itemGroup.overgearedmod": "Overgeared",
+  "item.overgearedmod.test_ingot": "Lingote de prueba",
+  "item.overgearedmod.jaffa_sword": "Espada de Jaffa",
+  "block.overgearedmod.smithing_anvil": "Yunque de herrero",
+  "container.overgearedmod.smithing_anvil": "Yunque de herrero",
+
+  "rating.overgearedmod.normal": "Normal",
+  "rating.overgearedmod.rare": "Rare",
+  "rating.overgearedmod.epic": "Epic",
+  "rating.overgearedmod.unique": "Unique",
+  "rating.overgearedmod.legendary": "Legendary",
+  "rating.overgearedmod.myth": "Myth",
+  "tooltip.overgearedmod.rating": "Rango: %s",
+
+  "stat.overgearedmod.strength": "Fuerza (STR)",
+  "stat.overgearedmod.stamina": "Resistencia (STA)",
+  "stat.overgearedmod.agility": "Agilidad (AGI)",
+  "stat.overgearedmod.intelligence": "Inteligencia (INT)",
+  "stat.overgearedmod.dexterity": "Destreza (DEX)",
+
+  "screen.overgearedmod.status": "Status Window",
+  "screen.overgearedmod.level": "Nivel %s",
+  "screen.overgearedmod.xp": "XP %s / %s",
+  "screen.overgearedmod.mana": "Maná %s / %s",
+  "screen.overgearedmod.smithing": "Herrería nv. %s",
+  "screen.overgearedmod.free_points": "Puntos libres: %s",
+
+  "skill.overgearedmod.pagma_link": "Pagma's Swordsmanship: Link",
+
+  "message.overgearedmod.level_up": "¡Nivel %s alcanzado!",
+  "message.overgearedmod.cooldown": "%s: enfriamiento %ss",
+  "message.overgearedmod.no_mana": "%s: maná insuficiente",
+  "message.overgearedmod.forged": "Has forjado %s [%s]",
+  "message.overgearedmod.reset": "Progresión de Satisfy reiniciada",
+
+  "key.categories.overgearedmod": "Overgeared",
+  "key.overgearedmod.status": "Abrir Status Window",
+  "key.overgearedmod.use_skill": "Usar habilidad del arma"
 }
