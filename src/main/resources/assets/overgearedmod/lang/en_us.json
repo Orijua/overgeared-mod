@@ -3,6 +3,7 @@
   "item.overgearedmod.test_ingot": "Lingote de prueba",
   "item.overgearedmod.jaffa_sword": "Espada de Jaffa",
   "item.overgearedmod.skill_book": "Libro de habilidad",
+  "item.overgearedmod.enhancement_stone": "Piedra de mejora",
   "block.overgearedmod.smithing_anvil": "Yunque de herrero",
   "container.overgearedmod.smithing_anvil": "Yunque de herrero",
 
@@ -13,6 +14,14 @@
   "rating.overgearedmod.legendary": "Legendary",
   "rating.overgearedmod.myth": "Myth",
   "tooltip.overgearedmod.rating": "Rango: %s",
+  "tooltip.overgearedmod.enhancement": "Mejora +%s",
+  "tooltip.overgearedmod.requires": "Requisitos:",
+  "tooltip.overgearedmod.requires_level": "Nivel %s",
+
+  "option.overgearedmod.sharpness": "Filo",
+  "option.overgearedmod.swiftness": "Celeridad",
+  "option.overgearedmod.vitality": "Vitalidad",
+  "option.overgearedmod.life_steal": "Robo de vida",
 
   "stat.overgearedmod.strength": "Fuerza (STR)",
   "stat.overgearedmod.stamina": "Resistencia (STA)",
@@ -31,6 +40,7 @@
   "screen.overgearedmod.no_skills": "Aún no conoces ninguna habilidad. Lee un libro de habilidad.",
   "screen.overgearedmod.skills_header": "Habilidades aprendidas",
   "screen.overgearedmod.skill_cost": "%s maná · %ss",
+  "screen.overgearedmod.enhance": "Mejorar +%s (%s%%)",
 
   "skill.overgearedmod.pagma_link": "Pagma's Swordsmanship: Link",
   "skill.overgearedmod.pagma_link.desc": "Corte en abanico frente a ti. Escala con STR y DEX. Requiere espada.",
@@ -46,6 +56,9 @@
   "message.overgearedmod.learned": "Has aprendido %s",
   "message.overgearedmod.already_known": "Ya conoces esa habilidad",
   "message.overgearedmod.forged": "Has forjado %s [%s]",
+  "message.overgearedmod.enhance_success": "¡%s mejorada a +%s!",
+  "message.overgearedmod.enhance_failure": "La mejora de %s ha fallado (sigue en +%s)",
+  "message.overgearedmod.requirements_unmet": "No cumples los requisitos de este objeto",
   "message.overgearedmod.reset": "Progresión de Satisfy reiniciada",
 
   "key.categories.overgearedmod": "Overgeared",

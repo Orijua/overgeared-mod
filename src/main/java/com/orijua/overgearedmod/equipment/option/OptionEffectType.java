@@ -1,0 +1,31 @@
+package com.orijua.overgearedmod.equipment.option;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.util.StringRepresentable;
+
+import java.util.function.Supplier;
+
+public enum OptionEffectType implements StringRepresentable {
+    ATTRIBUTE("attribute", () -> AttributeOptionEffect.CODEC),
+    LIFE_STEAL("life_steal", () -> LifeStealOptionEffect.CODEC);
+
+    public static final Codec<OptionEffectType> CODEC = StringRepresentable.fromEnum(OptionEffectType::values);
+
+    private final String name;
+    private final Supplier<MapCodec<? extends OptionEffect>> codec;
+
+    OptionEffectType(String name, Supplier<MapCodec<? extends OptionEffect>> codec) {
+        this.name = name;
+        this.codec = codec;
+    }
+
+    public MapCodec<? extends OptionEffect> codec() {
+        return codec.get();
+    }
+
+    @Override
+    public String getSerializedName() {
+        return name;
+    }
+}

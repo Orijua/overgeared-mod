@@ -1,9 +1,9 @@
 package com.orijua.overgearedmod;
 
 import com.mojang.logging.LogUtils;
+import com.orijua.overgearedmod.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.network.ModNetwork;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
-import com.orijua.overgearedmod.equipment.RatingEvents;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModCreativeTabs;
@@ -48,7 +48,7 @@ public class Overgearedmod {
         modEventBus.addListener(ModCreativeTabs::addToVanillaTabs);
 
         // Game bus events (gameplay: kills, ticks, item attributes...).
-        RatingEvents.register(NeoForge.EVENT_BUS);
+        EquipmentEvents.register(NeoForge.EVENT_BUS);
         ProgressionEvents.register(NeoForge.EVENT_BUS);
         SkillEvents.register(NeoForge.EVENT_BUS);
 

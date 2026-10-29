@@ -5,6 +5,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.neoforged.neoforge.common.CommonHooks;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,6 +25,13 @@ public final class Definitions {
 
     public static <T> Optional<T> get(HolderLookup.Provider registries, ResourceKey<Registry<T>> registry, ResourceLocation id) {
         return registries.lookup(registry)
+                .flatMap(lookup -> lookup.get(ResourceKey.create(registry, id)))
+                .map(holder -> holder.value());
+    }
+
+    /** For code with no level at hand (e.g. item attribute events): the running server's or the client's registries. */
+    public static <T> Optional<T> get(ResourceKey<Registry<T>> registry, ResourceLocation id) {
+        return Optional.ofNullable(CommonHooks.resolveLookup(registry))
                 .flatMap(lookup -> lookup.get(ResourceKey.create(registry, id)))
                 .map(holder -> holder.value());
     }

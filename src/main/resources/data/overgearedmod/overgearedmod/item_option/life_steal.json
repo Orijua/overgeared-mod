@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "option.overgearedmod.life_steal" },
+  "weight": 10,
+  "min": 0.02,
+  "max": 0.10,
+  "effect": { "type": "life_steal" }
+}

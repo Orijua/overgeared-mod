@@ -6,6 +6,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
 
 /** Server-side operations on a player's progression. The only place that writes PlayerStats. */
 public final class ProgressionService {
@@ -13,6 +14,11 @@ public final class ProgressionService {
     }
 
     public static PlayerStats get(ServerPlayer player) {
+        return player.getData(ModAttachments.PLAYER_STATS);
+    }
+
+    /** Allocated stats plus every passive bonus. Use this for gameplay checks; works on both sides. */
+    public static PlayerStats effectiveStats(Player player) {
         return player.getData(ModAttachments.PLAYER_STATS);
     }
 

@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.skill;
 
+import com.orijua.overgearedmod.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
@@ -12,7 +13,7 @@ import java.util.Optional;
 
 /** Server-side skill operations: learning, slotting and casting. Every rule is checked here. */
 public final class SkillService {
-    public enum Result { SUCCESS, EMPTY_SLOT, UNKNOWN_SKILL, WRONG_ITEM, ON_COOLDOWN, NO_MANA }
+    public enum Result { SUCCESS, EMPTY_SLOT, UNKNOWN_SKILL, WRONG_ITEM, REQUIREMENTS_UNMET, ON_COOLDOWN, NO_MANA }
 
     private SkillService() {
     }
@@ -58,6 +59,9 @@ public final class SkillService {
 
         if (!skill.canUseWith(player.getMainHandItem())) {
             return fail(player, Result.WRONG_ITEM, Component.translatable("message.overgearedmod.wrong_item", skill.name()));
+        }
+        if (!EquipmentEvents.meetsRequirements(player, player.getMainHandItem())) {
+            return fail(player, Result.REQUIREMENTS_UNMET, Component.translatable("message.overgearedmod.requirements_unmet"));
         }
         long remaining = skills.cooldownRemaining(id.get(), now);
         if (remaining > 0) {

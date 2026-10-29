@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "option.overgearedmod.swiftness" },
+  "weight": 20,
+  "min": 0.03,
+  "max": 0.12,
+  "effect": { "type": "attribute", "attribute": "minecraft:generic.attack_speed", "operation": "add_multiplied_base" }
+}
