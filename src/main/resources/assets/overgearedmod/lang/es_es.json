@@ -27,6 +27,10 @@
   "option.overgearedmod.vitality": "Vitalidad",
   "option.overgearedmod.life_steal": "Robo de vida",
   "option.overgearedmod.fortitude": "Fortaleza",
+  "option.overgearedmod.bleeding": "Sangrado al golpear",
+  "effect.overgearedmod.bleeding": "Sangrado",
+  "death.attack.overgearedmod.bleeding": "%1$s se desangró",
+  "death.attack.overgearedmod.bleeding.player": "%1$s se desangró por culpa de %2$s",
 
   "stat.overgearedmod.strength": "Fuerza (STR)",
   "stat.overgearedmod.stamina": "Resistencia (STA)",
@@ -106,6 +110,8 @@
   "skill.overgearedmod.iron_guard.desc": "Resistencia II y absorción durante unos segundos.",
   "skill.overgearedmod.flame_bolt": "Saeta de llamas",
   "skill.overgearedmod.flame_bolt.desc": "Lanza tres bolas de fuego pequeñas hacia donde miras.",
+  "skill.overgearedmod.rending_slash": "Corte desgarrador",
+  "skill.overgearedmod.rending_slash.desc": "Tajo corto que hace sangrar a los enemigos (Sangrado II). Requiere espada.",
 
   "message.overgearedmod.level_up": "¡Nivel %s alcanzado!",
   "message.overgearedmod.cooldown": "%s: enfriamiento %ss",

@@ -40,7 +40,7 @@ Cada uno introduce un patrón de Minecraft que la plantilla todavía no tiene.
 - [ ] **Monstruos con nivel y élites** (Medio). Modificar mobs vanilla al aparecer (attachment en la entidad), escalar su vida, daño y XP, y mostrar el nivel sobre la cabeza. Se conecta con la XP, las misiones (`kill`) y los títulos.
 - [ ] **Mineral y material propios** (Medio). Generación del mundo por datapack (vetas), un bloque con loot table y la cadena mineral → lingote → forja. Sustituiría al "Lingote de prueba".
 - [ ] **NPC herrero o de misiones** (Alto). Entidad propia con modelo, IA sencilla e interacción (dar misiones, comerciar). Mejor en una rama propia; valorar GeckoLib solo si hace falta animación.
-- [ ] **Efectos de estado propios** (Bajo). Un `MobEffect` propio (p. ej. Sangrado) que puedan aplicar opciones y habilidades: un tipo nuevo de `OptionEffect` y otro de `SkillEffect`.
+- [x] **Efectos de estado propios** (Bajo). Sangrado (`overgearedmod:bleeding`): daño por segundo que ignora la armadura. Lo aplican la opción de arma `apply_effect` y las habilidades con `target_effects` (Corte desgarrador).
 - [ ] **Generación de datos (datagen)** (Medio). Generar desde Java los JSON de traducciones, modelos, recetas y tags. No es una mecánica, pero facilita mantener la plantilla a medida que crece.
 
 Orden sugerido: monstruos con nivel → mineral propio → efectos de estado → datagen → NPC.

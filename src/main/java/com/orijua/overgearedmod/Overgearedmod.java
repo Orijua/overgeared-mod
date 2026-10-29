@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModCreativeTabs;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.registry.ModEffects;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.registry.ModRecipes;
@@ -35,6 +36,7 @@ public class Overgearedmod {
         // Registries (mod bus): content must be registered before the game freezes registries.
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+        ModEffects.EFFECTS.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);

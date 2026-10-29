@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "option.overgearedmod.bleeding" },
+  "weight": 8,
+  "min": 0.05,
+  "max": 0.20,
+  "applies_to": "overgearedmod:weapons",
+  "effect": { "type": "apply_effect", "effect": "overgearedmod:bleeding", "duration": 100 }
+}
