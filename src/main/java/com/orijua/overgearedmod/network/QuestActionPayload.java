@@ -8,9 +8,9 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.ByIdMap;
 
-/** Client → server: accept a quest or claim its rewards. */
+/** Client → server: accept a quest, claim its rewards or abandon it. */
 public record QuestActionPayload(ResourceLocation quest, Action action) implements CustomPacketPayload {
-    public enum Action { ACCEPT, CLAIM }
+    public enum Action { ACCEPT, CLAIM, ABANDON }
 
     private static final StreamCodec<ByteBuf, Action> ACTION_CODEC = ByteBufCodecs.idMapper(
             ByIdMap.continuous(Action::ordinal, Action.values(), ByIdMap.OutOfBoundsStrategy.CLAMP), Action::ordinal);

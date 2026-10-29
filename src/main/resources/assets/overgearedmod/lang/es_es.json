@@ -4,6 +4,7 @@
   "item.overgearedmod.jaffa_sword": "Espada de Jaffa",
   "item.overgearedmod.skill_book": "Libro de habilidad",
   "item.overgearedmod.enhancement_stone": "Piedra de mejora",
+  "item.overgearedmod.respec_scroll": "Pergamino de reasignación",
   "block.overgearedmod.smithing_anvil": "Yunque de herrero",
   "container.overgearedmod.smithing_anvil": "Yunque de herrero",
 
@@ -45,6 +46,7 @@
   "screen.overgearedmod.no_quests": "No hay misiones disponibles.",
   "screen.overgearedmod.quest_accept": "Aceptar",
   "screen.overgearedmod.quest_claim": "Reclamar",
+  "screen.overgearedmod.quest_abandon": "Abandonar misión",
   "screen.overgearedmod.quest_reward": "Recompensa: %s XP y %s objeto(s)",
   "screen.overgearedmod.class": "Clase:",
   "screen.overgearedmod.choose_class": "Elige una (solo una vez):",
@@ -109,6 +111,9 @@
   "message.overgearedmod.title_earned": "Título obtenido: %s",
   "message.overgearedmod.quest_accepted": "Misión aceptada: %s",
   "message.overgearedmod.quest_completed": "Misión completada: %s",
+  "message.overgearedmod.quest_abandoned": "Misión abandonada: %s",
+  "message.overgearedmod.respec_done": "Puntos devueltos: tienes %s para repartir",
+  "message.overgearedmod.respec_nothing": "No tienes puntos asignados que devolver",
   "message.overgearedmod.reset": "Progresión de Satisfy reiniciada",
 
   "key.categories.overgearedmod": "Overgeared",

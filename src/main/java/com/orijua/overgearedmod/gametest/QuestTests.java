@@ -50,4 +50,15 @@ public final class QuestTests {
         helper.assertTrue(QuestService.accept(player, path) == QuestService.Result.NOT_AVAILABLE, "non-repeatable quest stays done");
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void abandonedQuestCanBeTakenAgain(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ResourceLocation commission = Overgearedmod.id("first_commission");
+        QuestService.accept(player, commission);
+        helper.assertTrue(QuestService.abandon(player, commission) == QuestService.Result.SUCCESS, "active quest can be abandoned");
+        helper.assertFalse(QuestService.get(player).isActive(commission), "abandoned quest is no longer active");
+        helper.assertTrue(QuestService.accept(player, commission) == QuestService.Result.SUCCESS, "and can be accepted again");
+        helper.succeed();
+    }
 }

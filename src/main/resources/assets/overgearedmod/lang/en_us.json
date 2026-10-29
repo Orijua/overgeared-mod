@@ -4,6 +4,7 @@
   "item.overgearedmod.jaffa_sword": "Jaffa Sword",
   "item.overgearedmod.skill_book": "Skill Book",
   "item.overgearedmod.enhancement_stone": "Enhancement Stone",
+  "item.overgearedmod.respec_scroll": "Respec Scroll",
   "block.overgearedmod.smithing_anvil": "Smithing Anvil",
   "container.overgearedmod.smithing_anvil": "Smithing Anvil",
 
@@ -45,6 +46,7 @@
   "screen.overgearedmod.no_quests": "No quests available.",
   "screen.overgearedmod.quest_accept": "Accept",
   "screen.overgearedmod.quest_claim": "Claim",
+  "screen.overgearedmod.quest_abandon": "Abandon quest",
   "screen.overgearedmod.quest_reward": "Reward: %s XP and %s item(s)",
   "screen.overgearedmod.class": "Class:",
   "screen.overgearedmod.choose_class": "Choose one (only once):",
@@ -109,6 +111,9 @@
   "message.overgearedmod.title_earned": "Title earned: %s",
   "message.overgearedmod.quest_accepted": "Quest accepted: %s",
   "message.overgearedmod.quest_completed": "Quest completed: %s",
+  "message.overgearedmod.quest_abandoned": "Quest abandoned: %s",
+  "message.overgearedmod.respec_done": "Points refunded: you have %s to spend",
+  "message.overgearedmod.respec_nothing": "You have no allocated points to refund",
   "message.overgearedmod.reset": "Satisfy progression reset",
 
   "key.categories.overgearedmod": "Overgeared",

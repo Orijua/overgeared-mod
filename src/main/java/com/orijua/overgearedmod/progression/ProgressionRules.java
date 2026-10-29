@@ -64,6 +64,17 @@ public final class ProgressionRules {
         return result;
     }
 
+    /** Takes every allocated point back into free points (bonuses from class and titles are untouched). */
+    public static PlayerStats refundAll(PlayerStats stats) {
+        int allocated = 0;
+        PlayerStats result = stats;
+        for (StatType stat : StatType.values()) {
+            allocated += stats.get(stat);
+            result = result.with(stat, 0);
+        }
+        return result.withProgress(stats.level(), stats.xp(), stats.freePoints() + allocated);
+    }
+
     /** Spends one free point on {@code stat}; returns the same instance if there are none. */
     public static PlayerStats allocate(PlayerStats stats, StatType stat) {
         if (stats.freePoints() <= 0) {

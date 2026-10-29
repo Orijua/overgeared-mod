@@ -41,4 +41,14 @@ public final class ProgressionTests {
         TestSupport.assertClose(helper, 20.0, player.getMaxHealth(), "max health after reset");
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void respecRefundsAllocatedPoints(GameTestHelper helper) {
+        PlayerStats stats = PlayerStats.DEFAULT.with(StatType.STRENGTH, 4).with(StatType.DEXTERITY, 3).withProgress(5, 0, 2);
+        PlayerStats refunded = ProgressionRules.refundAll(stats);
+        helper.assertTrue(refunded.freePoints() == 9, "2 free + 7 allocated = 9, got " + refunded.freePoints());
+        helper.assertTrue(refunded.strength() == 0 && refunded.dexterity() == 0, "allocated stats go back to 0");
+        helper.assertTrue(refunded.level() == 5, "level is untouched");
+        helper.succeed();
+    }
 }

@@ -12,6 +12,7 @@ import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -48,10 +49,22 @@ public class QuestsTab extends SatisfyTab {
         scroll.clamp(questCount);
         for (int i = scroll.first(); i < scroll.end(questCount); i++) {
             Definitions.Entry<QuestDefinition> entry = quests.get(i);
-            Button button = actionButton(entry, top + LIST_TOP + rows.size() * ROW - 4);
+            int y = top + LIST_TOP + rows.size() * ROW - 4;
+            Button button = actionButton(entry, y);
             addWidget.accept(button);
+            if (shownState.isActive(entry.id())) {
+                addWidget.accept(abandonButton(entry, y));
+            }
             rows.add(new Row(entry, button));
         }
+    }
+
+    private Button abandonButton(Definitions.Entry<QuestDefinition> entry, int y) {
+        return Button.builder(Component.literal("✖"),
+                        b -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), QuestActionPayload.Action.ABANDON)))
+                .bounds(left + width - BUTTON_WIDTH - 18, y, 16, 16)
+                .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_abandon")))
+                .build();
     }
 
     private Button actionButton(Definitions.Entry<QuestDefinition> entry, int y) {
