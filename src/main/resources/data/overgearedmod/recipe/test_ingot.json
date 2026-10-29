@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:crafting_shapeless",
-  "category": "misc",
-  "ingredients": [
-    { "item": "minecraft:iron_ingot" },
-    { "item": "minecraft:copper_ingot" }
-  ],
-  "result": { "id": "overgearedmod:test_ingot", "count": 1 }
-}

@@ -4,7 +4,7 @@
   "ingredients": [
     { "item": "minecraft:paper" },
     { "item": "minecraft:lapis_lazuli" },
-    { "item": "overgearedmod:test_ingot" }
+    { "item": "overgearedmod:mithril_ingot" }
   ],
   "result": { "id": "overgearedmod:respec_scroll", "count": 1 }
 }

@@ -22,7 +22,10 @@ public final class ModCreativeTabs {
                     .icon(() -> ModItems.SMITHING_ANVIL.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.SMITHING_ANVIL);
-                        output.accept(ModItems.TEST_INGOT);
+                        output.accept(ModItems.MITHRIL_ORE);
+                        output.accept(ModItems.DEEPSLATE_MITHRIL_ORE);
+                        output.accept(ModItems.RAW_MITHRIL);
+                        output.accept(ModItems.MITHRIL_INGOT);
                         output.accept(ModItems.JAFFA_SWORD);
                         output.accept(ModItems.GRID_LEGENDARY_SWORD);
                         output.accept(ModItems.ENHANCEMENT_STONE);
@@ -40,7 +43,12 @@ public final class ModCreativeTabs {
             event.accept(ModItems.GRID_LEGENDARY_SWORD);
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-            event.accept(ModItems.TEST_INGOT);
+            event.accept(ModItems.RAW_MITHRIL);
+            event.accept(ModItems.MITHRIL_INGOT);
+        }
+        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
+            event.accept(ModItems.MITHRIL_ORE);
+            event.accept(ModItems.DEEPSLATE_MITHRIL_ORE);
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ModItems.SMITHING_ANVIL);

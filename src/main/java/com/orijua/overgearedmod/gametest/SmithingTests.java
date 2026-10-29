@@ -38,13 +38,13 @@ public final class SmithingTests {
 
     @GameTest(template = TestSupport.EMPTY)
     public static void forgingRecipeLoadsFromDatapack(GameTestHelper helper) {
-        ForgingRecipeInput input = new ForgingRecipeInput(new ItemStack(ModItems.TEST_INGOT.get(), 2), new ItemStack(Items.STICK));
+        ForgingRecipeInput input = new ForgingRecipeInput(new ItemStack(ModItems.MITHRIL_INGOT.get(), 2), new ItemStack(Items.STICK));
         Optional<RecipeHolder<ForgingRecipe>> recipe = find(helper, input);
-        helper.assertTrue(recipe.isPresent(), "2 test ingots + stick should match a forging recipe");
+        helper.assertTrue(recipe.isPresent(), "2 mithril ingots + stick should match a forging recipe");
         helper.assertTrue(recipe.get().value().result().is(ModItems.JAFFA_SWORD.get()), "result should be the Jaffa sword");
         helper.assertTrue(recipe.get().value().requirements().isPresent(), "the Jaffa sword recipe declares requirements");
 
-        ForgingRecipeInput tooFew = new ForgingRecipeInput(new ItemStack(ModItems.TEST_INGOT.get(), 1), new ItemStack(Items.STICK));
+        ForgingRecipeInput tooFew = new ForgingRecipeInput(new ItemStack(ModItems.MITHRIL_INGOT.get(), 1), new ItemStack(Items.STICK));
         helper.assertFalse(find(helper, tooFew).isPresent(), "1 ingot must not be enough");
         helper.succeed();
     }
@@ -79,7 +79,7 @@ public final class SmithingTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void forgedItemGetsRatingAndRequirements(GameTestHelper helper) {
         ServerPlayer smith = TestSupport.fakePlayer(helper);
-        ForgingRecipe recipe = find(helper, new ForgingRecipeInput(new ItemStack(ModItems.TEST_INGOT.get(), 2), new ItemStack(Items.STICK)))
+        ForgingRecipe recipe = find(helper, new ForgingRecipeInput(new ItemStack(ModItems.MITHRIL_INGOT.get(), 2), new ItemStack(Items.STICK)))
                 .orElseThrow().value();
         ItemStack sword = recipe.result().copy();
         EquipmentService.stampForged(smith, sword, recipe.requirements());
