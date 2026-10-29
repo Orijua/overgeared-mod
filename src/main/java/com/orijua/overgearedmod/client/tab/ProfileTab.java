@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.client.tab;
 
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
+import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.goal.Goal;
 import com.orijua.overgearedmod.goal.PlayerCounters;
@@ -29,6 +30,9 @@ import java.util.function.Consumer;
 public class ProfileTab extends SatisfyTab {
     private static final int TITLES_TOP = 64;
     private static final int TITLE_ROW = 12;
+    private static final int VISIBLE_TITLES = 9;
+
+    private final ScrollList titleScroll = new ScrollList(VISIBLE_TITLES);
 
     public ProfileTab() {
         super(Component.translatable("tab.overgearedmod.profile"));
@@ -56,6 +60,11 @@ public class ProfileTab extends SatisfyTab {
                     .build();
             addWidget.accept(button);
         }
+    }
+
+    @Override
+    public boolean mouseScrolled(double wheel) {
+        return titleScroll.scroll(wheel, Definitions.all(player().level(), ModDatapackRegistries.TITLE).size());
     }
 
     @Override
@@ -93,9 +102,10 @@ public class ProfileTab extends SatisfyTab {
         PlayerIdentity identity = identity();
         PlayerCounters counters = player().getData(ModAttachments.PLAYER_COUNTERS);
         List<Definitions.Entry<TitleDefinition>> titles = Definitions.all(player().level(), ModDatapackRegistries.TITLE);
-        for (int i = 0; i < titles.size(); i++) {
+        titleScroll.clamp(titles.size());
+        for (int i = titleScroll.first(); i < titleScroll.end(titles.size()); i++) {
             TitleDefinition title = titles.get(i).value();
-            int y = top + TITLES_TOP + i * TITLE_ROW;
+            int y = top + TITLES_TOP + (i - titleScroll.first()) * TITLE_ROW;
             boolean earned = identity.hasTitle(titles.get(i).id());
             UiStyle.text(graphics, font(), Component.literal(earned ? "✔ " : "· ").append(title.name()), left, y, earned ? UiStyle.GOLD : UiStyle.MUTED);
             Goal goal = title.goal();
@@ -107,5 +117,6 @@ public class ProfileTab extends SatisfyTab {
                 graphics.renderTooltip(font(), List.of(title.description().getVisualOrderText(), goal.describe().getVisualOrderText()), mouseX, mouseY);
             }
         }
+        titleScroll.renderBar(graphics, left + width + 3, top + TITLES_TOP - 1, VISIBLE_TITLES * TITLE_ROW, titles.size());
     }
 }

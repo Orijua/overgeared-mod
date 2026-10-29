@@ -25,6 +25,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.TEST_INGOT);
                         output.accept(ModItems.JAFFA_SWORD);
                         output.accept(ModItems.ENHANCEMENT_STONE);
+                        output.accept(ModItems.RESPEC_SCROLL);
                         // One book per skill defined in the loaded datapacks.
                         parameters.holders().lookup(ModDatapackRegistries.SKILL).ifPresent(skills -> skills.listElementIds()
                                 .forEach(key -> output.accept(SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), key.location()))));

@@ -7,6 +7,9 @@ package com.orijua.overgearedmod;
 public record Balance(
         int statPointsPerLevel,
         double killXpMultiplier,
+        double killXpPerAttackDamage,
+        double killXpPerArmor,
+        double spawnerXpMultiplier,
         int xpBase,
         int xpPerLevel,
         float baseMana,
@@ -19,7 +22,7 @@ public record Balance(
         double enhanceMinChance) {
 
     public static final Balance DEFAULT = new Balance(
-            5, 1.5, 50, 25,
+            5, 1.0, 2.0, 1.0, 0.25, 50, 25,
             20.0f, 5.0f, 1.0f, 0.2f,
             0.95, 0.09, 0.005, 0.05);
 

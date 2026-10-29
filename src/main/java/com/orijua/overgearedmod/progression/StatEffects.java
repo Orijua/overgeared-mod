@@ -30,6 +30,16 @@ public final class StatEffects {
     private StatEffects() {
     }
 
+    /** What one point of {@code stat} adds to its vanilla attribute (0 if it has none), for UI descriptions. */
+    public static double perPoint(StatType stat) {
+        for (Mapping mapping : MAPPINGS) {
+            if (mapping.stat() == stat) {
+                return mapping.perPoint();
+            }
+        }
+        return 0;
+    }
+
     /** Idempotent: safe to call on login, respawn and every stat change. */
     public static void apply(Player player, PlayerStats stats) {
         for (Mapping mapping : MAPPINGS) {

@@ -12,10 +12,11 @@ import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.Optional;
 
-/** Three skill slots right of the hotbar: bound key, skill initial, and a dark overlay while on cooldown. */
+/** Three skill slots right of the hotbar: bound key, skill icon (or initial), and a dark overlay while on cooldown. */
 final class SkillSlotsHudLayer implements LayeredDraw.Layer {
     private static final int SIZE = 20;
     private static final int GAP = 2;
@@ -43,13 +44,21 @@ final class SkillSlotsHudLayer implements LayeredDraw.Layer {
             graphics.fill(left, y, left + SIZE, y + SIZE, skill.isPresent() ? FILLED : EMPTY);
             graphics.renderOutline(left, y, SIZE, SIZE, 0xFF5A5AA0);
             skill.ifPresent(def -> {
-                String name = def.name().getString();
-                String initial = name.isEmpty() ? "?" : name.substring(0, 1);
-                graphics.drawCenteredString(minecraft.font, initial, left + SIZE / 2, y + 6, 0xFFFFFF);
+                ItemStack icon = def.iconStack();
+                if (icon.isEmpty()) {
+                    String name = def.name().getString();
+                    graphics.drawCenteredString(minecraft.font, name.isEmpty() ? "?" : name.substring(0, 1), left + SIZE / 2, y + 6, 0xFFFFFF);
+                } else {
+                    graphics.renderItem(icon, left + 2, y + 2);
+                }
                 long remaining = skills.cooldownRemaining(id.get(), now);
                 if (remaining > 0 && def.cooldownTicks() > 0) {
                     int height = Math.round(SIZE * remaining / (float) def.cooldownTicks());
+                    // Items are drawn at a higher depth; lift the overlay above them.
+                    graphics.pose().pushPose();
+                    graphics.pose().translate(0, 0, 200);
                     graphics.fill(left, y + SIZE - height, left + SIZE, y + SIZE, COOLDOWN);
+                    graphics.pose().popPose();
                 }
             });
             Component key = OvergearedmodClient.SKILL_KEYS.get(slot).getTranslatedKeyMessage();

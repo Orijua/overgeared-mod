@@ -42,6 +42,11 @@ public abstract class SatisfyTab {
     public void tick() {
     }
 
+    /** Mouse wheel over the window. Return true if the tab scrolled, so its widgets are rebuilt. */
+    public boolean mouseScrolled(double wheel) {
+        return false;
+    }
+
     /** Return true when the data behind the widgets changed (e.g. a class was chosen) so the window rebuilds them. */
     public boolean needsRebuild() {
         return false;

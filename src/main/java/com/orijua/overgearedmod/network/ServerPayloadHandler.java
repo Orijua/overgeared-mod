@@ -44,6 +44,7 @@ final class ServerPayloadHandler {
             switch (payload.action()) {
                 case ACCEPT -> QuestService.accept(player, payload.quest());
                 case CLAIM -> QuestService.claim(player, payload.quest());
+                case ABANDON -> QuestService.abandon(player, payload.quest());
             }
         }
     }

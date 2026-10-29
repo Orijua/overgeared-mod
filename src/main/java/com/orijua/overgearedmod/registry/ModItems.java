@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.progression.RespecScrollItem;
 import com.orijua.overgearedmod.skill.SkillBookItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -26,6 +27,9 @@ public final class ModItems {
 
     public static final DeferredItem<SkillBookItem> SKILL_BOOK = ITEMS.registerItem("skill_book",
             SkillBookItem::new, new Item.Properties().stacksTo(1));
+
+    public static final DeferredItem<RespecScrollItem> RESPEC_SCROLL = ITEMS.registerItem("respec_scroll",
+            RespecScrollItem::new, new Item.Properties().stacksTo(16));
 
     private ModItems() {
     }

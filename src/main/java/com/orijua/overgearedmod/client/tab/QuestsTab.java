@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.client.tab;
 
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
+import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.QuestActionPayload;
 import com.orijua.overgearedmod.quest.PlayerQuests;
@@ -11,6 +12,7 @@ import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -23,7 +25,7 @@ import java.util.function.Consumer;
 public class QuestsTab extends SatisfyTab {
     private static final int ROW = 22;
     private static final int LIST_TOP = 16;
-    private static final int MAX_ROWS = 7;
+    private static final int VISIBLE_ROWS = 7;
     private static final int BUTTON_WIDTH = 64;
 
     private record Row(Definitions.Entry<QuestDefinition> quest, Button button) {
@@ -31,6 +33,8 @@ public class QuestsTab extends SatisfyTab {
 
     private final List<Row> rows = new ArrayList<>();
     private PlayerQuests shownState;
+    private final ScrollList scroll = new ScrollList(VISIBLE_ROWS);
+    private int questCount;
 
     public QuestsTab() {
         super(Component.translatable("tab.overgearedmod.quests"));
@@ -41,12 +45,26 @@ public class QuestsTab extends SatisfyTab {
         rows.clear();
         shownState = QuestService.get(player());
         List<Definitions.Entry<QuestDefinition>> quests = Definitions.all(player().level(), ModDatapackRegistries.QUEST);
-        for (int i = 0; i < Math.min(quests.size(), MAX_ROWS); i++) {
+        questCount = quests.size();
+        scroll.clamp(questCount);
+        for (int i = scroll.first(); i < scroll.end(questCount); i++) {
             Definitions.Entry<QuestDefinition> entry = quests.get(i);
-            Button button = actionButton(entry, top + LIST_TOP + i * ROW - 4);
+            int y = top + LIST_TOP + rows.size() * ROW - 4;
+            Button button = actionButton(entry, y);
             addWidget.accept(button);
+            if (shownState.isActive(entry.id())) {
+                addWidget.accept(abandonButton(entry, y));
+            }
             rows.add(new Row(entry, button));
         }
+    }
+
+    private Button abandonButton(Definitions.Entry<QuestDefinition> entry, int y) {
+        return Button.builder(Component.literal("✖"),
+                        b -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), QuestActionPayload.Action.ABANDON)))
+                .bounds(left + width - BUTTON_WIDTH - 18, y, 16, 16)
+                .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_abandon")))
+                .build();
     }
 
     private Button actionButton(Definitions.Entry<QuestDefinition> entry, int y) {
@@ -75,6 +93,11 @@ public class QuestsTab extends SatisfyTab {
     private boolean isDone(Definitions.Entry<QuestDefinition> entry, PlayerQuests state) {
         Integer baseline = state.active().get(entry.id());
         return baseline != null && QuestService.progress(player(), entry.value(), baseline) >= entry.value().goal().target();
+    }
+
+    @Override
+    public boolean mouseScrolled(double wheel) {
+        return scroll.scroll(wheel, questCount);
     }
 
     /** Buttons depend on quest state and progress, so rebuild whenever either changes. */
@@ -111,6 +134,7 @@ public class QuestsTab extends SatisfyTab {
                 graphics.renderTooltip(font(), tooltip(quest), mouseX, mouseY);
             }
         }
+        scroll.renderBar(graphics, left + width + 3, top + LIST_TOP - 6, VISIBLE_ROWS * ROW - 4, questCount);
     }
 
     private static List<FormattedCharSequence> tooltip(QuestDefinition quest) {

@@ -41,4 +41,25 @@ public final class ProgressionTests {
         TestSupport.assertClose(helper, 20.0, player.getMaxHealth(), "max health after reset");
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void respecRefundsAllocatedPoints(GameTestHelper helper) {
+        PlayerStats stats = PlayerStats.DEFAULT.with(StatType.STRENGTH, 4).with(StatType.DEXTERITY, 3).withProgress(5, 0, 2);
+        PlayerStats refunded = ProgressionRules.refundAll(stats);
+        helper.assertTrue(refunded.freePoints() == 9, "2 free + 7 allocated = 9, got " + refunded.freePoints());
+        helper.assertTrue(refunded.strength() == 0 && refunded.dexterity() == 0, "allocated stats go back to 0");
+        helper.assertTrue(refunded.level() == 5, "level is untouched");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void killXpRewardsStrengthAndPunishesSpawners(GameTestHelper helper) {
+        int zombie = ProgressionRules.killXp(Balance.DEFAULT, new ProgressionRules.Victim(20, 3, 2, false));
+        int armoredBrute = ProgressionRules.killXp(Balance.DEFAULT, new ProgressionRules.Victim(20, 8, 10, false));
+        int farmedZombie = ProgressionRules.killXp(Balance.DEFAULT, new ProgressionRules.Victim(20, 3, 2, true));
+        helper.assertTrue(zombie == 28, "default zombie should give 28, got " + zombie);
+        helper.assertTrue(armoredBrute > zombie, "a harder-hitting, armored mob gives more XP");
+        helper.assertTrue(farmedZombie == 7, "spawner zombie gives a quarter (7), got " + farmedZombie);
+        helper.succeed();
+    }
 }

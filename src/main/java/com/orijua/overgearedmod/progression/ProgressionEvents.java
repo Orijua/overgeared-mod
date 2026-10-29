@@ -8,9 +8,12 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
@@ -19,10 +22,18 @@ public final class ProgressionEvents {
     }
 
     public static void register(IEventBus gameBus) {
+        gameBus.addListener(ProgressionEvents::onMobSpawn);
         gameBus.addListener(ProgressionEvents::onLivingDeath);
         gameBus.addListener(ProgressionEvents::onLogin);
         gameBus.addListener(ProgressionEvents::onRespawn);
         gameBus.addListener(ProgressionEvents::onRegisterCommands);
+    }
+
+    /** Remembers which mobs came from a spawner, so farms give less XP. */
+    private static void onMobSpawn(FinalizeSpawnEvent event) {
+        if (MobSpawnType.isSpawner(event.getSpawnType())) {
+            event.getEntity().setData(ModAttachments.FROM_SPAWNER, true);
+        }
     }
 
     /** Killing a non-player mob grants Satisfy XP (separate from vanilla XP). */
@@ -31,7 +42,11 @@ public final class ProgressionEvents {
         if (victim instanceof Player || !(event.getSource().getEntity() instanceof ServerPlayer killer)) {
             return;
         }
-        ProgressionService.awardXp(killer, ProgressionRules.killXp(Balance.current(), victim.getMaxHealth()));
+        ProgressionService.awardXp(killer, ProgressionRules.killXp(Balance.current(), new ProgressionRules.Victim(
+                victim.getMaxHealth(),
+                victim.getAttribute(Attributes.ATTACK_DAMAGE) != null ? victim.getAttributeValue(Attributes.ATTACK_DAMAGE) : 0.0,
+                victim.getArmorValue(),
+                victim.getData(ModAttachments.FROM_SPAWNER))));
         GoalTracker.onKill(killer, victim.getType());
     }
 

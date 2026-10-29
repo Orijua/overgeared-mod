@@ -8,7 +8,9 @@ import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -43,6 +45,24 @@ public final class EquipmentService {
             stack.set(ModDataComponents.ITEM_OPTIONS, options);
         }
         requirements.ifPresent(r -> stack.set(ModDataComponents.REQUIREMENTS, r));
+        refreshName(stack);
+    }
+
+    /**
+     * Writes the display name as "<name> +N" in the rating color. It goes into vanilla's item_name
+     * component, so it shows everywhere (tooltip, hotbar, inventory); a name set on a vanilla anvil still wins.
+     */
+    public static void refreshName(ItemStack stack) {
+        ItemRating rating = stack.get(ModDataComponents.ITEM_RATING);
+        int enhancement = stack.getOrDefault(ModDataComponents.ENHANCEMENT, 0);
+        if (rating == null && enhancement == 0) {
+            return;
+        }
+        MutableComponent name = Component.translatable(stack.getItem().getDescriptionId());
+        if (enhancement > 0) {
+            name.append(" +" + enhancement);
+        }
+        stack.set(DataComponents.ITEM_NAME, rating != null ? name.withStyle(rating.color()) : name);
     }
 
     public static boolean canEnhance(ItemStack stack) {
@@ -61,6 +81,7 @@ public final class EquipmentService {
         boolean success = smith.getRandom().nextDouble() < chance;
         if (success) {
             equipment.set(ModDataComponents.ENHANCEMENT, level + 1);
+            refreshName(equipment);
         }
         smith.displayClientMessage(Component.translatable(success ? "message.overgearedmod.enhance_success" : "message.overgearedmod.enhance_failure",
                 equipment.getHoverName(), success ? level + 1 : level), true);

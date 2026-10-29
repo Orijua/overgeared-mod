@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.network.AllocateStatPayload;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.progression.StatEffects;
 import com.orijua.overgearedmod.progression.StatType;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.client.gui.GuiGraphics;
@@ -72,6 +73,7 @@ public class StatusTab extends SatisfyTab {
                 stats.freePoints() > 0 ? UiStyle.GOOD : UiStyle.MUTED);
 
         StatType[] types = StatType.values();
+        StatType hovered = null;
         for (int i = 0; i < types.length; i++) {
             int y = top + STATS_TOP + i * STAT_ROW;
             UiStyle.text(graphics, font(), types[i].displayName(), left, y, UiStyle.TEXT);
@@ -80,6 +82,27 @@ public class StatusTab extends SatisfyTab {
             if (bonus > 0) {
                 UiStyle.text(graphics, font(), Component.literal("+" + bonus), left + width - 42, y, UiStyle.GOOD);
             }
+            if (mouseX >= left && mouseX < left + width - 20 && mouseY >= y - 4 && mouseY < y + STAT_ROW - 4) {
+                hovered = types[i];
+            }
         }
+        if (hovered != null) {
+            graphics.renderTooltip(font(), font().split(describe(hovered), 200), mouseX, mouseY);
+        }
+    }
+
+    /** "Per point: ..." built from the real numbers in StatEffects and Balance, so it never goes stale. */
+    private static Component describe(StatType stat) {
+        Balance balance = Balance.current();
+        String key = "stat.overgearedmod." + stat.getSerializedName() + ".desc";
+        return switch (stat) {
+            case STRENGTH, STAMINA -> Component.translatable(key, number(StatEffects.perPoint(stat)));
+            case AGILITY, DEXTERITY -> Component.translatable(key, number(StatEffects.perPoint(stat) * 100));
+            case INTELLIGENCE -> Component.translatable(key, number(balance.manaPerIntelligence()), number(balance.manaRegenPerIntelligence()));
+        };
+    }
+
+    private static String number(double value) {
+        return value == Math.rint(value) ? String.valueOf((long) value) : String.valueOf(Math.round(value * 100) / 100.0);
     }
 }

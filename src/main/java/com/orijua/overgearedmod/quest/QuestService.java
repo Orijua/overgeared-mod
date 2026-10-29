@@ -59,6 +59,18 @@ public final class QuestService {
         return Result.SUCCESS;
     }
 
+    /** Drops an accepted quest without rewards; it can be accepted again later. */
+    public static Result abandon(ServerPlayer player, ResourceLocation id) {
+        PlayerQuests quests = get(player);
+        if (!quests.isActive(id)) {
+            return Result.NOT_ACTIVE;
+        }
+        player.setData(ModAttachments.PLAYER_QUESTS, quests.abandon(id));
+        Definitions.get(player.level(), ModDatapackRegistries.QUEST, id).ifPresent(quest ->
+                player.displayClientMessage(Component.translatable("message.overgearedmod.quest_abandoned", quest.name()), true));
+        return Result.SUCCESS;
+    }
+
     public static Result claim(ServerPlayer player, ResourceLocation id) {
         Optional<QuestDefinition> found = Definitions.get(player.level(), ModDatapackRegistries.QUEST, id);
         if (found.isEmpty()) {

@@ -61,6 +61,15 @@ public class SatisfyScreen extends Screen {
     }
 
     @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (current().mouseScrolled(scrollY)) {
+            rebuildWidgets();
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
         UiStyle.panel(graphics, left, top, PANEL_WIDTH, PANEL_HEIGHT);

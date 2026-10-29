@@ -17,9 +17,17 @@ public final class ProgressionRules {
         return balance.xpBase() + balance.xpPerLevel() * level;
     }
 
-    /** XP for killing a mob, from its max health (with the defaults a zombie, 20 HP, gives 30). */
-    public static int killXp(Balance balance, float victimMaxHealth) {
-        return Math.max(1, (int) Math.round(victimMaxHealth * balance.killXpMultiplier()));
+    /** What a mob was like when it died, as far as XP is concerned. */
+    public record Victim(float maxHealth, double attackDamage, int armor, boolean fromSpawner) {
+    }
+
+    /** XP for a kill: tougher and harder-hitting mobs give more; spawner mobs give less (anti-farming). */
+    public static int killXp(Balance balance, Victim victim) {
+        double strength = victim.maxHealth()
+                + victim.attackDamage() * balance.killXpPerAttackDamage()
+                + victim.armor() * balance.killXpPerArmor();
+        double xp = strength * balance.killXpMultiplier() * (victim.fromSpawner() ? balance.spawnerXpMultiplier() : 1.0);
+        return Math.max(1, (int) Math.round(xp));
     }
 
     public static int smithingLevel(int smithingXp) {
@@ -62,6 +70,17 @@ public final class ProgressionRules {
             }
         }
         return result;
+    }
+
+    /** Takes every allocated point back into free points (bonuses from class and titles are untouched). */
+    public static PlayerStats refundAll(PlayerStats stats) {
+        int allocated = 0;
+        PlayerStats result = stats;
+        for (StatType stat : StatType.values()) {
+            allocated += stats.get(stat);
+            result = result.with(stat, 0);
+        }
+        return result.withProgress(stats.level(), stats.xp(), stats.freePoints() + allocated);
     }
 
     /** Spends one free point on {@code stat}; returns the same instance if there are none. */

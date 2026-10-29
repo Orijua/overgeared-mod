@@ -40,6 +40,12 @@ public record PlayerQuests(Map<ResourceLocation, Integer> active, List<ResourceL
         return new PlayerQuests(Map.copyOf(newActive), completed);
     }
 
+    public PlayerQuests abandon(ResourceLocation quest) {
+        Map<ResourceLocation, Integer> newActive = new HashMap<>(active);
+        newActive.remove(quest);
+        return new PlayerQuests(Map.copyOf(newActive), completed);
+    }
+
     public PlayerQuests complete(ResourceLocation quest) {
         Map<ResourceLocation, Integer> newActive = new HashMap<>(active);
         newActive.remove(quest);
