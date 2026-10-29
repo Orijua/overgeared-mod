@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.client.tab;
 
 import com.orijua.overgearedmod.client.ui.SatisfyScreen;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
+import net.minecraft.client.Minecraft;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -19,5 +20,9 @@ public final class SatisfyTabs {
 
     public static SatisfyScreen createScreen() {
         return new SatisfyScreen(TABS);
+    }
+
+    public static void openQuests() {
+        Minecraft.getInstance().setScreen(createScreen().showing(QuestsTab.class));
     }
 }

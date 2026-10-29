@@ -4,6 +4,8 @@
   "item.overgearedmod.mithril_ingot": "Lingote de mitril",
   "block.overgearedmod.mithril_ore": "Mena de mitril",
   "block.overgearedmod.deepslate_mithril_ore": "Mena de mitril de pizarra profunda",
+  "entity.overgearedmod.blacksmith": "Herrero",
+  "item.overgearedmod.blacksmith_spawn_egg": "Huevo de generación de herrero",
   "item.overgearedmod.jaffa_sword": "Espada de Jaffa",
   "item.overgearedmod.grid_legendary_sword": "Espada legendaria de Grid",
   "item.overgearedmod.skill_book": "Libro de habilidad",

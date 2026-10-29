@@ -25,6 +25,16 @@ public class SatisfyScreen extends Screen {
         lastTab = Math.min(lastTab, tabs.size() - 1);
     }
 
+    /** Opens on the first tab of the given type, e.g. the Quests tab when talking to an NPC. */
+    public SatisfyScreen showing(Class<? extends SatisfyTab> type) {
+        for (int i = 0; i < tabs.size(); i++) {
+            if (type.isInstance(tabs.get(i))) {
+                lastTab = i;
+            }
+        }
+        return this;
+    }
+
     private SatisfyTab current() {
         return tabs.get(lastTab);
     }

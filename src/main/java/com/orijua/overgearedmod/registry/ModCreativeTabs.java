@@ -30,6 +30,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.GRID_LEGENDARY_SWORD);
                         output.accept(ModItems.ENHANCEMENT_STONE);
                         output.accept(ModItems.RESPEC_SCROLL);
+                        output.accept(ModItems.BLACKSMITH_SPAWN_EGG);
                         // One book per skill defined in the loaded datapacks.
                         parameters.holders().lookup(ModDatapackRegistries.SKILL).ifPresent(skills -> skills.listElementIds()
                                 .forEach(key -> output.accept(SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), key.location()))));
@@ -49,6 +50,9 @@ public final class ModCreativeTabs {
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
             event.accept(ModItems.MITHRIL_ORE);
             event.accept(ModItems.DEEPSLATE_MITHRIL_ORE);
+        }
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+            event.accept(ModItems.BLACKSMITH_SPAWN_EGG);
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ModItems.SMITHING_ANVIL);

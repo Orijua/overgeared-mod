@@ -11,6 +11,7 @@ import com.orijua.overgearedmod.registry.ModCreativeTabs;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.registry.ModEffects;
+import com.orijua.overgearedmod.registry.ModEntities;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.registry.ModRecipes;
@@ -38,6 +39,7 @@ public class Overgearedmod {
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModEffects.EFFECTS.register(modEventBus);
+        ModEntities.ENTITIES.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
@@ -45,10 +47,11 @@ public class Overgearedmod {
         ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
-        // Mod bus events (JSON registries, networking, creative tabs).
+        // Mod bus events (JSON registries, networking, creative tabs, entity attributes).
         modEventBus.addListener(ModDatapackRegistries::register);
         modEventBus.addListener(ModNetwork::register);
         modEventBus.addListener(ModCreativeTabs::addToVanillaTabs);
+        modEventBus.addListener(ModEntities::registerAttributes);
 
         // Game bus events (gameplay: kills, ticks, item attributes...).
         EquipmentEvents.register(NeoForge.EVENT_BUS);
