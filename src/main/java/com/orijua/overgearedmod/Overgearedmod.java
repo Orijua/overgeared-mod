@@ -5,9 +5,12 @@ import com.orijua.overgearedmod.network.ModNetwork;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
 import com.orijua.overgearedmod.rating.RatingEvents;
 import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModCreativeTabs;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.registry.ModMenus;
+import com.orijua.overgearedmod.registry.ModRecipes;
 import com.orijua.overgearedmod.skill.SkillEvents;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -29,9 +32,13 @@ public class Overgearedmod {
 
     public Overgearedmod(IEventBus modEventBus, ModContainer modContainer) {
         // Registries (mod bus): content must be registered before the game freezes registries.
+        ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
         ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
+        ModRecipes.RECIPE_TYPES.register(modEventBus);
+        ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         // Mod bus events (lifecycle, networking setup, creative tabs).

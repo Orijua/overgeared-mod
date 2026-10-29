@@ -18,8 +18,9 @@ public final class ModCreativeTabs {
                     .title(Component.translatable("itemGroup.overgearedmod"))
                     .withTabsBefore(CreativeModeTabs.COMBAT)
                     // Lambda: the stack is built lazily, never during class init.
-                    .icon(() -> ModItems.TEST_INGOT.get().getDefaultInstance())
+                    .icon(() -> ModItems.SMITHING_ANVIL.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
+                        output.accept(ModItems.SMITHING_ANVIL);
                         output.accept(ModItems.TEST_INGOT);
                         output.accept(ModItems.JAFFA_SWORD);
                     })
@@ -32,6 +33,9 @@ public final class ModCreativeTabs {
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(ModItems.TEST_INGOT);
+        }
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(ModItems.SMITHING_ANVIL);
         }
     }
 

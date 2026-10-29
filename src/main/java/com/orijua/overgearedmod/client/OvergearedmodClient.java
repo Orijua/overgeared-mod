@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.network.UseSkillPayload;
+import com.orijua.overgearedmod.registry.ModMenus;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -11,6 +12,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -31,12 +33,17 @@ public class OvergearedmodClient {
 
     public OvergearedmodClient(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(OvergearedmodClient::onRegisterKeys);
+        modEventBus.addListener(OvergearedmodClient::onRegisterScreens);
         NeoForge.EVENT_BUS.addListener(OvergearedmodClient::onClientTick);
     }
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(OPEN_STATUS);
         event.register(USE_SKILL);
+    }
+
+    private static void onRegisterScreens(RegisterMenuScreensEvent event) {
+        event.register(ModMenus.SMITHING_ANVIL.get(), SmithingAnvilScreen::new);
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {
