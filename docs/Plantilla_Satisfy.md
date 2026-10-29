@@ -109,9 +109,9 @@ Estadísticas (diseño propio, se ajustan en `StatEffects` y en `Balance`):
 }
 ```
 
-`icon` es opcional: cualquier objeto, cuya textura se ve en el HUD y en la pestaña Habilidades. Tipos de efecto: `area_damage`, `self_buff` (`"effects": [{ "id": "minecraft:speed", "amplifier": 1, "duration": 200 }]`) y `projectile` (`count`, `speed`).
+`icon` es opcional: cualquier objeto, cuya textura se ve en el HUD y en la pestaña Habilidades. Tipos de efecto: `area_damage`, `self_buff` (`"effects": [{ "id": "minecraft:speed", "amplifier": 1, "duration": 200 }]`) y `projectile` (`count`, `speed`). `area_damage` acepta `target_effects` para dar efectos a cada enemigo golpeado (ejemplo: `rending_slash.json` con `overgearedmod:bleeding`).
 
-**Opción de equipo:** `item_option/<id>.json`. El tipo es `attribute` (cualquier atributo vanilla, con `operation` opcional) o `life_steal`. `applies_to` es opcional: limita la opción a un tag de objetos (`overgearedmod:weapons`, `overgearedmod:armor` o cualquier otro). Sin él, puede salir en cualquier objeto.
+**Opción de equipo:** `item_option/<id>.json`. El tipo es `attribute` (cualquier atributo vanilla, con `operation` opcional), `life_steal` o `apply_effect` (probabilidad al golpear de dar un efecto: `"effect": "overgearedmod:bleeding", "duration": 100`; el valor sorteado es la probabilidad). `applies_to` es opcional: limita la opción a un tag de objetos (`overgearedmod:weapons`, `overgearedmod:armor` o cualquier otro). Sin él, puede salir en cualquier objeto.
 
 ```json
 { "name": { "translate": "option.overgearedmod.knockback" }, "weight": 15, "min": 0.1, "max": 0.5,
@@ -152,6 +152,7 @@ Recuerda añadir las traducciones en `assets/overgearedmod/lang/es_es.json` y `e
 
 - **Efecto de habilidad:** un `record` que implemente `SkillEffect`, con su `MapCodec`, y una entrada en `SkillEffectType`.
 - **Efecto de opción:** un `record` que implemente `OptionEffect`. Sobrescribe solo los ganchos que necesites (`addModifiers`, `onHit`) y añade su entrada en `OptionEffectType`.
+- **Efecto de estado:** una clase que extienda `MobEffect`, registrada en `ModEffects`, con su icono en `textures/mob_effect/<id>.png` y la clave `effect.overgearedmod.<id>`. Ejemplo: `BleedingEffect`, con su tipo de daño propio (`damage_type/bleeding.json`) que ignora la armadura.
 - **Objetivo:** un `record` que implemente `Goal` y su entrada en `GoalType`. Si cuenta eventos nuevos, añade el método correspondiente en `GoalTracker`.
 - **Pestaña de la ventana:** una clase que extienda `SatisfyTab` y su entrada en `SatisfyTabs`. Usa `UiStyle` para que se vea igual que el resto.
 - **Sistema nuevo:** sigue la tabla del patrón. Si guarda datos del jugador, añade un attachment en `ModAttachments` (así `/satisfy reset` lo limpia solo). Si tiene contenido en JSON, añade una clave en `ModDatapackRegistries`.

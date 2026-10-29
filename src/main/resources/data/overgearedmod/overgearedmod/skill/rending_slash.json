@@ -1,0 +1,18 @@
+{
+  "name": { "translate": "skill.overgearedmod.rending_slash" },
+  "description": { "translate": "skill.overgearedmod.rending_slash.desc" },
+  "icon": "minecraft:redstone",
+  "mana_cost": 12,
+  "cooldown_ticks": 160,
+  "required_item": "minecraft:swords",
+  "effect": {
+    "type": "area_damage",
+    "range": 3.5,
+    "cone_degrees": 90,
+    "damage_multiplier": 0.6,
+    "strength_scaling": 0.02,
+    "target_effects": [
+      { "id": "overgearedmod:bleeding", "amplifier": 1, "duration": 100 }
+    ]
+  }
+}

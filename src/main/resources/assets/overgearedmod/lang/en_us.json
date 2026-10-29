@@ -27,6 +27,10 @@
   "option.overgearedmod.vitality": "Vitality",
   "option.overgearedmod.life_steal": "Life Steal",
   "option.overgearedmod.fortitude": "Fortitude",
+  "option.overgearedmod.bleeding": "Bleed on Hit",
+  "effect.overgearedmod.bleeding": "Bleeding",
+  "death.attack.overgearedmod.bleeding": "%1$s bled to death",
+  "death.attack.overgearedmod.bleeding.player": "%1$s bled to death whilst fighting %2$s",
 
   "stat.overgearedmod.strength": "Strength (STR)",
   "stat.overgearedmod.stamina": "Stamina (STA)",
@@ -106,6 +110,8 @@
   "skill.overgearedmod.iron_guard.desc": "Resistance II and absorption for a few seconds.",
   "skill.overgearedmod.flame_bolt": "Flame Bolt",
   "skill.overgearedmod.flame_bolt.desc": "Throws three small fireballs where you look.",
+  "skill.overgearedmod.rending_slash": "Rending Slash",
+  "skill.overgearedmod.rending_slash.desc": "A short slash that makes enemies bleed (Bleeding II). Requires a sword.",
 
   "message.overgearedmod.level_up": "Level %s reached!",
   "message.overgearedmod.cooldown": "%s: cooldown %ss",

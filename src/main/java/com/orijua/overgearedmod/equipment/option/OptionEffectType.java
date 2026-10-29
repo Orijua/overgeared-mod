@@ -8,7 +8,8 @@ import java.util.function.Supplier;
 
 public enum OptionEffectType implements StringRepresentable {
     ATTRIBUTE("attribute", () -> AttributeOptionEffect.CODEC),
-    LIFE_STEAL("life_steal", () -> LifeStealOptionEffect.CODEC);
+    LIFE_STEAL("life_steal", () -> LifeStealOptionEffect.CODEC),
+    APPLY_EFFECT("apply_effect", () -> ApplyEffectOptionEffect.CODEC);
 
     public static final Codec<OptionEffectType> CODEC = StringRepresentable.fromEnum(OptionEffectType::values);
 

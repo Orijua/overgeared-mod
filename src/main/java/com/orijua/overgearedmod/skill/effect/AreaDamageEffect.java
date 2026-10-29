@@ -9,21 +9,29 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-/** Hits every enemy in a cone in front of the player, scaling the weapon's damage with STR/DEX. */
+import java.util.List;
+
+/**
+ * Hits every enemy in a cone in front of the player, scaling the weapon's damage with STR/DEX.
+ * Optional {@code target_effects} are given to each enemy hit, e.g. {"id": "overgearedmod:bleeding", "duration": 100}.
+ */
 public record AreaDamageEffect(double range, double coneDegrees, double damageMultiplier,
-                               double strengthScaling, double dexterityScaling) implements SkillEffect {
+                               double strengthScaling, double dexterityScaling,
+                               List<MobEffectInstance> targetEffects) implements SkillEffect {
 
     public static final MapCodec<AreaDamageEffect> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Codec.doubleRange(0.5, 16).fieldOf("range").forGetter(AreaDamageEffect::range),
             Codec.doubleRange(1, 360).optionalFieldOf("cone_degrees", 140.0).forGetter(AreaDamageEffect::coneDegrees),
             Codec.doubleRange(0, 100).optionalFieldOf("damage_multiplier", 1.0).forGetter(AreaDamageEffect::damageMultiplier),
             Codec.DOUBLE.optionalFieldOf("strength_scaling", 0.0).forGetter(AreaDamageEffect::strengthScaling),
-            Codec.DOUBLE.optionalFieldOf("dexterity_scaling", 0.0).forGetter(AreaDamageEffect::dexterityScaling)
+            Codec.DOUBLE.optionalFieldOf("dexterity_scaling", 0.0).forGetter(AreaDamageEffect::dexterityScaling),
+            MobEffectInstance.CODEC.listOf().optionalFieldOf("target_effects", List.of()).forGetter(AreaDamageEffect::targetEffects)
     ).apply(instance, AreaDamageEffect::new));
 
     @Override
@@ -46,6 +54,7 @@ public record AreaDamageEffect(double range, double coneDegrees, double damageMu
                 .forEach(target -> {
                     target.hurt(player.damageSources().playerAttack(player), damage);
                     target.knockback(0.5, -look.x, -look.z);
+                    targetEffects.forEach(effect -> target.addEffect(new MobEffectInstance(effect), player));
                 });
 
         for (int i = 1; i <= 3; i++) {
