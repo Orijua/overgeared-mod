@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.smithing;
 import com.orijua.overgearedmod.equipment.EquipmentRules;
 import com.orijua.overgearedmod.equipment.EquipmentService;
 import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModDataComponents;
@@ -114,6 +115,7 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
             ProgressionService.addSmithingXp(serverPlayer, smithingXp);
             ItemRating rating = forged.get(ModDataComponents.ITEM_RATING);
             if (rating != null) {
+                GoalTracker.onForged(serverPlayer, rating);
                 serverPlayer.displayClientMessage(Component.translatable("message.overgearedmod.forged", forged.getHoverName(), rating.displayName()), true);
             }
             access.execute((level, pos) -> level.playSound(null, pos, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.0f, 1.0f));

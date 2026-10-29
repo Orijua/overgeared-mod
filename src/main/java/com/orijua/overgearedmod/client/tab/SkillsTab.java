@@ -32,6 +32,7 @@ public class SkillsTab extends SatisfyTab {
     }
 
     private final List<Row> rows = new ArrayList<>();
+    private int shownLearnedCount;
 
     public SkillsTab() {
         super(Component.translatable("tab.overgearedmod.skills"));
@@ -45,6 +46,7 @@ public class SkillsTab extends SatisfyTab {
     protected void addWidgets(Consumer<AbstractWidget> addWidget) {
         rows.clear();
         List<ResourceLocation> learned = skills().learned();
+        shownLearnedCount = learned.size();
         for (int i = 0; i < Math.min(learned.size(), MAX_ROWS); i++) {
             ResourceLocation id = learned.get(i);
             Optional<SkillDefinition> skill = Definitions.get(player().level(), ModDatapackRegistries.SKILL, id);
@@ -72,6 +74,11 @@ public class SkillsTab extends SatisfyTab {
     private static void toggle(int slot, ResourceLocation skill) {
         boolean alreadyThere = skills().slot(slot).filter(skill::equals).isPresent();
         PacketDistributor.sendToServer(new AssignSkillPayload(slot, alreadyThere ? Optional.empty() : Optional.of(skill)));
+    }
+
+    @Override
+    public boolean needsRebuild() {
+        return skills().learned().size() != shownLearnedCount;
     }
 
     /** Marks the slot(s) where each skill is equipped with a check. */

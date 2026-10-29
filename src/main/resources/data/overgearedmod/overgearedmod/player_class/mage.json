@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "class.overgearedmod.mage" },
+  "description": { "translate": "class.overgearedmod.mage.desc" },
+  "bonus_stats": { "intelligence": 5 },
+  "skills": ["overgearedmod:flame_bolt"]
+}

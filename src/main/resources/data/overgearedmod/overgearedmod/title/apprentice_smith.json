@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.apprentice_smith" },
+  "description": { "translate": "title.overgearedmod.apprentice_smith.desc" },
+  "goal": { "type": "forge", "count": 5 },
+  "bonus_stats": { "dexterity": 1 }
+}

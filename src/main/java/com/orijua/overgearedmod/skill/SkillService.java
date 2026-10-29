@@ -73,7 +73,7 @@ public final class SkillService {
             return fail(player, Result.NO_MANA, Component.translatable("message.overgearedmod.no_mana", skill.name()));
         }
 
-        skill.effect().apply(player, ProgressionService.get(player));
+        skill.effect().apply(player, ProgressionService.effectiveStats(player));
         player.setData(ModAttachments.MANA, mana - skill.manaCost());
         player.setData(ModAttachments.PLAYER_SKILLS, skills.withCooldown(id.get(), now + skill.cooldownTicks()));
         player.displayClientMessage(skill.name(), true);

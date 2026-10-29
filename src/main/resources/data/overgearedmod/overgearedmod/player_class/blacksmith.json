@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "class.overgearedmod.blacksmith" },
+  "description": { "translate": "class.overgearedmod.blacksmith.desc" },
+  "bonus_stats": { "dexterity": 3, "stamina": 2 },
+  "smithing_bonus": 5,
+  "skills": ["overgearedmod:iron_guard"]
+}

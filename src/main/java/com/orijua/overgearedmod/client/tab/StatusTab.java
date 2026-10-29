@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.AllocateStatPayload;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionRules;
+import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.progression.StatType;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.client.gui.GuiGraphics;
@@ -56,6 +57,7 @@ public class StatusTab extends SatisfyTab {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         PlayerStats stats = stats();
+        PlayerStats effective = ProgressionService.effectiveStats(player());
         float mana = player().getData(ModAttachments.MANA);
         int half = left + width / 2;
 
@@ -63,8 +65,8 @@ public class StatusTab extends SatisfyTab {
         int xpNeeded = ProgressionRules.xpToNextLevel(stats.level());
         UiStyle.bar(graphics, half, top + 2, width / 2, 4, stats.xp() / (float) xpNeeded, 0xFF55CC55);
 
-        UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.mana", (int) mana, (int) stats.maxMana()), left, top + 16, UiStyle.TEXT);
-        UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.smithing", stats.smithingLevel()), half, top + 16, UiStyle.MUTED);
+        UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.mana", (int) mana, (int) effective.maxMana()), left, top + 16, UiStyle.TEXT);
+        UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.smithing", ProgressionService.effectiveSmithingLevel(player())), half, top + 16, UiStyle.MUTED);
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.free_points", stats.freePoints()), left, top + 30,
                 stats.freePoints() > 0 ? UiStyle.GOOD : UiStyle.MUTED);
 
@@ -72,7 +74,11 @@ public class StatusTab extends SatisfyTab {
         for (int i = 0; i < types.length; i++) {
             int y = top + STATS_TOP + i * STAT_ROW;
             UiStyle.text(graphics, font(), types[i].displayName(), left, y, UiStyle.TEXT);
-            UiStyle.text(graphics, font(), Component.literal(String.valueOf(stats.get(types[i]))), left + width - 48, y, UiStyle.GOLD);
+            UiStyle.text(graphics, font(), Component.literal(String.valueOf(stats.get(types[i]))), left + width - 60, y, UiStyle.GOLD);
+            int bonus = effective.get(types[i]) - stats.get(types[i]);
+            if (bonus > 0) {
+                UiStyle.text(graphics, font(), Component.literal("+" + bonus), left + width - 42, y, UiStyle.GOOD);
+            }
         }
     }
 }

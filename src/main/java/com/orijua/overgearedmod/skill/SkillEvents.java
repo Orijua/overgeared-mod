@@ -21,7 +21,7 @@ public final class SkillEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 20 != 0) {
             return;
         }
-        PlayerStats stats = ProgressionService.get(player);
+        PlayerStats stats = ProgressionService.effectiveStats(player);
         float current = player.getData(ModAttachments.MANA);
         float regenerated = Math.min(stats.maxMana(), current + ProgressionRules.manaRegenPerSecond(stats.intelligence()));
         if (regenerated != current) {

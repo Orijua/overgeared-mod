@@ -1,5 +1,8 @@
 package com.orijua.overgearedmod.progression;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Pure progression formulas (project design, not canon numbers).
  * No Minecraft state here, so the rules are easy to read, tweak and unit-test.
@@ -46,6 +49,17 @@ public final class ProgressionRules {
             gained++;
         }
         return new XpResult(stats.withProgress(level, xp, points), gained);
+    }
+
+    /** Adds flat stat bonuses (from class, titles...) on top of the allocated stats. */
+    public static PlayerStats withBonuses(PlayerStats stats, List<Map<StatType, Integer>> bonuses) {
+        PlayerStats result = stats;
+        for (Map<StatType, Integer> bonus : bonuses) {
+            for (Map.Entry<StatType, Integer> entry : bonus.entrySet()) {
+                result = result.with(entry.getKey(), result.get(entry.getKey()) + entry.getValue());
+            }
+        }
+        return result;
     }
 
     /** Spends one free point on {@code stat}; returns the same instance if there are none. */

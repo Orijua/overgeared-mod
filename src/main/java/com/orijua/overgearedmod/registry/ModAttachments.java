@@ -2,6 +2,8 @@ package com.orijua.overgearedmod.registry;
 
 import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.goal.PlayerCounters;
+import com.orijua.overgearedmod.progression.PlayerIdentity;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.skill.PlayerSkills;
 import io.netty.buffer.ByteBuf;
@@ -30,6 +32,12 @@ public final class ModAttachments {
 
     public static final Supplier<AttachmentType<Float>> MANA =
             playerData("mana", () -> 20.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, false);
+
+    public static final Supplier<AttachmentType<PlayerIdentity>> PLAYER_IDENTITY =
+            playerData("player_identity", () -> PlayerIdentity.DEFAULT, PlayerIdentity.CODEC, PlayerIdentity.STREAM_CODEC, true);
+
+    public static final Supplier<AttachmentType<PlayerCounters>> PLAYER_COUNTERS =
+            playerData("player_counters", () -> PlayerCounters.EMPTY, PlayerCounters.CODEC, PlayerCounters.STREAM_CODEC, true);
 
     private ModAttachments() {
     }

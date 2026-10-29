@@ -10,7 +10,8 @@ import java.util.function.Supplier;
 public final class SatisfyTabs {
     private static final List<Supplier<SatisfyTab>> TABS = List.of(
             StatusTab::new,
-            SkillsTab::new);
+            SkillsTab::new,
+            ProfileTab::new);
 
     private SatisfyTabs() {
     }

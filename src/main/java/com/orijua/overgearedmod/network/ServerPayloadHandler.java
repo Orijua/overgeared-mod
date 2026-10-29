@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.network;
 
+import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.skill.SkillService;
 import net.minecraft.server.level.ServerPlayer;
@@ -28,6 +29,12 @@ final class ServerPayloadHandler {
     static void allocateStat(AllocateStatPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             ProgressionService.allocatePoint(player, payload.stat());
+        }
+    }
+
+    static void chooseClass(ChooseClassPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            ClassService.choose(player, payload.playerClass());
         }
     }
 }

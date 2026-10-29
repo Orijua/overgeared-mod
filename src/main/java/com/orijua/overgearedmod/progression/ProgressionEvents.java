@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.progression;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.orijua.overgearedmod.Config;
+import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -31,18 +32,19 @@ public final class ProgressionEvents {
             return;
         }
         ProgressionService.awardXp(killer, ProgressionRules.killXp(victim.getMaxHealth(), Config.XP_MULTIPLIER.get()));
+        GoalTracker.onKill(killer, victim.getType());
     }
 
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            StatEffects.apply(player, ProgressionService.get(player));
+            ProgressionService.refreshEffects(player);
         }
     }
 
     /** Respawn creates a new player entity: stats are copied (copyOnDeath), modifiers must be re-applied. */
     private static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            StatEffects.apply(player, ProgressionService.get(player));
+            ProgressionService.refreshEffects(player);
             player.setHealth(player.getMaxHealth());
         }
     }

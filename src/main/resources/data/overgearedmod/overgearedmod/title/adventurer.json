@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.adventurer" },
+  "description": { "translate": "title.overgearedmod.adventurer.desc" },
+  "goal": { "type": "level", "level": 5 },
+  "bonus_stats": { "stamina": 1, "agility": 1 }
+}

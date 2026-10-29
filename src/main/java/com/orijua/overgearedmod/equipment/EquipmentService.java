@@ -28,7 +28,7 @@ public final class EquipmentService {
     public static void stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements) {
         PlayerStats stats = ProgressionService.effectiveStats(smith);
         RandomSource random = smith.getRandom();
-        ItemRating rating = RatingRoller.roll(stats.dexterity(), stats.smithingLevel(), random.nextDouble());
+        ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), random.nextDouble());
         stack.set(ModDataComponents.ITEM_RATING, rating);
 
         List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(smith.level(), ModDatapackRegistries.ITEM_OPTION);

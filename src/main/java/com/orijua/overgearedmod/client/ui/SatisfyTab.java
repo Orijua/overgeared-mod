@@ -42,6 +42,11 @@ public abstract class SatisfyTab {
     public void tick() {
     }
 
+    /** Return true when the data behind the widgets changed (e.g. a class was chosen) so the window rebuilds them. */
+    public boolean needsRebuild() {
+        return false;
+    }
+
     public abstract void render(GuiGraphics graphics, int mouseX, int mouseY);
 
     protected static LocalPlayer player() {

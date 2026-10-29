@@ -54,6 +54,9 @@ public class SatisfyScreen extends Screen {
 
     @Override
     public void tick() {
+        if (current().needsRebuild()) {
+            rebuildWidgets();
+        }
         current().tick();
     }
 
