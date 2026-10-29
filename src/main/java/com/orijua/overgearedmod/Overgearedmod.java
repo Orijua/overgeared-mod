@@ -1,10 +1,14 @@
 package com.orijua.overgearedmod;
 
 import com.mojang.logging.LogUtils;
+import com.orijua.overgearedmod.network.ModNetwork;
+import com.orijua.overgearedmod.progression.ProgressionEvents;
 import com.orijua.overgearedmod.rating.RatingEvents;
+import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModCreativeTabs;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.skill.SkillEvents;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -27,13 +31,17 @@ public class Overgearedmod {
         // Registries (mod bus): content must be registered before the game freezes registries.
         ModItems.ITEMS.register(modEventBus);
         ModDataComponents.DATA_COMPONENTS.register(modEventBus);
+        ModAttachments.ATTACHMENT_TYPES.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         // Mod bus events (lifecycle, networking setup, creative tabs).
+        modEventBus.addListener(ModNetwork::register);
         modEventBus.addListener(ModCreativeTabs::addToVanillaTabs);
 
         // Game bus events (gameplay: kills, ticks, item attributes...).
         RatingEvents.register(NeoForge.EVENT_BUS);
+        ProgressionEvents.register(NeoForge.EVENT_BUS);
+        SkillEvents.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
