@@ -1,7 +1,7 @@
 package com.orijua.overgearedmod.progression;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.orijua.overgearedmod.Config;
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.commands.Commands;
@@ -31,7 +31,7 @@ public final class ProgressionEvents {
         if (victim instanceof Player || !(event.getSource().getEntity() instanceof ServerPlayer killer)) {
             return;
         }
-        ProgressionService.awardXp(killer, ProgressionRules.killXp(victim.getMaxHealth(), Config.XP_MULTIPLIER.get()));
+        ProgressionService.awardXp(killer, ProgressionRules.killXp(Balance.current(), victim.getMaxHealth()));
         GoalTracker.onKill(killer, victim.getType());
     }
 

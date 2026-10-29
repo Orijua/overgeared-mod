@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.client.tab;
 
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.AllocateStatPayload;
@@ -62,10 +63,10 @@ public class StatusTab extends SatisfyTab {
         int half = left + width / 2;
 
         UiStyle.heading(graphics, font(), Component.translatable("screen.overgearedmod.level", stats.level()), left, top);
-        int xpNeeded = ProgressionRules.xpToNextLevel(stats.level());
+        int xpNeeded = ProgressionRules.xpToNextLevel(Balance.current(), stats.level());
         UiStyle.bar(graphics, half, top + 2, width / 2, 4, stats.xp() / (float) xpNeeded, 0xFF55CC55);
 
-        UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.mana", (int) mana, (int) effective.maxMana()), left, top + 16, UiStyle.TEXT);
+        UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.mana", (int) mana, (int) ProgressionRules.maxMana(Balance.current(), effective.intelligence())), left, top + 16, UiStyle.TEXT);
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.smithing", ProgressionService.effectiveSmithingLevel(player())), half, top + 16, UiStyle.MUTED);
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.free_points", stats.freePoints()), left, top + 30,
                 stats.freePoints() > 0 ? UiStyle.GOOD : UiStyle.MUTED);

@@ -1,5 +1,7 @@
 package com.orijua.overgearedmod.equipment;
 
+import com.orijua.overgearedmod.Balance;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.DoubleSupplier;
@@ -48,8 +50,10 @@ public final class EquipmentRules {
         return picked;
     }
 
-    /** 95% at +0, about 10 points less per level, a little better with DEX; never below 5%. */
-    public static double enhancementChance(int currentLevel, int dexterity) {
-        return Math.clamp(0.95 - 0.09 * currentLevel + 0.005 * dexterity, 0.05, 0.95);
+    /** Drops with each level already reached, rises a little with DEX; never above the base chance. */
+    public static double enhancementChance(Balance balance, int currentLevel, int dexterity) {
+        double chance = balance.enhanceBaseChance() - balance.enhanceChanceLossPerLevel() * currentLevel
+                + balance.enhanceChancePerDexterity() * dexterity;
+        return Math.clamp(chance, balance.enhanceMinChance(), Math.max(balance.enhanceMinChance(), balance.enhanceBaseChance()));
     }
 }

@@ -1,6 +1,6 @@
 package com.orijua.overgearedmod.skill;
 
-import com.orijua.overgearedmod.progression.PlayerStats;
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.ModAttachments;
@@ -21,9 +21,11 @@ public final class SkillEvents {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.tickCount % 20 != 0) {
             return;
         }
-        PlayerStats stats = ProgressionService.effectiveStats(player);
+        int intelligence = ProgressionService.effectiveStats(player).intelligence();
+        Balance balance = Balance.current();
         float current = player.getData(ModAttachments.MANA);
-        float regenerated = Math.min(stats.maxMana(), current + ProgressionRules.manaRegenPerSecond(stats.intelligence()));
+        float regenerated = Math.min(ProgressionRules.maxMana(balance, intelligence),
+                current + ProgressionRules.manaRegenPerSecond(balance, intelligence));
         if (regenerated != current) {
             player.setData(ModAttachments.MANA, regenerated);
         }
