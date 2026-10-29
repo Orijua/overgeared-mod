@@ -19,12 +19,14 @@ public record Balance(
         double enhanceBaseChance,
         double enhanceChanceLossPerLevel,
         double enhanceChancePerDexterity,
-        double enhanceMinChance) {
+        double enhanceMinChance,
+        double deathXpLoss) {
 
     public static final Balance DEFAULT = new Balance(
             5, 1.0, 2.0, 1.0, 0.25, 50, 25,
             20.0f, 5.0f, 1.0f, 0.2f,
-            0.95, 0.09, 0.005, 0.05);
+            0.95, 0.09, 0.005, 0.05,
+            0.10);
 
     /** The active server config, or the defaults before a world is loaded (e.g. on the title screen). */
     public static Balance current() {

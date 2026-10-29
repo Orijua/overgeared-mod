@@ -62,4 +62,14 @@ public final class ProgressionTests {
         helper.assertTrue(farmedZombie == 7, "spawner zombie gives a quarter (7), got " + farmedZombie);
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void deathCostsPartOfTheLevelXp(GameTestHelper helper) {
+        PlayerStats stats = PlayerStats.DEFAULT.withProgress(4, 50, 0);
+        PlayerStats after = ProgressionRules.applyDeathPenalty(Balance.DEFAULT, stats);
+        helper.assertTrue(after.xp() == 45 && after.level() == 4, "10% of 50 XP lost, level kept; got " + after.xp() + " at level " + after.level());
+        PlayerStats fresh = ProgressionRules.applyDeathPenalty(Balance.DEFAULT, PlayerStats.DEFAULT);
+        helper.assertTrue(fresh.xp() == 0 && fresh.level() == 1, "nothing to lose at 0 XP");
+        helper.succeed();
+    }
 }

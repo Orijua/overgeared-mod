@@ -72,6 +72,12 @@ public final class ProgressionRules {
         return result;
     }
 
+    /** Death penalty: loses part of the XP gathered towards the next level, never a whole level. */
+    public static PlayerStats applyDeathPenalty(Balance balance, PlayerStats stats) {
+        int lost = (int) Math.floor(stats.xp() * balance.deathXpLoss());
+        return stats.withProgress(stats.level(), stats.xp() - lost, stats.freePoints());
+    }
+
     /** Takes every allocated point back into free points (bonuses from class and titles are untouched). */
     public static PlayerStats refundAll(PlayerStats stats) {
         int allocated = 0;

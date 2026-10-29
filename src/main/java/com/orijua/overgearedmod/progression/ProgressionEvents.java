@@ -39,6 +39,9 @@ public final class ProgressionEvents {
     /** Killing a non-player mob grants Satisfy XP (separate from vanilla XP). */
     private static void onLivingDeath(LivingDeathEvent event) {
         LivingEntity victim = event.getEntity();
+        if (victim instanceof ServerPlayer dead) {
+            penalizeDeath(dead);
+        }
         if (victim instanceof Player || !(event.getSource().getEntity() instanceof ServerPlayer killer)) {
             return;
         }
@@ -48,6 +51,16 @@ public final class ProgressionEvents {
                 victim.getArmorValue(),
                 victim.getData(ModAttachments.FROM_SPAWNER))));
         GoalTracker.onKill(killer, victim.getType());
+    }
+
+    /** Runs before the respawn copy, so the reduced stats are what the new player entity inherits. */
+    private static void penalizeDeath(ServerPlayer player) {
+        PlayerStats before = ProgressionService.get(player);
+        PlayerStats after = ProgressionRules.applyDeathPenalty(Balance.current(), before);
+        if (after.xp() < before.xp()) {
+            player.setData(ModAttachments.PLAYER_STATS, after);
+            player.sendSystemMessage(Component.translatable("message.overgearedmod.death_xp_lost", before.xp() - after.xp()));
+        }
     }
 
     private static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
