@@ -3,5 +3,6 @@
   "weight": 20,
   "min": 0.03,
   "max": 0.12,
+  "applies_to": "overgearedmod:weapons",
   "effect": { "type": "attribute", "attribute": "minecraft:generic.attack_speed", "operation": "add_multiplied_base" }
 }

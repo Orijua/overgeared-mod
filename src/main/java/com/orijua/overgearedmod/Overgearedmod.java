@@ -52,7 +52,7 @@ public class Overgearedmod {
         ProgressionEvents.register(NeoForge.EVENT_BUS);
         SkillEvents.register(NeoForge.EVENT_BUS);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }
 
     /** Shorthand for {@code overgearedmod:<path>}. */

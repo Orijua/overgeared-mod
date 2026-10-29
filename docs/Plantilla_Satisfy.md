@@ -7,7 +7,8 @@ Plantilla de partida del mod: varios sistemas pequeños y funcionales, todos con
 | Qué | Cómo |
 |---|---|
 | Jugar en desarrollo | `gradlew runClient` (o la configuración *client* de IntelliJ) |
-| Tests en juego | `gradlew runGameTestServer`: arranca un servidor real, ejecuta los tests de `gametest/` y termina. Si todo va bien, debe decir *All 17 required tests passed*. |
+| Tests en juego | `gradlew runGameTestServer`: arranca un servidor real, ejecuta los tests de `gametest/` y termina. Si todo va bien, debe decir *All 19 required tests passed*. |
+| Ajustar el equilibrio | `saves/<mundo>/serverconfig/overgearedmod-server.toml` (curva de XP, maná, probabilidades de mejora…). Se aplica por mundo y se sincroniza con los clientes |
 | Subir de nivel rápido | `/satisfy xp 500` (requiere trucos/op) |
 | Reiniciar todo (clase incluida) | `/satisfy reset` |
 
@@ -78,7 +79,11 @@ Ideas clave, comparadas con .NET:
 | Títulos | `title/*.json` | `player_identity` + `player_counters` | Perfil |
 | Misiones | `quest/*.json` | attachment `player_quests` | Misiones |
 
-Estadísticas (diseño propio, se ajustan en `StatEffects` y `ProgressionRules`):
+**Números del juego.** Todos los valores ajustables (XP, maná, mejora) están en el record `Balance`. Las reglas lo reciben como parámetro y así siguen siendo puras: los tests usan `Balance.DEFAULT` y el juego, `Balance.current()`, que viene de la configuración del servidor.
+
+**Bonificaciones del equipo.** El rango, la mejora y las opciones no van "en el objeto", sino que se aplican al jugador que lo lleva (`EquipmentBonuses`), y solo si cumple sus requisitos. Se recalculan cada vez que cambia el equipo o las estadísticas.
+
+Estadísticas (diseño propio, se ajustan en `StatEffects` y en `Balance`):
 
 | Estadística | Efecto por punto |
 |---|---|
@@ -105,11 +110,12 @@ Estadísticas (diseño propio, se ajustan en `StatEffects` y `ProgressionRules`)
 
 Tipos de efecto: `area_damage`, `self_buff` (`"effects": [{ "id": "minecraft:speed", "amplifier": 1, "duration": 200 }]`) y `projectile` (`count`, `speed`).
 
-**Opción de equipo:** `item_option/<id>.json`. El tipo es `attribute` (cualquier atributo vanilla, con `operation` opcional) o `life_steal`.
+**Opción de equipo:** `item_option/<id>.json`. El tipo es `attribute` (cualquier atributo vanilla, con `operation` opcional) o `life_steal`. `applies_to` es opcional: limita la opción a un tag de objetos (`overgearedmod:weapons`, `overgearedmod:armor` o cualquier otro). Sin él, puede salir en cualquier objeto.
 
 ```json
-{ "name": { "translate": "option.overgearedmod.armor" }, "weight": 15, "min": 1, "max": 4,
-  "effect": { "type": "attribute", "attribute": "minecraft:generic.armor" } }
+{ "name": { "translate": "option.overgearedmod.knockback" }, "weight": 15, "min": 0.1, "max": 0.5,
+  "applies_to": "overgearedmod:weapons",
+  "effect": { "type": "attribute", "attribute": "minecraft:generic.attack_knockback" } }
 ```
 
 **Receta de forja:** `data/overgearedmod/recipe/forging/<id>.json`. `handle` y `requirements` son opcionales.
@@ -139,7 +145,7 @@ Los objetivos (`goal`) son de tres tipos:
 | `forge` | `{ "type": "forge", "min_rating": "unique", "count": 1 }` |
 | `level` | `{ "type": "level", "level": 10 }` |
 
-Recuerda añadir las traducciones en `assets/overgearedmod/lang/en_us.json`.
+Recuerda añadir las traducciones en `assets/overgearedmod/lang/es_es.json` y `en_us.json`.
 
 ## Cómo añadir un tipo nuevo (Java)
 
@@ -168,4 +174,4 @@ Siguiendo el criterio de `Fuentes_Overgeared_Conocimiento.md` §4:
 - **Aspecto provisional.** El yunque usa el modelo vanilla y la interfaz del horno, y los objetos reutilizan texturas vanilla. Los huecos de habilidad muestran la inicial, no un icono.
 - **Listas sin desplazamiento.** Las pestañas Habilidades y Misiones muestran como mucho 7 filas, y Perfil caben unos 9 títulos. Con más contenido harán falta páginas o scroll.
 - **Sin probar en el juego.** Los tests prueban la lógica en un servidor real, pero las pantallas, el HUD y las teclas hay que probarlos a mano con `runClient`.
-- **Un solo idioma.** Solo existe `en_us.json`, con la mezcla de nombres elegida. Si juegas en español sin `es_es.json`, el juego usa esa misma.
+- **Dos idiomas.** `es_es.json` lleva la mezcla de nombres elegida (Status Window, Rare/Epic…) y `en_us.json` está todo en inglés. Al añadir una clave, añádela en los dos archivos.

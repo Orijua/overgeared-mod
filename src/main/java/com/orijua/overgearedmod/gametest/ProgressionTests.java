@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.gametest;
 
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionRules;
@@ -21,7 +22,7 @@ public final class ProgressionTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void levelUpGrantsStatPoints(GameTestHelper helper) {
         // Level 1 → 2 costs 75 XP, 2 → 3 costs 100.
-        ProgressionRules.XpResult result = ProgressionRules.addXp(PlayerStats.DEFAULT, 180, 5);
+        ProgressionRules.XpResult result = ProgressionRules.addXp(Balance.DEFAULT, PlayerStats.DEFAULT, 180);
         helper.assertTrue(result.stats().level() == 3, "expected level 3, got " + result.stats().level());
         helper.assertTrue(result.stats().xp() == 5, "expected 5 leftover xp, got " + result.stats().xp());
         helper.assertTrue(result.stats().freePoints() == 10, "expected 10 points, got " + result.stats().freePoints());

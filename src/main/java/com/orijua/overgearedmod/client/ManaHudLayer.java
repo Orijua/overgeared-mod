@@ -1,7 +1,8 @@
 package com.orijua.overgearedmod.client;
 
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.client.ui.UiStyle;
-import com.orijua.overgearedmod.progression.PlayerStats;
+import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.client.DeltaTracker;
@@ -26,7 +27,7 @@ final class ManaHudLayer implements LayeredDraw.Layer {
         if (!HudVisibility.showSurvivalBars(minecraft)) {
             return;
         }
-        PlayerStats stats = ProgressionService.effectiveStats(player);
+        float maxMana = ProgressionRules.maxMana(Balance.current(), ProgressionService.effectiveStats(player).intelligence());
         float mana = player.getData(ModAttachments.MANA);
 
         Gui gui = minecraft.gui;
@@ -34,6 +35,6 @@ final class ManaHudLayer implements LayeredDraw.Layer {
         int top = graphics.guiHeight() - gui.rightHeight + 2;
         gui.rightHeight += ROW_HEIGHT;
 
-        UiStyle.bar(graphics, left, top, WIDTH, 5, stats.maxMana() <= 0 ? 0 : mana / stats.maxMana(), UiStyle.MANA);
+        UiStyle.bar(graphics, left, top, WIDTH, 5, maxMana <= 0 ? 0 : mana / maxMana, UiStyle.MANA);
     }
 }

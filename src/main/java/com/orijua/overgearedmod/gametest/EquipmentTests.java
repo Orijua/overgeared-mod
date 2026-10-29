@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.gametest;
 
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.EquipRequirements;
 import com.orijua.overgearedmod.equipment.EquipmentRules;
@@ -64,7 +65,17 @@ public final class EquipmentTests {
         ItemStack sword = new ItemStack(Items.IRON_SWORD);
         sword.set(ModDataComponents.ENHANCEMENT, 3);
         TestSupport.assertClose(helper, 3 * EquipmentRules.ATTACK_PER_ENHANCEMENT, TestSupport.attackBonusOver(helper, sword), "+3 enhancement");
-        helper.assertTrue(EquipmentRules.enhancementChance(9, 0) < EquipmentRules.enhancementChance(0, 0), "higher levels must be harder");
+        helper.assertTrue(EquipmentRules.enhancementChance(Balance.DEFAULT, 9, 0) < EquipmentRules.enhancementChance(Balance.DEFAULT, 0, 0), "higher levels must be harder");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void unmetRequirementsDisableBonuses(GameTestHelper helper) {
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        sword.set(ModDataComponents.ITEM_RATING, ItemRating.UNIQUE);
+        sword.set(ModDataComponents.ENHANCEMENT, 2);
+        sword.set(ModDataComponents.REQUIREMENTS, new EquipRequirements(5, Map.of()));
+        TestSupport.assertClose(helper, 0.0, TestSupport.attackBonusOver(helper, sword), "bonus with unmet requirements");
         helper.succeed();
     }
 

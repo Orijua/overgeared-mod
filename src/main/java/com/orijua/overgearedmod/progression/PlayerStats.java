@@ -69,8 +69,4 @@ public record PlayerStats(
     public int smithingLevel() {
         return ProgressionRules.smithingLevel(smithingXp);
     }
-
-    public float maxMana() {
-        return ProgressionRules.maxMana(intelligence);
-    }
 }

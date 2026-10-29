@@ -1,51 +1,53 @@
 package com.orijua.overgearedmod.progression;
 
+import com.orijua.overgearedmod.Balance;
+
 import java.util.List;
 import java.util.Map;
 
 /**
  * Pure progression formulas (project design, not canon numbers).
- * No Minecraft state here, so the rules are easy to read, tweak and unit-test.
+ * No Minecraft state here; every tunable number comes from {@link Balance}.
  */
 public final class ProgressionRules {
     private ProgressionRules() {
     }
 
-    public static int xpToNextLevel(int level) {
-        return 50 + 25 * level;
+    public static int xpToNextLevel(Balance balance, int level) {
+        return balance.xpBase() + balance.xpPerLevel() * level;
     }
 
-    /** XP for killing a mob, from its max health (a zombie with 20 HP gives 30). */
-    public static int killXp(float victimMaxHealth, double multiplier) {
-        return Math.max(1, (int) Math.round(victimMaxHealth * 1.5 * multiplier));
+    /** XP for killing a mob, from its max health (with the defaults a zombie, 20 HP, gives 30). */
+    public static int killXp(Balance balance, float victimMaxHealth) {
+        return Math.max(1, (int) Math.round(victimMaxHealth * balance.killXpMultiplier()));
     }
 
     public static int smithingLevel(int smithingXp) {
         return (int) Math.floor(Math.sqrt(Math.max(0, smithingXp) / 10.0));
     }
 
-    public static float maxMana(int intelligence) {
-        return 20.0f + 5.0f * intelligence;
+    public static float maxMana(Balance balance, int intelligence) {
+        return balance.baseMana() + balance.manaPerIntelligence() * intelligence;
     }
 
     /** Mana regenerated per second. */
-    public static float manaRegenPerSecond(int intelligence) {
-        return 1.0f + 0.2f * intelligence;
+    public static float manaRegenPerSecond(Balance balance, int intelligence) {
+        return balance.baseManaRegen() + balance.manaRegenPerIntelligence() * intelligence;
     }
 
     public record XpResult(PlayerStats stats, int levelsGained) {
     }
 
-    /** Adds XP and resolves any number of level ups, each granting {@code pointsPerLevel}. */
-    public static XpResult addXp(PlayerStats stats, int amount, int pointsPerLevel) {
+    /** Adds XP and resolves any number of level ups, each granting the configured stat points. */
+    public static XpResult addXp(Balance balance, PlayerStats stats, int amount) {
         int level = stats.level();
         int xp = stats.xp() + Math.max(0, amount);
         int points = stats.freePoints();
         int gained = 0;
-        while (xp >= xpToNextLevel(level)) {
-            xp -= xpToNextLevel(level);
+        while (xp >= xpToNextLevel(balance, level)) {
+            xp -= xpToNextLevel(balance, level);
             level++;
-            points += pointsPerLevel;
+            points += balance.statPointsPerLevel();
             gained++;
         }
         return new XpResult(stats.withProgress(level, xp, points), gained);

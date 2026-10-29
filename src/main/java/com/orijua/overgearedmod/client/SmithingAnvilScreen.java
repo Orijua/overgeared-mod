@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.client;
 
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.equipment.EquipmentRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.smithing.SmithingAnvilMenu;
@@ -38,7 +39,7 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         enhanceButton.visible = menu.canEnhance();
         if (enhanceButton.visible) {
             int level = menu.currentEnhancement();
-            double chance = EquipmentRules.enhancementChance(level, ProgressionService.effectiveStats(minecraft.player).dexterity());
+            double chance = EquipmentRules.enhancementChance(Balance.current(), level, ProgressionService.effectiveStats(minecraft.player).dexterity());
             enhanceButton.setMessage(Component.translatable("screen.overgearedmod.enhance", level + 1, Math.round(chance * 100)));
         }
     }

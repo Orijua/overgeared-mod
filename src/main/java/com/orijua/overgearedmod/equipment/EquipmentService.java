@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.equipment;
 
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.equipment.option.ItemOptionDefinition;
 import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.progression.PlayerStats;
@@ -31,7 +32,9 @@ public final class EquipmentService {
         ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), random.nextDouble());
         stack.set(ModDataComponents.ITEM_RATING, rating);
 
-        List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(smith.level(), ModDatapackRegistries.ITEM_OPTION);
+        List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(smith.level(), ModDatapackRegistries.ITEM_OPTION).stream()
+                .filter(e -> e.value().canRollOn(stack))
+                .toList();
         List<RolledOption> options = EquipmentRules.pickWeighted(pool, e -> e.value().weight(), EquipmentRules.optionCount(rating), random::nextDouble)
                 .stream()
                 .map(e -> new RolledOption(e.id(), EquipmentRules.rollValue(e.value().min(), e.value().max(), rating, random.nextDouble())))
@@ -54,7 +57,7 @@ public final class EquipmentService {
         if (level >= EquipmentRules.MAX_ENHANCEMENT) {
             return EnhanceResult.MAXED;
         }
-        double chance = EquipmentRules.enhancementChance(level, ProgressionService.effectiveStats(smith).dexterity());
+        double chance = EquipmentRules.enhancementChance(Balance.current(), level, ProgressionService.effectiveStats(smith).dexterity());
         boolean success = smith.getRandom().nextDouble() < chance;
         if (success) {
             equipment.set(ModDataComponents.ENHANCEMENT, level + 1);
