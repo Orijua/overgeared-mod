@@ -29,6 +29,10 @@ Orden de trabajo: primero mejorar lo que ya existe y después añadir sistemas n
 - [ ] **Texturas e interfaz propias** (Medio). Sustituir las texturas vanilla provisionales por PNG propios.
 - [ ] **Recetas de forja en JEI** (Medio). Mejora la experiencia, pero añade una dependencia externa que mantener.
 
+### Extras
+
+- [ ] **Espada legendaria de Grid** (Bajo). Usar la textura `espada_legendaria_grid.png` en un objeto nuevo (`grid_legendary_sword`, "Espada legendaria de Grid" / "Grid's Legendary Sword") que se forje en el yunque y pida nivel 10 y 8 de STR. Si hay un nombre canon, confirmarlo en la novela (capítulo) antes de usarlo.
+
 ## 2. Sistemas nuevos
 
 Cada uno introduce un patrón de Minecraft que la plantilla todavía no tiene.
