@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.goal.PlayerCounters;
 import com.orijua.overgearedmod.progression.PlayerIdentity;
 import com.orijua.overgearedmod.progression.PlayerStats;
+import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.skill.PlayerSkills;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -38,6 +39,9 @@ public final class ModAttachments {
 
     public static final Supplier<AttachmentType<PlayerCounters>> PLAYER_COUNTERS =
             playerData("player_counters", () -> PlayerCounters.EMPTY, PlayerCounters.CODEC, PlayerCounters.STREAM_CODEC, true);
+
+    public static final Supplier<AttachmentType<PlayerQuests>> PLAYER_QUESTS =
+            playerData("player_quests", () -> PlayerQuests.EMPTY, PlayerQuests.CODEC, PlayerQuests.STREAM_CODEC, true);
 
     private ModAttachments() {
     }

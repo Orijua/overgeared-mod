@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "quest.overgearedmod.first_commission" },
+  "description": { "translate": "quest.overgearedmod.first_commission.desc" },
+  "goal": { "type": "forge", "count": 1 },
+  "xp_reward": 50,
+  "item_rewards": [{ "id": "overgearedmod:enhancement_stone", "count": 2 }]
+}

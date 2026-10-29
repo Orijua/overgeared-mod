@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "quest.overgearedmod.path_of_the_adventurer" },
+  "description": { "translate": "quest.overgearedmod.path_of_the_adventurer.desc" },
+  "goal": { "type": "level", "level": 3 },
+  "item_rewards": [
+    { "id": "overgearedmod:skill_book", "count": 1, "components": { "overgearedmod:skill_book": "overgearedmod:flame_bolt" } }
+  ]
+}

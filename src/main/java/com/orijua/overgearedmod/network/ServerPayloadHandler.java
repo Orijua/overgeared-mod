@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.network;
 
 import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.skill.SkillService;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -35,6 +36,15 @@ final class ServerPayloadHandler {
     static void chooseClass(ChooseClassPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             ClassService.choose(player, payload.playerClass());
+        }
+    }
+
+    static void questAction(QuestActionPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            switch (payload.action()) {
+                case ACCEPT -> QuestService.accept(player, payload.quest());
+                case CLAIM -> QuestService.claim(player, payload.quest());
+            }
         }
     }
 }
