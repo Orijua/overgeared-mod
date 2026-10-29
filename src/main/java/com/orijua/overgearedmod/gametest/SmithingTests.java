@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.EquipmentService;
+import com.orijua.overgearedmod.equipment.EquipRequirements;
 import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.progression.StatType;
@@ -14,6 +15,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -44,6 +46,18 @@ public final class SmithingTests {
 
         ForgingRecipeInput tooFew = new ForgingRecipeInput(new ItemStack(ModItems.TEST_INGOT.get(), 1), new ItemStack(Items.STICK));
         helper.assertFalse(find(helper, tooFew).isPresent(), "1 ingot must not be enough");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void gridSwordIsForgedAndRollsWeaponOptions(GameTestHelper helper) {
+        ForgingRecipeInput input = new ForgingRecipeInput(new ItemStack(Items.DIAMOND, 4), new ItemStack(Items.BLAZE_ROD));
+        Optional<RecipeHolder<ForgingRecipe>> recipe = find(helper, input);
+        helper.assertTrue(recipe.isPresent() && recipe.get().value().result().is(ModItems.GRID_LEGENDARY_SWORD.get()),
+                "4 diamonds + blaze rod should forge Grid's sword");
+        EquipRequirements requirements = recipe.get().value().requirements().orElseThrow();
+        helper.assertTrue(requirements.level() == 10 && requirements.stats().get(StatType.STRENGTH) == 8, "needs level 10 and 8 STR");
+        helper.assertTrue(ModItems.GRID_LEGENDARY_SWORD.toStack().is(ItemTags.SWORDS), "it is a sword, so weapon options can roll on it");
         helper.succeed();
     }
 

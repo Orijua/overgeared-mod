@@ -24,6 +24,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.SMITHING_ANVIL);
                         output.accept(ModItems.TEST_INGOT);
                         output.accept(ModItems.JAFFA_SWORD);
+                        output.accept(ModItems.GRID_LEGENDARY_SWORD);
                         output.accept(ModItems.ENHANCEMENT_STONE);
                         output.accept(ModItems.RESPEC_SCROLL);
                         // One book per skill defined in the loaded datapacks.
@@ -36,6 +37,7 @@ public final class ModCreativeTabs {
     public static void addToVanillaTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(ModItems.JAFFA_SWORD);
+            event.accept(ModItems.GRID_LEGENDARY_SWORD);
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(ModItems.TEST_INGOT);

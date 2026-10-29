@@ -31,7 +31,7 @@ Orden de trabajo: primero mejorar lo que ya existe y después añadir sistemas n
 
 ### Extras
 
-- [ ] **Espada legendaria de Grid** (Bajo). Usar la textura `espada_legendaria_grid.png` en un objeto nuevo (`grid_legendary_sword`, "Espada legendaria de Grid" / "Grid's Legendary Sword") que se forje en el yunque y pida nivel 10 y 8 de STR. Si hay un nombre canon, confirmarlo en la novela (capítulo) antes de usarlo.
+- [x] **Espada legendaria de Grid** (Bajo). Usar la textura (ahora `grid_legendary_sword.png`) en un objeto nuevo (`grid_legendary_sword`, "Espada legendaria de Grid" / "Grid's Legendary Sword") que se forje en el yunque y pida nivel 10 y 8 de STR. Si hay un nombre canon, confirmarlo en la novela (capítulo) antes de usarlo.
 
 ## 2. Sistemas nuevos
 
