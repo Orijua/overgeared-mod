@@ -18,8 +18,8 @@ Teclas por defecto (se pueden cambiar en *Controles → Overgeared*):
 
 Recorrido rápido para probarlo todo:
 
-1. Fabrica el **Yunque de herrero**: 3 bloques de hierro arriba, 1 lingote de hierro en el centro y 3 lingotes abajo.
-2. Fabrica el **Lingote de prueba**: lingote de hierro + lingote de cobre, sin forma.
+1. Fabrica el **Lingote de prueba**: lingote de hierro + lingote de cobre, sin forma. Necesitarás 4 para el yunque y 2 por espada.
+2. Fabrica el **Yunque de herrero**: 3 bloques de hierro arriba, 1 lingote de prueba en el centro y 3 lingotes de prueba abajo.
 3. En el yunque, pon 2 lingotes de prueba arriba y 1 palo abajo, y recoge la **Espada de Jaffa**. Su rango sale al azar, y el tooltip lo muestra.
 4. Mata mobs o usa `/satisfy xp 500`, pulsa **K** y reparte los puntos (por ejemplo, en DEX para forjar mejor).
 5. Con la espada en la mano, pulsa **R** delante de un mob.
