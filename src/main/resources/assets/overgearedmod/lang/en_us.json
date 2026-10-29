@@ -14,7 +14,9 @@
   "rating.overgearedmod.legendary": "Legendary",
   "rating.overgearedmod.myth": "Myth",
   "tooltip.overgearedmod.rating": "Rango: %s",
-  "tooltip.overgearedmod.enhancement": "Mejora +%s",
+  "tooltip.overgearedmod.rating_bonus": "Rango: %s (+%s daño)",
+  "tooltip.overgearedmod.enhancement": "Mejora +%s (+%s daño)",
+  "tooltip.overgearedmod.bonuses_inactive": "Bonificaciones inactivas: no cumples los requisitos",
   "tooltip.overgearedmod.requires": "Requisitos:",
   "tooltip.overgearedmod.requires_level": "Nivel %s",
 

@@ -1,6 +1,5 @@
 package com.orijua.overgearedmod.equipment;
 
-import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionService;
@@ -11,17 +10,12 @@ import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlotGroup;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.ItemAttributeModifierEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
@@ -29,16 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** Turns the equipment components (rating, enhancement, options, requirements) into gameplay and tooltip lines. */
+/** Connects the equipment components (rating, enhancement, options, requirements) to the game and the tooltip. */
 public final class EquipmentEvents {
-    private static final ResourceLocation RATING_BONUS_ID = Overgearedmod.id("rating_bonus");
-    private static final ResourceLocation ENHANCEMENT_ID = Overgearedmod.id("enhancement");
-
     private EquipmentEvents() {
     }
 
     public static void register(IEventBus gameBus) {
-        gameBus.addListener(EquipmentEvents::onItemAttributes);
+        gameBus.addListener(EquipmentEvents::onEquipmentChange);
         gameBus.addListener(EquipmentEvents::onTooltip);
         gameBus.addListener(EquipmentEvents::onDamageDealt);
         gameBus.addListener(EquipmentEvents::onAttack);
@@ -49,33 +40,9 @@ public final class EquipmentEvents {
         return requirements == null || requirements.metBy(ProgressionService.effectiveStats(player));
     }
 
-    private static EquipmentSlotGroup slotFor(ItemStack stack) {
-        return stack.getItem() instanceof ArmorItem armor ? EquipmentSlotGroup.bySlot(armor.getEquipmentSlot()) : EquipmentSlotGroup.MAINHAND;
-    }
-
-    private static void onItemAttributes(ItemAttributeModifierEvent event) {
-        ItemStack stack = event.getItemStack();
-        EquipmentSlotGroup slot = slotFor(stack);
-        boolean isWeapon = event.getDefaultModifiers().modifiers().stream()
-                .anyMatch(entry -> entry.attribute().equals(Attributes.ATTACK_DAMAGE));
-
-        ItemRating rating = stack.get(ModDataComponents.ITEM_RATING);
-        if (isWeapon && rating != null && rating.attackDamageBonus() > 0) {
-            event.addModifier(Attributes.ATTACK_DAMAGE,
-                    new AttributeModifier(RATING_BONUS_ID, rating.attackDamageBonus(), AttributeModifier.Operation.ADD_VALUE), slot);
-        }
-        int enhancement = stack.getOrDefault(ModDataComponents.ENHANCEMENT, 0);
-        if (isWeapon && enhancement > 0) {
-            event.addModifier(Attributes.ATTACK_DAMAGE, new AttributeModifier(ENHANCEMENT_ID,
-                    enhancement * EquipmentRules.ATTACK_PER_ENHANCEMENT, AttributeModifier.Operation.ADD_VALUE), slot);
-        }
-
-        List<RolledOption> options = stack.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.of());
-        for (int i = 0; i < options.size(); i++) {
-            RolledOption rolled = options.get(i);
-            ResourceLocation modifierId = Overgearedmod.id("option_" + i);
-            Definitions.get(ModDatapackRegistries.ITEM_OPTION, rolled.option())
-                    .ifPresent(def -> def.effect().addModifiers(event, modifierId, rolled.value(), slot));
+    private static void onEquipmentChange(LivingEquipmentChangeEvent event) {
+        if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
+            EquipmentBonuses.apply(player);
         }
     }
 
@@ -110,11 +77,14 @@ public final class EquipmentEvents {
 
         ItemRating rating = stack.get(ModDataComponents.ITEM_RATING);
         if (rating != null) {
-            lines.add(Component.translatable("tooltip.overgearedmod.rating", rating.displayName()));
+            lines.add(rating.attackDamageBonus() > 0
+                    ? Component.translatable("tooltip.overgearedmod.rating_bonus", rating.displayName(), rating.attackDamageBonus())
+                    : Component.translatable("tooltip.overgearedmod.rating", rating.displayName()));
         }
         int enhancement = stack.getOrDefault(ModDataComponents.ENHANCEMENT, 0);
         if (enhancement > 0) {
-            lines.add(Component.translatable("tooltip.overgearedmod.enhancement", enhancement).withStyle(ChatFormatting.AQUA));
+            lines.add(Component.translatable("tooltip.overgearedmod.enhancement", enhancement,
+                    enhancement * EquipmentRules.ATTACK_PER_ENHANCEMENT).withStyle(ChatFormatting.AQUA));
         }
         if (registries != null) {
             for (RolledOption rolled : stack.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
@@ -125,7 +95,11 @@ public final class EquipmentEvents {
         }
         EquipRequirements requirements = stack.get(ModDataComponents.REQUIREMENTS);
         if (requirements != null && event.getEntity() != null) {
-            lines.addAll(requirementLines(requirements, ProgressionService.effectiveStats(event.getEntity())));
+            PlayerStats stats = ProgressionService.effectiveStats(event.getEntity());
+            lines.addAll(requirementLines(requirements, stats));
+            if (!requirements.metBy(stats)) {
+                lines.add(Component.translatable("tooltip.overgearedmod.bonuses_inactive").withStyle(ChatFormatting.RED));
+            }
         }
 
         event.getToolTip().addAll(Math.min(1, event.getToolTip().size()), lines);

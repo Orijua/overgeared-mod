@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.progression;
 
 import com.orijua.overgearedmod.Config;
+import com.orijua.overgearedmod.equipment.EquipmentBonuses;
 import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.registry.Definitions;
@@ -59,9 +60,10 @@ public final class ProgressionService {
         refreshEffects(player);
     }
 
-    /** Re-applies attribute modifiers; call after anything that changes effective stats. */
+    /** Re-applies attribute modifiers; call after anything that changes effective stats (requirements may change too). */
     public static void refreshEffects(ServerPlayer player) {
         StatEffects.apply(player, effectiveStats(player));
+        EquipmentBonuses.apply(player);
     }
 
     public static void awardXp(ServerPlayer player, int amount) {

@@ -69,6 +69,16 @@ public final class EquipmentTests {
     }
 
     @GameTest(template = TestSupport.EMPTY)
+    public static void unmetRequirementsDisableBonuses(GameTestHelper helper) {
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        sword.set(ModDataComponents.ITEM_RATING, ItemRating.UNIQUE);
+        sword.set(ModDataComponents.ENHANCEMENT, 2);
+        sword.set(ModDataComponents.REQUIREMENTS, new EquipRequirements(5, Map.of()));
+        TestSupport.assertClose(helper, 0.0, TestSupport.attackBonusOver(helper, sword), "bonus with unmet requirements");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
     public static void requirementsCheckLevelAndStats(GameTestHelper helper) {
         EquipRequirements requirements = new EquipRequirements(2, Map.of(StatType.STRENGTH, 2));
         PlayerStats weak = PlayerStats.DEFAULT.withProgress(2, 0, 0);
