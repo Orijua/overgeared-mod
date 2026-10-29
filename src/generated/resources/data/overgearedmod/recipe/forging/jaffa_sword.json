@@ -1,0 +1,21 @@
+{
+  "type": "overgearedmod:forging",
+  "handle": {
+    "item": "minecraft:stick"
+  },
+  "material": {
+    "item": "overgearedmod:mithril_ingot"
+  },
+  "material_count": 2,
+  "requirements": {
+    "level": 2,
+    "stats": {
+      "strength": 2
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:jaffa_sword"
+  },
+  "smithing_xp": 15
+}

@@ -1,0 +1,14 @@
+{
+  "type": "overgearedmod:forging",
+  "handle": {
+    "item": "minecraft:stick"
+  },
+  "material": {
+    "item": "minecraft:iron_ingot"
+  },
+  "material_count": 2,
+  "result": {
+    "count": 1,
+    "id": "minecraft:iron_sword"
+  }
+}

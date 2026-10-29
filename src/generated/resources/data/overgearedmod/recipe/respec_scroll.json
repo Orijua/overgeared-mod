@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "minecraft:paper"
+    },
+    {
+      "item": "minecraft:lapis_lazuli"
+    },
+    {
+      "item": "overgearedmod:mithril_ingot"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:respec_scroll"
+  }
+}

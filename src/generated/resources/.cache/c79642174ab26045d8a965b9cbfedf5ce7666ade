@@ -1,0 +1,9 @@
+// 1.21.1	2026-10-29T23:03:43.819126	Block States: overgearedmod
+045607e7149d9f4664d1095be5b8c8c5b373f816 assets/overgearedmod/blockstates/deepslate_mithril_ore.json
+73704d795b067a750b2b22a31276a36221e7cfeb assets/overgearedmod/blockstates/mithril_ore.json
+347a2ed3431a0567068253cced66a77d4a79d6f9 assets/overgearedmod/blockstates/smithing_anvil.json
+7dcb3dce46c4a6d66fab353e91c785341a7e1829 assets/overgearedmod/models/block/deepslate_mithril_ore.json
+dcbf36788ff291c6eba3535fb68b7f4d29371687 assets/overgearedmod/models/block/mithril_ore.json
+dd611f0180eb39810b4041c80782ebec1c4e8fb6 assets/overgearedmod/models/item/deepslate_mithril_ore.json
+0db1d599c298b045f4822eebaa4b1675617477a3 assets/overgearedmod/models/item/mithril_ore.json
+9c9a8fcc0fe537da5794094e45fc4ca8d397d73f assets/overgearedmod/models/item/smithing_anvil.json

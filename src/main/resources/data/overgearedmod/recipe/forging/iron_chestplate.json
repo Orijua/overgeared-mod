@@ -1,7 +1,0 @@
-{
-  "type": "overgearedmod:forging",
-  "material": { "item": "minecraft:iron_ingot" },
-  "material_count": 8,
-  "result": { "id": "minecraft:iron_chestplate", "count": 1 },
-  "smithing_xp": 20
-}
