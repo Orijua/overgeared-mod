@@ -2,6 +2,7 @@ package com.orijua.overgearedmod;
 
 import com.mojang.logging.LogUtils;
 import com.orijua.overgearedmod.equipment.EquipmentEvents;
+import com.orijua.overgearedmod.mob.MobLevelEvents;
 import com.orijua.overgearedmod.network.ModNetwork;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
 import com.orijua.overgearedmod.registry.ModAttachments;
@@ -53,6 +54,7 @@ public class Overgearedmod {
         EquipmentEvents.register(NeoForge.EVENT_BUS);
         ProgressionEvents.register(NeoForge.EVENT_BUS);
         SkillEvents.register(NeoForge.EVENT_BUS);
+        MobLevelEvents.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }

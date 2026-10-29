@@ -18,15 +18,16 @@ public final class ProgressionRules {
     }
 
     /** What a mob was like when it died, as far as XP is concerned. */
-    public record Victim(float maxHealth, double attackDamage, int armor, boolean fromSpawner) {
+    public record Victim(float maxHealth, double attackDamage, int armor, boolean fromSpawner, boolean elite) {
     }
 
-    /** XP for a kill: tougher and harder-hitting mobs give more; spawner mobs give less (anti-farming). */
+    /** XP for a kill: tougher and harder-hitting mobs (so higher levels) give more, elites even more; spawner mobs give less (anti-farming). */
     public static int killXp(Balance balance, Victim victim) {
         double strength = victim.maxHealth()
                 + victim.attackDamage() * balance.killXpPerAttackDamage()
                 + victim.armor() * balance.killXpPerArmor();
-        double xp = strength * balance.killXpMultiplier() * (victim.fromSpawner() ? balance.spawnerXpMultiplier() : 1.0);
+        double xp = strength * balance.killXpMultiplier() * (victim.fromSpawner() ? balance.spawnerXpMultiplier() : 1.0)
+                * (victim.elite() ? balance.eliteXpMultiplier() : 1.0);
         return Math.max(1, (int) Math.round(xp));
     }
 

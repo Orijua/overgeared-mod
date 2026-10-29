@@ -78,8 +78,12 @@ Ideas clave, comparadas con .NET:
 | Clases | `player_class/*.json` | attachment `player_identity` | Perfil |
 | Títulos | `title/*.json` | `player_identity` + `player_counters` | Perfil |
 | Misiones | `quest/*.json` | attachment `player_quests` | Misiones |
+| Efectos de estado | `MobEffect` en Java (`ModEffects`) | efecto vanilla sobre la entidad | iconos de efecto |
+| Monstruos con nivel | — (números en la config, sección `mobs`) | attachment `mob_level` en el mob | nombre sobre la cabeza |
 
 **Números del juego.** Todos los valores ajustables (XP, maná, mejora) están en el record `Balance`. Las reglas lo reciben como parámetro y así siguen siendo puras: los tests usan `Balance.DEFAULT` y el juego, `Balance.current()`, que viene de la configuración del servidor.
+
+**Monstruos con nivel.** Al aparecer, cada mob hostil toma el nivel del jugador más cercano ± `levelSpread` (`MobLevelEvents`). Cada nivel suma un porcentaje de vida y daño base como modificadores permanentes (`MobLevelService`), así que la XP por matarlo ya crece sola. Un 5 % son élites: brillan, tienen +50 % de vida y daño y dan el triple de XP. Encima de la cabeza se ve "[Nv 5] Zombi" (`MobLevelNameTags`).
 
 **Bonificaciones del equipo.** El rango, la mejora y las opciones no van "en el objeto", sino que se aplican al jugador que lo lleva (`EquipmentBonuses`), y solo si cumple sus requisitos. Se recalculan cada vez que cambia el equipo o las estadísticas.
 

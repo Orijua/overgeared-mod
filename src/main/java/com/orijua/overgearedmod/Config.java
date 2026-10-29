@@ -74,6 +74,27 @@ public final class Config {
             .defineInRange("xpLoss", D.deathXpLoss(), 0.0, 1.0);
 
     static {
+        BUILDER.pop().push("mobs");
+    }
+
+    private static final ModConfigSpec.IntValue MOB_LEVEL_SPREAD = BUILDER
+            .comment("Hostile mobs spawn at the nearest player's level, plus or minus up to this many levels.")
+            .defineInRange("levelSpread", D.mobLevelSpread(), 0, 100);
+    private static final ModConfigSpec.DoubleValue MOB_HEALTH_PER_LEVEL = BUILDER
+            .comment("Extra max health per level above 1, as a fraction of the base (0.08 = +8%).")
+            .defineInRange("healthPerLevel", D.mobHealthPerLevel(), 0.0, 10.0);
+    private static final ModConfigSpec.DoubleValue MOB_DAMAGE_PER_LEVEL = BUILDER
+            .comment("Extra attack damage per level above 1, as a fraction of the base.")
+            .defineInRange("damagePerLevel", D.mobDamagePerLevel(), 0.0, 10.0);
+    private static final ModConfigSpec.DoubleValue ELITE_CHANCE = BUILDER
+            .comment("Chance for a hostile mob to be an elite: glowing, +eliteStatBonus health and damage, eliteXpMultiplier XP.")
+            .defineInRange("eliteChance", D.eliteChance(), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue ELITE_STAT_BONUS = BUILDER
+            .defineInRange("eliteStatBonus", D.eliteStatBonus(), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue ELITE_XP_MULTIPLIER = BUILDER
+            .defineInRange("eliteXpMultiplier", D.eliteXpMultiplier(), 1.0, 100.0);
+
+    static {
         BUILDER.pop();
     }
 
@@ -93,6 +114,8 @@ public final class Config {
                 BASE_MANA.get().floatValue(), MANA_PER_INTELLIGENCE.get().floatValue(),
                 BASE_MANA_REGEN.get().floatValue(), MANA_REGEN_PER_INTELLIGENCE.get().floatValue(),
                 ENHANCE_BASE_CHANCE.get(), ENHANCE_LOSS_PER_LEVEL.get(), ENHANCE_PER_DEXTERITY.get(), ENHANCE_MIN_CHANCE.get(),
-                DEATH_XP_LOSS.get());
+                DEATH_XP_LOSS.get(),
+                MOB_LEVEL_SPREAD.get(), MOB_HEALTH_PER_LEVEL.get(), MOB_DAMAGE_PER_LEVEL.get(),
+                ELITE_CHANCE.get(), ELITE_STAT_BONUS.get(), ELITE_XP_MULTIPLIER.get());
     }
 }

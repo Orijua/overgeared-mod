@@ -49,7 +49,8 @@ public final class ProgressionEvents {
                 victim.getMaxHealth(),
                 victim.getAttribute(Attributes.ATTACK_DAMAGE) != null ? victim.getAttributeValue(Attributes.ATTACK_DAMAGE) : 0.0,
                 victim.getArmorValue(),
-                victim.getData(ModAttachments.FROM_SPAWNER))));
+                victim.getData(ModAttachments.FROM_SPAWNER),
+                victim.getData(ModAttachments.MOB_LEVEL).elite())));
         GoalTracker.onKill(killer, victim.getType());
     }
 
