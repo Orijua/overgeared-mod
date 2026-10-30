@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.playerclass;
 
+import com.orijua.overgearedmod.event.ClassChangedEvent;
 import com.orijua.overgearedmod.progression.PlayerIdentity;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
@@ -11,6 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.Optional;
 
@@ -32,7 +34,7 @@ public final class ClassService {
         if (current(player).isPresent() || definition.isEmpty() || !definition.get().selectable()) {
             return false;
         }
-        apply(player, classId, definition.get(), "message.overgearedmod.class_chosen");
+        apply(player, classId, definition.get(), false);
         return true;
     }
 
@@ -42,11 +44,13 @@ public final class ClassService {
         if (definition.isEmpty()) {
             return false;
         }
-        apply(player, classId, definition.get(), "message.overgearedmod.class_granted");
+        apply(player, classId, definition.get(), true);
         return true;
     }
 
-    private static void apply(ServerPlayer player, ResourceLocation classId, PlayerClassDefinition definition, String messageKey) {
+    /** @param granted true when a quest gives the class, false when the player picks it at the start */
+    private static void apply(ServerPlayer player, ResourceLocation classId, PlayerClassDefinition definition, boolean granted) {
+        String messageKey = granted ? "message.overgearedmod.class_granted" : "message.overgearedmod.class_chosen";
         PlayerIdentity identity = player.getData(ModAttachments.PLAYER_IDENTITY);
         player.setData(ModAttachments.PLAYER_IDENTITY, identity.withClass(classId));
         definition.skills().forEach(skill -> SkillService.learn(player, skill));
@@ -54,5 +58,6 @@ public final class ClassService {
 
         player.displayClientMessage(Component.translatable(messageKey, definition.name()), false);
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 0.8f);
+        NeoForge.EVENT_BUS.post(new ClassChangedEvent(player, classId, granted));
     }
 }

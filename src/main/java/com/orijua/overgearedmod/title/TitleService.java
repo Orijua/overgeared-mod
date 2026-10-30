@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.title;
 
+import com.orijua.overgearedmod.event.TitleEarnedEvent;
 import com.orijua.overgearedmod.goal.PlayerCounters;
 import com.orijua.overgearedmod.progression.PlayerIdentity;
 import com.orijua.overgearedmod.progression.PlayerStats;
@@ -8,9 +9,14 @@ import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.neoforged.neoforge.common.NeoForge;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class TitleService {
     private TitleService() {
@@ -22,6 +28,7 @@ public final class TitleService {
         PlayerCounters counters = player.getData(ModAttachments.PLAYER_COUNTERS);
         PlayerStats stats = ProgressionService.get(player);
         boolean changed = false;
+        List<ResourceLocation> earned = new ArrayList<>();
 
         for (Definitions.Entry<TitleDefinition> title : Definitions.all(player.level(), ModDatapackRegistries.TITLE)) {
             if (identity.hasTitle(title.id()) || title.value().goal().progress(counters, stats) < title.value().goal().target()) {
@@ -31,10 +38,12 @@ public final class TitleService {
             changed = true;
             player.displayClientMessage(Component.translatable("message.overgearedmod.title_earned", title.value().name()), false);
             player.level().playSound(null, player.blockPosition(), SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.PLAYERS, 0.7f, 1.0f);
+            earned.add(title.id());
         }
         if (changed) {
             player.setData(ModAttachments.PLAYER_IDENTITY, identity);
             ProgressionService.refreshEffects(player);
+            earned.forEach(id -> NeoForge.EVENT_BUS.post(new TitleEarnedEvent(player, id)));
         }
     }
 }

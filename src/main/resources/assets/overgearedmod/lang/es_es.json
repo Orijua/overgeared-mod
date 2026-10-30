@@ -129,6 +129,12 @@
   "skill.overgearedmod.rending_slash.desc": "Tajo corto que hace sangrar a los enemigos (Sangrado II). Requiere espada.",
 
   "message.overgearedmod.level_up": "¡Nivel %s alcanzado!",
+  "notification.overgearedmod.level_up": "Has subido de nivel",
+  "notification.overgearedmod.level_up.body": "Nivel %s",
+  "notification.overgearedmod.level_up.points": "+%s puntos de estadística para repartir",
+  "notification.overgearedmod.title": "Has obtenido un título",
+  "notification.overgearedmod.quest": "Misión completada",
+  "notification.overgearedmod.class": "Has obtenido una clase",
   "message.overgearedmod.cooldown": "%s: enfriamiento %ss",
   "message.overgearedmod.no_mana": "%s: maná insuficiente",
   "message.overgearedmod.wrong_item": "%s: no puedes usarla con lo que llevas en la mano",

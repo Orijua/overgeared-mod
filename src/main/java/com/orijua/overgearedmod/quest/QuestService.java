@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.quest;
 
+import com.orijua.overgearedmod.event.QuestCompletedEvent;
 import com.orijua.overgearedmod.goal.Goal;
 import com.orijua.overgearedmod.goal.PlayerCounters;
 import com.orijua.overgearedmod.playerclass.ClassService;
@@ -15,6 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.Optional;
 
@@ -107,6 +109,7 @@ public final class QuestService {
         quest.classReward().ifPresent(classId -> ClassService.grant(player, classId));
         player.displayClientMessage(Component.translatable("message.overgearedmod.quest_completed", quest.name()), false);
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.8f, 1.5f);
+        NeoForge.EVENT_BUS.post(new QuestCompletedEvent(player, id));
         return Result.SUCCESS;
     }
 }

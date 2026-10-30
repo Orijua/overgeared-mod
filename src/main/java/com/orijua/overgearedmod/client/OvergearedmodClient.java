@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.client.tab.SatisfyTabs;
 import com.orijua.overgearedmod.network.UseSkillPayload;
+import com.orijua.overgearedmod.notification.ClientNotifications;
 import com.orijua.overgearedmod.registry.ModEntities;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.skill.PlayerSkills;
@@ -13,6 +14,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
@@ -45,6 +47,7 @@ public class OvergearedmodClient {
         modEventBus.addListener(OvergearedmodClient::onRegisterRenderers);
         NeoForge.EVENT_BUS.addListener(OvergearedmodClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientNotifications.QUEUE.clear());
     }
 
     private static KeyMapping key(String name, int defaultKey) {
@@ -70,6 +73,7 @@ public class OvergearedmodClient {
         event.registerAbove(Overgearedmod.id("mana"), Overgearedmod.id("xp"), new XpHudLayer());
         event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), new SkillSlotsHudLayer());
         event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), new QuestTrackerHudLayer());
+        event.registerAbove(Overgearedmod.id("quest_tracker"), Overgearedmod.id("system_notification"), new SystemNotificationHudLayer());
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {
