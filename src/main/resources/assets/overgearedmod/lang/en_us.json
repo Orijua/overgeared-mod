@@ -163,6 +163,11 @@
   "message.overgearedmod.respec_done": "Points refunded: you have %s to spend",
   "message.overgearedmod.respec_nothing": "You have no allocated points to refund",
   "message.overgearedmod.reset": "Satisfy progression reset",
+  "message.overgearedmod.simulated_kills": "Simulated %s kills of %s",
+  "message.overgearedmod.simulated_forges": "Simulated %s %s forges",
+  "message.overgearedmod.simulate_not_a_mob": "That entity is not a mob",
+  "message.overgearedmod.simulate_bad_rating": "Unknown rating: %s",
+  "message.overgearedmod.quests_reset": "Quests reset",
   "message.overgearedmod.content_valid": "Content OK: no broken references.",
   "message.overgearedmod.content_problems": "%s problem(s) in the content:",
 
