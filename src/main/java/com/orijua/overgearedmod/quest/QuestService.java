@@ -38,12 +38,16 @@ public final class QuestService {
         return progress(quest.goal(), baseline, player.getData(ModAttachments.PLAYER_COUNTERS), ProgressionService.get(player));
     }
 
-    /** Not already active, not done (unless repeatable), and the player has the required class if there is one. */
+    /**
+     * Not already active, not done (unless repeatable), the player has the required class if there is one,
+     * and the previous quest of its chain is completed.
+     */
     public static boolean canAccept(Player player, ResourceLocation id, QuestDefinition quest) {
         PlayerQuests quests = get(player);
         return !quests.isActive(id)
                 && (quest.repeatable() || !quests.isCompleted(id))
-                && quest.allowsClass(player.getData(ModAttachments.PLAYER_IDENTITY).playerClass());
+                && quest.allowsClass(player.getData(ModAttachments.PLAYER_IDENTITY).playerClass())
+                && quest.isUnlockedBy(quests);
     }
 
     public static Result accept(ServerPlayer player, ResourceLocation id) {

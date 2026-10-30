@@ -14,6 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ public final class ContentScanner {
     public static ContentIndex index(RegistryAccess access) {
         Set<ResourceLocation> advancedClasses = new HashSet<>();
         Set<ResourceLocation> rewardedClasses = new HashSet<>();
+        Map<ResourceLocation, ResourceLocation> questRequirements = new HashMap<>();
         List<Reference> references = new ArrayList<>();
 
         for (Map.Entry<ResourceLocation, PlayerClassDefinition> entry : entries(access, ModDatapackRegistries.PLAYER_CLASS)) {
@@ -40,6 +42,10 @@ public final class ContentScanner {
             String from = "quest " + entry.getKey();
             QuestDefinition quest = entry.getValue();
             quest.requiredClass().ifPresent(id -> references.add(new Reference(from, Kind.CLASS, id)));
+            quest.requiresQuest().ifPresent(id -> {
+                references.add(new Reference(from, Kind.QUEST, id));
+                questRequirements.put(entry.getKey(), id);
+            });
             quest.classReward().ifPresent(id -> {
                 references.add(new Reference(from, Kind.CLASS, id));
                 rewardedClasses.add(id);
@@ -54,7 +60,7 @@ public final class ContentScanner {
         BlacksmithNpc.SOLD_SKILLS.forEach(skill -> references.add(new Reference("blacksmith trades", Kind.SKILL, skill)));
 
         return new ContentIndex(ids(access, ModDatapackRegistries.SKILL), ids(access, ModDatapackRegistries.PLAYER_CLASS),
-                advancedClasses, rewardedClasses, references);
+                ids(access, ModDatapackRegistries.QUEST), advancedClasses, rewardedClasses, questRequirements, references);
     }
 
     private static <T> Set<ResourceLocation> ids(RegistryAccess access, ResourceKey<Registry<T>> key) {

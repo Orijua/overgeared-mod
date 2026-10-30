@@ -3,7 +3,9 @@ package com.orijua.overgearedmod.validation;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -21,6 +23,7 @@ public final class ContentValidator {
             Set<ResourceLocation> existing = switch (reference.kind()) {
                 case SKILL -> content.skills();
                 case CLASS -> content.classes();
+                case QUEST -> content.quests();
             };
             if (!existing.contains(reference.target())) {
                 problems.add(reference.from() + ": " + reference.kind().name().toLowerCase() + " " + reference.target() + " does not exist");
@@ -31,7 +34,25 @@ public final class ContentValidator {
                 problems.add("class " + advanced + ": can't be chosen and no quest grants it, so nobody can get it");
             }
         }
+        for (ResourceLocation quest : content.questRequirements().keySet()) {
+            if (loopsBack(quest, content.questRequirements())) {
+                problems.add("quest " + quest + ": its requires_quest chain loops back to it, so it can never be accepted");
+            }
+        }
         problems.sort(null);
         return problems;
+    }
+
+    /** Follows requires_quest from {@code start}; true if the chain comes back to it. */
+    private static boolean loopsBack(ResourceLocation start, Map<ResourceLocation, ResourceLocation> requirements) {
+        Set<ResourceLocation> seen = new HashSet<>();
+        ResourceLocation current = requirements.get(start);
+        while (current != null && seen.add(current)) {
+            if (current.equals(start)) {
+                return true;
+            }
+            current = requirements.get(current);
+        }
+        return false;
     }
 }
