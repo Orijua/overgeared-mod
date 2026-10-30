@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.client.tab.SatisfyTabs;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.skill.SkillBookItem;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
@@ -28,12 +29,17 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
+
 /**
  * A blacksmith NPC: right-click to trade, sneak + right-click to open the Quests tab.
  * Reuses vanilla's merchant logic (AbstractVillager) and the villager model. It stays where it is
  * placed (no wandering), never despawns and only takes damage from creative players or /kill.
  */
 public class BlacksmithNpc extends AbstractVillager {
+    /** Skill books on sale; the content validator checks these skills exist. */
+    public static final List<ResourceLocation> SOLD_SKILLS = List.of(Overgearedmod.id("rending_slash"), Overgearedmod.id("iron_guard"));
+
     public BlacksmithNpc(EntityType<? extends BlacksmithNpc> type, Level level) {
         super(type, level);
     }
@@ -58,10 +64,10 @@ public class BlacksmithNpc extends AbstractVillager {
         offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 6), new ItemStack(ModItems.ENHANCEMENT_STONE.get()), 16, 0, 0.05f));
         offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 12), new ItemStack(ModItems.RESPEC_SCROLL.get()), 4, 0, 0.05f));
         offers.add(new MerchantOffer(new ItemCost(ModItems.MITHRIL_INGOT.get(), 4), new ItemStack(Items.EMERALD, 3), 16, 0, 0.05f));
-        offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 16),
-                SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), Overgearedmod.id("rending_slash")), 3, 0, 0.05f));
-        offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 16),
-                SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), Overgearedmod.id("iron_guard")), 3, 0, 0.05f));
+        for (ResourceLocation skill : SOLD_SKILLS) {
+            offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 16),
+                    SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), skill), 3, 0, 0.05f));
+        }
     }
 
     @Override
