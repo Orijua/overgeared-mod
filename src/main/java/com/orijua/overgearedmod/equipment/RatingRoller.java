@@ -10,6 +10,8 @@ public final class RatingRoller {
 
     /** Skill points needed to double the odds of each step up in tier. */
     private static final double SKILL_SCALE = 40.0;
+    /** A negative skill (a botched manual forge) can push the odds down, but never below this factor. */
+    private static final double MIN_FACTOR = 0.25;
 
     private RatingRoller() {
     }
@@ -20,7 +22,12 @@ public final class RatingRoller {
      * @param random01      a uniform random number in [0, 1)
      */
     public static ItemRating roll(int dexterity, int smithingLevel, double random01) {
-        return pick(weights(dexterity, smithingLevel), random01);
+        return roll(dexterity, smithingLevel, 0, random01);
+    }
+
+    /** As {@link #roll(int, int, double)}, plus {@code skillBonus} (negative or positive), e.g. from a manual forge. */
+    public static ItemRating roll(int dexterity, int smithingLevel, double skillBonus, double random01) {
+        return pick(weights(dexterity, smithingLevel, skillBonus), random01);
     }
 
     /**
@@ -57,7 +64,12 @@ public final class RatingRoller {
      * Exactly what {@link #roll} uses, so the anvil can show the player their real odds.
      */
     public static double[] odds(int dexterity, int smithingLevel) {
-        double[] weights = weights(dexterity, smithingLevel);
+        return odds(dexterity, smithingLevel, 0);
+    }
+
+    /** As {@link #odds(int, int)}, plus {@code skillBonus}, e.g. to show what a perfect manual forge would give. */
+    public static double[] odds(int dexterity, int smithingLevel, double skillBonus) {
+        double[] weights = weights(dexterity, smithingLevel, skillBonus);
         double total = 0;
         for (double weight : weights) {
             total += weight;
@@ -68,10 +80,14 @@ public final class RatingRoller {
         return weights;
     }
 
-    /** Higher tiers get boosted more: tier i is multiplied by factor^i. */
     static double[] weights(int dexterity, int smithingLevel) {
-        double skill = Math.max(0, dexterity) + 3.0 * Math.max(0, smithingLevel);
-        double factor = 1.0 + skill / SKILL_SCALE;
+        return weights(dexterity, smithingLevel, 0);
+    }
+
+    /** Higher tiers get boosted more: tier i is multiplied by factor^i (a factor below 1 favours low tiers). */
+    static double[] weights(int dexterity, int smithingLevel, double skillBonus) {
+        double skill = Math.max(0, dexterity) + 3.0 * Math.max(0, smithingLevel) + skillBonus;
+        double factor = Math.max(MIN_FACTOR, 1.0 + skill / SKILL_SCALE);
         double[] weights = new double[BASE_WEIGHTS.length];
         for (int i = 0; i < weights.length; i++) {
             weights[i] = BASE_WEIGHTS[i] * Math.pow(factor, i);

@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.skill.SkillService;
+import com.orijua.overgearedmod.smithing.SmithingAnvilMenu;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
@@ -36,6 +37,15 @@ final class ServerPayloadHandler {
     static void chooseClass(ChooseClassPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             ClassService.choose(player, payload.playerClass());
+        }
+    }
+
+    /** Only for the anvil the player has open right now; the menu itself validates the result. */
+    static void manualForge(ManualForgePayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player
+                && player.containerMenu instanceof SmithingAnvilMenu anvil
+                && anvil.containerId == payload.containerId()) {
+            anvil.finishManual(player, payload.precision());
         }
     }
 
