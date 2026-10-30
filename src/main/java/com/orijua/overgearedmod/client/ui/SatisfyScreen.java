@@ -49,7 +49,7 @@ public class SatisfyScreen extends Screen {
             int index = i;
             Button button = Button.builder(tabs.get(i).title(), b -> select(index))
                     .bounds(left + 4 + i * tabWidth, top + 4, tabWidth - 2, 18)
-                    .build();
+                    .build(SatisfyButton::new);
             button.active = i != lastTab;
             addRenderableWidget(button);
         }

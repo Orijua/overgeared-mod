@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.client.tab;
 
+import com.orijua.overgearedmod.client.ui.SatisfyButton;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
@@ -59,7 +60,7 @@ public class ProfileTab extends SatisfyTab {
             Button button = Button.builder(entry.value().name(), b -> PacketDistributor.sendToServer(new ChooseClassPayload(entry.id())))
                     .bounds(left + i * (buttonWidth + 4), top + 14, buttonWidth, 18)
                     .tooltip(Tooltip.create(classTooltip(entry.value())))
-                    .build();
+                    .build(SatisfyButton::new);
             addWidget.accept(button);
         }
     }

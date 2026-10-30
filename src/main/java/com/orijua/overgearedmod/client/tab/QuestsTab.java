@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.client.tab;
 
+import com.orijua.overgearedmod.client.ui.SatisfyButton;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
@@ -71,7 +72,7 @@ public class QuestsTab extends SatisfyTab {
                         b -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), QuestActionPayload.Action.ABANDON)))
                 .bounds(left + width - BUTTON_WIDTH - 18, y, 16, 16)
                 .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_abandon")))
-                .build();
+                .build(SatisfyButton::new);
     }
 
     private Button actionButton(Definitions.Entry<QuestDefinition> entry, int y) {
@@ -96,7 +97,7 @@ public class QuestsTab extends SatisfyTab {
         }
         Button button = Button.builder(label, b -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), action)))
                 .bounds(left + width - BUTTON_WIDTH, y, BUTTON_WIDTH, 16)
-                .build();
+                .build(SatisfyButton::new);
         button.active = enabled;
         return button;
     }

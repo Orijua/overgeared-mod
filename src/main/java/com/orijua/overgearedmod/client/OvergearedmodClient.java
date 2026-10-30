@@ -47,6 +47,7 @@ public class OvergearedmodClient {
         modEventBus.addListener(OvergearedmodClient::onRegisterRenderers);
         NeoForge.EVENT_BUS.addListener(OvergearedmodClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
+        NeoForge.EVENT_BUS.addListener(SatisfyTooltips::onTooltipColor);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientNotifications.QUEUE.clear());
     }
 
