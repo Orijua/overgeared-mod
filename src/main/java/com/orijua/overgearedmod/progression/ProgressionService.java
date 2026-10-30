@@ -7,7 +7,6 @@ import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
-import com.orijua.overgearedmod.title.TitleDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -17,12 +16,11 @@ import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
  * Progression of a player: the only place that writes PlayerStats, and the one place that
- * knows how class and title bonuses combine into the effective stats.
+ * gathers the stat sources (allocated points, class, titles) into the effective stats.
  */
 public final class ProgressionService {
     private ProgressionService() {
@@ -33,9 +31,9 @@ public final class ProgressionService {
         return player.getData(ModAttachments.PLAYER_STATS);
     }
 
-    /** Allocated stats plus class and title bonuses. Use this for every gameplay check; works on both sides. */
+    /** Allocated stats plus every other source in {@link #modifiers}. Use this for every gameplay check; works on both sides. */
     public static PlayerStats effectiveStats(Player player) {
-        return ProgressionRules.withBonuses(get(player), bonuses(player));
+        return ProgressionRules.effective(get(player), modifiers(player));
     }
 
     public static int effectiveSmithingLevel(Player player) {
@@ -47,13 +45,18 @@ public final class ProgressionService {
                 .flatMap(id -> Definitions.get(player.level(), ModDatapackRegistries.PLAYER_CLASS, id));
     }
 
-    private static List<Map<StatType, Integer>> bonuses(Player player) {
-        List<Map<StatType, Integer>> bonuses = new ArrayList<>();
-        playerClass(player).ifPresent(c -> bonuses.add(c.bonusStats()));
+    /**
+     * Every contribution to the base stats, each tagged with where it comes from (the stat tooltip lists them).
+     * A new source (equipment, talents, sets, buffs, guild...) only needs to add its modifiers here.
+     */
+    public static List<StatModifier> modifiers(Player player) {
+        List<StatModifier> modifiers = new ArrayList<>(StatModifier.allocated(get(player)));
+        playerClass(player).ifPresent(c -> modifiers.addAll(StatModifier.fromBonuses(new StatSource(c.name()), c.bonusStats())));
         for (var titleId : player.getData(ModAttachments.PLAYER_IDENTITY).titles()) {
-            Definitions.get(player.level(), ModDatapackRegistries.TITLE, titleId).map(TitleDefinition::bonusStats).ifPresent(bonuses::add);
+            Definitions.get(player.level(), ModDatapackRegistries.TITLE, titleId)
+                    .ifPresent(t -> modifiers.addAll(StatModifier.fromBonuses(new StatSource(t.name()), t.bonusStats())));
         }
-        return bonuses;
+        return modifiers;
     }
 
     public static void set(ServerPlayer player, PlayerStats stats) {

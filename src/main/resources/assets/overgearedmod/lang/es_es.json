@@ -49,6 +49,9 @@
   "stat.overgearedmod.agility.desc": "Por punto: +%s%% de velocidad de movimiento.",
   "stat.overgearedmod.intelligence.desc": "Por punto: +%s de maná máximo y +%s de maná por segundo.",
   "stat.overgearedmod.dexterity.desc": "Por punto: +%s%% de velocidad de ataque. Mejora el rango al forjar y la probabilidad de mejora.",
+  "screen.overgearedmod.stat_sources": "Origen:",
+  "screen.overgearedmod.stat_source": "%s: %s",
+  "screen.overgearedmod.stat_source.allocated": "Asignados",
 
   "screen.overgearedmod.status": "Status Window",
   "tab.overgearedmod.status": "Estado",

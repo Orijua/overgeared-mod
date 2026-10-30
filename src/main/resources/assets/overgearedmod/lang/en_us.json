@@ -49,6 +49,9 @@
   "stat.overgearedmod.agility.desc": "Per point: +%s%% movement speed.",
   "stat.overgearedmod.intelligence.desc": "Per point: +%s max mana and +%s mana per second.",
   "stat.overgearedmod.dexterity.desc": "Per point: +%s%% attack speed. Improves forging ratings and enhancement odds.",
+  "screen.overgearedmod.stat_sources": "Sources:",
+  "screen.overgearedmod.stat_source": "%s: %s",
+  "screen.overgearedmod.stat_source.allocated": "Allocated",
 
   "screen.overgearedmod.status": "Status Window",
   "tab.overgearedmod.status": "Status",

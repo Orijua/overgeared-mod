@@ -8,12 +8,16 @@ import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.progression.StatEffects;
+import com.orijua.overgearedmod.progression.StatModifier;
+import com.orijua.overgearedmod.progression.StatSource;
 import com.orijua.overgearedmod.progression.StatType;
 import com.orijua.overgearedmod.registry.ModAttachments;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
@@ -90,8 +94,35 @@ public class StatusTab extends SatisfyTab {
             }
         }
         if (hovered != null) {
-            graphics.renderTooltip(font(), font().split(describe(hovered), 200), mouseX, mouseY);
+            graphics.renderTooltip(font(), tooltip(hovered), mouseX, mouseY);
         }
+    }
+
+    /** What one point does, then where the current value comes from ("Allocated: 5", "Warrior: +3"...). */
+    private List<FormattedCharSequence> tooltip(StatType stat) {
+        List<FormattedCharSequence> lines = new ArrayList<>(font().split(describe(stat), 200));
+        List<Component> sources = new ArrayList<>();
+        for (StatModifier modifier : ProgressionService.modifiers(player())) {
+            if (modifier.stat() == stat && modifier.value() != 0) {
+                sources.add(Component.translatable("screen.overgearedmod.stat_source", modifier.source().name(), amount(modifier))
+                        .withStyle(ChatFormatting.GRAY));
+            }
+        }
+        if (!sources.isEmpty()) {
+            lines.add(FormattedCharSequence.EMPTY);
+            lines.add(Component.translatable("screen.overgearedmod.stat_sources").getVisualOrderText());
+            sources.forEach(line -> lines.add(line.getVisualOrderText()));
+        }
+        return lines;
+    }
+
+    /** "5" for allocated points, "+3" for a flat bonus, "+10%" for a percentage. */
+    private static String amount(StatModifier modifier) {
+        String sign = modifier.source() == StatSource.ALLOCATED || modifier.value() < 0 ? "" : "+";
+        return switch (modifier.operation()) {
+            case ADD -> sign + number(modifier.value());
+            case MULTIPLY -> sign + number(modifier.value() * 100) + "%";
+        };
     }
 
     /** "Per point: ..." built from the real numbers in StatEffects and Balance, so it never goes stale. */
