@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.client.tab;
 
 import com.orijua.overgearedmod.client.OvergearedmodClient;
+import com.orijua.overgearedmod.client.ui.SatisfyButton;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
@@ -61,7 +62,7 @@ public class SkillsTab extends SatisfyTab {
                 int targetSlot = slot;
                 Button button = Button.builder(OvergearedmodClient.SKILL_KEYS.get(slot).getTranslatedKeyMessage(), b -> toggle(targetSlot, id))
                         .bounds(left + width - (PlayerSkills.SLOT_COUNT - slot) * (SLOT_BUTTON + 2), rowY(rows.size()) - 2, SLOT_BUTTON, SLOT_BUTTON)
-                        .build();
+                        .build(SatisfyButton::new);
                 buttons.add(button);
                 addWidget.accept(button);
             }

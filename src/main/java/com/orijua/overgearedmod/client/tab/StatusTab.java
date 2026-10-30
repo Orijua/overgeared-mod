@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.client.tab;
 
 import com.orijua.overgearedmod.Balance;
+import com.orijua.overgearedmod.client.ui.SatisfyButton;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.AllocateStatPayload;
@@ -51,7 +52,7 @@ public class StatusTab extends SatisfyTab {
                             b -> PacketDistributor.sendToServer(new AllocateStatPayload(stat, pointsPerClick())))
                     .bounds(left + width - 18, top + STATS_TOP + i * STAT_ROW - 4, 16, 16)
                     .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.allocate_hint")))
-                    .build();
+                    .build(SatisfyButton::new);
             plusButtons.add(button);
             addWidget.accept(button);
         }
