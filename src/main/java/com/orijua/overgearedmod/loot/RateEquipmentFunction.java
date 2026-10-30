@@ -35,6 +35,11 @@ public final class RateEquipmentFunction extends LootItemConditionalFunction {
         this.minimum = minimum;
     }
 
+    /** For datagen loot tables: {@code .apply(RateEquipmentFunction.rate(40, ItemRating.EPIC))}. */
+    public static LootItemConditionalFunction.Builder<?> rate(int luck, ItemRating minimum) {
+        return simpleBuilder(conditions -> new RateEquipmentFunction(conditions, luck, minimum));
+    }
+
     @Override
     public LootItemFunctionType<RateEquipmentFunction> getType() {
         return ModLoot.RATE_EQUIPMENT.get();

@@ -66,6 +66,7 @@ public class OvergearedmodClient {
 
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.BLACKSMITH.get(), BlacksmithRenderer::new);
+        event.registerEntityRenderer(ModEntities.BONE_LORD.get(), BoneLordRenderer::new);
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

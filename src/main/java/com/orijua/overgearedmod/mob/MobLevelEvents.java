@@ -8,7 +8,7 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 
-/** Levels every hostile mob when it spawns, based on the nearest player. */
+/** Levels every hostile mob when it spawns, based on the nearest player. Bosses ({@link BossMob}) keep their fixed strength. */
 public final class MobLevelEvents {
     /** How far to look for the player a new mob scales with. */
     private static final double PLAYER_RANGE = 128.0;
@@ -22,7 +22,7 @@ public final class MobLevelEvents {
 
     private static void onMobSpawn(FinalizeSpawnEvent event) {
         Mob mob = event.getEntity();
-        if (!(mob instanceof Enemy) || MobLevelService.get(mob).isLeveled()) {
+        if (!(mob instanceof Enemy) || mob instanceof BossMob || MobLevelService.get(mob).isLeveled()) {
             return;
         }
         Player nearest = event.getLevel().getNearestPlayer(event.getX(), event.getY(), event.getZ(), PLAYER_RANGE, false);
