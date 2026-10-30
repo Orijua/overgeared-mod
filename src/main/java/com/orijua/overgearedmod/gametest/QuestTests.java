@@ -1,14 +1,12 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.QuestService;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -25,13 +23,13 @@ public final class QuestTests {
     public static void onlyKillsAfterAcceptingCount(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         for (int i = 0; i < 3; i++) {
-            GoalTracker.onKill(player, EntityType.ZOMBIE); // before accepting: must not count
+            TestSupport.killZombie(helper, player); // before accepting: must not count
         }
         helper.assertTrue(QuestService.accept(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "quest should be acceptable");
         helper.assertTrue(QuestService.claim(player, ZOMBIE_PLAGUE) == QuestService.Result.NOT_DONE, "no kills since accepting yet");
 
         for (int i = 0; i < 5; i++) {
-            GoalTracker.onKill(player, EntityType.ZOMBIE);
+            TestSupport.killZombie(helper, player);
         }
         helper.assertTrue(QuestService.claim(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "5 kills complete the quest");
         helper.assertTrue(player.getInventory().countItem(Items.BREAD) == 3, "reward bread should be in the inventory");

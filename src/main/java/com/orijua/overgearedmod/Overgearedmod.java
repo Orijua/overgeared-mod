@@ -3,6 +3,7 @@ package com.orijua.overgearedmod;
 import com.mojang.logging.LogUtils;
 import com.orijua.overgearedmod.datagen.ModDataGenerators;
 import com.orijua.overgearedmod.equipment.EquipmentEvents;
+import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.mob.MobLevelEvents;
 import com.orijua.overgearedmod.network.ModNetwork;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
@@ -60,6 +61,8 @@ public class Overgearedmod {
         ProgressionEvents.register(NeoForge.EVENT_BUS);
         SkillEvents.register(NeoForge.EVENT_BUS);
         MobLevelEvents.register(NeoForge.EVENT_BUS);
+        // Our own domain events (event/) have their subscribers on the same game bus.
+        GoalTracker.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }

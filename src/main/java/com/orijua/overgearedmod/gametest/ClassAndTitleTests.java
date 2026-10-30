@@ -2,7 +2,6 @@ package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.goal.PlayerCounters;
 import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
@@ -13,7 +12,6 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -38,7 +36,7 @@ public final class ClassAndTitleTests {
     public static void killsUnlockTitle(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         for (int i = 0; i < 10; i++) {
-            GoalTracker.onKill(player, EntityType.ZOMBIE);
+            TestSupport.killZombie(helper, player);
         }
         helper.assertTrue(player.getData(ModAttachments.PLAYER_IDENTITY).hasTitle(Overgearedmod.id("zombie_hunter")), "10 zombies earn the title");
         helper.assertTrue(ProgressionService.effectiveStats(player).strength() == 1, "zombie_hunter gives +1 STR");
@@ -48,7 +46,7 @@ public final class ClassAndTitleTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void forgingCountsForLowerTiers(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        GoalTracker.onForged(player, ItemRating.EPIC);
+        TestSupport.forge(player, ItemRating.EPIC);
         PlayerCounters counters = player.getData(ModAttachments.PLAYER_COUNTERS);
         helper.assertTrue(counters.get("forge") == 1 && counters.get("forge/rare") == 1 && counters.get("forge/epic") == 1,
                 "an epic forge counts for normal, rare and epic: " + counters);
@@ -73,7 +71,7 @@ public final class ClassAndTitleTests {
 
         ClassService.choose(player, Overgearedmod.id("blacksmith"));
         helper.assertTrue(QuestService.accept(player, legacy) == QuestService.Result.SUCCESS, "a blacksmith can accept it");
-        GoalTracker.onForged(player, ItemRating.UNIQUE);
+        TestSupport.forge(player, ItemRating.UNIQUE);
         helper.assertTrue(QuestService.claim(player, legacy) == QuestService.Result.SUCCESS, "a unique forge completes it");
 
         helper.assertTrue(ClassService.current(player).filter(Overgearedmod.id("legendary_smith_successor")::equals).isPresent(),

@@ -1,15 +1,20 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.mojang.authlib.GameProfile;
+import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.event.ItemForgedEvent;
+import com.orijua.overgearedmod.event.MobKilledEvent;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
 import java.util.UUID;
@@ -32,6 +37,16 @@ final class TestSupport {
         player.moveTo(origin.x, origin.y, origin.z, 0.0f, 0.0f);
         player.setYHeadRot(0.0f);
         return player;
+    }
+
+    /** Posts a zombie kill, as a real kill would after awarding XP (the zombie is never added to the world). */
+    static void killZombie(GameTestHelper helper, ServerPlayer player) {
+        NeoForge.EVENT_BUS.post(new MobKilledEvent(player, EntityType.ZOMBIE.create(helper.getLevel())));
+    }
+
+    /** Posts a forge of the given rating, as taking it out of the smithing anvil would. */
+    static void forge(ServerPlayer player, ItemRating rating) {
+        NeoForge.EVENT_BUS.post(new ItemForgedEvent(player, new ItemStack(Items.IRON_SWORD), rating));
     }
 
     /** Attack damage {@code weapon} gives on top of a plain iron sword. */
