@@ -39,6 +39,12 @@ final class ServerPayloadHandler {
         }
     }
 
+    static void questsSeen(QuestsSeenPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            QuestService.markDiscoveriesSeen(player);
+        }
+    }
+
     static void questAction(QuestActionPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             switch (payload.action()) {

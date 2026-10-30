@@ -66,6 +66,7 @@
   "screen.overgearedmod.quest_claim": "Reclamar",
   "screen.overgearedmod.quest_abandon": "Abandonar misión",
   "screen.overgearedmod.quest_locked": "Bloqueada",
+  "screen.overgearedmod.quest_new": "¡Nueva!",
   "screen.overgearedmod.quest_requires_class": "Requiere la clase: %s",
   "screen.overgearedmod.quest_requires_quest": "Completa antes: %s",
   "screen.overgearedmod.quest_class_reward": "Recompensa de clase: %s",

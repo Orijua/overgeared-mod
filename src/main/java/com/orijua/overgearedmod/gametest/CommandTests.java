@@ -36,6 +36,18 @@ public final class CommandTests {
     }
 
     @GameTest(template = TestSupport.EMPTY)
+    public static void discoveredQuestIsNewUntilTheTabIsOpened(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ResourceLocation call = Overgearedmod.id("call_of_the_night");
+        run(helper, player, "satisfy simulate kill minecraft:skeleton 30");
+        helper.assertTrue(QuestService.get(player).isNew(call), "a fresh discovery is new");
+        QuestService.markDiscoveriesSeen(player); // what opening the Quests tab asks the server to do
+        helper.assertFalse(QuestService.get(player).isNew(call), "seen once the tab was opened");
+        helper.assertTrue(QuestService.get(player).isDiscovered(call), "and still discovered");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
     public static void simulatedForgesCountForTheirTier(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         run(helper, player, "satisfy simulate forge epic 2");
