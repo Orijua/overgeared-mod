@@ -1,3 +1,7 @@
+# Every text file is stored and checked out with LF, whatever core.autocrlf says, so editors and
+# tools writing LF never show phantom "modified" files. Binaries are detected and left alone.
+* text=auto eol=lf
+
 # Scripts and binaries need fixed line endings regardless of core.autocrlf.
 gradlew text eol=lf
 *.bat text eol=crlf
