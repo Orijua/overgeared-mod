@@ -30,7 +30,20 @@ class PlayerQuestsTest {
         PlayerQuests loaded = PlayerQuests.CODEC.parse(JsonOps.INSTANCE,
                 JsonParser.parseString("{\"active\": {\"test:other\": 2}, \"completed\": [\"test:secret\"]}")).getOrThrow();
         assertEquals(List.of(), loaded.discovered());
+        assertEquals(List.of(), loaded.seen());
         assertTrue(loaded.isActive(OTHER) && loaded.isCompleted(SECRET));
+    }
+
+    @Test
+    void discoveriesAreNewUntilSeen() {
+        PlayerQuests quests = PlayerQuests.EMPTY.discover(SECRET);
+        assertTrue(quests.isNew(SECRET) && quests.hasNew());
+        PlayerQuests seen = quests.seeAllDiscovered();
+        assertFalse(seen.isNew(SECRET) || seen.hasNew(), "seen once the tab is opened");
+        assertTrue(seen.isDiscovered(SECRET), "seeing it keeps it discovered");
+        assertSame(seen, seen.seeAllDiscovered(), "nothing new, nothing changes");
+        assertTrue(seen.discover(OTHER).isNew(OTHER), "a later discovery is new again");
+        assertFalse(PlayerQuests.EMPTY.isNew(SECRET), "undiscovered quests are never new");
     }
 
     @Test

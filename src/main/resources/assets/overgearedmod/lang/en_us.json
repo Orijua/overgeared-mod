@@ -66,6 +66,7 @@
   "screen.overgearedmod.quest_claim": "Claim",
   "screen.overgearedmod.quest_abandon": "Abandon quest",
   "screen.overgearedmod.quest_locked": "Locked",
+  "screen.overgearedmod.quest_new": "New!",
   "screen.overgearedmod.quest_requires_class": "Requires class: %s",
   "screen.overgearedmod.quest_requires_quest": "Complete first: %s",
   "screen.overgearedmod.quest_class_reward": "Class reward: %s",

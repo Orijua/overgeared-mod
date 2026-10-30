@@ -21,6 +21,7 @@ public final class ModNetwork {
         registrar.playToServer(AllocateStatPayload.TYPE, AllocateStatPayload.STREAM_CODEC, ServerPayloadHandler::allocateStat);
         registrar.playToServer(ChooseClassPayload.TYPE, ChooseClassPayload.STREAM_CODEC, ServerPayloadHandler::chooseClass);
         registrar.playToServer(QuestActionPayload.TYPE, QuestActionPayload.STREAM_CODEC, ServerPayloadHandler::questAction);
+        registrar.playToServer(QuestsSeenPayload.TYPE, QuestsSeenPayload.STREAM_CODEC, ServerPayloadHandler::questsSeen);
         // The handler only touches ClientNotifications (no client classes), so this is safe on a dedicated server.
         registrar.playToClient(SystemNotificationPayload.TYPE, SystemNotificationPayload.STREAM_CODEC,
                 (payload, context) -> ClientNotifications.QUEUE.push(payload.notification()));

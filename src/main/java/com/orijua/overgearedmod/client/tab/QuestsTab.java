@@ -6,6 +6,7 @@ import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.QuestActionPayload;
+import com.orijua.overgearedmod.network.QuestsSeenPayload;
 import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.PlayerQuests;
@@ -14,6 +15,7 @@ import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -27,7 +29,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /** Every quest with its state: accept it, follow its progress, claim it when done. */
 public class QuestsTab extends SatisfyTab {
@@ -43,15 +47,33 @@ public class QuestsTab extends SatisfyTab {
     private PlayerQuests shownState;
     private final ScrollList scroll = new ScrollList(VISIBLE_ROWS);
     private int questCount;
+    /**
+     * Discoveries that were unseen when this tab was first shown. They keep their "New!" mark while the
+     * window stays open, even though the server already counts them as seen.
+     */
+    private Set<ResourceLocation> newWhenOpened;
 
     public QuestsTab() {
         super(Component.translatable("tab.overgearedmod.quests"));
+    }
+
+    /** "Quests •" while there are discoveries the player hasn't looked at yet. */
+    @Override
+    public Component title() {
+        Component title = super.title();
+        return QuestService.get(player()).hasNew() ? title.copy().append(Component.literal(" •").withStyle(ChatFormatting.GOLD)) : title;
     }
 
     @Override
     protected void addWidgets(Consumer<AbstractWidget> addWidget) {
         rows.clear();
         shownState = QuestService.get(player());
+        if (newWhenOpened == null) {
+            newWhenOpened = shownState.discovered().stream().filter(shownState::isNew).collect(Collectors.toSet());
+            if (!newWhenOpened.isEmpty()) {
+                PacketDistributor.sendToServer(QuestsSeenPayload.INSTANCE);
+            }
+        }
         // Hidden quests stay out of the list (not even locked) until the player discovers them.
         List<Definitions.Entry<QuestDefinition>> quests = Definitions.all(player().level(), ModDatapackRegistries.QUEST).stream()
                 .filter(entry -> entry.value().isVisibleTo(entry.id(), shownState))
@@ -154,6 +176,10 @@ public class QuestsTab extends SatisfyTab {
             QuestDefinition quest = entry.value();
             int y = top + LIST_TOP + i * ROW;
             UiStyle.text(graphics, font(), quest.name(), left, y, UiStyle.TEXT);
+            if (newWhenOpened.contains(entry.id())) {
+                UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.quest_new"),
+                        left + font().width(quest.name()) + 4, y, UiStyle.GOLD);
+            }
 
             Integer baseline = state.active().get(entry.id());
             if (baseline != null) {

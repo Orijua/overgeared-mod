@@ -56,6 +56,15 @@ public final class QuestService {
                 && quest.isUnlockedBy(quests);
     }
 
+    /** The player opened the Quests tab: their discoveries stop being marked "New!". */
+    public static void markDiscoveriesSeen(ServerPlayer player) {
+        PlayerQuests quests = get(player);
+        PlayerQuests seen = quests.seeAllDiscovered();
+        if (seen != quests) {
+            player.setData(ModAttachments.PLAYER_QUESTS, seen);
+        }
+    }
+
     /** Reveals every hidden quest whose secret goal is now met. Called by GoalTracker after any countable event. */
     public static void checkDiscoveries(ServerPlayer player) {
         PlayerQuests quests = get(player);
