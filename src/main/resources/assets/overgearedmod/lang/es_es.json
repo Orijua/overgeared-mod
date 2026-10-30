@@ -166,6 +166,11 @@
   "message.overgearedmod.respec_done": "Puntos devueltos: tienes %s para repartir",
   "message.overgearedmod.respec_nothing": "No tienes puntos asignados que devolver",
   "message.overgearedmod.reset": "Progresión de Satisfy reiniciada",
+  "message.overgearedmod.simulated_kills": "Simuladas %s muertes de %s",
+  "message.overgearedmod.simulated_forges": "Simuladas %s forjas %s",
+  "message.overgearedmod.simulate_not_a_mob": "Esa entidad no es un mob",
+  "message.overgearedmod.simulate_bad_rating": "Rango desconocido: %s",
+  "message.overgearedmod.quests_reset": "Misiones reiniciadas",
   "message.overgearedmod.content_valid": "Contenido correcto: ninguna referencia rota.",
   "message.overgearedmod.content_problems": "%s problema(s) en el contenido:",
 

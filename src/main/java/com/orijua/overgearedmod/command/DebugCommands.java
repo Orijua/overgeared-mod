@@ -1,0 +1,102 @@
+package com.orijua.overgearedmod.command;
+
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.event.ItemForgedEvent;
+import com.orijua.overgearedmod.event.MobKilledEvent;
+import com.orijua.overgearedmod.quest.PlayerQuests;
+import com.orijua.overgearedmod.registry.ModAttachments;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.commands.arguments.ResourceArgument;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+
+import java.util.Arrays;
+
+/**
+ * Test helpers under /satisfy (op only), so titles and quests can be tried without grinding:
+ * <ul>
+ *   <li>{@code /satisfy simulate kill <entity> [amount]}: counts kills as if they happened.</li>
+ *   <li>{@code /satisfy simulate forge <rating> [amount]}: counts forges of that rating.</li>
+ *   <li>{@code /satisfy quest reset}: forgets accepted, completed and discovered quests.</li>
+ * </ul>
+ * Simulations post the same domain events as real play, so every listener (counters, titles,
+ * hidden quests, notifications) reacts the same way. No mob dies and no item is created.
+ */
+public final class DebugCommands {
+    private static final SimpleCommandExceptionType NOT_A_MOB =
+            new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.simulate_not_a_mob"));
+
+    private DebugCommands() {
+    }
+
+    public static void register(IEventBus gameBus) {
+        gameBus.addListener(DebugCommands::onRegisterCommands);
+    }
+
+    private static void onRegisterCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("satisfy")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.literal("simulate")
+                        .then(Commands.literal("kill")
+                                .then(Commands.argument("entity", ResourceArgument.resource(event.getBuildContext(), Registries.ENTITY_TYPE))
+                                        .executes(ctx -> simulateKills(ctx, 1))
+                                        .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
+                                                .executes(ctx -> simulateKills(ctx, IntegerArgumentType.getInteger(ctx, "amount"))))))
+                        .then(Commands.literal("forge")
+                                .then(Commands.argument("rating", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                Arrays.stream(ItemRating.values()).map(ItemRating::getSerializedName), builder))
+                                        .executes(ctx -> simulateForges(ctx, 1))
+                                        .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
+                                                .executes(ctx -> simulateForges(ctx, IntegerArgumentType.getInteger(ctx, "amount")))))))
+                .then(Commands.literal("quest")
+                        .then(Commands.literal("reset")
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    player.setData(ModAttachments.PLAYER_QUESTS, PlayerQuests.EMPTY);
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.quests_reset"), false);
+                                    return 1;
+                                }))));
+    }
+
+    private static int simulateKills(CommandContext<CommandSourceStack> ctx, int amount) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        EntityType<?> type = ResourceArgument.getEntityType(ctx, "entity").value();
+        if (!(type.create(player.serverLevel()) instanceof LivingEntity)) {
+            throw NOT_A_MOB.create();
+        }
+        for (int i = 0; i < amount; i++) {
+            // A fresh, never-spawned entity per kill, as listeners may keep or inspect the victim.
+            NeoForge.EVENT_BUS.post(new MobKilledEvent(player, (LivingEntity) type.create(player.serverLevel())));
+        }
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.simulated_kills", amount, type.getDescription()), false);
+        return amount;
+    }
+
+    private static int simulateForges(CommandContext<CommandSourceStack> ctx, int amount) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        String name = StringArgumentType.getString(ctx, "rating");
+        ItemRating rating = Arrays.stream(ItemRating.values()).filter(r -> r.getSerializedName().equals(name)).findFirst()
+                .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.simulate_bad_rating", name)).create());
+        for (int i = 0; i < amount; i++) {
+            NeoForge.EVENT_BUS.post(new ItemForgedEvent(player, new ItemStack(Items.IRON_SWORD), rating));
+        }
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.simulated_forges", amount, rating.displayName()), false);
+        return amount;
+    }
+}

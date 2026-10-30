@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod;
 
 import com.mojang.logging.LogUtils;
+import com.orijua.overgearedmod.command.DebugCommands;
 import com.orijua.overgearedmod.datagen.ModDataGenerators;
 import com.orijua.overgearedmod.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.goal.GoalTracker;
@@ -72,6 +73,7 @@ public class Overgearedmod {
         GoalTracker.register(NeoForge.EVENT_BUS);
         ContentValidationEvents.register(NeoForge.EVENT_BUS);
         NotificationEvents.register(NeoForge.EVENT_BUS);
+        DebugCommands.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }
