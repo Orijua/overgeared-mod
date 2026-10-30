@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.quest;
 
 import com.orijua.overgearedmod.event.QuestCompletedEvent;
+import com.orijua.overgearedmod.event.QuestDiscoveredEvent;
 import com.orijua.overgearedmod.goal.Goal;
 import com.orijua.overgearedmod.goal.PlayerCounters;
 import com.orijua.overgearedmod.playerclass.ClassService;
@@ -18,6 +19,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public final class QuestService {
@@ -41,15 +44,35 @@ public final class QuestService {
     }
 
     /**
-     * Not already active, not done (unless repeatable), the player has the required class if there is one,
-     * and the previous quest of its chain is completed.
+     * Visible (a hidden quest must be discovered), not already active, not done (unless repeatable),
+     * the player has the required class if there is one, and the previous quest of its chain is completed.
      */
     public static boolean canAccept(Player player, ResourceLocation id, QuestDefinition quest) {
         PlayerQuests quests = get(player);
-        return !quests.isActive(id)
+        return quest.isVisibleTo(id, quests)
+                && !quests.isActive(id)
                 && (quest.repeatable() || !quests.isCompleted(id))
                 && quest.allowsClass(player.getData(ModAttachments.PLAYER_IDENTITY).playerClass())
                 && quest.isUnlockedBy(quests);
+    }
+
+    /** Reveals every hidden quest whose secret goal is now met. Called by GoalTracker after any countable event. */
+    public static void checkDiscoveries(ServerPlayer player) {
+        PlayerQuests quests = get(player);
+        PlayerCounters counters = player.getData(ModAttachments.PLAYER_COUNTERS);
+        PlayerStats stats = ProgressionService.get(player);
+        List<ResourceLocation> found = new ArrayList<>();
+        for (Definitions.Entry<QuestDefinition> entry : Definitions.all(player.level(), ModDatapackRegistries.QUEST)) {
+            Optional<Goal> secret = entry.value().discoverWhen();
+            if (secret.isPresent() && !quests.isDiscovered(entry.id()) && secret.get().progress(counters, stats) >= secret.get().target()) {
+                quests = quests.discover(entry.id());
+                found.add(entry.id());
+            }
+        }
+        if (!found.isEmpty()) {
+            player.setData(ModAttachments.PLAYER_QUESTS, quests);
+            found.forEach(id -> NeoForge.EVENT_BUS.post(new QuestDiscoveredEvent(player, id)));
+        }
     }
 
     public static Result accept(ServerPlayer player, ResourceLocation id) {

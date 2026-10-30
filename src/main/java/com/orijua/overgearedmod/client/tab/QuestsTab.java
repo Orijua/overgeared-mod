@@ -48,7 +48,10 @@ public class QuestsTab extends SatisfyTab {
     protected void addWidgets(Consumer<AbstractWidget> addWidget) {
         rows.clear();
         shownState = QuestService.get(player());
-        List<Definitions.Entry<QuestDefinition>> quests = Definitions.all(player().level(), ModDatapackRegistries.QUEST);
+        // Hidden quests stay out of the list (not even locked) until the player discovers them.
+        List<Definitions.Entry<QuestDefinition>> quests = Definitions.all(player().level(), ModDatapackRegistries.QUEST).stream()
+                .filter(entry -> entry.value().isVisibleTo(entry.id(), shownState))
+                .toList();
         questCount = quests.size();
         scroll.clamp(questCount);
         for (int i = scroll.first(); i < scroll.end(questCount); i++) {

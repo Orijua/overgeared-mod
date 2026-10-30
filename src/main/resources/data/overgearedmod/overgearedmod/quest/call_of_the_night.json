@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "quest.overgearedmod.call_of_the_night" },
+  "description": { "translate": "quest.overgearedmod.call_of_the_night.desc" },
+  "discover_when": { "type": "kill", "entity": "minecraft:skeleton", "count": 30 },
+  "goal": { "type": "kill", "entity": "minecraft:skeleton", "count": 15 },
+  "xp_reward": 300,
+  "class_reward": "overgearedmod:night_hunter"
+}

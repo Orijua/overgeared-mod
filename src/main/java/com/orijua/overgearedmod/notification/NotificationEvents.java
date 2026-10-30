@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.event.ClassChangedEvent;
 import com.orijua.overgearedmod.event.LevelUpEvent;
 import com.orijua.overgearedmod.event.QuestCompletedEvent;
+import com.orijua.overgearedmod.event.QuestDiscoveredEvent;
 import com.orijua.overgearedmod.event.TitleEarnedEvent;
 import com.orijua.overgearedmod.network.SystemNotificationPayload;
 import com.orijua.overgearedmod.notification.SystemNotification.Kind;
@@ -27,6 +28,7 @@ public final class NotificationEvents {
         gameBus.addListener(NotificationEvents::onTitleEarned);
         gameBus.addListener(NotificationEvents::onQuestCompleted);
         gameBus.addListener(NotificationEvents::onClassChanged);
+        gameBus.addListener(NotificationEvents::onQuestDiscovered);
     }
 
     private static void onLevelUp(LevelUpEvent event) {
@@ -49,6 +51,11 @@ public final class NotificationEvents {
     private static void onClassChanged(ClassChangedEvent event) {
         Definitions.get(event.player().level(), ModDatapackRegistries.PLAYER_CLASS, event.playerClass()).ifPresent(playerClass ->
                 send(event.player(), Kind.CLASS, nameAndDescription(playerClass.name(), playerClass.description())));
+    }
+
+    private static void onQuestDiscovered(QuestDiscoveredEvent event) {
+        Definitions.get(event.player().level(), ModDatapackRegistries.QUEST, event.quest()).ifPresent(quest ->
+                send(event.player(), Kind.QUEST_DISCOVERED, nameAndDescription(quest.name(), quest.description())));
     }
 
     private static List<Component> nameAndDescription(Component name, Component description) {

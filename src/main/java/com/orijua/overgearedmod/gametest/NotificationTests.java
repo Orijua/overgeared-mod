@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.event.ClassChangedEvent;
 import com.orijua.overgearedmod.event.QuestCompletedEvent;
+import com.orijua.overgearedmod.event.QuestDiscoveredEvent;
 import com.orijua.overgearedmod.event.SatisfyPlayerEvent;
 import com.orijua.overgearedmod.event.TitleEarnedEvent;
 import com.orijua.overgearedmod.network.SystemNotificationPayload;
@@ -17,6 +18,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -55,6 +57,11 @@ public final class NotificationTests {
             record(event);
         }
 
+        @SubscribeEvent
+        public void onDiscovery(QuestDiscoveredEvent event) {
+            record(event);
+        }
+
         private void record(SatisfyPlayerEvent event) {
             if (event.player() == player) {
                 events.add(event);
@@ -82,6 +89,24 @@ public final class NotificationTests {
                 && t.title().equals(Overgearedmod.id("epic_forger"))), "an epic forge earns epic_forger: " + recorder.events);
         helper.assertTrue(recorder.events.stream().anyMatch(e -> e instanceof QuestCompletedEvent q
                 && q.quest().equals(commission)), "claiming the quest: " + recorder.events);
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void discoveringAHiddenQuestPostsItsEventOnce(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        Recorder recorder = new Recorder(player);
+        NeoForge.EVENT_BUS.register(recorder);
+        try {
+            for (int i = 0; i < 32; i++) {
+                TestSupport.kill(helper, player, EntityType.SKELETON);
+            }
+        } finally {
+            NeoForge.EVENT_BUS.unregister(recorder);
+        }
+        long discoveries = recorder.events.stream().filter(e -> e instanceof QuestDiscoveredEvent d
+                && d.quest().equals(Overgearedmod.id("call_of_the_night"))).count();
+        helper.assertTrue(discoveries == 1, "one discovery at the 30th kill, not one per kill after it: " + discoveries);
         helper.succeed();
     }
 
