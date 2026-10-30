@@ -1,7 +1,8 @@
-// 1.21.1	2026-10-29T23:03:43.8196293	Tags for minecraft:item mod id overgearedmod
+// 1.21.1	2026-10-30T19:10:24.4477716	Tags for minecraft:item mod id overgearedmod
 fb6a49bffa1239acb6eae3cb6e1cde64fe355d91 data/c/tags/item/ingots.json
 6348cb2592b5e338f59aff6a279c174c72dc502a data/c/tags/item/ores.json
 cc585e2d6209f5966528a8544c770d195c6e58d9 data/c/tags/item/raw_materials.json
 f5af0f07f23033b89576eb61dbcca069f764f01e data/minecraft/tags/item/swords.json
 db1e03703684ff6ecc870c39cf9dca92dce328d5 data/overgearedmod/tags/item/armor.json
+1885f2be9255e28c5646d9274b1404e56c9b9b2f data/overgearedmod/tags/item/elite_drops.json
 ddddcd9ef8cd706876a4c5b9fb1bb011516a430c data/overgearedmod/tags/item/weapons.json

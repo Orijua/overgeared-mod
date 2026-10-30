@@ -20,7 +20,22 @@ public final class RatingRoller {
      * @param random01      a uniform random number in [0, 1)
      */
     public static ItemRating roll(int dexterity, int smithingLevel, double random01) {
-        double[] weights = weights(dexterity, smithingLevel);
+        return pick(weights(dexterity, smithingLevel), random01);
+    }
+
+    /**
+     * Rating of an item found as loot: {@code luck} plays the part of the smith's skill (0 = base odds)
+     * and tiers below {@code minimum} can't come out, so a boss can guarantee at least Rare.
+     */
+    public static ItemRating rollLoot(int luck, ItemRating minimum, double random01) {
+        double[] weights = weights(luck, 0);
+        for (int i = 0; i < minimum.ordinal(); i++) {
+            weights[i] = 0;
+        }
+        return pick(weights, random01);
+    }
+
+    private static ItemRating pick(double[] weights, double random01) {
         double total = 0;
         for (double w : weights) {
             total += w;

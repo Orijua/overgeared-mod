@@ -93,6 +93,9 @@ public final class Config {
             .defineInRange("eliteStatBonus", D.eliteStatBonus(), 0.0, 100.0);
     private static final ModConfigSpec.DoubleValue ELITE_XP_MULTIPLIER = BUILDER
             .defineInRange("eliteXpMultiplier", D.eliteXpMultiplier(), 1.0, 100.0);
+    private static final ModConfigSpec.DoubleValue ELITE_EQUIPMENT_CHANCE = BUILDER
+            .comment("Chance for an elite killed by a player to drop a rated (Rare or better) piece from the #overgearedmod:elite_drops tag.")
+            .defineInRange("eliteEquipmentChance", D.eliteEquipmentChance(), 0.0, 1.0);
 
     static {
         BUILDER.pop();
@@ -116,6 +119,6 @@ public final class Config {
                 ENHANCE_BASE_CHANCE.get(), ENHANCE_LOSS_PER_LEVEL.get(), ENHANCE_PER_DEXTERITY.get(), ENHANCE_MIN_CHANCE.get(),
                 DEATH_XP_LOSS.get(),
                 MOB_LEVEL_SPREAD.get(), MOB_HEALTH_PER_LEVEL.get(), MOB_DAMAGE_PER_LEVEL.get(),
-                ELITE_CHANCE.get(), ELITE_STAT_BONUS.get(), ELITE_XP_MULTIPLIER.get());
+                ELITE_CHANCE.get(), ELITE_STAT_BONUS.get(), ELITE_XP_MULTIPLIER.get(), ELITE_EQUIPMENT_CHANCE.get());
     }
 }

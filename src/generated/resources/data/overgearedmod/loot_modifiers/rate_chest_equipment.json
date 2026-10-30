@@ -1,0 +1,5 @@
+{
+  "type": "overgearedmod:rate_equipment",
+  "conditions": [],
+  "table_prefix": "chests/"
+}

@@ -26,6 +26,35 @@ class RatingRollerTest {
         assertTrue(master > novice, "master " + master + " should beat novice " + novice);
     }
 
+    @Test
+    void lootWithoutLuckOrMinimumFollowsTheBaseOdds() {
+        for (int i = 0; i < 1000; i++) {
+            double random01 = (i + 0.5) / 1000;
+            assertEquals(RatingRoller.roll(0, 0, random01), RatingRoller.rollLoot(0, ItemRating.NORMAL, random01));
+        }
+    }
+
+    @Test
+    void lootNeverRollsBelowTheMinimum() {
+        for (int i = 0; i < 1000; i++) {
+            ItemRating rating = RatingRoller.rollLoot(0, ItemRating.RARE, (i + 0.5) / 1000);
+            assertTrue(rating.ordinal() >= ItemRating.RARE.ordinal(), "got " + rating);
+        }
+        assertEquals(ItemRating.RARE, RatingRoller.rollLoot(0, ItemRating.RARE, 0.0), "the lowest roll lands on the minimum");
+    }
+
+    @Test
+    void lootLuckShiftsTheOddsUp() {
+        double plain = 0;
+        double lucky = 0;
+        for (int i = 0; i < 10_000; i++) {
+            double random01 = (i + 0.5) / 10_000;
+            plain += RatingRoller.rollLoot(0, ItemRating.NORMAL, random01).ordinal();
+            lucky += RatingRoller.rollLoot(40, ItemRating.NORMAL, random01).ordinal();
+        }
+        assertTrue(lucky > plain, "luck 40 (" + lucky + ") should beat luck 0 (" + plain + ")");
+    }
+
     private static double averageTier(int dexterity, int smithingLevel) {
         int samples = 10_000;
         double sum = 0;

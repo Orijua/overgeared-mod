@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import com.orijua.overgearedmod.datagen.ModDataGenerators;
 import com.orijua.overgearedmod.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.loot.LootEvents;
 import com.orijua.overgearedmod.mob.MobLevelEvents;
 import com.orijua.overgearedmod.network.ModNetwork;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
@@ -15,6 +16,7 @@ import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.registry.ModEffects;
 import com.orijua.overgearedmod.registry.ModEntities;
 import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.registry.ModLoot;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.registry.ModRecipes;
 import com.orijua.overgearedmod.skill.SkillEvents;
@@ -48,6 +50,8 @@ public class Overgearedmod {
         ModMenus.MENUS.register(modEventBus);
         ModRecipes.RECIPE_TYPES.register(modEventBus);
         ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
+        ModLoot.LOOT_FUNCTIONS.register(modEventBus);
+        ModLoot.LOOT_MODIFIERS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         // Mod bus events (JSON registries, networking, creative tabs, entity attributes, datagen).
@@ -62,6 +66,7 @@ public class Overgearedmod {
         ProgressionEvents.register(NeoForge.EVENT_BUS);
         SkillEvents.register(NeoForge.EVENT_BUS);
         MobLevelEvents.register(NeoForge.EVENT_BUS);
+        LootEvents.register(NeoForge.EVENT_BUS);
         // Our own domain events (event/) have their subscribers on the same game bus.
         GoalTracker.register(NeoForge.EVENT_BUS);
         ContentValidationEvents.register(NeoForge.EVENT_BUS);
