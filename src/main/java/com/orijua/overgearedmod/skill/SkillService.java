@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.skill;
 
 import com.orijua.overgearedmod.equipment.EquipmentEvents;
+import com.orijua.overgearedmod.event.SkillUsedEvent;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
@@ -8,6 +9,7 @@ import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.Optional;
 
@@ -77,6 +79,7 @@ public final class SkillService {
         player.setData(ModAttachments.MANA, mana - skill.manaCost());
         player.setData(ModAttachments.PLAYER_SKILLS, skills.withCooldown(id.get(), now + skill.cooldownTicks()));
         player.displayClientMessage(skill.name(), true);
+        NeoForge.EVENT_BUS.post(new SkillUsedEvent(player, id.get()));
         return Result.SUCCESS;
     }
 

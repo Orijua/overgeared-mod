@@ -2,7 +2,7 @@ package com.orijua.overgearedmod.progression;
 
 import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.equipment.EquipmentBonuses;
-import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.event.LevelUpEvent;
 import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +73,8 @@ public final class ProgressionService {
         if (result.levelsGained() > 0) {
             player.displayClientMessage(Component.translatable("message.overgearedmod.level_up", result.stats().level()), true);
             player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.2f);
-            GoalTracker.onLevelUp(player);
+            int newLevel = result.stats().level();
+            NeoForge.EVENT_BUS.post(new LevelUpEvent(player, newLevel - result.levelsGained(), newLevel));
         }
     }
 

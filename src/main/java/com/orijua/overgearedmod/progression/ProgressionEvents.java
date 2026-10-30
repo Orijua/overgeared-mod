@@ -2,7 +2,7 @@ package com.orijua.overgearedmod.progression;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.orijua.overgearedmod.Balance;
-import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.event.MobKilledEvent;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
@@ -12,6 +12,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -51,7 +52,7 @@ public final class ProgressionEvents {
                 victim.getArmorValue(),
                 victim.getData(ModAttachments.FROM_SPAWNER),
                 victim.getData(ModAttachments.MOB_LEVEL).elite())));
-        GoalTracker.onKill(killer, victim.getType());
+        NeoForge.EVENT_BUS.post(new MobKilledEvent(killer, victim));
     }
 
     /** Runs before the respawn copy, so the reduced stats are what the new player entity inherits. */
