@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "class.overgearedmod.night_hunter" },
+  "description": { "translate": "class.overgearedmod.night_hunter.desc" },
+  "selectable": false,
+  "bonus_stats": { "agility": 6, "strength": 3, "dexterity": 2 },
+  "skills": ["overgearedmod:rending_slash"]
+}

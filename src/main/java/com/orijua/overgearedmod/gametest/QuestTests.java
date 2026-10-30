@@ -2,12 +2,14 @@ package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.QuestService;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -69,6 +71,29 @@ public final class QuestTests {
         TestSupport.forge(player, ItemRating.EPIC);
         helper.assertTrue(QuestService.claim(player, qualityTest) == QuestService.Result.SUCCESS, "two rare-or-better forges complete it");
         helper.assertTrue(QuestService.accept(player, nightWatch) == QuestService.Result.SUCCESS, "night_watch unlocks after quality_test");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void hiddenQuestAppearsAfterItsSecretGoalAndGrantsTheHiddenClass(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ResourceLocation call = Overgearedmod.id("call_of_the_night");
+        helper.assertTrue(QuestService.accept(player, call) == QuestService.Result.NOT_AVAILABLE, "hidden before its secret goal");
+
+        for (int i = 0; i < 29; i++) {
+            TestSupport.kill(helper, player, EntityType.SKELETON);
+        }
+        helper.assertFalse(QuestService.get(player).isDiscovered(call), "29 skeletons are not enough");
+        TestSupport.kill(helper, player, EntityType.SKELETON);
+        helper.assertTrue(QuestService.get(player).isDiscovered(call), "the 30th skeleton reveals it");
+
+        helper.assertTrue(QuestService.accept(player, call) == QuestService.Result.SUCCESS, "discovered quests can be accepted");
+        for (int i = 0; i < 15; i++) {
+            TestSupport.kill(helper, player, EntityType.SKELETON);
+        }
+        helper.assertTrue(QuestService.claim(player, call) == QuestService.Result.SUCCESS, "15 more skeletons complete it");
+        helper.assertTrue(ClassService.current(player).filter(Overgearedmod.id("night_hunter")::equals).isPresent(),
+                "claiming grants the hidden class");
         helper.succeed();
     }
 

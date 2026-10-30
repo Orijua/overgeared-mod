@@ -8,6 +8,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -41,7 +42,12 @@ final class TestSupport {
 
     /** Posts a zombie kill, as a real kill would after awarding XP (the zombie is never added to the world). */
     static void killZombie(GameTestHelper helper, ServerPlayer player) {
-        NeoForge.EVENT_BUS.post(new MobKilledEvent(player, EntityType.ZOMBIE.create(helper.getLevel())));
+        kill(helper, player, EntityType.ZOMBIE);
+    }
+
+    /** Posts a kill of a mob of {@code type}, which is never added to the world. */
+    static void kill(GameTestHelper helper, ServerPlayer player, EntityType<? extends LivingEntity> type) {
+        NeoForge.EVENT_BUS.post(new MobKilledEvent(player, type.create(helper.getLevel())));
     }
 
     /** Posts a forge of the given rating, as taking it out of the smithing anvil would. */

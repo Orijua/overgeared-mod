@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.event.ItemForgedEvent;
 import com.orijua.overgearedmod.event.LevelUpEvent;
 import com.orijua.overgearedmod.event.MobKilledEvent;
+import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.title.TitleService;
 import net.minecraft.server.level.ServerPlayer;
@@ -11,7 +12,7 @@ import net.neoforged.bus.api.IEventBus;
 
 import java.util.Optional;
 
-/** Listens to the domain events of "something countable happened": updates counters, then checks titles. */
+/** Listens to the domain events of "something countable happened": updates counters, then checks titles and hidden quests. */
 public final class GoalTracker {
     private GoalTracker() {
     }
@@ -45,11 +46,17 @@ public final class GoalTracker {
     }
 
     private static void onLevelUp(LevelUpEvent event) {
-        TitleService.checkUnlocks(event.player());
+        checkGoals(event.player());
     }
 
     private static void update(ServerPlayer player, PlayerCounters counters) {
         player.setData(ModAttachments.PLAYER_COUNTERS, counters);
+        checkGoals(player);
+    }
+
+    /** Everything that unlocks on lifetime goals: titles and hidden quests. */
+    private static void checkGoals(ServerPlayer player) {
         TitleService.checkUnlocks(player);
+        QuestService.checkDiscoveries(player);
     }
 }
