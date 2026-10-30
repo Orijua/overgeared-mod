@@ -28,6 +28,7 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.SKILL_BOOK.get(), "writable_book");
 
         withExistingParent(ModItems.BLACKSMITH_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.BONE_LORD_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
     }
 
     private void vanillaTexture(Item item, String vanillaTexture) {
