@@ -30,8 +30,8 @@ public final class UiStyle {
     private static final int CREST_FILL = 0xFFCFE9FF;
     private static final int CREST_OUTLINE = 0xFF4F7CB0;
 
-    private static final int BAR_BORDER = 0xFF1B2A40;
-    private static final int BAR_EMPTY = 0xFF2A3F5E;
+    private static final int BAR_BORDER = 0xC09DC4EA;
+    private static final int BAR_EMPTY = 0xC01B2A40;
 
     public static final int LINE = 12;
 
@@ -119,11 +119,20 @@ public final class UiStyle {
         return (Math.round(base * Math.clamp(alpha, 0, 1)) << 24) | (color & 0xFFFFFF);
     }
 
-    /** A bar with a 1px border, filled left to right. */
+    /** A Satisfy bar: light-blue 1px border, dark translucent track, filled left to right with a lit top edge. */
     public static void bar(GuiGraphics graphics, int x, int y, int width, int height, float fraction, int color) {
         graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, BAR_BORDER);
         graphics.fill(x, y, x + width, y + height, BAR_EMPTY);
-        graphics.fill(x, y, x + Math.round(width * Math.clamp(fraction, 0, 1)), y + height, color);
+        int filled = Math.round(width * Math.clamp(fraction, 0, 1));
+        graphics.fillGradient(x, y, x + filled, y + height, lighter(color), color);
+    }
+
+    /** {@code color} blended a third of the way to white, keeping its alpha. */
+    private static int lighter(int color) {
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        return (color & 0xFF000000) | ((r + (255 - r) / 3) << 16) | ((g + (255 - g) / 3) << 8) | (b + (255 - b) / 3);
     }
 
     public static void text(GuiGraphics graphics, Font font, Component text, int x, int y, int color) {

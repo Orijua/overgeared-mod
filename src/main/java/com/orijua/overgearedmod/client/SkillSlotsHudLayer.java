@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.client;
 
+import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
@@ -20,9 +21,9 @@ import java.util.Optional;
 final class SkillSlotsHudLayer implements LayeredDraw.Layer {
     private static final int SIZE = 20;
     private static final int GAP = 2;
-    private static final int EMPTY = 0x80000000;
-    private static final int FILLED = 0xC0203060;
-    private static final int COOLDOWN = 0xB0000000;
+    /** Empty slots are drawn as a fainter Satisfy frame. */
+    private static final float EMPTY_ALPHA = 0.45f;
+    private static final int COOLDOWN = 0xB0101828;
 
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
@@ -41,13 +42,12 @@ final class SkillSlotsHudLayer implements LayeredDraw.Layer {
             Optional<ResourceLocation> id = skills.slot(slot);
             Optional<SkillDefinition> skill = id.flatMap(s -> Definitions.get(player.level(), ModDatapackRegistries.SKILL, s));
 
-            graphics.fill(left, y, left + SIZE, y + SIZE, skill.isPresent() ? FILLED : EMPTY);
-            graphics.renderOutline(left, y, SIZE, SIZE, 0xFF5A5AA0);
+            UiStyle.frame(graphics, left, y, SIZE, SIZE, skill.isPresent() ? 1.0f : EMPTY_ALPHA);
             skill.ifPresent(def -> {
                 ItemStack icon = def.iconStack();
                 if (icon.isEmpty()) {
                     String name = def.name().getString();
-                    graphics.drawCenteredString(minecraft.font, name.isEmpty() ? "?" : name.substring(0, 1), left + SIZE / 2, y + 6, 0xFFFFFF);
+                    graphics.drawCenteredString(minecraft.font, name.isEmpty() ? "?" : name.substring(0, 1), left + SIZE / 2, y + 6, UiStyle.TEXT);
                 } else {
                     graphics.renderItem(icon, left + 2, y + 2);
                 }
@@ -62,7 +62,7 @@ final class SkillSlotsHudLayer implements LayeredDraw.Layer {
                 }
             });
             Component key = OvergearedmodClient.SKILL_KEYS.get(slot).getTranslatedKeyMessage();
-            graphics.drawString(minecraft.font, key, left + 2, y - 9, 0xA0A0A0);
+            graphics.drawCenteredString(minecraft.font, key, left + SIZE / 2, y - 9, UiStyle.HEADING);
         }
     }
 }
