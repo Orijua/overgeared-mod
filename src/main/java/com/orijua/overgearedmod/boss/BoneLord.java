@@ -40,9 +40,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.event.EventHooks;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * The Bone Lord, the first boss: a big sword-wielding skeleton with a boss bar and two phases.
@@ -64,6 +66,8 @@ public class BoneLord extends AbstractSkeleton implements BossMob {
     private final ServerBossEvent bossEvent = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.NOTCHED_10);
     private boolean phaseTwo;
     private int ticksSinceHurt;
+    /** The skeletons this boss summoned (not saved: after a reload it forgets them, they stay as plain mobs). */
+    private final List<UUID> minions = new ArrayList<>();
 
     public BoneLord(EntityType<? extends BoneLord> type, Level level) {
         super(type, level);
@@ -154,8 +158,22 @@ public class BoneLord extends AbstractSkeleton implements BossMob {
             EventHooks.finalizeMobSpawn(minion, level, level.getCurrentDifficultyAt(BlockPos.containing(minion.position())),
                     MobSpawnType.MOB_SUMMONED, null);
             minion.setTarget(getTarget());
-            level.addFreshEntity(minion);
+            if (level.addFreshEntity(minion)) {
+                minions.add(minion.getUUID());
+            }
         }
+    }
+
+    /** The summoned skeletons still alive and loaded. Server side only. */
+    public List<Skeleton> summonedMinions() {
+        ServerLevel level = (ServerLevel) level();
+        List<Skeleton> alive = new ArrayList<>();
+        for (UUID id : minions) {
+            if (level.getEntity(id) instanceof Skeleton minion && minion.isAlive()) {
+                alive.add(minion);
+            }
+        }
+        return alive;
     }
 
     /** In phase two its hits also make the target bleed. */

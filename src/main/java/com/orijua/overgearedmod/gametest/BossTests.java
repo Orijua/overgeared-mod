@@ -64,13 +64,13 @@ public final class BossTests {
         boss.setHealth(boss.getMaxHealth() / 2 + 1);
         boss.hurt(level.damageSources().generic(), 5.0f);
         helper.assertTrue(boss.isPhaseTwo(), "below half health it enrages");
-        helper.assertTrue(minionsAround(boss) == BoneLord.MINIONS, "summons " + BoneLord.MINIONS + ", found " + minionsAround(boss));
+        helper.assertTrue(boss.summonedMinions().size() == BoneLord.MINIONS, "summons " + BoneLord.MINIONS + ", found " + boss.summonedMinions().size());
 
         boss.invulnerableTime = 0;
         boss.hurt(level.damageSources().generic(), 5.0f);
-        helper.assertTrue(minionsAround(boss) == BoneLord.MINIONS, "only once: still " + BoneLord.MINIONS + ", found " + minionsAround(boss));
+        helper.assertTrue(boss.summonedMinions().size() == BoneLord.MINIONS, "only once: still " + BoneLord.MINIONS + ", found " + boss.summonedMinions().size());
 
-        level.getEntitiesOfClass(Skeleton.class, boss.getBoundingBox().inflate(6)).forEach(Skeleton::discard);
+        boss.summonedMinions().forEach(Skeleton::discard);
         boss.discard();
         helper.succeed();
     }
@@ -88,7 +88,7 @@ public final class BossTests {
         boss.doHurtTarget(enraged);
         helper.assertTrue(enraged.hasEffect(ModEffects.BLEEDING), "phase two hits bleed");
 
-        helper.getLevel().getEntitiesOfClass(Skeleton.class, boss.getBoundingBox().inflate(6)).forEach(Skeleton::discard);
+        boss.summonedMinions().forEach(Skeleton::discard);
         boss.discard();
         helper.succeed();
     }
@@ -116,7 +116,7 @@ public final class BossTests {
         helper.runAtTickTime(BoneLord.OUT_OF_COMBAT_TICKS + 60, () -> {
             helper.assertFalse(boss.isPhaseTwo(), "back to phase one once fully healed");
             helper.assertFalse(boss.hasGlowingTag(), "and no longer glowing");
-            helper.getLevel().getEntitiesOfClass(Skeleton.class, boss.getBoundingBox().inflate(8)).forEach(Skeleton::discard);
+            boss.summonedMinions().forEach(Skeleton::discard);
             boss.discard();
             helper.succeed();
         });
@@ -145,9 +145,5 @@ public final class BossTests {
         }
         boss.discard();
         helper.succeed();
-    }
-
-    private static int minionsAround(BoneLord boss) {
-        return boss.level().getEntitiesOfClass(Skeleton.class, boss.getBoundingBox().inflate(6)).size();
     }
 }
