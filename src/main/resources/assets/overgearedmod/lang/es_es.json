@@ -80,6 +80,7 @@
   "screen.overgearedmod.mana": "Maná %s / %s",
   "screen.overgearedmod.smithing": "Herrería nv. %s",
   "screen.overgearedmod.free_points": "Puntos libres: %s",
+  "screen.overgearedmod.allocate_hint": "Clic: +1 · Shift: +10 · Control: +100",
   "screen.overgearedmod.no_skills": "Aún no conoces ninguna habilidad. Lee un libro de habilidad.",
   "screen.overgearedmod.skills_header": "Habilidades aprendidas",
   "screen.overgearedmod.skill_cost": "%s maná · %ss",

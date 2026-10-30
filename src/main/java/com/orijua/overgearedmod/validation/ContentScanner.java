@@ -29,6 +29,7 @@ public final class ContentScanner {
         Set<ResourceLocation> advancedClasses = new HashSet<>();
         Set<ResourceLocation> rewardedClasses = new HashSet<>();
         Map<ResourceLocation, ResourceLocation> questRequirements = new HashMap<>();
+        Set<ResourceLocation> visibleClassQuests = new HashSet<>();
         List<Reference> references = new ArrayList<>();
 
         for (Map.Entry<ResourceLocation, PlayerClassDefinition> entry : entries(access, ModDatapackRegistries.PLAYER_CLASS)) {
@@ -49,6 +50,9 @@ public final class ContentScanner {
             quest.classReward().ifPresent(id -> {
                 references.add(new Reference(from, Kind.CLASS, id));
                 rewardedClasses.add(id);
+                if (!quest.isHidden()) {
+                    visibleClassQuests.add(entry.getKey());
+                }
             });
             for (ItemStack reward : quest.itemRewards()) {
                 ResourceLocation skill = reward.get(ModDataComponents.SKILL_BOOK);
@@ -60,7 +64,7 @@ public final class ContentScanner {
         BlacksmithNpc.SOLD_SKILLS.forEach(skill -> references.add(new Reference("blacksmith trades", Kind.SKILL, skill)));
 
         return new ContentIndex(ids(access, ModDatapackRegistries.SKILL), ids(access, ModDatapackRegistries.PLAYER_CLASS),
-                ids(access, ModDatapackRegistries.QUEST), advancedClasses, rewardedClasses, questRequirements, references);
+                ids(access, ModDatapackRegistries.QUEST), advancedClasses, rewardedClasses, questRequirements, visibleClassQuests, references);
     }
 
     private static <T> Set<ResourceLocation> ids(RegistryAccess access, ResourceKey<Registry<T>> key) {

@@ -17,6 +17,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -46,8 +48,10 @@ public class StatusTab extends SatisfyTab {
         StatType[] types = StatType.values();
         for (int i = 0; i < types.length; i++) {
             StatType stat = types[i];
-            Button button = Button.builder(Component.literal("+"), b -> PacketDistributor.sendToServer(new AllocateStatPayload(stat)))
+            Button button = Button.builder(Component.literal("+"),
+                            b -> PacketDistributor.sendToServer(new AllocateStatPayload(stat, pointsPerClick())))
                     .bounds(left + width - 18, top + STATS_TOP + i * STAT_ROW - 4, 16, 16)
+                    .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.allocate_hint")))
                     .build(SatisfyButton::new);
             plusButtons.add(button);
             addWidget.accept(button);
@@ -97,6 +101,11 @@ public class StatusTab extends SatisfyTab {
         if (hovered != null) {
             graphics.renderTooltip(font(), tooltip(hovered), mouseX, mouseY);
         }
+    }
+
+    /** Control: 100 points, Shift: 10, plain click: 1. The server spends only what's left. */
+    private static int pointsPerClick() {
+        return Screen.hasControlDown() ? 100 : Screen.hasShiftDown() ? 10 : 1;
     }
 
     /** What one point does, then where the current value comes from ("Allocated: 5", "Warrior: +3"...). */
