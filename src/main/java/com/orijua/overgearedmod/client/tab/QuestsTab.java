@@ -1,17 +1,20 @@
 package com.orijua.overgearedmod.client.tab;
 
 import com.orijua.overgearedmod.client.ui.SatisfyButton;
+import com.orijua.overgearedmod.client.ui.SatisfyConfirmScreen;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
 import com.orijua.overgearedmod.client.ui.ScrollList;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.QuestActionPayload;
 import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
+import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.quest.QuestDefinition;
 import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -95,11 +98,27 @@ public class QuestsTab extends SatisfyTab {
             enabled = available;
             action = QuestActionPayload.Action.ACCEPT;
         }
-        Button button = Button.builder(label, b -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), action)))
+        Button button = Button.builder(label, b -> press(entry, action))
                 .bounds(left + width - BUTTON_WIDTH, y, BUTTON_WIDTH, 16)
                 .build(SatisfyButton::new);
         button.active = enabled;
         return button;
+    }
+
+    /** Claiming a quest that gives a class replaces the current one, so it asks first. */
+    private static void press(Definitions.Entry<QuestDefinition> entry, QuestActionPayload.Action action) {
+        Runnable send = () -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), action));
+        Optional<Component> newClass = entry.value().classReward().flatMap(QuestsTab::className);
+        if (action != QuestActionPayload.Action.CLAIM || newClass.isEmpty()) {
+            send.run();
+            return;
+        }
+        Component message = ProgressionService.playerClass(player()).map(PlayerClassDefinition::name)
+                .map(current -> Component.translatable("screen.overgearedmod.confirm_class_change", current, newClass.get()))
+                .orElseGet(() -> Component.translatable("screen.overgearedmod.confirm_class_first", newClass.get()));
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.setScreen(new SatisfyConfirmScreen(minecraft.screen,
+                Component.translatable("screen.overgearedmod.confirm_class_title"), message, send));
     }
 
     private boolean isDone(Definitions.Entry<QuestDefinition> entry, PlayerQuests state) {
