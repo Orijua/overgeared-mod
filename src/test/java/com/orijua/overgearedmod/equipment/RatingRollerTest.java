@@ -55,6 +55,27 @@ class RatingRollerTest {
         assertTrue(lucky > plain, "luck 40 (" + lucky + ") should beat luck 0 (" + plain + ")");
     }
 
+    @Test
+    void oddsAddUpToOneAndMatchTheRoll() {
+        double[] odds = RatingRoller.odds(20, 3);
+        double sum = 0;
+        for (double odd : odds) {
+            sum += odd;
+        }
+        assertEquals(1.0, sum, 1e-9);
+        // Rolling just below the Normal share still gives Normal; just above, Rare.
+        assertEquals(ItemRating.NORMAL, RatingRoller.roll(20, 3, odds[0] - 1e-6));
+        assertEquals(ItemRating.RARE, RatingRoller.roll(20, 3, odds[0] + 1e-6));
+    }
+
+    @Test
+    void novicesSeeTheBaseOdds() {
+        double[] odds = RatingRoller.odds(0, 0);
+        assertEquals(0.60, odds[ItemRating.NORMAL.ordinal()], 1e-9);
+        assertEquals(0.25, odds[ItemRating.RARE.ordinal()], 1e-9);
+        assertEquals(0.001, odds[ItemRating.MYTH.ordinal()], 1e-9);
+    }
+
     private static double averageTier(int dexterity, int smithingLevel) {
         int samples = 10_000;
         double sum = 0;

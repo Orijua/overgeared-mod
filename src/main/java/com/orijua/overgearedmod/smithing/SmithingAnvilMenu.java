@@ -36,7 +36,7 @@ import java.util.Optional;
  *     rolled on the server only when the result is taken.</li>
  *     <li>Enhancing: equipment (top) + enhancement stone (bottom) → "Enhance" button (+1, may fail).</li>
  * </ul>
- * Slot positions match vanilla's furnace texture, which the screen reuses as a placeholder.
+ * Slot positions follow vanilla's furnace layout; the screen draws its own Satisfy-styled slots around them.
  */
 public class SmithingAnvilMenu extends AbstractContainerMenu {
     public static final int TOP_SLOT = 0;

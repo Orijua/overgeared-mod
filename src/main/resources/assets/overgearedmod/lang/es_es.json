@@ -88,6 +88,9 @@
   "screen.overgearedmod.skills_header": "Habilidades aprendidas",
   "screen.overgearedmod.skill_cost": "%s maná · %ss",
   "screen.overgearedmod.enhance": "Mejorar +%s (%s%%)",
+  "screen.overgearedmod.anvil_odds": "Probabilidad de rango",
+  "screen.overgearedmod.anvil_requirements": "Requisitos del resultado",
+  "screen.overgearedmod.anvil_no_requirements": "Sin requisitos",
 
   "class.overgearedmod.warrior": "Guerrero",
   "class.overgearedmod.warrior.desc": "Combate cuerpo a cuerpo. Empieza con Pagma's Swordsmanship: Link.",

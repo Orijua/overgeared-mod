@@ -52,6 +52,22 @@ public final class RatingRoller {
         return tiers[tiers.length - 1];
     }
 
+    /**
+     * The chance of each rating when forging, in {@link ItemRating} order, as fractions that add up to 1.
+     * Exactly what {@link #roll} uses, so the anvil can show the player their real odds.
+     */
+    public static double[] odds(int dexterity, int smithingLevel) {
+        double[] weights = weights(dexterity, smithingLevel);
+        double total = 0;
+        for (double weight : weights) {
+            total += weight;
+        }
+        for (int i = 0; i < weights.length; i++) {
+            weights[i] /= total;
+        }
+        return weights;
+    }
+
     /** Higher tiers get boosted more: tier i is multiplied by factor^i. */
     static double[] weights(int dexterity, int smithingLevel) {
         double skill = Math.max(0, dexterity) + 3.0 * Math.max(0, smithingLevel);
