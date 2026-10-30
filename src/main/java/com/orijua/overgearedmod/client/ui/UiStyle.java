@@ -26,8 +26,22 @@ public final class UiStyle {
     }
 
     public static void panel(GuiGraphics graphics, int x, int y, int width, int height) {
-        graphics.fill(x, y, x + width, y + height, PANEL);
-        graphics.renderOutline(x, y, width, height, PANEL_BORDER);
+        panel(graphics, x, y, width, height, 1.0f);
+    }
+
+    /** A panel faded to {@code alpha} (0-1), for windows that fade in and out. */
+    public static void panel(GuiGraphics graphics, int x, int y, int width, int height, float alpha) {
+        graphics.fill(x, y, x + width, y + height, withAlpha(PANEL, alpha));
+        graphics.renderOutline(x, y, width, height, withAlpha(PANEL_BORDER, alpha));
+    }
+
+    /**
+     * {@code color} with its alpha scaled by {@code alpha}; RGB colors without alpha count as opaque.
+     * Don't draw text below ~0.05: the font treats an alpha under 4 as fully opaque.
+     */
+    public static int withAlpha(int color, float alpha) {
+        int base = (color >>> 24) == 0 ? 0xFF : color >>> 24;
+        return (Math.round(base * Math.clamp(alpha, 0, 1)) << 24) | (color & 0xFFFFFF);
     }
 
     /** A bar with a 1px border, filled left to right. */

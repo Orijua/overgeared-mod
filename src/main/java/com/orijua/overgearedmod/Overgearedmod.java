@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.loot.LootEvents;
 import com.orijua.overgearedmod.mob.MobLevelEvents;
 import com.orijua.overgearedmod.network.ModNetwork;
+import com.orijua.overgearedmod.notification.NotificationEvents;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModBlocks;
@@ -70,6 +71,7 @@ public class Overgearedmod {
         // Our own domain events (event/) have their subscribers on the same game bus.
         GoalTracker.register(NeoForge.EVENT_BUS);
         ContentValidationEvents.register(NeoForge.EVENT_BUS);
+        NotificationEvents.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }

@@ -129,6 +129,12 @@
   "skill.overgearedmod.rending_slash.desc": "A short slash that makes enemies bleed (Bleeding II). Requires a sword.",
 
   "message.overgearedmod.level_up": "Level %s reached!",
+  "notification.overgearedmod.level_up": "You have leveled up",
+  "notification.overgearedmod.level_up.body": "Level %s",
+  "notification.overgearedmod.level_up.points": "+%s stat points to allocate",
+  "notification.overgearedmod.title": "You have earned a title",
+  "notification.overgearedmod.quest": "Quest completed",
+  "notification.overgearedmod.class": "You have obtained a class",
   "message.overgearedmod.cooldown": "%s: cooldown %ss",
   "message.overgearedmod.no_mana": "%s: not enough mana",
   "message.overgearedmod.wrong_item": "%s: can't be used with what you are holding",
