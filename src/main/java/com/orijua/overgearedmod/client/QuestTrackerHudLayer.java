@@ -14,15 +14,22 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-/** Top-left list of accepted quests with their progress; finished ones turn green. */
+/** Top-left Satisfy panel with the accepted quests and their progress; finished ones turn green. */
 final class QuestTrackerHudLayer implements LayeredDraw.Layer {
     private static final int MAX_SHOWN = 3;
     private static final int X = 4;
     private static final int Y = 4;
+    private static final int PADDING = 5;
     private static final int LINE = 10;
-    private static final int BACKGROUND = 0x60000000;
+    /** Fainter than a screen window, so it doesn't hide the world behind it. */
+    private static final float ALPHA = 0.8f;
+
+    private record Line(Component text, boolean done) {
+    }
 
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
@@ -32,14 +39,9 @@ final class QuestTrackerHudLayer implements LayeredDraw.Layer {
             return;
         }
         PlayerQuests quests = QuestService.get(player);
-        if (quests.active().isEmpty()) {
-            return;
-        }
-
-        int y = Y;
-        int shown = 0;
+        List<Line> lines = new ArrayList<>();
         for (Map.Entry<ResourceLocation, Integer> active : quests.active().entrySet()) {
-            if (shown == MAX_SHOWN) {
+            if (lines.size() == MAX_SHOWN) {
                 break;
             }
             QuestDefinition quest = Definitions.get(player.level(), ModDatapackRegistries.QUEST, active.getKey()).orElse(null);
@@ -48,12 +50,27 @@ final class QuestTrackerHudLayer implements LayeredDraw.Layer {
             }
             int progress = QuestService.progress(player, quest, active.getValue());
             int target = quest.goal().target();
-            Component line = quest.name().copy().append(" " + progress + "/" + target);
-            int width = minecraft.font.width(line);
-            graphics.fill(X - 2, y - 1, X + width + 2, y + LINE - 1, BACKGROUND);
-            graphics.drawString(minecraft.font, line, X, y, progress >= target ? UiStyle.GOOD : UiStyle.TEXT);
+            lines.add(new Line(quest.name().copy().append(" " + progress + "/" + target), progress >= target));
+        }
+        if (lines.isEmpty()) {
+            return;
+        }
+
+        Component heading = Component.translatable("tab.overgearedmod.quests");
+        int width = minecraft.font.width(heading);
+        for (Line line : lines) {
+            width = Math.max(width, minecraft.font.width(line.text()));
+        }
+        width += 2 * PADDING;
+        int height = PADDING + LINE + 3 + lines.size() * LINE + PADDING - 2;
+
+        UiStyle.frame(graphics, X, Y, width, height, ALPHA);
+        int y = Y + PADDING;
+        graphics.drawString(minecraft.font, heading, X + PADDING, y, UiStyle.HEADING);
+        y += LINE + 3;
+        for (Line line : lines) {
+            graphics.drawString(minecraft.font, line.text(), X + PADDING, y, line.done() ? UiStyle.GOOD : UiStyle.TEXT);
             y += LINE;
-            shown++;
         }
     }
 }
