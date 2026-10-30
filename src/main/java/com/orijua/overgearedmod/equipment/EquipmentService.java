@@ -16,6 +16,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,9 +33,25 @@ public final class EquipmentService {
         PlayerStats stats = ProgressionService.effectiveStats(smith);
         RandomSource random = smith.getRandom();
         ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), random.nextDouble());
-        stack.set(ModDataComponents.ITEM_RATING, rating);
+        requirements.ifPresent(r -> stack.set(ModDataComponents.REQUIREMENTS, r));
+        applyRating(smith.level(), stack, rating, random);
+    }
 
-        List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(smith.level(), ModDatapackRegistries.ITEM_OPTION).stream()
+    /**
+     * Gives equipment found as loot (chests, elites, bosses) a rating and options, as if it had been forged.
+     * Leaves anything that isn't equipment, or already has a rating, untouched.
+     */
+    public static void rateLoot(Level level, ItemStack stack, int luck, ItemRating minimum, RandomSource random) {
+        if (!canEnhance(stack) || stack.has(ModDataComponents.ITEM_RATING)) {
+            return;
+        }
+        applyRating(level, stack, RatingRoller.rollLoot(luck, minimum, random.nextDouble()), random);
+    }
+
+    /** Stamps {@code rating}, rolls the options it allows from the item_option pool, and renames the item. */
+    private static void applyRating(Level level, ItemStack stack, ItemRating rating, RandomSource random) {
+        stack.set(ModDataComponents.ITEM_RATING, rating);
+        List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(level, ModDatapackRegistries.ITEM_OPTION).stream()
                 .filter(e -> e.value().canRollOn(stack))
                 .toList();
         List<RolledOption> options = EquipmentRules.pickWeighted(pool, e -> e.value().weight(), EquipmentRules.optionCount(rating), random::nextDouble)
@@ -44,7 +61,6 @@ public final class EquipmentService {
         if (!options.isEmpty()) {
             stack.set(ModDataComponents.ITEM_OPTIONS, options);
         }
-        requirements.ifPresent(r -> stack.set(ModDataComponents.REQUIREMENTS, r));
         refreshName(stack);
     }
 

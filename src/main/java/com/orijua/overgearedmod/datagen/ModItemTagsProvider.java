@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.loot.LootEvents;
 import com.orijua.overgearedmod.registry.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -8,6 +9,7 @@ import net.minecraft.data.tags.ItemTagsProvider;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
@@ -29,6 +31,11 @@ final class ModItemTagsProvider extends ItemTagsProvider {
     protected void addTags(HolderLookup.Provider provider) {
         tag(WEAPONS).addTag(ItemTags.SWORDS).addTag(ItemTags.AXES);
         tag(ARMOR).addTag(ItemTags.HEAD_ARMOR).addTag(ItemTags.CHEST_ARMOR).addTag(ItemTags.LEG_ARMOR).addTag(ItemTags.FOOT_ARMOR);
+
+        // What elites can drop (rated Rare or better): mid-tier gear, never the mod's unique weapons.
+        tag(LootEvents.ELITE_DROPS).add(Items.IRON_SWORD, Items.IRON_AXE,
+                Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS,
+                Items.CHAINMAIL_HELMET, Items.CHAINMAIL_CHESTPLATE, Items.CHAINMAIL_LEGGINGS, Items.CHAINMAIL_BOOTS);
 
         // Being in minecraft:swords also makes them enchantable as swords.
         tag(ItemTags.SWORDS).add(ModItems.JAFFA_SWORD.get(), ModItems.GRID_LEGENDARY_SWORD.get());

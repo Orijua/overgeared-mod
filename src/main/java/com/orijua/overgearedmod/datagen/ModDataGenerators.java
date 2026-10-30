@@ -13,7 +13,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Data generation (`gradlew runData`): writes models, blockstates, loot tables, tags and recipes into
+ * Data generation (`gradlew runData`): writes models, blockstates, loot tables, tags, recipes and global loot modifiers into
  * src/generated/resources. Edit the providers here instead of those JSON files; they are overwritten.
  * Translations, the Satisfy JSON (skills, quests...), worldgen and the damage type stay hand-written in src/main/resources.
  */
@@ -35,5 +35,6 @@ public final class ModDataGenerators {
         ModBlockTagsProvider blockTags = generator.addProvider(event.includeServer(), new ModBlockTagsProvider(output, lookup, files));
         generator.addProvider(event.includeServer(), new ModItemTagsProvider(output, lookup, blockTags.contentsGetter(), files));
         generator.addProvider(event.includeServer(), new ModRecipeProvider(output, lookup));
+        generator.addProvider(event.includeServer(), new ModLootModifierProvider(output, lookup));
     }
 }
