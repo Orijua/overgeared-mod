@@ -88,6 +88,9 @@
   "screen.overgearedmod.skills_header": "Learned skills",
   "screen.overgearedmod.skill_cost": "%s mana · %ss",
   "screen.overgearedmod.enhance": "Enhance +%s (%s%%)",
+  "screen.overgearedmod.anvil_odds": "Rating odds",
+  "screen.overgearedmod.anvil_requirements": "Result requirements",
+  "screen.overgearedmod.anvil_no_requirements": "No requirements",
 
   "class.overgearedmod.warrior": "Warrior",
   "class.overgearedmod.warrior.desc": "Melee fighter. Starts with Pagma's Swordsmanship: Link.",
