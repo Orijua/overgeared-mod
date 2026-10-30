@@ -3,7 +3,6 @@ package com.orijua.overgearedmod.progression;
 import com.orijua.overgearedmod.Balance;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Pure progression formulas (project design, not canon numbers).
@@ -62,13 +61,31 @@ public final class ProgressionRules {
         return new XpResult(stats.withProgress(level, xp, points), gained);
     }
 
-    /** Adds flat stat bonuses (from class, titles...) on top of the allocated stats. */
-    public static PlayerStats withBonuses(PlayerStats stats, List<Map<StatType, Integer>> bonuses) {
-        PlayerStats result = stats;
-        for (Map<StatType, Integer> bonus : bonuses) {
-            for (Map.Entry<StatType, Integer> entry : bonus.entrySet()) {
-                result = result.with(entry.getKey(), result.get(entry.getKey()) + entry.getValue());
+    /** Final value of one stat: every ADD summed, then raised by the sum of every MULTIPLY, rounded down. */
+    public static int total(StatType stat, List<StatModifier> modifiers) {
+        double flat = 0;
+        double percent = 0;
+        for (StatModifier modifier : modifiers) {
+            if (modifier.stat() != stat) {
+                continue;
             }
+            switch (modifier.operation()) {
+                case ADD -> flat += modifier.value();
+                case MULTIPLY -> percent += modifier.value();
+            }
+        }
+        // The epsilon keeps 10 * 1.1 = 11.000000000000002 or 10.999999999999998 from flooring to 10.
+        return (int) Math.floor(flat * (1 + percent) + 1e-9);
+    }
+
+    /**
+     * {@code stats} with each base stat replaced by its {@link #total}. The modifiers must include the
+     * allocated points ({@link StatModifier#allocated}); level, XP and the rest are kept from {@code stats}.
+     */
+    public static PlayerStats effective(PlayerStats stats, List<StatModifier> modifiers) {
+        PlayerStats result = stats;
+        for (StatType stat : StatType.values()) {
+            result = result.with(stat, total(stat, modifiers));
         }
         return result;
     }

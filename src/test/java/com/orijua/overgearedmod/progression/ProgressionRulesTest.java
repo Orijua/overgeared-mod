@@ -1,8 +1,10 @@
 package com.orijua.overgearedmod.progression;
 
 import com.orijua.overgearedmod.Balance;
+import net.minecraft.network.chat.Component;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ProgressionRulesTest {
     private static final Balance B = Balance.DEFAULT;
+    private static final StatSource CLASS = new StatSource(Component.literal("class"));
+    private static final StatSource TITLE = new StatSource(Component.literal("title"));
 
     @Test
     void xpCurveGrowsWithLevel() {
@@ -54,11 +58,45 @@ class ProgressionRulesTest {
     }
 
     @Test
-    void withBonusesAddsOnTopOfAllocatedStats() {
-        PlayerStats stats = PlayerStats.DEFAULT.with(StatType.STRENGTH, 2);
-        PlayerStats total = ProgressionRules.withBonuses(stats, List.of(Map.of(StatType.STRENGTH, 3), Map.of(StatType.DEXTERITY, 1)));
+    void effectiveAddsBonusesOnTopOfAllocatedStats() {
+        PlayerStats stats = PlayerStats.DEFAULT.with(StatType.STRENGTH, 2).withProgress(4, 10, 1);
+        List<StatModifier> modifiers = new ArrayList<>(StatModifier.allocated(stats));
+        modifiers.addAll(StatModifier.fromBonuses(CLASS, Map.of(StatType.STRENGTH, 3)));
+        modifiers.addAll(StatModifier.fromBonuses(TITLE, Map.of(StatType.DEXTERITY, 1)));
+        PlayerStats total = ProgressionRules.effective(stats, modifiers);
         assertEquals(5, total.strength());
         assertEquals(1, total.dexterity());
+        assertEquals(0, total.agility());
+        assertEquals(4, total.level(), "level, XP and points are kept");
+        assertEquals(1, total.freePoints());
+    }
+
+    @Test
+    void percentagesApplyAfterEveryFlatBonus() {
+        List<StatModifier> modifiers = List.of(
+                StatModifier.multiply(TITLE, StatType.STRENGTH, 0.5), // listed first on purpose: order must not matter
+                StatModifier.add(StatSource.ALLOCATED, StatType.STRENGTH, 6),
+                StatModifier.add(CLASS, StatType.STRENGTH, 4));
+        assertEquals(15, ProgressionRules.total(StatType.STRENGTH, modifiers), "(6 + 4) * 1.5");
+    }
+
+    @Test
+    void percentagesAddUpBeforeApplying() {
+        List<StatModifier> modifiers = List.of(
+                StatModifier.add(StatSource.ALLOCATED, StatType.AGILITY, 10),
+                StatModifier.multiply(CLASS, StatType.AGILITY, 0.1),
+                StatModifier.multiply(TITLE, StatType.AGILITY, 0.2));
+        assertEquals(13, ProgressionRules.total(StatType.AGILITY, modifiers), "10 * (1 + 0.1 + 0.2), not 10 * 1.1 * 1.2");
+    }
+
+    @Test
+    void totalRoundsDownAndIgnoresOtherStats() {
+        List<StatModifier> modifiers = List.of(
+                StatModifier.add(StatSource.ALLOCATED, StatType.STAMINA, 7),
+                StatModifier.multiply(CLASS, StatType.STAMINA, 0.1),
+                StatModifier.add(CLASS, StatType.STRENGTH, 50));
+        assertEquals(7, ProgressionRules.total(StatType.STAMINA, modifiers), "7 * 1.1 = 7.7 rounds down");
+        assertEquals(0, ProgressionRules.total(StatType.INTELLIGENCE, List.of()), "no modifiers, no points");
     }
 
     @Test
