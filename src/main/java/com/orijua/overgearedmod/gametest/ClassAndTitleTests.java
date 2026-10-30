@@ -97,6 +97,9 @@ public final class ClassAndTitleTests {
         helper.assertTrue(QuestService.accept(player, legacy) == QuestService.Result.NOT_AVAILABLE, "needs the Blacksmith class first");
 
         ClassService.choose(player, Overgearedmod.id("blacksmith"));
+        helper.assertTrue(QuestService.accept(player, legacy) == QuestService.Result.NOT_AVAILABLE, "class quests are hidden until discovered");
+        TestSupport.forge(player, ItemRating.EPIC);
+        helper.assertTrue(QuestService.get(player).isDiscovered(legacy), "the first Epic forge reveals it");
         helper.assertTrue(QuestService.accept(player, legacy) == QuestService.Result.SUCCESS, "a blacksmith can accept it");
         TestSupport.forge(player, ItemRating.UNIQUE);
         helper.assertTrue(QuestService.claim(player, legacy) == QuestService.Result.SUCCESS, "a unique forge completes it");
@@ -104,7 +107,7 @@ public final class ClassAndTitleTests {
         helper.assertTrue(ClassService.current(player).filter(Overgearedmod.id("legendary_smith_successor")::equals).isPresent(),
                 "claiming grants the advanced class");
         helper.assertTrue(SkillService.get(player).knows(Overgearedmod.id("iron_guard")), "skills learned before are kept");
-        // +8 DEX from the new class (the Blacksmith's +3 is gone) and +2 from the Epic Forger title the unique forge also earned.
+        // +8 DEX from the new class (the Blacksmith's +3 is gone) and +2 from the Epic Forger title the Epic forge earned.
         int dexterity = ProgressionService.effectiveStats(player).dexterity();
         helper.assertTrue(dexterity == 10, "expected 8 (class) + 2 (title) DEX, got " + dexterity);
         helper.succeed();

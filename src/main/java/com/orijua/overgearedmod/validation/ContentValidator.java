@@ -34,6 +34,9 @@ public final class ContentValidator {
                 problems.add("class " + advanced + ": can't be chosen and no quest grants it, so nobody can get it");
             }
         }
+        for (ResourceLocation quest : content.visibleClassQuests()) {
+            problems.add("quest " + quest + ": grants a class but is visible to everyone; give it a discover_when");
+        }
         for (ResourceLocation quest : content.questRequirements().keySet()) {
             if (loopsBack(quest, content.questRequirements())) {
                 problems.add("quest " + quest + ": its requires_quest chain loops back to it, so it can never be accepted");
