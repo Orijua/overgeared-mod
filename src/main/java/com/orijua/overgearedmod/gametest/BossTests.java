@@ -93,6 +93,35 @@ public final class BossTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 320)
+    public static void bossHealsWhenLeftAlone(GameTestHelper helper) {
+        BoneLord boss = spawnBoss(helper);
+        boss.setHealth(100.0f);
+        helper.runAtTickTime(BoneLord.OUT_OF_COMBAT_TICKS - 20, () ->
+                helper.assertTrue(boss.getHealth() == 100.0f, "no healing before the out-of-combat delay, got " + boss.getHealth()));
+        helper.runAtTickTime(BoneLord.OUT_OF_COMBAT_TICKS + 60, () -> {
+            helper.assertTrue(boss.getHealth() > 100.0f, "heals once left alone, got " + boss.getHealth());
+            boss.discard();
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 320)
+    public static void enragedBossCalmsDownOnceFullyHealed(GameTestHelper helper) {
+        BoneLord boss = spawnBoss(helper);
+        boss.setHealth(boss.getMaxHealth() / 2 + 1);
+        boss.hurt(helper.getLevel().damageSources().generic(), 5.0f);
+        helper.assertTrue(boss.isPhaseTwo(), "enraged below half health");
+        boss.setHealth(boss.getMaxHealth() - 1);
+        helper.runAtTickTime(BoneLord.OUT_OF_COMBAT_TICKS + 60, () -> {
+            helper.assertFalse(boss.isPhaseTwo(), "back to phase one once fully healed");
+            helper.assertFalse(boss.hasGlowingTag(), "and no longer glowing");
+            helper.getLevel().getEntitiesOfClass(Skeleton.class, boss.getBoundingBox().inflate(8)).forEach(Skeleton::discard);
+            boss.discard();
+            helper.succeed();
+        });
+    }
+
     @GameTest(template = TestSupport.EMPTY)
     public static void bossAlwaysDropsAnEpicOrBetterPiece(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();

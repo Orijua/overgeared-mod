@@ -40,18 +40,30 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.event.EventHooks;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * The Bone Lord, the first boss: a big sword-wielding skeleton with a boss bar and two phases.
  * Phase 1 is a plain (but tough) melee fight. Below half health it enrages once: faster, glowing,
- * its hits cause Bleeding, and it calls {@link #MINIONS} skeletons. Its loot table guarantees an
- * Epic-or-better piece. Uses the wither skeleton model until it gets its own texture.
+ * its hits cause Bleeding, and it calls {@link #MINIONS} skeletons. Left alone it heals and, once
+ * full, calms back to phase one. Its loot table guarantees an Epic-or-better piece.
+ * Uses the wither skeleton model until it gets its own texture.
  */
 public class BoneLord extends AbstractSkeleton implements BossMob {
     public static final int MINIONS = 2;
+    /** Without taking damage for this long it starts to heal, so hitting, fleeing and coming back doesn't work. */
+    public static final int OUT_OF_COMBAT_TICKS = 200;
+    /** Healed per second out of combat, as a fraction of max health (full in about 50 s). */
+    private static final float REGEN_PER_SECOND = 0.02f;
+    /** Players within this many blocks see the boss bar. */
+    private static final double BAR_RANGE = 32.0;
     private static final ResourceLocation ENRAGED_SPEED = Overgearedmod.id("bone_lord_enraged");
 
     private final ServerBossEvent bossEvent = new ServerBossEvent(getDisplayName(), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.NOTCHED_10);
     private boolean phaseTwo;
+    private int ticksSinceHurt;
 
     public BoneLord(EntityType<? extends BoneLord> type, Level level) {
         super(type, level);
@@ -96,6 +108,9 @@ public class BoneLord extends AbstractSkeleton implements BossMob {
     @Override
     public boolean hurt(DamageSource source, float amount) {
         boolean hurt = super.hurt(source, amount);
+        if (hurt) {
+            ticksSinceHurt = 0;
+        }
         if (hurt && !level().isClientSide && !phaseTwo && isAlive() && getHealth() <= getMaxHealth() / 2) {
             enterPhaseTwo();
         }
@@ -112,6 +127,14 @@ public class BoneLord extends AbstractSkeleton implements BossMob {
             player.displayClientMessage(Component.translatable("message.overgearedmod.bone_lord_enraged", getDisplayName()), true);
         }
         summonMinions((ServerLevel) level());
+    }
+
+    /** Fully healed after the players left: the next fight starts from phase one again. */
+    private void leavePhaseTwo() {
+        phaseTwo = false;
+        getAttribute(Attributes.MOVEMENT_SPEED).removeModifier(ENRAGED_SPEED);
+        setGlowingTag(false);
+        bossEvent.setColor(BossEvent.BossBarColor.WHITE);
     }
 
     private void applyEnragedSpeed() {
@@ -148,13 +171,34 @@ public class BoneLord extends AbstractSkeleton implements BossMob {
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
+        ticksSinceHurt++;
+        if (tickCount % 20 == 0) {
+            regenerateOutOfCombat();
+            updateBarViewers();
+        }
         bossEvent.setProgress(getHealth() / getMaxHealth());
     }
 
-    @Override
-    public void startSeenByPlayer(ServerPlayer player) {
-        super.startSeenByPlayer(player);
-        bossEvent.addPlayer(player);
+    private void regenerateOutOfCombat() {
+        if (ticksSinceHurt < OUT_OF_COMBAT_TICKS || getHealth() >= getMaxHealth()) {
+            return;
+        }
+        heal(getMaxHealth() * REGEN_PER_SECOND);
+        if (phaseTwo && getHealth() >= getMaxHealth()) {
+            leavePhaseTwo();
+        }
+    }
+
+    /** Only players nearby see the bar, not everyone within entity tracking range. */
+    private void updateBarViewers() {
+        Set<ServerPlayer> near = new HashSet<>(((ServerLevel) level()).getPlayers(
+                player -> player.isAlive() && !player.isSpectator() && distanceToSqr(player) <= BAR_RANGE * BAR_RANGE));
+        for (ServerPlayer viewer : List.copyOf(bossEvent.getPlayers())) {
+            if (!near.contains(viewer)) {
+                bossEvent.removePlayer(viewer);
+            }
+        }
+        near.forEach(bossEvent::addPlayer);
     }
 
     @Override
