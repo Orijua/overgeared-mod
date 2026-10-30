@@ -109,10 +109,19 @@ public final class ProgressionRules {
 
     /** Spends one free point on {@code stat}; returns the same instance if there are none. */
     public static PlayerStats allocate(PlayerStats stats, StatType stat) {
-        if (stats.freePoints() <= 0) {
+        return allocate(stats, stat, 1);
+    }
+
+    /**
+     * Spends up to {@code amount} free points on {@code stat} (all that are left if fewer);
+     * returns the same instance if there are none or {@code amount} isn't positive.
+     */
+    public static PlayerStats allocate(PlayerStats stats, StatType stat, int amount) {
+        int spent = Math.min(amount, stats.freePoints());
+        if (spent <= 0) {
             return stats;
         }
-        return stats.with(stat, stats.get(stat) + 1)
-                .withProgress(stats.level(), stats.xp(), stats.freePoints() - 1);
+        return stats.with(stat, stats.get(stat) + spent)
+                .withProgress(stats.level(), stats.xp(), stats.freePoints() - spent);
     }
 }

@@ -48,6 +48,19 @@ class ProgressionRulesTest {
     }
 
     @Test
+    void allocateManySpendsUpToWhatIsLeft() {
+        PlayerStats stats = PlayerStats.DEFAULT.withProgress(30, 0, 25);
+        PlayerStats ten = ProgressionRules.allocate(stats, StatType.STRENGTH, 10);
+        assertEquals(10, ten.strength());
+        assertEquals(15, ten.freePoints());
+        PlayerStats hundred = ProgressionRules.allocate(ten, StatType.STRENGTH, 100);
+        assertEquals(25, hundred.strength(), "only the 15 left are spent");
+        assertEquals(0, hundred.freePoints());
+        assertSame(stats, ProgressionRules.allocate(stats, StatType.STRENGTH, 0), "zero changes nothing");
+        assertSame(stats, ProgressionRules.allocate(stats, StatType.STRENGTH, -5), "a negative amount from a bad client changes nothing");
+    }
+
+    @Test
     void refundAllReturnsAllocatedPoints() {
         PlayerStats stats = PlayerStats.DEFAULT.with(StatType.STRENGTH, 4).with(StatType.DEXTERITY, 3).withProgress(5, 0, 2);
         PlayerStats refunded = ProgressionRules.refundAll(stats);

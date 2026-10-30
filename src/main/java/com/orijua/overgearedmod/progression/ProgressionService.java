@@ -81,9 +81,10 @@ public final class ProgressionService {
         }
     }
 
-    public static void allocatePoint(ServerPlayer player, StatType stat) {
+    /** Spends up to {@code amount} free points; the rule caps it at what's left and ignores bad amounts from the client. */
+    public static void allocatePoints(ServerPlayer player, StatType stat, int amount) {
         PlayerStats before = get(player);
-        PlayerStats after = ProgressionRules.allocate(before, stat);
+        PlayerStats after = ProgressionRules.allocate(before, stat, amount);
         if (after != before) {
             set(player, after);
         }

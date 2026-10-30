@@ -29,7 +29,7 @@ final class ServerPayloadHandler {
 
     static void allocateStat(AllocateStatPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
-            ProgressionService.allocatePoint(player, payload.stat());
+            ProgressionService.allocatePoints(player, payload.stat(), payload.amount());
         }
     }
 
