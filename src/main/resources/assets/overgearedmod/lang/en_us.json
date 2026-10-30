@@ -143,6 +143,8 @@
   "message.overgearedmod.respec_done": "Points refunded: you have %s to spend",
   "message.overgearedmod.respec_nothing": "You have no allocated points to refund",
   "message.overgearedmod.reset": "Satisfy progression reset",
+  "message.overgearedmod.content_valid": "Content OK: no broken references.",
+  "message.overgearedmod.content_problems": "%s problem(s) in the content:",
 
   "key.categories.overgearedmod": "Overgeared",
   "key.overgearedmod.status": "Open Status Window",

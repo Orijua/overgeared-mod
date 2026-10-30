@@ -143,6 +143,8 @@
   "message.overgearedmod.respec_done": "Puntos devueltos: tienes %s para repartir",
   "message.overgearedmod.respec_nothing": "No tienes puntos asignados que devolver",
   "message.overgearedmod.reset": "Progresión de Satisfy reiniciada",
+  "message.overgearedmod.content_valid": "Contenido correcto: ninguna referencia rota.",
+  "message.overgearedmod.content_problems": "%s problema(s) en el contenido:",
 
   "key.categories.overgearedmod": "Overgeared",
   "key.overgearedmod.status": "Abrir Status Window",
