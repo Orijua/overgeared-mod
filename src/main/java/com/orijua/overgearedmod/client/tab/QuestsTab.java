@@ -83,9 +83,10 @@ public class QuestsTab extends SatisfyTab {
             action = QuestActionPayload.Action.CLAIM;
         } else {
             boolean available = QuestService.canAccept(player(), entry.id(), entry.value());
-            boolean classLocked = !entry.value().allowsClass(player().getData(ModAttachments.PLAYER_IDENTITY).playerClass());
+            boolean locked = !entry.value().allowsClass(player().getData(ModAttachments.PLAYER_IDENTITY).playerClass())
+                    || !entry.value().isUnlockedBy(state);
             label = available ? Component.translatable("screen.overgearedmod.quest_accept")
-                    : classLocked ? Component.translatable("screen.overgearedmod.quest_locked")
+                    : locked ? Component.translatable("screen.overgearedmod.quest_locked")
                     : Component.literal("✔");
             enabled = available;
             action = QuestActionPayload.Action.ACCEPT;
@@ -150,6 +151,8 @@ public class QuestsTab extends SatisfyTab {
         lines.add(Component.translatable("screen.overgearedmod.quest_reward", quest.xpReward(), quest.itemRewards().size()).getVisualOrderText());
         quest.requiredClass().flatMap(QuestsTab::className).ifPresent(name ->
                 lines.add(Component.translatable("screen.overgearedmod.quest_requires_class", name).getVisualOrderText()));
+        quest.requiresQuest().flatMap(QuestsTab::questName).ifPresent(name ->
+                lines.add(Component.translatable("screen.overgearedmod.quest_requires_quest", name).getVisualOrderText()));
         quest.classReward().flatMap(QuestsTab::className).ifPresent(name ->
                 lines.add(Component.translatable("screen.overgearedmod.quest_class_reward", name).getVisualOrderText()));
         return lines;
@@ -157,5 +160,9 @@ public class QuestsTab extends SatisfyTab {
 
     private static Optional<Component> className(ResourceLocation classId) {
         return Definitions.get(player().level(), ModDatapackRegistries.PLAYER_CLASS, classId).map(PlayerClassDefinition::name);
+    }
+
+    private static Optional<Component> questName(ResourceLocation questId) {
+        return Definitions.get(player().level(), ModDatapackRegistries.QUEST, questId).map(QuestDefinition::name);
     }
 }

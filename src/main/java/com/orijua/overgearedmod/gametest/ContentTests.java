@@ -36,6 +36,8 @@ public final class ContentTests {
         helper.assertTrue(content.references().stream().anyMatch(r -> r.from().startsWith("quest ")
                 && r.kind() == ContentIndex.Kind.SKILL), "quest skill-book rewards");
         helper.assertTrue(content.references().stream().anyMatch(r -> r.from().equals("blacksmith trades")), "blacksmith books");
+        helper.assertTrue(Overgearedmod.id("quality_test").equals(content.questRequirements().get(Overgearedmod.id("night_watch"))),
+                "quest chains (requires_quest)");
         helper.succeed();
     }
 }

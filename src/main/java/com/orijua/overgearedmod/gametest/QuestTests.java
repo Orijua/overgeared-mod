@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.QuestService;
 import net.minecraft.gametest.framework.GameTest;
@@ -46,6 +47,28 @@ public final class QuestTests {
         ProgressionService.awardXp(player, 500); // level goal: absolute, not counted from acceptance
         helper.assertTrue(QuestService.claim(player, path) == QuestService.Result.SUCCESS, "reaching level 3 completes it");
         helper.assertTrue(QuestService.accept(player, path) == QuestService.Result.NOT_AVAILABLE, "non-repeatable quest stays done");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void chainedQuestUnlocksWhenThePreviousIsCompleted(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ResourceLocation commission = Overgearedmod.id("first_commission");
+        ResourceLocation qualityTest = Overgearedmod.id("quality_test");
+        ResourceLocation nightWatch = Overgearedmod.id("night_watch");
+        helper.assertTrue(QuestService.accept(player, qualityTest) == QuestService.Result.NOT_AVAILABLE, "locked until first_commission is done");
+
+        QuestService.accept(player, commission);
+        TestSupport.forge(player, ItemRating.NORMAL);
+        helper.assertTrue(QuestService.accept(player, qualityTest) == QuestService.Result.NOT_AVAILABLE, "active is not enough: it must be claimed");
+        QuestService.claim(player, commission);
+        helper.assertTrue(QuestService.accept(player, qualityTest) == QuestService.Result.SUCCESS, "unlocked once first_commission is claimed");
+        helper.assertTrue(QuestService.accept(player, nightWatch) == QuestService.Result.NOT_AVAILABLE, "the next link stays locked");
+
+        TestSupport.forge(player, ItemRating.RARE);
+        TestSupport.forge(player, ItemRating.EPIC);
+        helper.assertTrue(QuestService.claim(player, qualityTest) == QuestService.Result.SUCCESS, "two rare-or-better forges complete it");
+        helper.assertTrue(QuestService.accept(player, nightWatch) == QuestService.Result.SUCCESS, "night_watch unlocks after quality_test");
         helper.succeed();
     }
 
