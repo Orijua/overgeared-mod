@@ -1,0 +1,6 @@
+# Scripts and binaries need fixed line endings regardless of core.autocrlf.
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.png binary
+*.nbt binary
