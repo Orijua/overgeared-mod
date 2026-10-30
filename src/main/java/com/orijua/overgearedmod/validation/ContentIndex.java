@@ -13,6 +13,8 @@ import java.util.Set;
  * @param advancedClasses   classes with {@code "selectable": false}: only a quest's {@code class_reward} can grant them
  * @param rewardedClasses   every class some quest grants with {@code class_reward}
  * @param questRequirements quest → the quest its {@code requires_quest} points to, to find chains that loop
+ * @param visibleClassQuests quests with a {@code class_reward} but no {@code discover_when}: in Satisfy every
+ *                           class quest is found by the player, never listed for everyone
  */
 public record ContentIndex(
         Set<ResourceLocation> skills,
@@ -21,6 +23,7 @@ public record ContentIndex(
         Set<ResourceLocation> advancedClasses,
         Set<ResourceLocation> rewardedClasses,
         Map<ResourceLocation, ResourceLocation> questRequirements,
+        Set<ResourceLocation> visibleClassQuests,
         List<Reference> references) {
 
     public enum Kind {

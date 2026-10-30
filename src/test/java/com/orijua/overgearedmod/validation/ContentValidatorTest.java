@@ -22,7 +22,7 @@ class ContentValidatorTest {
     @Test
     void consistentContentHasNoProblems() {
         ContentIndex content = new ContentIndex(Set.of(SLASH), Set.of(WARRIOR, HERO), Set.of(TRIAL, HUNT), Set.of(HERO), Set.of(HERO),
-                Map.of(HUNT, TRIAL), List.of(
+                Map.of(HUNT, TRIAL), Set.of(), List.of(
                 new Reference("class test:warrior", Kind.SKILL, SLASH),
                 new Reference("quest test:trial", Kind.CLASS, WARRIOR),
                 new Reference("quest test:trial", Kind.CLASS, HERO),
@@ -50,8 +50,15 @@ class ContentValidatorTest {
 
     @Test
     void reportsAnAdvancedClassNoQuestGrants() {
-        ContentIndex content = new ContentIndex(Set.of(), Set.of(WARRIOR, HERO), Set.of(), Set.of(HERO), Set.of(), Map.of(), List.of());
+        ContentIndex content = new ContentIndex(Set.of(), Set.of(WARRIOR, HERO), Set.of(), Set.of(HERO), Set.of(), Map.of(), Set.of(), List.of());
         assertEquals(List.of("class test:hero: can't be chosen and no quest grants it, so nobody can get it"),
+                ContentValidator.validate(content));
+    }
+
+    @Test
+    void reportsAClassQuestVisibleToEveryone() {
+        ContentIndex content = new ContentIndex(Set.of(), Set.of(HERO), Set.of(TRIAL), Set.of(), Set.of(HERO), Map.of(), Set.of(TRIAL), List.of());
+        assertEquals(List.of("quest test:trial: grants a class but is visible to everyone; give it a discover_when"),
                 ContentValidator.validate(content));
     }
 
@@ -61,7 +68,7 @@ class ContentValidatorTest {
         ResourceLocation extra = id("extra");
         Map<ResourceLocation, ResourceLocation> requirements = Map.of(TRIAL, FINALE, FINALE, HUNT, HUNT, TRIAL, extra, TRIAL);
         ContentIndex content = new ContentIndex(Set.of(), Set.of(), Set.of(TRIAL, HUNT, FINALE, extra), Set.of(), Set.of(),
-                requirements, List.of());
+                requirements, Set.of(), List.of());
         assertEquals(List.of(
                 "quest test:finale: its requires_quest chain loops back to it, so it can never be accepted",
                 "quest test:hunt: its requires_quest chain loops back to it, so it can never be accepted",
@@ -81,7 +88,7 @@ class ContentValidatorTest {
 
     /** Content with warrior and the trial quest but no skills, plus the given references. */
     private static ContentIndex references(Reference... references) {
-        return new ContentIndex(Set.of(), Set.of(WARRIOR), Set.of(TRIAL), Set.of(), Set.of(), Map.of(), List.of(references));
+        return new ContentIndex(Set.of(), Set.of(WARRIOR), Set.of(TRIAL), Set.of(), Set.of(), Map.of(), Set.of(), List.of(references));
     }
 
     private static ResourceLocation id(String path) {
