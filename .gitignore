@@ -20,11 +20,8 @@ hs_err_pid*
 # Common working directory
 run
 
-# Personal notes and research (kept local, not published)
-docs/*
-# ...except the template guide, which documents the mod itself
-!docs/Plantilla_Satisfy.md
-!docs/Roadmap.md
+# Documentation (guide, roadmap, notes): kept local, never published
+docs/
 
 # Local Claude Code instructions (point at the personal docs above)
 CLAUDE.MD
