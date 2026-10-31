@@ -29,7 +29,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 public final class QuestService {
-    public enum Result { SUCCESS, UNKNOWN_QUEST, NOT_AVAILABLE, NOT_ACTIVE, NOT_DONE, TALK_TO_GIVER, NOTHING_TO_DELIVER }
+    public enum Result { SUCCESS, UNKNOWN_QUEST, NOT_AVAILABLE, NOT_ACTIVE, NOT_DONE, TALK_TO_GIVER, NOTHING_TO_DELIVER, TRACKING_FULL }
 
     /** How close (in blocks) the player must stand to an NPC to deal with its quests. */
     public static final double GIVER_REACH = 8.0;
@@ -173,6 +173,21 @@ public final class QuestService {
         player.setData(ModAttachments.PLAYER_QUESTS, quests.abandon(id));
         Definitions.get(player.level(), ModDatapackRegistries.QUEST, id).ifPresent(quest ->
                 player.displayClientMessage(Component.translatable("message.overgearedmod.quest_abandoned", quest.name()), true));
+        return Result.SUCCESS;
+    }
+
+    /** Follows an accepted quest on the HUD panel, or stops following it; at most {@link PlayerQuests#MAX_TRACKED}. */
+    public static Result toggleTracked(ServerPlayer player, ResourceLocation id) {
+        PlayerQuests quests = get(player);
+        if (!quests.isActive(id)) {
+            return Result.NOT_ACTIVE;
+        }
+        PlayerQuests toggled = quests.toggleTracked(id);
+        if (toggled == quests) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.quest_tracking_full", PlayerQuests.MAX_TRACKED), true);
+            return Result.TRACKING_FULL;
+        }
+        player.setData(ModAttachments.PLAYER_QUESTS, toggled);
         return Result.SUCCESS;
     }
 

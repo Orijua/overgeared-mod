@@ -16,11 +16,9 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-/** Top-left Satisfy panel with the accepted quests and their progress; finished ones turn green. */
+/** Top-left Satisfy panel with the quests the player follows (Quests tab) and their progress; finished ones turn green. */
 final class QuestTrackerHudLayer implements LayeredDraw.Layer {
-    private static final int MAX_SHOWN = 3;
     private static final int X = 4;
     private static final int Y = 4;
     private static final int PADDING = 5;
@@ -40,15 +38,13 @@ final class QuestTrackerHudLayer implements LayeredDraw.Layer {
         }
         PlayerQuests quests = QuestService.get(player);
         List<Line> lines = new ArrayList<>();
-        for (Map.Entry<ResourceLocation, Integer> active : quests.active().entrySet()) {
-            if (lines.size() == MAX_SHOWN) {
-                break;
-            }
-            QuestDefinition quest = Definitions.get(player.level(), ModDatapackRegistries.QUEST, active.getKey()).orElse(null);
-            if (quest == null) {
+        for (ResourceLocation id : quests.tracked()) {
+            Integer stored = quests.active().get(id);
+            QuestDefinition quest = Definitions.get(player.level(), ModDatapackRegistries.QUEST, id).orElse(null);
+            if (stored == null || quest == null) {
                 continue;
             }
-            int progress = QuestService.progress(player, quest, active.getValue());
+            int progress = QuestService.progress(player, quest, stored);
             int target = quest.goal().target();
             lines.add(new Line(quest.name().copy().append(" " + progress + "/" + target), progress >= target));
         }

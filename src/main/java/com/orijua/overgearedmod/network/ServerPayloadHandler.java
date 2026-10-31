@@ -74,6 +74,7 @@ final class ServerPayloadHandler {
                 case ACCEPT -> QuestService.accept(player, payload.quest());
                 case CLAIM -> QuestService.claim(player, payload.quest());
                 case ABANDON -> QuestService.abandon(player, payload.quest());
+                case TRACK -> QuestService.toggleTracked(player, payload.quest());
             }
         }
     }

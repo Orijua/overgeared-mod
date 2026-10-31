@@ -6,7 +6,9 @@ import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.npc.VillageChiefNpc;
 import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.quest.QuestService;
+import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -130,6 +132,36 @@ public final class QuestTests {
         helper.assertTrue(QuestService.abandon(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "active quest can be abandoned anywhere");
         helper.assertFalse(QuestService.get(player).isActive(ZOMBIE_PLAGUE), "abandoned quest is no longer active");
         helper.assertTrue(QuestService.accept(player, ZOMBIE_PLAGUE, chief) == QuestService.Result.SUCCESS, "and can be accepted again");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void followedQuestsOnTheHud(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        VillageChiefNpc chief = TestSupport.chief(helper);
+        helper.assertTrue(QuestService.toggleTracked(player, ZOMBIE_PLAGUE) == QuestService.Result.NOT_ACTIVE,
+                "only accepted quests can be followed");
+        QuestService.accept(player, ZOMBIE_PLAGUE, chief);
+        helper.assertTrue(QuestService.get(player).isTracked(ZOMBIE_PLAGUE), "an accepted quest is followed at once");
+        helper.assertTrue(QuestService.toggleTracked(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "unfollow");
+        helper.assertFalse(QuestService.get(player).isTracked(ZOMBIE_PLAGUE), "no longer on the HUD");
+
+        // Three other quests fill the HUD, so the plague can't be followed again until one is dropped.
+        TestSupport.completed(player, "smith_jaffa_sword");
+        QuestService.accept(player, Overgearedmod.id("path_of_the_adventurer"), chief);
+        QuestService.accept(player, Overgearedmod.id("first_commission"), TestSupport.smith(helper));
+        player.setData(ModAttachments.PLAYER_QUESTS, QuestService.get(player).accept(Overgearedmod.id("night_watch"), 0));
+        helper.assertTrue(QuestService.toggleTracked(player, ZOMBIE_PLAGUE) == QuestService.Result.TRACKING_FULL, "the HUD is full");
+        QuestService.abandon(player, Overgearedmod.id("night_watch"));
+        helper.assertTrue(QuestService.toggleTracked(player, ZOMBIE_PLAGUE) == QuestService.Result.SUCCESS, "room again");
+
+        for (int i = 0; i < 5; i++) {
+            TestSupport.killZombie(helper, player);
+        }
+        QuestService.claim(player, ZOMBIE_PLAGUE, chief);
+        PlayerQuests quests = QuestService.get(player);
+        helper.assertFalse(quests.isTracked(ZOMBIE_PLAGUE), "a claimed quest leaves the HUD");
+        helper.assertTrue(quests.timesCompleted(ZOMBIE_PLAGUE) == 1, "and its completion is counted");
         helper.succeed();
     }
 }
