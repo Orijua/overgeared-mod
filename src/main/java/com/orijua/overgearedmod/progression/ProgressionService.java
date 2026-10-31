@@ -1,17 +1,21 @@
 package com.orijua.overgearedmod.progression;
 
 import com.orijua.overgearedmod.Balance;
+import com.orijua.overgearedmod.equipment.EquipRequirements;
 import com.orijua.overgearedmod.equipment.EquipmentBonuses;
+import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.event.LevelUpEvent;
 import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
@@ -56,6 +60,27 @@ public final class ProgressionService {
             Definitions.get(player.level(), ModDatapackRegistries.TITLE, titleId)
                     .ifPresent(t -> modifiers.addAll(StatModifier.fromBonuses(new StatSource(t.name()), t.bonusStats())));
         }
+        modifiers.addAll(equipmentModifiers(player, ProgressionRules.effective(get(player), modifiers)));
+        return modifiers;
+    }
+
+    /**
+     * Stat options (e.g. Fracaso's agility) of the equipment the player wears. Requirements are checked against
+     * {@code withoutEquipment}, so an item can't meet its own requirements with the stats it gives.
+     */
+    private static List<StatModifier> equipmentModifiers(Player player, PlayerStats withoutEquipment) {
+        List<StatModifier> modifiers = new ArrayList<>();
+        for (ItemStack stack : EquipmentBonuses.wornEquipment(player)) {
+            EquipRequirements requirements = stack.get(ModDataComponents.REQUIREMENTS);
+            if (requirements != null && !requirements.metBy(withoutEquipment)) {
+                continue;
+            }
+            StatSource source = new StatSource(stack.getHoverName());
+            for (RolledOption rolled : stack.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
+                Definitions.get(player.level(), ModDatapackRegistries.ITEM_OPTION, rolled.option())
+                        .ifPresent(def -> def.effect().statModifiers(source, rolled.value(), modifiers::add));
+            }
+        }
         return modifiers;
     }
 
@@ -65,7 +90,7 @@ public final class ProgressionService {
     }
 
     /** Re-applies attribute modifiers; call after anything that changes effective stats (requirements may change too). */
-    public static void refreshEffects(ServerPlayer player) {
+    public static void refreshEffects(Player player) {
         StatEffects.apply(player, effectiveStats(player));
         EquipmentBonuses.apply(player);
     }

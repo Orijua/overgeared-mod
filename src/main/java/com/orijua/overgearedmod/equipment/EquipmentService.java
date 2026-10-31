@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.equipment;
 
 import com.orijua.overgearedmod.Balance;
+import com.orijua.overgearedmod.equipment.option.FixedOption;
 import com.orijua.overgearedmod.equipment.option.ItemOptionDefinition;
 import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.progression.PlayerStats;
@@ -8,6 +9,7 @@ import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.smithing.ForgingExtras;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -39,10 +41,26 @@ public final class EquipmentService {
      */
     public static void stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements,
                                    double skillBonus, double extraOptionChance) {
+        stampForged(smith, stack, requirements, ForgingExtras.NONE, skillBonus, extraOptionChance);
+    }
+
+    /**
+     * As above, for a recipe with {@link ForgingExtras}: the rating stays within its range and, when it has
+     * fixed options, the item gets exactly those (the ones its rating reaches) instead of random ones.
+     */
+    public static void stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements,
+                                   ForgingExtras extras, double skillBonus, double extraOptionChance) {
         PlayerStats stats = ProgressionService.effectiveStats(smith);
         RandomSource random = smith.getRandom();
-        ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), skillBonus, random.nextDouble());
+        ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), skillBonus,
+                extras.minRating(), extras.maxRating(), random.nextDouble());
         requirements.ifPresent(r -> stack.set(ModDataComponents.REQUIREMENTS, r));
+        if (!extras.fixedOptions().isEmpty()) {
+            stack.set(ModDataComponents.ITEM_RATING, rating);
+            stack.set(ModDataComponents.ITEM_OPTIONS, FixedOption.forRating(extras.fixedOptions(), rating));
+            refreshName(stack);
+            return;
+        }
         int extraOptions = random.nextDouble() < extraOptionChance ? 1 : 0;
         applyRating(smith.level(), stack, rating, extraOptions, random);
     }
@@ -65,7 +83,7 @@ public final class EquipmentService {
     private static void applyRating(Level level, ItemStack stack, ItemRating rating, int extraOptions, RandomSource random) {
         stack.set(ModDataComponents.ITEM_RATING, rating);
         List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(level, ModDatapackRegistries.ITEM_OPTION).stream()
-                .filter(e -> e.value().canRollOn(stack))
+                .filter(e -> e.value().weight() > 0 && e.value().canRollOn(stack))
                 .toList();
         int count = EquipmentRules.optionCount(rating) + extraOptions;
         List<RolledOption> options = EquipmentRules.pickWeighted(pool, e -> e.value().weight(), count, random::nextDouble)

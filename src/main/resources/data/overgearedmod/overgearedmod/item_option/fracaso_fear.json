@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "option.overgearedmod.fracaso_fear" },
+  "weight": 0,
+  "min": 50,
+  "max": 50,
+  "effect": { "type": "fear", "radius": 8, "duration": 60 }
+}

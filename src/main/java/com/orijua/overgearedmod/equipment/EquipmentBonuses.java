@@ -19,6 +19,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -49,6 +50,18 @@ public final class EquipmentBonuses {
         if (player.getHealth() > player.getMaxHealth()) {
             player.setHealth(player.getMaxHealth());
         }
+    }
+
+    /** The items the player wears where their bonuses count; their requirements aren't checked here. */
+    public static List<ItemStack> wornEquipment(Player player) {
+        List<ItemStack> worn = new ArrayList<>();
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack stack = player.getItemBySlot(slot);
+            if (!stack.isEmpty() && slot == bonusSlot(stack)) {
+                worn.add(stack);
+            }
+        }
+        return worn;
     }
 
     /** Armor counts in its own slot; anything else only in the main hand. */

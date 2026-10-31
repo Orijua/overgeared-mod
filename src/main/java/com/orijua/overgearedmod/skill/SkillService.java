@@ -1,20 +1,27 @@
 package com.orijua.overgearedmod.skill;
 
 import com.orijua.overgearedmod.equipment.EquipmentEvents;
+import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.event.SkillUsedEvent;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
 
+import java.util.List;
 import java.util.Optional;
 
 /** Server-side skill operations: learning, slotting and casting. Every rule is checked here. */
 public final class SkillService {
+    /** The fourth skill key: casts the held weapon's own skill instead of a learned one. */
+    public static final int WEAPON_SLOT = PlayerSkills.SLOT_COUNT;
+
     public enum Result { SUCCESS, EMPTY_SLOT, UNKNOWN_SKILL, WRONG_ITEM, REQUIREMENTS_UNMET, ON_COOLDOWN, NO_MANA }
 
     private SkillService() {
@@ -46,13 +53,34 @@ public final class SkillService {
         player.setData(ModAttachments.PLAYER_SKILLS, skills.withSlot(slot, skill));
     }
 
+    /** Casts the skill in key slot {@code slot}, or the held weapon's skill for {@link #WEAPON_SLOT}. */
     public static Result use(ServerPlayer player, int slot) {
-        PlayerSkills skills = get(player);
-        Optional<ResourceLocation> id = skills.slot(slot);
+        Optional<ResourceLocation> id = slot == WEAPON_SLOT ? weaponSkill(player.getMainHandItem()) : get(player).slot(slot);
         if (id.isEmpty()) {
             return Result.EMPTY_SLOT;
         }
-        Optional<SkillDefinition> found = definition(player, id.get());
+        return cast(player, id.get());
+    }
+
+    /**
+     * The skill a weapon lets its holder cast (a skill option, e.g. Bisection on a Legendary Fracaso), if any.
+     * Works on both sides, so the HUD can show it.
+     */
+    public static Optional<ResourceLocation> weaponSkill(ItemStack weapon) {
+        for (RolledOption rolled : weapon.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
+            Optional<ResourceLocation> skill = Definitions.get(ModDatapackRegistries.ITEM_OPTION, rolled.option())
+                    .flatMap(def -> def.effect().grantedSkill());
+            if (skill.isPresent()) {
+                return skill;
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Checks the item, requirements, cooldown and mana, then casts. The skill need not be learned (weapon skills). */
+    private static Result cast(ServerPlayer player, ResourceLocation id) {
+        PlayerSkills skills = get(player);
+        Optional<SkillDefinition> found = definition(player, id);
         if (found.isEmpty()) {
             return Result.UNKNOWN_SKILL;
         }
@@ -65,7 +93,7 @@ public final class SkillService {
         if (!EquipmentEvents.meetsRequirements(player, player.getMainHandItem())) {
             return fail(player, Result.REQUIREMENTS_UNMET, Component.translatable("message.overgearedmod.requirements_unmet"));
         }
-        long remaining = skills.cooldownRemaining(id.get(), now);
+        long remaining = skills.cooldownRemaining(id, now);
         if (remaining > 0) {
             return fail(player, Result.ON_COOLDOWN, Component.translatable("message.overgearedmod.cooldown",
                     skill.name(), String.format("%.1f", remaining / 20.0)));
@@ -77,9 +105,9 @@ public final class SkillService {
 
         skill.effect().apply(player, ProgressionService.effectiveStats(player));
         player.setData(ModAttachments.MANA, mana - skill.manaCost());
-        player.setData(ModAttachments.PLAYER_SKILLS, skills.withCooldown(id.get(), now + skill.cooldownTicks()));
+        player.setData(ModAttachments.PLAYER_SKILLS, skills.withCooldown(id, now + skill.cooldownTicks()));
         player.displayClientMessage(skill.name(), true);
-        NeoForge.EVENT_BUS.post(new SkillUsedEvent(player, id.get()));
+        NeoForge.EVENT_BUS.post(new SkillUsedEvent(player, id));
         return Result.SUCCESS;
     }
 

@@ -6,7 +6,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-/** Client → server: the key of skill slot {@code slot} (0-2) was pressed. */
+/** Client → server: the key of skill slot {@code slot} (0-2) was pressed, or the weapon-skill key (3, {@code SkillService.WEAPON_SLOT}). */
 public record UseSkillPayload(int slot) implements CustomPacketPayload {
     public static final Type<UseSkillPayload> TYPE = new Type<>(Overgearedmod.id("use_skill"));
     public static final StreamCodec<ByteBuf, UseSkillPayload> STREAM_CODEC =

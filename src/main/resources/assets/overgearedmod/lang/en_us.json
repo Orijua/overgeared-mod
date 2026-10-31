@@ -23,6 +23,9 @@
   "message.overgearedmod.bone_lord_enraged": "%s is enraged!",
   "item.overgearedmod.jaffa_sword": "Jaffa Sword",
   "item.overgearedmod.grid_legendary_sword": "Grid's Legendary Sword",
+  "item.overgearedmod.fracaso_sword": "Failure",
+  "item.overgearedmod.fracaso_blueprint": "Failure Blueprint",
+  "item.overgearedmod.fracaso_blueprint.desc": "Only the Legendary Smith Successor can use it: at the anvil, with 15 blue orichalcum ingots. Used up by the forge.",
   "item.overgearedmod.skill_book": "Skill Book",
   "item.overgearedmod.enhancement_stone": "Enhancement Stone",
   "item.overgearedmod.respec_scroll": "Respec Scroll",
@@ -48,6 +51,12 @@
   "option.overgearedmod.life_steal": "Life Steal",
   "option.overgearedmod.fortitude": "Fortitude",
   "option.overgearedmod.bleeding": "Bleed on Hit",
+  "option.overgearedmod.fracaso_agility": "Agility",
+  "option.overgearedmod.fracaso_block": "Block chance",
+  "option.overgearedmod.fracaso_darkness": "Attack in darkness",
+  "option.overgearedmod.fracaso_fear": "Fear in much weaker enemies",
+  "option.overgearedmod.fracaso_bisection": "Skill: Bisection",
+  "option.overgearedmod.level_gap": "(%s levels below)",
   "effect.overgearedmod.bleeding": "Bleeding",
   "entity.overgearedmod.level": "[Lv %s] %s",
   "entity.overgearedmod.elite_level": "★ Elite [Lv %s] %s",
@@ -117,6 +126,7 @@
   "screen.overgearedmod.enhance": "Enhance +%s (%s%%)",
   "screen.overgearedmod.anvil_odds": "Rating odds",
   "screen.overgearedmod.anvil_requirements": "Result requirements",
+  "screen.overgearedmod.anvil_class": "Forged only by: %s",
   "screen.overgearedmod.anvil_no_requirements": "No requirements",
   "screen.overgearedmod.anvil_col_auto": "Auto",
   "screen.overgearedmod.anvil_col_manual": "Manual*",
@@ -215,6 +225,8 @@
 
   "skill.overgearedmod.pagma_link": "Pagma's Swordsmanship: Link",
   "skill.overgearedmod.pagma_link.desc": "Fan-shaped slash in front of you. Scales with STR and DEX. Needs a sword.",
+  "skill.overgearedmod.bisection": "Bisection",
+  "skill.overgearedmod.bisection.desc": "A long, straight cut that splits whatever is in front of you. Scales with STR. Only with a Legendary Failure in hand, on the weapon skill key.",
   "skill.overgearedmod.iron_guard": "Iron Guard",
   "skill.overgearedmod.iron_guard.desc": "Resistance II and absorption for a few seconds.",
   "skill.overgearedmod.flame_bolt": "Flame Bolt",
@@ -272,5 +284,6 @@
   "key.overgearedmod.status": "Open Status Window",
   "key.overgearedmod.skill_1": "Skill 1",
   "key.overgearedmod.skill_2": "Skill 2",
-  "key.overgearedmod.skill_3": "Skill 3"
+  "key.overgearedmod.skill_3": "Skill 3",
+  "key.overgearedmod.weapon_skill": "Weapon skill"
 }

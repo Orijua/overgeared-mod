@@ -1,0 +1,14 @@
+{
+  "name": { "translate": "skill.overgearedmod.bisection" },
+  "description": { "translate": "skill.overgearedmod.bisection.desc" },
+  "icon": "overgearedmod:fracaso_sword",
+  "mana_cost": 30,
+  "cooldown_ticks": 300,
+  "effect": {
+    "type": "area_damage",
+    "range": 7.0,
+    "cone_degrees": 30,
+    "damage_multiplier": 3.0,
+    "strength_scaling": 0.03
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "option.overgearedmod.fracaso_block" },
+  "weight": 0,
+  "min": 0.15,
+  "max": 0.15,
+  "effect": { "type": "block_chance" }
+}

@@ -2,9 +2,12 @@ package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.EquipRequirements;
+import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.equipment.option.FixedOption;
 import com.orijua.overgearedmod.progression.StatType;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.smelting.MeltingRecipe;
+import com.orijua.overgearedmod.smithing.ForgingExtras;
 import com.orijua.overgearedmod.smithing.ForgingRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -19,6 +22,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -87,6 +91,16 @@ final class ModRecipeProvider extends RecipeProvider {
                 Optional.of(new EquipRequirements(2, Map.of(StatType.STRENGTH, 2))));
         forge(output, "grid_legendary_sword", Items.DIAMOND, 4, Items.BLAZE_ROD, ModItems.GRID_LEGENDARY_SWORD.get(), 60,
                 Optional.of(new EquipRequirements(10, Map.of(StatType.STRENGTH, 8))));
+        // Fracaso (canon cap. 11): 15 blue orichalcum on its blueprint, only for the Legendary Smith Successor. It comes out
+        // Unique or Legendary with the canon's fixed effects, and asks for what nobody has (level 300, 5000 STR).
+        forge(output, "fracaso_sword", ModItems.BLUE_ORICHALCUM_INGOT.get(), 15, ModItems.FRACASO_BLUEPRINT.get(),
+                ModItems.FRACASO_SWORD.get(), 500, Optional.of(new EquipRequirements(300, Map.of(StatType.STRENGTH, 5000))),
+                new ForgingExtras(Optional.of(Overgearedmod.id("legendary_smith_successor")), ItemRating.UNIQUE, ItemRating.LEGENDARY,
+                        List.of(new FixedOption(Overgearedmod.id("fracaso_agility"), 30),
+                                new FixedOption(Overgearedmod.id("fracaso_block"), 0.15f),
+                                new FixedOption(Overgearedmod.id("fracaso_darkness"), 0.2f),
+                                new FixedOption(Overgearedmod.id("fracaso_fear"), 50),
+                                new FixedOption(Overgearedmod.id("fracaso_bisection"), 1, ItemRating.LEGENDARY))));
     }
 
     /**
@@ -115,8 +129,13 @@ final class ModRecipeProvider extends RecipeProvider {
     /** A smithing anvil recipe at data/overgearedmod/recipe/forging/<name>.json. {@code handle} may be null. */
     private static void forge(RecipeOutput output, String name, ItemLike material, int materialCount, ItemLike handle,
                               ItemLike result, int smithingXp, Optional<EquipRequirements> requirements) {
+        forge(output, name, material, materialCount, handle, result, smithingXp, requirements, ForgingExtras.NONE);
+    }
+
+    private static void forge(RecipeOutput output, String name, ItemLike material, int materialCount, ItemLike handle,
+                              ItemLike result, int smithingXp, Optional<EquipRequirements> requirements, ForgingExtras extras) {
         ForgingRecipe recipe = new ForgingRecipe(Ingredient.of(material), materialCount,
-                handle == null ? Ingredient.EMPTY : Ingredient.of(handle), new ItemStack(result), smithingXp, requirements);
+                handle == null ? Ingredient.EMPTY : Ingredient.of(handle), new ItemStack(result), smithingXp, requirements, extras);
         output.accept(Overgearedmod.id("forging/" + name), recipe, null);
     }
 }

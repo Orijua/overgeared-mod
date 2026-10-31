@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.validation;
 
+import com.orijua.overgearedmod.equipment.option.ItemOptionDefinition;
 import com.orijua.overgearedmod.goal.DeliverGoal;
 import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
@@ -7,6 +8,9 @@ import com.orijua.overgearedmod.quest.QuestDefinition;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.registry.ModEntities;
+import com.orijua.overgearedmod.registry.ModRecipes;
+import com.orijua.overgearedmod.smithing.ForgingExtras;
+import com.orijua.overgearedmod.smithing.ForgingRecipe;
 import com.orijua.overgearedmod.title.TitleDefinition;
 import com.orijua.overgearedmod.validation.ContentIndex.Kind;
 import com.orijua.overgearedmod.validation.ContentIndex.Reference;
@@ -16,6 +20,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +35,7 @@ public final class ContentScanner {
     private ContentScanner() {
     }
 
-    public static ContentIndex index(RegistryAccess access) {
+    public static ContentIndex index(RegistryAccess access, RecipeManager recipes) {
         Set<ResourceLocation> advancedClasses = new HashSet<>();
         Set<ResourceLocation> rewardedClasses = new HashSet<>();
         Map<ResourceLocation, ResourceLocation> questRequirements = new HashMap<>();
@@ -79,13 +85,23 @@ public final class ContentScanner {
                 deliveriesWithoutGiver.add("title " + entry.getKey());
             }
         }
+        for (Map.Entry<ResourceLocation, ItemOptionDefinition> entry : entries(access, ModDatapackRegistries.ITEM_OPTION)) {
+            String from = "item option " + entry.getKey();
+            entry.getValue().effect().grantedSkill().ifPresent(skill -> references.add(new Reference(from, Kind.SKILL, skill)));
+        }
+        for (RecipeHolder<ForgingRecipe> holder : recipes.getAllRecipesFor(ModRecipes.FORGING.get())) {
+            String from = "forging recipe " + holder.id();
+            ForgingExtras extras = holder.value().extras();
+            extras.requiredClass().ifPresent(id -> references.add(new Reference(from, Kind.CLASS, id)));
+            extras.fixedOptions().forEach(option -> references.add(new Reference(from, Kind.OPTION, option.option())));
+        }
         BlacksmithNpc.SOLD_SKILLS.forEach(skill -> references.add(new Reference("blacksmith trades", Kind.SKILL, skill)));
         Set<ResourceLocation> questGiverNpcs = new HashSet<>();
         ModEntities.questGivers().forEach(type -> questGiverNpcs.add(BuiltInRegistries.ENTITY_TYPE.getKey(type)));
 
         return new ContentIndex(ids(access, ModDatapackRegistries.SKILL), ids(access, ModDatapackRegistries.PLAYER_CLASS),
                 ids(access, ModDatapackRegistries.QUEST), advancedClasses, rewardedClasses, questRequirements, visibleClassQuests, references,
-                questGivers, questGiverNpcs, deliveriesWithoutGiver);
+                questGivers, questGiverNpcs, deliveriesWithoutGiver, ids(access, ModDatapackRegistries.ITEM_OPTION));
     }
 
     private static <T> Set<ResourceLocation> ids(RegistryAccess access, ResourceKey<Registry<T>> key) {

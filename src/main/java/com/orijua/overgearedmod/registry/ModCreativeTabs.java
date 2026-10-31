@@ -37,6 +37,8 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.MITHRIL_INGOT);
                         output.accept(ModItems.JAFFA_SWORD);
                         output.accept(ModItems.GRID_LEGENDARY_SWORD);
+                        output.accept(ModItems.FRACASO_SWORD);
+                        output.accept(ModItems.FRACASO_BLUEPRINT);
                         output.accept(ModItems.ENHANCEMENT_STONE);
                         output.accept(ModItems.RESPEC_SCROLL);
                         output.accept(ModItems.BLACKSMITH_SPAWN_EGG);
@@ -53,6 +55,7 @@ public final class ModCreativeTabs {
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(ModItems.JAFFA_SWORD);
             event.accept(ModItems.GRID_LEGENDARY_SWORD);
+            event.accept(ModItems.FRACASO_SWORD);
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(ModItems.RAW_JAFFA);

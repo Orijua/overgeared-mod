@@ -21,11 +21,13 @@ final class ModItemModelProvider extends ItemModelProvider {
         basicItem(ModItems.MITHRIL_INGOT.get());
         handheldItem(ModItems.JAFFA_SWORD.get());
         handheldItem(ModItems.GRID_LEGENDARY_SWORD.get());
+        handheldItem(ModItems.FRACASO_SWORD.get()); // the user's 32x32 PNG
 
         // Placeholders that reuse a vanilla texture until there is an own PNG.
         vanillaTexture(ModItems.ENHANCEMENT_STONE.get(), "amethyst_shard");
         vanillaTexture(ModItems.RESPEC_SCROLL.get(), "paper");
         vanillaTexture(ModItems.SKILL_BOOK.get(), "writable_book");
+        vanillaTexture(ModItems.FRACASO_BLUEPRINT.get(), "map");
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
         vanillaTexture(ModItems.JAFFA_INGOT.get(), "copper_ingot");
         vanillaTexture(ModItems.RAW_BLUE_ORICHALCUM.get(), "prismarine_crystals");

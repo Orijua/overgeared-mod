@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.equipment;
 
+import com.orijua.overgearedmod.equipment.option.OptionEffect;
 import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionService;
@@ -16,12 +17,15 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /** Connects the equipment components (rating, enhancement, options, requirements) to the game and the tooltip. */
 public final class EquipmentEvents {
@@ -33,6 +37,8 @@ public final class EquipmentEvents {
         gameBus.addListener(EquipmentEvents::onTooltip);
         gameBus.addListener(EquipmentEvents::onDamageDealt);
         gameBus.addListener(EquipmentEvents::onAttack);
+        gameBus.addListener(EquipmentEvents::onIncomingDamage);
+        gameBus.addListener(EquipmentEvents::onPlayerTick);
     }
 
     public static boolean meetsRequirements(Player player, ItemStack stack) {
@@ -40,9 +46,45 @@ public final class EquipmentEvents {
         return requirements == null || requirements.metBy(ProgressionService.effectiveStats(player));
     }
 
+    /** Equipment can give stats too (stat options), so both the stat effects and the bonuses are re-applied. */
     private static void onEquipmentChange(LivingEquipmentChangeEvent event) {
         if (event.getEntity() instanceof Player player && !player.level().isClientSide) {
-            EquipmentBonuses.apply(player);
+            ProgressionService.refreshEffects(player);
+        }
+    }
+
+    /** Every option of the equipment the player wears where it counts and whose requirements they meet. */
+    public static void forEachActiveOption(Player player, BiConsumer<OptionEffect, Float> action) {
+        for (ItemStack stack : EquipmentBonuses.wornEquipment(player)) {
+            if (!meetsRequirements(player, stack)) {
+                continue;
+            }
+            for (RolledOption rolled : stack.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
+                Definitions.get(player.level(), ModDatapackRegistries.ITEM_OPTION, rolled.option())
+                        .ifPresent(def -> action.accept(def.effect(), rolled.value()));
+            }
+        }
+    }
+
+    /** Options that react to damage: blocking it as the wearer, or making the wearer's attacks hit harder. */
+    private static void onIncomingDamage(LivingIncomingDamageEvent event) {
+        if (event.getEntity() instanceof ServerPlayer wearer) {
+            forEachActiveOption(wearer, (effect, value) -> {
+                if (!event.isCanceled()) {
+                    effect.onWearerHurt(wearer, event, value);
+                }
+            });
+        }
+        if (!event.isCanceled() && event.getSource().getEntity() instanceof ServerPlayer attacker) {
+            forEachActiveOption(attacker, (effect, value) ->
+                    event.setAmount(effect.outgoingDamage(attacker, event.getEntity(), event.getAmount(), value)));
+        }
+    }
+
+    /** Once a second, options that act on their own while worn (Fracaso's fear). */
+    private static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (event.getEntity() instanceof ServerPlayer player && player.tickCount % 20 == 0) {
+            forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
         }
     }
 
