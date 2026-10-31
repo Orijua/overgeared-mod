@@ -32,6 +32,7 @@ public final class Bairan {
     private static final String ENTRY = Overgearedmod.MODID + ":bairan_entry";
     private static final String NO_POOL = "minecraft:empty";
     private static final String PATH = "minecraft:dirt_path";
+    static final String JAFFA_ORE = Overgearedmod.MODID + ":jaffa_ore";
 
     private Bairan() {
     }
@@ -198,8 +199,8 @@ public final class Bairan {
 
     /**
      * The mountain mine (canon: where Grid digs Smith's iron). A rocky mound with a propped tunnel, rails and a minecart,
-     * and iron and coal in the walls of the room at the back. It stays above ground: villages adapt the terrain around
-     * their pieces (beard_thin), which would dig a crater over a piece that went underground.
+     * and iron, coal and jaffa in the walls of the room at the back. It stays above ground: villages adapt the terrain
+     * around their pieces (beard_thin), which would dig a crater over a piece that went underground.
      */
     static TemplateBuilder mine() {
         TemplateBuilder piece = new TemplateBuilder(11, 8, 12);
@@ -232,6 +233,11 @@ public final class Bairan {
         int[][] coal = {{1, 3, 1}, {9, 3, 4}, {2, 4, 3}, {7, 4, 1}};
         for (int[] ore : coal) {
             piece.set(ore[0], ore[1], ore[2], "minecraft:coal_ore");
+        }
+        // Jaffa: the ore Smith teaches Grid to smelt (canon), always some here for his quest.
+        int[][] jaffa = {{2, 1, 0}, {8, 1, 0}, {1, 2, 4}, {9, 1, 4}, {3, 4, 4}};
+        for (int[] ore : jaffa) {
+            piece.set(ore[0], ore[1], ore[2], JAFFA_ORE);
         }
         piece.entity(5, 1, 2, "minecraft:minecart", new CompoundTag());
         return front(piece, 5, 11);

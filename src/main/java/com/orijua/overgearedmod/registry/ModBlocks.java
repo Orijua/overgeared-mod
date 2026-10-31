@@ -21,6 +21,15 @@ public final class ModBlocks {
                     .sound(SoundType.ANVIL)
                     .noOcclusion());
 
+    // Jaffa ore (canon: the ore Smith teaches Grid to smelt in Bairan). Iron tier: around iron height, a bit rarer, plus
+    // guaranteed veins in Bairan's mine (worldgen/placed_feature/ore_jaffa.json + neoforge/biome_modifier).
+    public static final DeferredBlock<Block> JAFFA_ORE = BLOCKS.registerSimpleBlock("jaffa_ore",
+            BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops());
+
+    public static final DeferredBlock<Block> DEEPSLATE_JAFFA_ORE = BLOCKS.registerSimpleBlock("deepslate_jaffa_ore",
+            BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE).strength(4.5f, 3.0f).requiresCorrectToolForDrops()
+                    .sound(SoundType.DEEPSLATE));
+
     // Mithril ore: generated in the Overworld (worldgen/placed_feature/ore_mithril.json + neoforge/biome_modifier).
     public static final DeferredBlock<Block> MITHRIL_ORE = BLOCKS.registerSimpleBlock("mithril_ore",
             BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops());

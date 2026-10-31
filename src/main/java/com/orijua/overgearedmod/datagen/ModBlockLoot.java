@@ -19,7 +19,9 @@ final class ModBlockLoot extends BlockLootSubProvider {
     @Override
     protected void generate() {
         dropSelf(ModBlocks.SMITHING_ANVIL.get());
-        // Like iron ore: raw mithril (more with Fortune), the ore itself with Silk Touch.
+        // Like iron ore: the raw material (more with Fortune), the ore itself with Silk Touch.
+        add(ModBlocks.JAFFA_ORE.get(), block -> createOreDrop(block, ModItems.RAW_JAFFA.get()));
+        add(ModBlocks.DEEPSLATE_JAFFA_ORE.get(), block -> createOreDrop(block, ModItems.RAW_JAFFA.get()));
         add(ModBlocks.MITHRIL_ORE.get(), block -> createOreDrop(block, ModItems.RAW_MITHRIL.get()));
         add(ModBlocks.DEEPSLATE_MITHRIL_ORE.get(), block -> createOreDrop(block, ModItems.RAW_MITHRIL.get()));
     }

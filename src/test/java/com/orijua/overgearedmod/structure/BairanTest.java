@@ -55,12 +55,14 @@ class BairanTest {
     }
 
     @Test
-    void theMineHasIronToDig() {
+    void theMineHasIronAndJaffaToDig() {
         TemplateBuilder mine = Bairan.mine();
-        long iron = mine.build(1).getList("palette", Tag.TAG_COMPOUND).stream()
-                .filter(state -> ((CompoundTag) state).getString("Name").equals("minecraft:iron_ore")).count();
-        assertEquals(1, iron, "iron ore is in the palette");
+        List<String> palette = mine.build(1).getList("palette", Tag.TAG_COMPOUND).stream()
+                .map(state -> ((CompoundTag) state).getString("Name")).toList();
+        assertTrue(palette.contains("minecraft:iron_ore"), "iron for Smith's second quest");
+        assertTrue(palette.contains(Bairan.JAFFA_ORE), "jaffa for his third");
         assertEquals("minecraft:iron_ore", mine.blockAt(5, 1, 0), "on the back wall of the room");
+        assertEquals(Bairan.JAFFA_ORE, mine.blockAt(2, 1, 0), "next to it");
         assertEquals("minecraft:air", mine.blockAt(5, 2, 5), "and the tunnel to it is open");
     }
 

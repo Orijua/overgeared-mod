@@ -18,7 +18,6 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -53,14 +52,20 @@ final class ModRecipeProvider extends RecipeProvider {
     }
 
     private void smelting(RecipeOutput output) {
-        List<ItemLike> sources = List.of(ModItems.RAW_MITHRIL.get(), ModItems.MITHRIL_ORE.get(), ModItems.DEEPSLATE_MITHRIL_ORE.get());
+        ingot(output, ModItems.MITHRIL_INGOT.get(), 0.8f, ModItems.RAW_MITHRIL.get(), ModItems.MITHRIL_ORE.get(), ModItems.DEEPSLATE_MITHRIL_ORE.get());
+        ingot(output, ModItems.JAFFA_INGOT.get(), 0.7f, ModItems.RAW_JAFFA.get(), ModItems.JAFFA_ORE.get(), ModItems.DEEPSLATE_JAFFA_ORE.get());
+    }
+
+    /** Smelting (10 s) and blasting (5 s) recipes from each source into the ingot, like vanilla's iron. */
+    private static void ingot(RecipeOutput output, ItemLike ingot, float xp, ItemLike... sources) {
+        String ingotName = getItemName(ingot);
         for (ItemLike source : sources) {
-            String name = "mithril_ingot_from_%s_" + getItemName(source);
-            SimpleCookingRecipeBuilder.smelting(Ingredient.of(source), RecipeCategory.MISC, ModItems.MITHRIL_INGOT.get(), 0.8f, 200)
-                    .group("mithril_ingot").unlockedBy(getHasName(source), has(source))
+            String name = ingotName + "_from_%s_" + getItemName(source);
+            SimpleCookingRecipeBuilder.smelting(Ingredient.of(source), RecipeCategory.MISC, ingot, xp, 200)
+                    .group(ingotName).unlockedBy(getHasName(source), has(source))
                     .save(output, Overgearedmod.id(name.formatted("smelting")));
-            SimpleCookingRecipeBuilder.blasting(Ingredient.of(source), RecipeCategory.MISC, ModItems.MITHRIL_INGOT.get(), 0.8f, 100)
-                    .group("mithril_ingot").unlockedBy(getHasName(source), has(source))
+            SimpleCookingRecipeBuilder.blasting(Ingredient.of(source), RecipeCategory.MISC, ingot, xp, 100)
+                    .group(ingotName).unlockedBy(getHasName(source), has(source))
                     .save(output, Overgearedmod.id(name.formatted("blasting")));
         }
     }
@@ -68,7 +73,7 @@ final class ModRecipeProvider extends RecipeProvider {
     private void forging(RecipeOutput output) {
         forge(output, "iron_sword", Items.IRON_INGOT, 2, Items.STICK, Items.IRON_SWORD, 10, Optional.empty());
         forge(output, "iron_chestplate", Items.IRON_INGOT, 8, null, Items.IRON_CHESTPLATE, 20, Optional.empty());
-        forge(output, "jaffa_sword", ModItems.MITHRIL_INGOT.get(), 2, Items.STICK, ModItems.JAFFA_SWORD.get(), 15,
+        forge(output, "jaffa_sword", ModItems.JAFFA_INGOT.get(), 2, Items.STICK, ModItems.JAFFA_SWORD.get(), 15,
                 Optional.of(new EquipRequirements(2, Map.of(StatType.STRENGTH, 2))));
         forge(output, "grid_legendary_sword", Items.DIAMOND, 4, Items.BLAZE_ROD, ModItems.GRID_LEGENDARY_SWORD.get(), 60,
                 Optional.of(new EquipRequirements(10, Map.of(StatType.STRENGTH, 8))));

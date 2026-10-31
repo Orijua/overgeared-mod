@@ -18,9 +18,12 @@ final class ModBlockTagsProvider extends BlockTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.SMITHING_ANVIL.get(), ModBlocks.MITHRIL_ORE.get(), ModBlocks.DEEPSLATE_MITHRIL_ORE.get());
+        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.SMITHING_ANVIL.get(), ModBlocks.MITHRIL_ORE.get(), ModBlocks.DEEPSLATE_MITHRIL_ORE.get(),
+                ModBlocks.JAFFA_ORE.get(), ModBlocks.DEEPSLATE_JAFFA_ORE.get());
+        tag(BlockTags.NEEDS_STONE_TOOL).add(ModBlocks.JAFFA_ORE.get(), ModBlocks.DEEPSLATE_JAFFA_ORE.get());
         tag(BlockTags.NEEDS_IRON_TOOL).add(ModBlocks.MITHRIL_ORE.get(), ModBlocks.DEEPSLATE_MITHRIL_ORE.get());
         // c:ores, shared with other mods.
-        tag(Tags.Blocks.ORES).add(ModBlocks.MITHRIL_ORE.get(), ModBlocks.DEEPSLATE_MITHRIL_ORE.get());
+        tag(Tags.Blocks.ORES).add(ModBlocks.MITHRIL_ORE.get(), ModBlocks.DEEPSLATE_MITHRIL_ORE.get(), ModBlocks.JAFFA_ORE.get(),
+                ModBlocks.DEEPSLATE_JAFFA_ORE.get());
     }
 }

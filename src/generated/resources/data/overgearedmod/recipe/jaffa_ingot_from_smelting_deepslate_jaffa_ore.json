@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.7,
+  "group": "jaffa_ingot",
+  "ingredient": {
+    "item": "overgearedmod:deepslate_jaffa_ore"
+  },
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:jaffa_ingot"
+  }
+}
