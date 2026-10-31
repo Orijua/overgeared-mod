@@ -6,9 +6,13 @@ import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModEntities;
 import com.orijua.overgearedmod.structure.AdventurerCamp;
 import com.orijua.overgearedmod.structure.Bairan;
+import com.orijua.overgearedmod.structure.StartingVillage;
+import com.orijua.overgearedmod.structure.StartingVillagePlacement;
 import com.orijua.overgearedmod.structure.StructurePieces;
 import com.orijua.overgearedmod.structure.TemplateBuilder;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
@@ -19,22 +23,29 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
+import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterLists;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
+import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
-import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /** The structure pipeline: generated pieces, the hand-written worldgen JSON around them, and the camp and Bairan they make. */
 @GameTestHolder(Overgearedmod.MODID)
@@ -104,20 +115,57 @@ public final class StructureTests {
         helper.succeed();
     }
 
-    /** Bairan is unique: a single ring position near the world's center, nudged to a fitting biome. */
+    /** Bairan generates only at the site its world saved, and /locate can follow it there. */
     @GameTest(template = TestSupport.EMPTY)
-    public static void bairanIsOnePerWorldNearSpawn(GameTestHelper helper) {
+    public static void bairanGeneratesOnlyAtItsWorldsSite(GameTestHelper helper) {
         var registries = helper.getLevel().registryAccess();
         helper.assertTrue(registries.registryOrThrow(Registries.STRUCTURE).containsKey(Bairan.STRUCTURE), "structure");
         StructureSet set = registries.registryOrThrow(Registries.STRUCTURE_SET).get(Bairan.STRUCTURE);
-        helper.assertTrue(set != null && set.placement() instanceof ConcentricRingsStructurePlacement, "placed on rings, like strongholds");
-        ConcentricRingsStructurePlacement rings = (ConcentricRingsStructurePlacement) set.placement();
-        helper.assertTrue(rings.count() == 1, "one Bairan per world, got " + rings.count());
-        // A ring of distance d sits about 4·d chunks from the center: under ~300 blocks for d = 3.
-        helper.assertTrue(rings.distance() <= 4, "near spawn, distance " + rings.distance());
+        helper.assertTrue(set != null && set.placement() instanceof StartingVillagePlacement, "placed as the starting village");
+        StartingVillagePlacement placement = (StartingVillagePlacement) set.placement();
+
+        long seed = -7_123_456_789L; // no real world in the test server has it
+        helper.assertFalse(placement.applyAdditionalChunkRestrictions(0, 0, seed), "a world without a site has no Bairan");
+        ChunkPos site = new ChunkPos(12, -40);
+        StartingVillage.remember(seed, site);
+        try {
+            helper.assertTrue(placement.applyAdditionalChunkRestrictions(0, 0, seed), "a world with a site has it");
+            for (ChunkPos region : List.of(new ChunkPos(0, 0), new ChunkPos(500, -300), new ChunkPos(-64, 64))) {
+                helper.assertTrue(site.equals(placement.getPotentialStructureChunk(seed, region.x, region.z)),
+                        "every region points /locate at the site, from " + region);
+            }
+        } finally {
+            StartingVillage.forget(seed);
+        }
         TagKey<Biome> biomes = TagKey.create(Registries.BIOME, Overgearedmod.id("has_structure/bairan"));
         helper.assertTrue(registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS).is(biomes), "plains");
-        helper.assertFalse(registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.OCEAN).is(biomes), "not at sea");
+        helper.assertFalse(registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.FOREST).is(biomes), "not among trees");
+        helper.succeed();
+    }
+
+    /**
+     * On real overworld terrain (not the flat test world), every one of 40 seeds gets a Bairan site near its usual spawn:
+     * the whole village on dry land, in its biomes. With the old ring placement only 26 of these 40 seeds had one.
+     */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 4000)
+    public static void bairanFindsASiteInEveryRealWorld(GameTestHelper helper) {
+        RegistryAccess registries = helper.getLevel().registryAccess();
+        Holder<NoiseGeneratorSettings> settings = registries.registryOrThrow(Registries.NOISE_SETTINGS)
+                .getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+        BiomeSource biomes = MultiNoiseBiomeSource.createFromPreset(registries.registryOrThrow(Registries.MULTI_NOISE_BIOME_SOURCE_PARAMETER_LIST)
+                .getHolderOrThrow(MultiNoiseBiomeSourceParameterLists.OVERWORLD));
+        NoiseBasedChunkGenerator generator = new NoiseBasedChunkGenerator(biomes, settings);
+        LevelHeightAccessor height = LevelHeightAccessor.create(-64, 384);
+        int farthest = 0;
+        for (long seed = 1; seed <= 40; seed++) {
+            RandomState random = RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), seed);
+            ChunkPos usualSpawn = new ChunkPos(random.sampler().findSpawnPosition());
+            Optional<StartingVillage.Site> site = StartingVillage.findSite(registries, generator, random,
+                    helper.getLevel().getStructureManager(), seed, height, usualSpawn);
+            helper.assertTrue(site.isPresent(), "no Bairan site for seed " + seed);
+            farthest = Math.max(farthest, usualSpawn.getChessboardDistance(site.get().chunk()));
+        }
+        Overgearedmod.LOGGER.info("Bairan: a site in all 40 seeds, at most {} chunks from the usual spawn", farthest);
         helper.succeed();
     }
 

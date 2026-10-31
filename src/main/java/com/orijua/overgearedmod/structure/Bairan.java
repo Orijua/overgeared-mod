@@ -8,8 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Bairan, the village where Grid starts as a blacksmith (canon: caps. 10 and 22). One per world, near spawn
- * (structure_set bairan: concentric rings with a single position). The place, Smith the blacksmith and the mountain
+ * Bairan, the village where Grid starts as a blacksmith (canon: caps. 10 and 22). The world's starting village: one per
+ * new world, with the spawn on its square ({@link StartingVillage}). The place, Smith the blacksmith and the mountain
  * mine are canon; the layout, the chief and how the buildings look are our own design.
  * <p>
  * A square with a well and the firewood pile, and around it, joined by jigsaws: Smith's smithy (north), houses
