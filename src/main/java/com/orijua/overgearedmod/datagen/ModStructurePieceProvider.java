@@ -3,7 +3,7 @@ package com.orijua.overgearedmod.datagen;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.structure.AdventurerCamp;
+import com.orijua.overgearedmod.structure.StructurePieces;
 import com.orijua.overgearedmod.structure.TemplateBuilder;
 import net.minecraft.SharedConstants;
 import net.minecraft.data.CachedOutput;
@@ -32,7 +32,7 @@ final class ModStructurePieceProvider implements DataProvider {
     @Override
     public CompletableFuture<?> run(CachedOutput output) {
         int dataVersion = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
-        return CompletableFuture.allOf(AdventurerCamp.pieces().entrySet().stream()
+        return CompletableFuture.allOf(StructurePieces.all().entrySet().stream()
                 .map(piece -> CompletableFuture.runAsync(() -> write(output, piece, dataVersion)))
                 .toArray(CompletableFuture[]::new));
     }

@@ -6,7 +6,6 @@ import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.skill.SkillBookItem;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -89,8 +88,7 @@ public class BlacksmithNpc extends AbstractVillager {
 
     @Override
     public boolean isInvulnerableTo(DamageSource source) {
-        boolean creativePlayer = source.getEntity() instanceof Player player && player.isCreative();
-        return !creativePlayer && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
+        return NpcRules.isInvulnerableTo(source);
     }
 
     @Override

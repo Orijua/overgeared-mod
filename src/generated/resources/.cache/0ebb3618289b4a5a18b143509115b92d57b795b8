@@ -1,4 +1,4 @@
-// 1.21.1	2026-10-30T20:11:10.716105	Item Models: overgearedmod
+// 1.21.1	2026-10-31T09:32:53.6615905	Item Models: overgearedmod
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/blacksmith_spawn_egg.json
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/bone_lord_spawn_egg.json
 c64ed609ece68994ce23dd2809145040bce13579 assets/overgearedmod/models/item/enhancement_stone.json
@@ -8,3 +8,4 @@ c64ed609ece68994ce23dd2809145040bce13579 assets/overgearedmod/models/item/enhanc
 9432ed90011c59cc0d6d4dbf3ef836509e4c2f15 assets/overgearedmod/models/item/raw_mithril.json
 9186aec3aa11a45a2b24103e84126c200f2ac5c2 assets/overgearedmod/models/item/respec_scroll.json
 2af470b6f3845c30915965c3b3844b9d2f60ab4a assets/overgearedmod/models/item/skill_book.json
+63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/village_chief_spawn_egg.json

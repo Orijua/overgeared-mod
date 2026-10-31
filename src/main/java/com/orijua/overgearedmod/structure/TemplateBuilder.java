@@ -1,17 +1,20 @@
 package com.orijua.overgearedmod.structure;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Builds a structure template (the .nbt a structure block saves) block by block, from code. Pure: blocks are written as
- * text ("minecraft:oak_log[axis=x]"), so it needs no registries and is unit tested. Datagen writes the result
+ * Builds a structure template (the .nbt a structure block saves) block by block, from code. Pure: blocks and entities are
+ * written as text ("minecraft:oak_log[axis=x]"), so it needs no registries and is unit tested. Datagen writes the result
  * (ModStructurePieceProvider); a piece built in game and saved with a structure block can replace that file later.
  * Positions left unset are structure void: the terrain there is kept. Set "minecraft:air" to clear it.
  */
@@ -25,6 +28,7 @@ public final class TemplateBuilder {
     private final int sizeY;
     private final int sizeZ;
     private final Map<Pos, Placed> blocks = new TreeMap<>(ORDER);
+    private final List<PlacedEntity> entities = new ArrayList<>();
 
     public TemplateBuilder(int sizeX, int sizeY, int sizeZ) {
         if (sizeX <= 0 || sizeY <= 0 || sizeZ <= 0) {
@@ -46,6 +50,22 @@ public final class TemplateBuilder {
             for (int z = Math.min(z1, z2); z <= Math.max(z1, z2); z++) {
                 for (int x = Math.min(x1, x2); x <= Math.max(x1, x2); x++) {
                     put(x, y, z, spec, null);
+                }
+            }
+        }
+        return this;
+    }
+
+    /** Like {@link #fill}, but only the four sides of the box: the walls of a room, with its inside left as it was. */
+    public TemplateBuilder walls(int x1, int y1, int z1, int x2, int y2, int z2, String block) {
+        BlockSpec spec = BlockSpec.parse(block);
+        int minX = Math.min(x1, x2), maxX = Math.max(x1, x2), minZ = Math.min(z1, z2), maxZ = Math.max(z1, z2);
+        for (int y = Math.min(y1, y2); y <= Math.max(y1, y2); y++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                for (int x = minX; x <= maxX; x++) {
+                    if (x == minX || x == maxX || z == minZ || z == maxZ) {
+                        put(x, y, z, spec, null);
+                    }
                 }
             }
         }
@@ -79,6 +99,23 @@ public final class TemplateBuilder {
         return put(x, y, z, BlockSpec.parse("minecraft:jigsaw[orientation=" + orientation + "]"), nbt);
     }
 
+    /**
+     * An entity standing on the center of a block, such as an NPC. {@code data} is its saved NBT without the id
+     * (a custom name, for example); the template gives it a fresh UUID each time it is placed.
+     */
+    public TemplateBuilder entity(int x, int y, int z, String id, CompoundTag data) {
+        checkInside(x, y, z);
+        CompoundTag nbt = data.copy();
+        nbt.putString("id", id);
+        entities.add(new PlacedEntity(new Pos(x, y, z), nbt));
+        return this;
+    }
+
+    /** The ids of the entities placed so far, in order. */
+    public List<String> entityIds() {
+        return entities.stream().map(entity -> entity.nbt().getString("id")).toList();
+    }
+
     /** The block set at a position, or null where it is structure void. */
     public String blockAt(int x, int y, int z) {
         Placed placed = blocks.get(new Pos(x, y, z));
@@ -100,23 +137,36 @@ public final class TemplateBuilder {
         });
         ListTag paletteList = new ListTag();
         palette.keySet().forEach(spec -> paletteList.add(spec.toTag()));
+        ListTag entityList = new ListTag();
+        for (PlacedEntity entity : entities) {
+            Pos pos = entity.pos();
+            CompoundTag entry = new CompoundTag();
+            entry.put("pos", doubles(pos.x() + 0.5, pos.y(), pos.z() + 0.5));
+            entry.put("blockPos", ints(pos.x(), pos.y(), pos.z()));
+            entry.put("nbt", entity.nbt().copy());
+            entityList.add(entry);
+        }
 
         CompoundTag tag = new CompoundTag();
         tag.put("size", ints(sizeX, sizeY, sizeZ));
         tag.put("palette", paletteList);
         tag.put("blocks", blockList);
-        tag.put("entities", new ListTag());
+        tag.put("entities", entityList);
         tag.putInt("DataVersion", dataVersion);
         return tag;
     }
 
     private TemplateBuilder put(int x, int y, int z, BlockSpec spec, CompoundTag nbt) {
+        checkInside(x, y, z);
+        blocks.put(new Pos(x, y, z), new Placed(spec, nbt));
+        return this;
+    }
+
+    private void checkInside(int x, int y, int z) {
         if (x < 0 || y < 0 || z < 0 || x >= sizeX || y >= sizeY || z >= sizeZ) {
             throw new IllegalArgumentException("(" + x + ", " + y + ", " + z + ") is outside the "
                     + sizeX + "x" + sizeY + "x" + sizeZ + " template");
         }
-        blocks.put(new Pos(x, y, z), new Placed(spec, nbt));
-        return this;
     }
 
     private static ListTag ints(int... values) {
@@ -127,10 +177,21 @@ public final class TemplateBuilder {
         return list;
     }
 
+    private static ListTag doubles(double... values) {
+        ListTag list = new ListTag();
+        for (double value : values) {
+            list.add(DoubleTag.valueOf(value));
+        }
+        return list;
+    }
+
     private record Pos(int x, int y, int z) {
     }
 
     private record Placed(BlockSpec spec, CompoundTag nbt) {
+    }
+
+    private record PlacedEntity(Pos pos, CompoundTag nbt) {
     }
 
     /** A block state as text: an id plus its properties, sorted so equal states share one palette entry. */
