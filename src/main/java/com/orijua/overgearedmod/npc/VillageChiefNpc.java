@@ -1,6 +1,6 @@
 package com.orijua.overgearedmod.npc;
 
-import com.orijua.overgearedmod.client.tab.SatisfyTabs;
+import com.orijua.overgearedmod.client.NpcQuestScreen;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -17,8 +17,8 @@ import net.minecraft.world.level.Level;
 
 /**
  * The village chief of Bairan (own design, not canon): gives the quests that aren't smithing. Right-click opens the
- * Quests tab. Like the blacksmith, it stays where it is placed, never despawns and only takes damage from creative
- * players or /kill.
+ * chief's quest window. Like the blacksmith, it stays where it is placed, never despawns and only takes damage from
+ * creative players or /kill.
  */
 public class VillageChiefNpc extends PathfinderMob {
     public VillageChiefNpc(EntityType<? extends VillageChiefNpc> type, Level level) {
@@ -43,7 +43,7 @@ public class VillageChiefNpc extends PathfinderMob {
         }
         if (level().isClientSide) {
             // Only runs on the client, so the client-only class is never loaded on a server.
-            SatisfyTabs.openQuests();
+            NpcQuestScreen.open(this, false);
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
     }

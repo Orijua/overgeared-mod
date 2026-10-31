@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 /** Every quest with its state: accept it, follow its progress, claim it when done. */
 public class QuestsTab extends SatisfyTab {
     private static final int ROW = 22;
@@ -40,7 +42,8 @@ public class QuestsTab extends SatisfyTab {
     private static final int VISIBLE_ROWS = 7;
     private static final int BUTTON_WIDTH = 64;
 
-    private record Row(Definitions.Entry<QuestDefinition> quest, Button button) {
+    /** {@code button} is null for an NPC's quest, which has no Accept/Claim here. */
+    private record Row(Definitions.Entry<QuestDefinition> quest, @Nullable Button button) {
     }
 
     private final List<Row> rows = new ArrayList<>();
@@ -83,8 +86,11 @@ public class QuestsTab extends SatisfyTab {
         for (int i = scroll.first(); i < scroll.end(questCount); i++) {
             Definitions.Entry<QuestDefinition> entry = quests.get(i);
             int y = top + LIST_TOP + rows.size() * ROW - 4;
-            Button button = actionButton(entry, y);
-            addWidget.accept(button);
+            // An NPC's quest is accepted and claimed at the NPC: here it only shows where to go.
+            Button button = entry.value().giver().isPresent() ? null : actionButton(entry, y);
+            if (button != null) {
+                addWidget.accept(button);
+            }
             if (shownState.isActive(entry.id())) {
                 addWidget.accept(abandonButton(entry, y));
             }
@@ -160,7 +166,8 @@ public class QuestsTab extends SatisfyTab {
         if (!state.equals(shownState)) {
             return true;
         }
-        return rows.stream().anyMatch(row -> state.isActive(row.quest().id()) && row.button().active != isDone(row.quest(), state));
+        return rows.stream().anyMatch(row -> row.button() != null && state.isActive(row.quest().id())
+                && row.button().active != isDone(row.quest(), state));
     }
 
     @Override
@@ -181,12 +188,14 @@ public class QuestsTab extends SatisfyTab {
                         left + font().width(quest.name()) + 4, y, UiStyle.GOLD);
             }
 
-            Integer baseline = state.active().get(entry.id());
-            if (baseline != null) {
-                int progress = QuestService.progress(player(), quest, baseline);
+            Integer stored = state.active().get(entry.id());
+            if (stored != null) {
+                int progress = QuestService.progress(player(), quest, stored);
                 UiStyle.text(graphics, font(), Component.literal(progress + "/" + quest.goal().target()), left + 124, y,
                         progress >= quest.goal().target() ? UiStyle.GOOD : UiStyle.MUTED);
             }
+            quest.giverHint().ifPresent(hint -> graphics.drawString(font(), Component.literal("↳ ").append(hint), left + 6, y + 10,
+                    UiStyle.GOLD));
             if (mouseX >= left && mouseX < left + width - BUTTON_WIDTH && mouseY >= y - 2 && mouseY < y + ROW - 4) {
                 graphics.renderTooltip(font(), tooltip(quest), mouseX, mouseY);
             }
@@ -197,6 +206,7 @@ public class QuestsTab extends SatisfyTab {
     private static List<FormattedCharSequence> tooltip(QuestDefinition quest) {
         List<FormattedCharSequence> lines = new ArrayList<>(font().split(quest.description(), 180));
         lines.add(quest.goal().describe().getVisualOrderText());
+        quest.giverHint().ifPresent(hint -> lines.add(hint.getVisualOrderText()));
         lines.add(Component.translatable("screen.overgearedmod.quest_reward", quest.xpReward(), quest.itemRewards().size()).getVisualOrderText());
         quest.requiredClass().flatMap(QuestsTab::className).ifPresent(name ->
                 lines.add(Component.translatable("screen.overgearedmod.quest_requires_class", name).getVisualOrderText()));

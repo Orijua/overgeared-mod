@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.event.SatisfyPlayerEvent;
 import com.orijua.overgearedmod.event.TitleEarnedEvent;
 import com.orijua.overgearedmod.network.SystemNotificationPayload;
 import com.orijua.overgearedmod.notification.SystemNotification;
+import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.quest.QuestService;
 import io.netty.buffer.Unpooled;
@@ -73,13 +74,15 @@ public final class NotificationTests {
     public static void titleQuestAndClassPostTheirEvents(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         ResourceLocation commission = Overgearedmod.id("first_commission");
+        BlacksmithNpc smith = TestSupport.smith(helper);
+        TestSupport.completed(player, "smith_jaffa_sword");
         Recorder recorder = new Recorder(player);
         NeoForge.EVENT_BUS.register(recorder);
         try {
             ClassService.choose(player, Overgearedmod.id("warrior"));
-            QuestService.accept(player, commission);
+            QuestService.accept(player, commission, smith);
             TestSupport.forge(player, ItemRating.EPIC); // also earns the epic_forger title
-            QuestService.claim(player, commission);
+            QuestService.claim(player, commission, smith);
         } finally {
             NeoForge.EVENT_BUS.unregister(recorder);
         }

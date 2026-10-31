@@ -21,6 +21,8 @@ final class ModItemTagsProvider extends ItemTagsProvider {
     static final TagKey<Item> WEAPONS = ItemTags.create(Overgearedmod.id("weapons"));
     /** Items that can roll armor options. */
     static final TagKey<Item> ARMOR = ItemTags.create(Overgearedmod.id("armor"));
+    /** What Smith takes for his iron quest (deliver goal "#overgearedmod:smith_iron"): raw iron or the ores. */
+    static final TagKey<Item> SMITH_IRON = ItemTags.create(Overgearedmod.id("smith_iron"));
 
     ModItemTagsProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup,
                         CompletableFuture<TagLookup<Block>> blockTags, ExistingFileHelper files) {
@@ -43,5 +45,6 @@ final class ModItemTagsProvider extends ItemTagsProvider {
         copy(Tags.Blocks.ORES, Tags.Items.ORES);
         tag(Tags.Items.INGOTS).add(ModItems.MITHRIL_INGOT.get(), ModItems.JAFFA_INGOT.get());
         tag(Tags.Items.RAW_MATERIALS).add(ModItems.RAW_MITHRIL.get(), ModItems.RAW_JAFFA.get());
+        tag(SMITH_IRON).add(Items.RAW_IRON, Items.IRON_ORE, Items.DEEPSLATE_IRON_ORE);
     }
 }

@@ -1,6 +1,7 @@
 {
   "name": { "translate": "quest.overgearedmod.zombie_plague" },
   "description": { "translate": "quest.overgearedmod.zombie_plague.desc" },
+  "giver": "overgearedmod:village_chief",
   "goal": { "type": "kill", "entity": "minecraft:zombie", "count": 5 },
   "xp_reward": 100,
   "item_rewards": [{ "id": "minecraft:bread", "count": 3 }],

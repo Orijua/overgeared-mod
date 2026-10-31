@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.quest;
 
 import com.orijua.overgearedmod.event.QuestCompletedEvent;
 import com.orijua.overgearedmod.event.QuestDiscoveredEvent;
+import com.orijua.overgearedmod.goal.DeliverGoal;
 import com.orijua.overgearedmod.goal.Goal;
 import com.orijua.overgearedmod.goal.PlayerCounters;
 import com.orijua.overgearedmod.playerclass.ClassService;
@@ -15,6 +16,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.NeoForge;
@@ -23,8 +26,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 public final class QuestService {
-    public enum Result { SUCCESS, UNKNOWN_QUEST, NOT_AVAILABLE, NOT_ACTIVE, NOT_DONE }
+    public enum Result { SUCCESS, UNKNOWN_QUEST, NOT_AVAILABLE, NOT_ACTIVE, NOT_DONE, TALK_TO_GIVER, NOTHING_TO_DELIVER }
+
+    /** How close (in blocks) the player must stand to an NPC to deal with its quests. */
+    public static final double GIVER_REACH = 8.0;
 
     private QuestService() {
     }
@@ -33,10 +41,18 @@ public final class QuestService {
         return player.getData(ModAttachments.PLAYER_QUESTS);
     }
 
-    /** Progress of an accepted quest. Pure: also used by the client to draw the Quests tab. */
-    public static int progress(Goal goal, int baseline, PlayerCounters counters, PlayerStats stats) {
-        int current = goal.progress(counters, stats);
-        return Math.min(goal.target(), goal.cumulative() ? current - baseline : current);
+    /** Progress of an accepted quest, from the value it stored. Pure: also used by the client to draw the quests. */
+    public static int progress(Goal goal, int stored, PlayerCounters counters, PlayerStats stats) {
+        return Math.max(0, Math.min(goal.target(), goal.questProgress(stored, counters, stats)));
+    }
+
+    /**
+     * A quest with a giver is only dealt with at a living NPC of that type, within reach. {@code at} is the NPC whose
+     * window the player used, or null from the Quests tab. Quests without a giver are fine anywhere.
+     */
+    public static boolean atGiver(QuestDefinition quest, Player player, @Nullable Entity at) {
+        return quest.giver().isEmpty() || at != null && at.isAlive() && quest.isGivenBy(at.getType())
+                && at.distanceToSqr(player) <= GIVER_REACH * GIVER_REACH;
     }
 
     public static int progress(Player player, QuestDefinition quest, int baseline) {
@@ -84,7 +100,13 @@ public final class QuestService {
         }
     }
 
+    /** From the Quests tab: only quests without a giver. */
     public static Result accept(ServerPlayer player, ResourceLocation id) {
+        return accept(player, id, null);
+    }
+
+    /** {@code at}: the NPC whose quest window the player used, or null (see {@link #atGiver}). */
+    public static Result accept(ServerPlayer player, ResourceLocation id, @Nullable Entity at) {
         Optional<QuestDefinition> quest = Definitions.get(player.level(), ModDatapackRegistries.QUEST, id);
         if (quest.isEmpty()) {
             return Result.UNKNOWN_QUEST;
@@ -92,13 +114,53 @@ public final class QuestService {
         if (!canAccept(player, id, quest.get())) {
             return Result.NOT_AVAILABLE;
         }
+        if (!atGiver(quest.get(), player, at)) {
+            return Result.TALK_TO_GIVER;
+        }
         PlayerQuests quests = get(player);
-        Goal goal = quest.get().goal();
-        int baseline = goal.cumulative()
-                ? goal.progress(player.getData(ModAttachments.PLAYER_COUNTERS), ProgressionService.get(player))
-                : 0;
-        player.setData(ModAttachments.PLAYER_QUESTS, quests.accept(id, baseline));
+        int stored = quest.get().goal().startingValue(player.getData(ModAttachments.PLAYER_COUNTERS), ProgressionService.get(player));
+        player.setData(ModAttachments.PLAYER_QUESTS, quests.accept(id, stored));
         player.displayClientMessage(Component.translatable("message.overgearedmod.quest_accepted", quest.get().name()), true);
+        return Result.SUCCESS;
+    }
+
+    /**
+     * Hands the giver what the player carries towards a deliver quest, up to what is still missing; the items are
+     * taken from the inventory. Partial deliveries add up.
+     */
+    public static Result deliver(ServerPlayer player, ResourceLocation id, @Nullable Entity at) {
+        Optional<QuestDefinition> found = Definitions.get(player.level(), ModDatapackRegistries.QUEST, id);
+        if (found.isEmpty()) {
+            return Result.UNKNOWN_QUEST;
+        }
+        QuestDefinition quest = found.get();
+        PlayerQuests quests = get(player);
+        if (!quests.isActive(id) || !(quest.goal() instanceof DeliverGoal goal)) {
+            return Result.NOT_ACTIVE;
+        }
+        if (!atGiver(quest, player, at)) {
+            return Result.TALK_TO_GIVER;
+        }
+        int missing = goal.target() - quests.active().get(id);
+        int taken = 0;
+        Inventory inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize() && taken < missing; slot++) {
+            ItemStack stack = inventory.getItem(slot);
+            if (goal.accepts(stack)) {
+                int amount = Math.min(stack.getCount(), missing - taken);
+                stack.shrink(amount);
+                taken += amount;
+            }
+        }
+        if (taken == 0) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.quest_nothing_to_deliver", goal.itemsName()), true);
+            return Result.NOTHING_TO_DELIVER;
+        }
+        PlayerQuests delivered = quests.deliver(id, taken);
+        player.setData(ModAttachments.PLAYER_QUESTS, delivered);
+        player.displayClientMessage(Component.translatable("message.overgearedmod.quest_delivered", taken, goal.itemsName(),
+                delivered.active().get(id), goal.target()), true);
+        player.level().playSound(null, player.blockPosition(), SoundEvents.ITEM_PICKUP, SoundSource.PLAYERS, 0.6f, 1.0f);
         return Result.SUCCESS;
     }
 
@@ -114,7 +176,13 @@ public final class QuestService {
         return Result.SUCCESS;
     }
 
+    /** From the Quests tab: only quests without a giver. */
     public static Result claim(ServerPlayer player, ResourceLocation id) {
+        return claim(player, id, null);
+    }
+
+    /** {@code at}: the NPC whose quest window the player used, or null (see {@link #atGiver}). */
+    public static Result claim(ServerPlayer player, ResourceLocation id, @Nullable Entity at) {
         Optional<QuestDefinition> found = Definitions.get(player.level(), ModDatapackRegistries.QUEST, id);
         if (found.isEmpty()) {
             return Result.UNKNOWN_QUEST;
@@ -126,6 +194,9 @@ public final class QuestService {
         }
         if (progress(player, quest, quests.active().get(id)) < quest.goal().target()) {
             return Result.NOT_DONE;
+        }
+        if (!atGiver(quest, player, at)) {
+            return Result.TALK_TO_GIVER;
         }
 
         player.setData(ModAttachments.PLAYER_QUESTS, quests.complete(id));

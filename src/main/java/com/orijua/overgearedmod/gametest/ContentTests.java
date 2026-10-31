@@ -36,8 +36,11 @@ public final class ContentTests {
         helper.assertTrue(content.references().stream().anyMatch(r -> r.from().startsWith("quest ")
                 && r.kind() == ContentIndex.Kind.SKILL), "quest skill-book rewards");
         helper.assertTrue(content.references().stream().anyMatch(r -> r.from().equals("blacksmith trades")), "blacksmith books");
-        helper.assertTrue(Overgearedmod.id("quality_test").equals(content.questRequirements().get(Overgearedmod.id("night_watch"))),
+        helper.assertTrue(Overgearedmod.id("smith_firewood").equals(content.questRequirements().get(Overgearedmod.id("smith_iron"))),
                 "quest chains (requires_quest)");
+        helper.assertTrue(Overgearedmod.id("blacksmith").equals(content.questGivers().get(Overgearedmod.id("smith_firewood"))),
+                "quest givers");
+        helper.assertTrue(content.questGiverNpcs().contains(Overgearedmod.id("village_chief")), "NPCs with a quest window");
         helper.succeed();
     }
 }
