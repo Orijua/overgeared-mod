@@ -46,7 +46,14 @@ public class QuestsTab extends SatisfyTab {
     private record Row(Definitions.Entry<QuestDefinition> quest, @Nullable Button button) {
     }
 
+    /**
+     * Whether the list also shows the route: quests already done and those still locked behind another. Off, it only
+     * lists what can be accepted or is in progress. Kept while the game runs.
+     */
+    private static boolean showRoute;
+
     private final List<Row> rows = new ArrayList<>();
+    private boolean routeToggled;
     private PlayerQuests shownState;
     private final ScrollList scroll = new ScrollList(VISIBLE_ROWS);
     private int questCount;
@@ -77,9 +84,18 @@ public class QuestsTab extends SatisfyTab {
                 PacketDistributor.sendToServer(QuestsSeenPayload.INSTANCE);
             }
         }
+        addWidget.accept(Button.builder(Component.translatable(showRoute ? "screen.overgearedmod.quest_route_hide"
+                                : "screen.overgearedmod.quest_route_show"), b -> {
+                            showRoute = !showRoute;
+                            routeToggled = true;
+                        })
+                .bounds(left + width - 96, top - 3, 96, 14)
+                .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_route_tooltip")))
+                .build(SatisfyButton::new));
         // Hidden quests stay out of the list (not even locked) until the player discovers them.
         List<Definitions.Entry<QuestDefinition>> quests = Definitions.all(player().level(), ModDatapackRegistries.QUEST).stream()
                 .filter(entry -> entry.value().isVisibleTo(entry.id(), shownState))
+                .filter(entry -> showRoute || shownState.isActive(entry.id()) || QuestService.canAccept(player(), entry.id(), entry.value()))
                 .toList();
         questCount = quests.size();
         scroll.clamp(questCount);
@@ -162,6 +178,10 @@ public class QuestsTab extends SatisfyTab {
     /** Buttons depend on quest state and progress, so rebuild whenever either changes. */
     @Override
     public boolean needsRebuild() {
+        if (routeToggled) {
+            routeToggled = false;
+            return true;
+        }
         PlayerQuests state = QuestService.get(player());
         if (!state.equals(shownState)) {
             return true;

@@ -1,8 +1,14 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.quest.QuestService;
+import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModDataComponents;
+import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.registry.ModRecipes;
 import com.orijua.overgearedmod.smithing.ForgingRecipeInput;
@@ -11,6 +17,7 @@ import com.orijua.overgearedmod.smithing.SmithingAnvilMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
@@ -107,6 +114,44 @@ public final class ForgingModeTests {
         helper.assertFalse(menu.finishManual(smith, 1.0), "a result in the same tick is too fast to be a real game");
         helper.assertTrue(inputsUntouched(menu) && !hasForgedJaffaSword(smith), "refused results spend and give nothing");
         helper.succeed();
+    }
+
+    /**
+     * Smith's quality test (2 forges of Rare or better) counts automatic and manual forges alike: after one of each, its
+     * progress is exactly the number of Rare-or-better swords they made, whatever the dice said.
+     */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = NOVICE_TICKS + ForgingRules.MIN_MANUAL_TICKS + 60)
+    public static void bothForgingModesCountForTheQualityTest(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        BlacksmithNpc npc = TestSupport.smith(helper);
+        ResourceLocation qualityTest = Overgearedmod.id("quality_test");
+        TestSupport.completed(smith, "smith_jaffa_sword", "first_commission");
+        helper.assertTrue(QuestService.accept(smith, qualityTest, npc) == QuestService.Result.SUCCESS, "quality test accepted at Smith");
+        int forgesBefore = GoalTracker.counters(smith).get("forge");
+
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        menu.clickMenuButton(smith, SmithingAnvilMenu.AUTO_FORGE_BUTTON);
+        helper.runAtTickTime(NOVICE_TICKS + 5, () -> {
+            menu.broadcastChanges();
+            helper.assertTrue(hasForgedJaffaSword(smith), "the automatic forge finished");
+            menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(ModItems.JAFFA_INGOT.get(), 2));
+            menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.STICK));
+            menu.broadcastChanges();
+            menu.clickMenuButton(smith, SmithingAnvilMenu.MANUAL_FORGE_BUTTON);
+        });
+        helper.runAtTickTime(NOVICE_TICKS + ForgingRules.MIN_MANUAL_TICKS + 10, () -> {
+            helper.assertTrue(menu.finishManual(smith, 1.0), "the manual forge is accepted");
+            helper.assertTrue(GoalTracker.counters(smith).get("forge") == forgesBefore + 2, "both forges were counted");
+            long rareOrBetter = smith.getInventory().items.stream()
+                    .filter(stack -> stack.is(ModItems.JAFFA_SWORD.get()))
+                    .map(stack -> stack.get(ModDataComponents.ITEM_RATING))
+                    .filter(rating -> rating != null && rating.ordinal() >= ItemRating.RARE.ordinal())
+                    .count();
+            int progress = QuestService.progress(smith, Definitions.get(helper.getLevel(), ModDatapackRegistries.QUEST, qualityTest)
+                    .orElseThrow(), QuestService.get(smith).active().get(qualityTest));
+            helper.assertTrue(progress == rareOrBetter, "quality test progress " + progress + " = Rare-or-better swords " + rareOrBetter);
+            helper.succeed();
+        });
     }
 
     @GameTest(template = TestSupport.EMPTY, timeoutTicks = ForgingRules.MIN_MANUAL_TICKS + 40)
