@@ -28,13 +28,23 @@ public final class EquipmentService {
     private EquipmentService() {
     }
 
-    /** Rolls rating and options for a freshly forged item and stamps its requirements. */
+    /** Rolls rating and options for a freshly forged item and stamps its requirements (automatic forging). */
     public static void stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements) {
+        stampForged(smith, stack, requirements, 0, 0);
+    }
+
+    /**
+     * As above, for a manual forge: {@code skillBonus} shifts the rating roll (negative when botched) and
+     * {@code extraOptionChance} may add one option beyond what the rating allows.
+     */
+    public static void stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements,
+                                   double skillBonus, double extraOptionChance) {
         PlayerStats stats = ProgressionService.effectiveStats(smith);
         RandomSource random = smith.getRandom();
-        ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), random.nextDouble());
+        ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), skillBonus, random.nextDouble());
         requirements.ifPresent(r -> stack.set(ModDataComponents.REQUIREMENTS, r));
-        applyRating(smith.level(), stack, rating, random);
+        int extraOptions = random.nextDouble() < extraOptionChance ? 1 : 0;
+        applyRating(smith.level(), stack, rating, extraOptions, random);
     }
 
     /**
@@ -45,16 +55,20 @@ public final class EquipmentService {
         if (!canEnhance(stack) || stack.has(ModDataComponents.ITEM_RATING)) {
             return;
         }
-        applyRating(level, stack, RatingRoller.rollLoot(luck, minimum, random.nextDouble()), random);
+        applyRating(level, stack, RatingRoller.rollLoot(luck, minimum, random.nextDouble()), 0, random);
     }
 
-    /** Stamps {@code rating}, rolls the options it allows from the item_option pool, and renames the item. */
-    private static void applyRating(Level level, ItemStack stack, ItemRating rating, RandomSource random) {
+    /**
+     * Stamps {@code rating}, rolls the options it allows (plus {@code extraOptions}) from the item_option pool,
+     * and renames the item.
+     */
+    private static void applyRating(Level level, ItemStack stack, ItemRating rating, int extraOptions, RandomSource random) {
         stack.set(ModDataComponents.ITEM_RATING, rating);
         List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(level, ModDatapackRegistries.ITEM_OPTION).stream()
                 .filter(e -> e.value().canRollOn(stack))
                 .toList();
-        List<RolledOption> options = EquipmentRules.pickWeighted(pool, e -> e.value().weight(), EquipmentRules.optionCount(rating), random::nextDouble)
+        int count = EquipmentRules.optionCount(rating) + extraOptions;
+        List<RolledOption> options = EquipmentRules.pickWeighted(pool, e -> e.value().weight(), count, random::nextDouble)
                 .stream()
                 .map(e -> new RolledOption(e.id(), EquipmentRules.rollValue(e.value().min(), e.value().max(), rating, random.nextDouble())))
                 .toList();

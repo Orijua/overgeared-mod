@@ -1,0 +1,131 @@
+package com.orijua.overgearedmod.gametest;
+
+import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.registry.ModDataComponents;
+import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.registry.ModRecipes;
+import com.orijua.overgearedmod.smithing.ForgingRecipeInput;
+import com.orijua.overgearedmod.smithing.ForgingRules;
+import com.orijua.overgearedmod.smithing.SmithingAnvilMenu;
+import net.minecraft.core.BlockPos;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+/**
+ * The two ways to forge, through the real anvil menu. A fake player's menu is not ticked by the server,
+ * so the tests call {@code broadcastChanges()} themselves, as ServerPlayer.tick does every tick.
+ */
+@GameTestHolder(Overgearedmod.MODID)
+@PrefixGameTestTemplate(false)
+public final class ForgingModeTests {
+    /** A novice forges automatically in the longest time (ForgingRulesTest checks it); a constant, for timeoutTicks. */
+    private static final int NOVICE_TICKS = ForgingRules.MAX_AUTO_TICKS;
+
+    private ForgingModeTests() {
+    }
+
+    /** An anvil menu loaded with 2 mithril ingots + a stick (the Jaffa sword recipe). */
+    private static SmithingAnvilMenu anvilWithJaffaInputs(GameTestHelper helper, ServerPlayer smith) {
+        SmithingAnvilMenu menu = new SmithingAnvilMenu(1, smith.getInventory(),
+                ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1))));
+        menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(ModItems.MITHRIL_INGOT.get(), 2));
+        menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.STICK));
+        helper.assertTrue(menu.canForge(), "2 mithril + stick should preview the Jaffa sword");
+        return menu;
+    }
+
+    private static boolean hasForgedJaffaSword(ServerPlayer smith) {
+        return smith.getInventory().items.stream()
+                .anyMatch(stack -> stack.is(ModItems.JAFFA_SWORD.get()) && stack.has(ModDataComponents.ITEM_RATING));
+    }
+
+    private static boolean inputsUntouched(SmithingAnvilMenu menu) {
+        return menu.getSlot(SmithingAnvilMenu.TOP_SLOT).getItem().getCount() == 2
+                && menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).getItem().is(Items.STICK);
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void resultCanOnlyBeForgedWithTheButtons(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        helper.assertFalse(menu.getSlot(SmithingAnvilMenu.RESULT_SLOT).mayPickup(smith), "the result slot is only a preview");
+        helper.assertTrue(menu.quickMoveStack(smith, SmithingAnvilMenu.RESULT_SLOT).isEmpty(), "and can't be shift-clicked out");
+        helper.assertTrue(inputsUntouched(menu) && !hasForgedJaffaSword(smith), "nothing was forged");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = NOVICE_TICKS + 40)
+    public static void autoForgeGivesTheItemOnceItsTimeIsUp(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        helper.assertTrue(menu.clickMenuButton(smith, SmithingAnvilMenu.AUTO_FORGE_BUTTON), "auto forging starts");
+        helper.runAtTickTime(NOVICE_TICKS / 2, () -> {
+            menu.broadcastChanges();
+            helper.assertTrue(menu.autoForging() && menu.autoProgress() > 0 && menu.autoProgress() < 1, "half way: " + menu.autoProgress());
+            helper.assertTrue(inputsUntouched(menu) && !hasForgedJaffaSword(smith), "nothing is spent before it finishes");
+        });
+        helper.runAtTickTime(NOVICE_TICKS + 5, () -> {
+            menu.broadcastChanges();
+            helper.assertFalse(menu.autoForging(), "finished");
+            helper.assertTrue(hasForgedJaffaSword(smith), "the rated sword goes straight to the inventory");
+            helper.assertTrue(menu.getSlot(SmithingAnvilMenu.TOP_SLOT).getItem().isEmpty(), "both ingots were spent");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = NOVICE_TICKS + 40)
+    public static void autoForgeStopsWhenTheInputsChange(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        menu.clickMenuButton(smith, SmithingAnvilMenu.AUTO_FORGE_BUTTON);
+        helper.runAtTickTime(10, () -> {
+            menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(ItemStack.EMPTY); // the player takes the stick out
+            menu.broadcastChanges();
+            helper.assertFalse(menu.autoForging(), "changing the inputs cancels it");
+            menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.STICK));
+        });
+        helper.runAtTickTime(NOVICE_TICKS + 5, () -> {
+            menu.broadcastChanges();
+            helper.assertTrue(inputsUntouched(menu) && !hasForgedJaffaSword(smith), "a cancelled forge spends and gives nothing");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void manualForgeRefusesResultsWithoutARealGame(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        helper.assertFalse(menu.finishManual(smith, 1.0), "no minigame was started");
+        menu.clickMenuButton(smith, SmithingAnvilMenu.MANUAL_FORGE_BUTTON);
+        helper.assertFalse(menu.finishManual(smith, 1.0), "a result in the same tick is too fast to be a real game");
+        helper.assertTrue(inputsUntouched(menu) && !hasForgedJaffaSword(smith), "refused results spend and give nothing");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = ForgingRules.MIN_MANUAL_TICKS + 40)
+    public static void manualForgeGivesTheItemAndDoubleSmithingXp(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        int recipeXp = helper.getLevel().getRecipeManager().getRecipeFor(ModRecipes.FORGING.get(),
+                new ForgingRecipeInput(new ItemStack(ModItems.MITHRIL_INGOT.get(), 2), new ItemStack(Items.STICK)), helper.getLevel())
+                .orElseThrow().value().smithingXp();
+        menu.clickMenuButton(smith, SmithingAnvilMenu.MANUAL_FORGE_BUTTON);
+        helper.runAtTickTime(ForgingRules.MIN_MANUAL_TICKS + 2, () -> {
+            int xpBefore = ProgressionService.get(smith).smithingXp();
+            helper.assertTrue(menu.finishManual(smith, 1.0), "a plausible minigame result is accepted");
+            helper.assertTrue(hasForgedJaffaSword(smith), "the rated sword goes straight to the inventory");
+            int gained = ProgressionService.get(smith).smithingXp() - xpBefore;
+            helper.assertTrue(gained == recipeXp * ForgingRules.MANUAL_XP_MULTIPLIER, "double smithing XP: expected "
+                    + recipeXp * ForgingRules.MANUAL_XP_MULTIPLIER + ", got " + gained);
+            helper.assertFalse(menu.finishManual(smith, 1.0), "one minigame forges once");
+            helper.succeed();
+        });
+    }
+}
