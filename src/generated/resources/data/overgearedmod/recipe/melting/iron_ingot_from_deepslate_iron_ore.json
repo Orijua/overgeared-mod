@@ -1,0 +1,13 @@
+{
+  "type": "overgearedmod:melting",
+  "ingredient": {
+    "item": "minecraft:deepslate_iron_ore"
+  },
+  "min_temperature": 900,
+  "result": {
+    "count": 1,
+    "id": "minecraft:iron_ingot"
+  },
+  "smithing_xp": 3,
+  "time": 160
+}

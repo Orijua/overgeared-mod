@@ -1,0 +1,14 @@
+{
+  "type": "overgearedmod:melting",
+  "ingredient": {
+    "item": "overgearedmod:blue_orichalcum_ore"
+  },
+  "min_temperature": 1450,
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:blue_orichalcum_ingot"
+  },
+  "smithing_level": 8,
+  "smithing_xp": 20,
+  "time": 400
+}

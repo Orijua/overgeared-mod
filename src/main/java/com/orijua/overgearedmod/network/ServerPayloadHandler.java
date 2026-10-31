@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.skill.SkillService;
+import com.orijua.overgearedmod.smelting.SmelterMenu;
 import com.orijua.overgearedmod.smithing.SmithingAnvilMenu;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -48,6 +49,15 @@ final class ServerPayloadHandler {
                 && player.containerMenu instanceof SmithingAnvilMenu anvil
                 && anvil.containerId == payload.containerId()) {
             anvil.finishManual(player, payload.precision());
+        }
+    }
+
+    /** Only for the smelter the player has open right now; the menu checks the timing, the smelter the rest. */
+    static void manualSmelt(ManualSmeltPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player
+                && player.containerMenu instanceof SmelterMenu smelter
+                && smelter.containerId == payload.containerId()) {
+            smelter.finishManual(player, payload.precision());
         }
     }
 

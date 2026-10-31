@@ -28,6 +28,8 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.SKILL_BOOK.get(), "writable_book");
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
         vanillaTexture(ModItems.JAFFA_INGOT.get(), "copper_ingot");
+        vanillaTexture(ModItems.RAW_BLUE_ORICHALCUM.get(), "prismarine_crystals");
+        vanillaTexture(ModItems.BLUE_ORICHALCUM_INGOT.get(), "prismarine_shard");
 
         withExistingParent(ModItems.BLACKSMITH_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.VILLAGE_CHIEF_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));

@@ -9,11 +9,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -37,13 +40,14 @@ public final class MaterialTests {
         helper.succeed();
     }
 
+    /** Mithril is an advanced metal: it melts into an ingot in the smelter only (SmelterTests checks the furnace refuses it). */
     @GameTest(template = TestSupport.EMPTY)
-    public static void rawMithrilSmeltsIntoIngot(GameTestHelper helper) {
+    public static void rawMithrilMeltsIntoIngotInTheSmelter(GameTestHelper helper) {
         ItemStack result = helper.getLevel().getRecipeManager()
-                .getRecipeFor(RecipeType.SMELTING, new SingleRecipeInput(new ItemStack(ModItems.RAW_MITHRIL.get())), helper.getLevel())
+                .getRecipeFor(ModRecipes.MELTING.get(), new SingleRecipeInput(new ItemStack(ModItems.RAW_MITHRIL.get())), helper.getLevel())
                 .map(recipe -> recipe.value().getResultItem(helper.getLevel().registryAccess()))
                 .orElse(ItemStack.EMPTY);
-        helper.assertTrue(result.is(ModItems.MITHRIL_INGOT.get()), "raw mithril should smelt into an ingot, got " + result);
+        helper.assertTrue(result.is(ModItems.MITHRIL_INGOT.get()), "raw mithril should melt into an ingot, got " + result);
         helper.succeed();
     }
 
@@ -95,6 +99,32 @@ public final class MaterialTests {
                 "the placed feature should load from the datapack");
         helper.assertTrue(registries.registryOrThrow(NeoForgeRegistries.Keys.BIOME_MODIFIERS).containsKey(Overgearedmod.id("add_ore_jaffa")),
                 "and be added to the overworld's biomes");
+        helper.succeed();
+    }
+
+    /** The hardest mineral (canon): only a diamond pickaxe breaks it for its raw orichalcum. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void blueOrichalcumNeedsADiamondPickaxe(GameTestHelper helper) {
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        for (Block ore : List.of(ModBlocks.BLUE_ORICHALCUM_ORE.get(), ModBlocks.DEEPSLATE_BLUE_ORICHALCUM_ORE.get())) {
+            List<ItemStack> drops = Block.getDrops(ore.defaultBlockState(), helper.getLevel(), pos, null, null,
+                    new ItemStack(Items.DIAMOND_PICKAXE));
+            helper.assertTrue(drops.stream().anyMatch(stack -> stack.is(ModItems.RAW_BLUE_ORICHALCUM.get())), ore + " drops raw orichalcum: " + drops);
+            helper.assertFalse(new ItemStack(Items.IRON_PICKAXE).isCorrectToolForDrops(ore.defaultBlockState()), "iron isn't enough");
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void blueOrichalcumGeneratesUnderForests(GameTestHelper helper) {
+        var registries = helper.getLevel().registryAccess();
+        helper.assertTrue(registries.registryOrThrow(Registries.PLACED_FEATURE).containsKey(Overgearedmod.id("ore_blue_orichalcum")),
+                "the placed feature should load");
+        helper.assertTrue(registries.registryOrThrow(NeoForgeRegistries.Keys.BIOME_MODIFIERS)
+                .containsKey(Overgearedmod.id("add_ore_blue_orichalcum")), "and its biome modifier");
+        TagKey<Biome> forests = TagKey.create(Registries.BIOME, Overgearedmod.id("has_ore/blue_orichalcum"));
+        helper.assertTrue(registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.DARK_FOREST).is(forests), "under forests");
+        helper.assertFalse(registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS).is(forests), "not under plains");
         helper.succeed();
     }
 }

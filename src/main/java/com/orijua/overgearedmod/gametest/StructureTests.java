@@ -187,6 +187,7 @@ public final class StructureTests {
     @GameTest(template = Bairan.SMITHY)
     public static void smithyPieceHasSmithAtTheAnvil(GameTestHelper helper) {
         helper.assertBlockPresent(ModBlocks.SMITHING_ANVIL.get(), inPiece(3, 1, 3));
+        helper.assertBlockPresent(ModBlocks.SMELTER.get(), inPiece(1, 1, 1));
         List<BlacksmithNpc> smiths = helper.getEntities(ModEntities.BLACKSMITH.get());
         helper.assertTrue(smiths.size() == 1, "one blacksmith, got " + smiths.size());
         helper.assertTrue(smiths.getFirst().getCustomName() != null

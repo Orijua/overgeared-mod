@@ -1,7 +1,10 @@
-// 1.21.1	2026-10-31T10:33:24.4907951	Loot Tables
+// 1.21.1	2026-10-31T12:27:34.6967822	Loot Tables
+e127692e2ebeb46eabe8e0b6aeea83a83c1724b0 data/overgearedmod/loot_table/blocks/blue_orichalcum_ore.json
+c7896b8130bbb87dd25986bcb32e31e27abaedeb data/overgearedmod/loot_table/blocks/deepslate_blue_orichalcum_ore.json
 daa1264b07ec5c06bebcbe4074142bcfd4c41ff5 data/overgearedmod/loot_table/blocks/deepslate_jaffa_ore.json
 095bb06ba714a29767e70d365c1c5cd15ca434c2 data/overgearedmod/loot_table/blocks/deepslate_mithril_ore.json
 324912fbd617c156041a901d847078ec1d77315b data/overgearedmod/loot_table/blocks/jaffa_ore.json
 a109e87245e8b43e855026d657dec0f1c72c3ba8 data/overgearedmod/loot_table/blocks/mithril_ore.json
+51fbe3d91996ab012950c28a4eda403de7e0e592 data/overgearedmod/loot_table/blocks/smelter.json
 5e51c90ca926bd735a07121a102ba0038745512d data/overgearedmod/loot_table/blocks/smithing_anvil.json
 2be4589865e37f62f0775e2c9a465f9df373ec5f data/overgearedmod/loot_table/entities/bone_lord.json
