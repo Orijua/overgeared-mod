@@ -5,6 +5,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -82,5 +84,32 @@ class TemplateBuilderTest {
         CompoundTag chest = blocks.getCompound(1).getCompound("nbt");
         assertEquals("minecraft:chests/simple_dungeon", chest.getString("LootTable"));
         assertFalse(jigsaw.contains("x"), "no world position: the template places it");
+    }
+
+    @Test
+    void wallsLeaveTheInsideAlone() {
+        TemplateBuilder room = new TemplateBuilder(3, 1, 3).walls(0, 0, 0, 2, 0, 2, "minecraft:stone");
+        assertEquals("minecraft:stone", room.blockAt(0, 0, 1));
+        assertNull(room.blockAt(1, 0, 1), "the middle of a 3x3 room");
+        assertEquals(8, room.build(1).getList("blocks", Tag.TAG_COMPOUND).size());
+    }
+
+    @Test
+    void entitiesStandOnTheCenterOfTheirBlock() {
+        CompoundTag data = new CompoundTag();
+        data.putString("CustomName", "{\"text\":\"Smith\"}");
+        TemplateBuilder piece = new TemplateBuilder(2, 2, 2).entity(1, 1, 0, "a:npc", data);
+        assertEquals(List.of("a:npc"), piece.entityIds());
+
+        CompoundTag entity = piece.build(1).getList("entities", Tag.TAG_COMPOUND).getCompound(0);
+        ListTag pos = entity.getList("pos", Tag.TAG_DOUBLE);
+        assertEquals(1.5, pos.getDouble(0));
+        assertEquals(1.0, pos.getDouble(1));
+        assertEquals(0.5, pos.getDouble(2));
+        assertEquals(1, entity.getList("blockPos", Tag.TAG_INT).getInt(0));
+        assertEquals("a:npc", entity.getCompound("nbt").getString("id"));
+        assertEquals("{\"text\":\"Smith\"}", entity.getCompound("nbt").getString("CustomName"));
+        assertFalse(data.contains("id"), "the caller's data isn't changed");
+        assertThrows(IllegalArgumentException.class, () -> piece.entity(2, 0, 0, "a:npc", new CompoundTag()));
     }
 }

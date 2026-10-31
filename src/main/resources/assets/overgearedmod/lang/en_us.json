@@ -6,6 +6,8 @@
   "block.overgearedmod.deepslate_mithril_ore": "Deepslate Mithril Ore",
   "entity.overgearedmod.blacksmith": "Blacksmith",
   "item.overgearedmod.blacksmith_spawn_egg": "Blacksmith Spawn Egg",
+  "entity.overgearedmod.village_chief": "Village Chief",
+  "item.overgearedmod.village_chief_spawn_egg": "Village Chief Spawn Egg",
   "entity.overgearedmod.bone_lord": "Bone Lord",
   "item.overgearedmod.bone_lord_spawn_egg": "Bone Lord Spawn Egg",
   "message.overgearedmod.bone_lord_enraged": "%s is enraged!",
