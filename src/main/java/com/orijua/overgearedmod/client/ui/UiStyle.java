@@ -121,10 +121,15 @@ public final class UiStyle {
 
     /** A Satisfy bar: light-blue 1px border, dark translucent track, filled left to right with a lit top edge. */
     public static void bar(GuiGraphics graphics, int x, int y, int width, int height, float fraction, int color) {
-        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, BAR_BORDER);
-        graphics.fill(x, y, x + width, y + height, BAR_EMPTY);
+        bar(graphics, x, y, width, height, fraction, color, 1);
+    }
+
+    /** The same bar faded to {@code alpha} (0 to 1), for HUD parts that appear and disappear. */
+    public static void bar(GuiGraphics graphics, int x, int y, int width, int height, float fraction, int color, float alpha) {
+        graphics.fill(x - 1, y - 1, x + width + 1, y + height + 1, withAlpha(BAR_BORDER, alpha));
+        graphics.fill(x, y, x + width, y + height, withAlpha(BAR_EMPTY, alpha));
         int filled = Math.round(width * Math.clamp(fraction, 0, 1));
-        graphics.fillGradient(x, y, x + filled, y + height, lighter(color), color);
+        graphics.fillGradient(x, y, x + filled, y + height, withAlpha(lighter(color), alpha), withAlpha(color, alpha));
     }
 
     /** {@code color} blended a third of the way to white, keeping its alpha. */
