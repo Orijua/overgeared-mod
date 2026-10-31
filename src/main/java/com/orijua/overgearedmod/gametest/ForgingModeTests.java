@@ -141,7 +141,7 @@ public final class ForgingModeTests {
         });
         helper.runAtTickTime(NOVICE_TICKS + ForgingRules.MIN_MANUAL_TICKS + 10, () -> {
             helper.assertTrue(menu.finishManual(smith, 1.0), "the manual forge is accepted");
-            helper.assertTrue(GoalTracker.counters(smith).get("forge") == forgesBefore + 2, "both forges were counted");
+            helper.assertTrue(GoalTracker.counters(smith).get("forge") == forgesBefore + 2, "both forges were counted: " + forgesBefore + " -> " + GoalTracker.counters(smith).get("forge"));
             long rareOrBetter = smith.getInventory().items.stream()
                     .filter(stack -> stack.is(ModItems.JAFFA_SWORD.get()))
                     .map(stack -> stack.get(ModDataComponents.ITEM_RATING))
@@ -150,6 +150,69 @@ public final class ForgingModeTests {
             int progress = QuestService.progress(smith, Definitions.get(helper.getLevel(), ModDatapackRegistries.QUEST, qualityTest)
                     .orElseThrow(), QuestService.get(smith).active().get(qualityTest));
             helper.assertTrue(progress == rareOrBetter, "quality test progress " + progress + " = Rare-or-better swords " + rareOrBetter);
+            helper.succeed();
+        });
+    }
+
+    private static long forgedJaffaSwords(ServerPlayer smith) {
+        return smith.getInventory().items.stream()
+                .filter(stack -> stack.is(ModItems.JAFFA_SWORD.get()) && stack.has(ModDataComponents.ITEM_RATING))
+                .mapToInt(ItemStack::getCount)
+                .sum();
+    }
+
+    /** A master smith (level 30: every batch size) with ingots and sticks for {@code swords} Jaffa swords. */
+    private static SmithingAnvilMenu masterAnvil(GameTestHelper helper, ServerPlayer smith, int swords) {
+        ProgressionService.addSmithingXp(smith, 10 * 30 * 30);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(ModItems.JAFFA_INGOT.get(), 2 * swords));
+        menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.STICK, swords));
+        return menu;
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void batchSizesStayLockedForANovice(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        menu.clickMenuButton(smith, SmithingAnvilMenu.BATCH_BUTTON);
+        helper.assertTrue(menu.batchChoice() == 0, "below smithing 10 the anvil only forges ×1");
+        helper.succeed();
+    }
+
+    /** ×5 asked, materials for 3: three rated swords, one after another, then it stops by itself. */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 5 * ForgingRules.MIN_AUTO_TICKS + 40)
+    public static void batchForgesUntilTheMaterialsRunOut(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = masterAnvil(helper, smith, 3);
+        menu.clickMenuButton(smith, SmithingAnvilMenu.BATCH_BUTTON);
+        helper.assertTrue(menu.batchChoice() == 1, "a master smith can pick ×5");
+        helper.assertTrue(menu.clickMenuButton(smith, SmithingAnvilMenu.AUTO_FORGE_BUTTON), "the batch starts");
+        helper.assertTrue(menu.batchCount() == 3, "capped at what the materials make: " + menu.batchCount());
+        helper.onEachTick(menu::broadcastChanges);
+        helper.runAtTickTime(ForgingRules.MIN_AUTO_TICKS + 5, () ->
+                helper.assertTrue(forgedJaffaSwords(smith) == 1 && menu.autoForging(), "one forged, the next one under way: forged " + forgedJaffaSwords(smith) + ", forging " + menu.autoForging() + ", done " + menu.batchDone() + "/" + menu.batchCount()));
+        helper.runAtTickTime(3 * ForgingRules.MIN_AUTO_TICKS + 10, () -> {
+            helper.assertTrue(forgedJaffaSwords(smith) == 3, "three swords: " + forgedJaffaSwords(smith));
+            helper.assertFalse(menu.autoForging(), "out of materials, the batch ends");
+            helper.assertTrue(menu.getSlot(SmithingAnvilMenu.TOP_SLOT).getItem().isEmpty(), "every ingot was spent");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 5 * ForgingRules.MIN_AUTO_TICKS + 40)
+    public static void stopEndsTheBatchKeepingWhatWasForged(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = masterAnvil(helper, smith, 5);
+        menu.clickMenuButton(smith, SmithingAnvilMenu.BATCH_BUTTON);
+        menu.clickMenuButton(smith, SmithingAnvilMenu.AUTO_FORGE_BUTTON);
+        helper.onEachTick(menu::broadcastChanges);
+        helper.runAtTickTime(ForgingRules.MIN_AUTO_TICKS + 5, () -> {
+            helper.assertTrue(menu.clickMenuButton(smith, SmithingAnvilMenu.STOP_BUTTON), "Stop works mid-batch: forged " + forgedJaffaSwords(smith) + ", done " + menu.batchDone() + "/" + menu.batchCount());
+            helper.assertFalse(menu.autoForging(), "stopped");
+        });
+        helper.runAtTickTime(3 * ForgingRules.MIN_AUTO_TICKS, () -> {
+            helper.assertTrue(forgedJaffaSwords(smith) == 1, "the forged sword stays, no more come: " + forgedJaffaSwords(smith));
+            helper.assertTrue(menu.getSlot(SmithingAnvilMenu.TOP_SLOT).getItem().getCount() == 8, "the rest of the ingots are untouched");
             helper.succeed();
         });
     }

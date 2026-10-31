@@ -22,7 +22,36 @@ public final class ForgingRules {
     public static final int MIN_MANUAL_TICKS = 40;
     public static final int MAX_MANUAL_TICKS = 20 * 120;
 
+    /** Batch forging (own design): how many items one press of Auto makes. "All" is as many as the materials allow. */
+    public static final int BATCH_ALL = Integer.MAX_VALUE;
+    public static final int[] BATCH_SIZES = {1, 5, 10, BATCH_ALL};
+    /** Smithing level (with the class bonus) that unlocks each of {@link #BATCH_SIZES}. */
+    public static final int[] BATCH_UNLOCK_LEVELS = {0, 10, 20, 30};
+
     private ForgingRules() {
+    }
+
+    /** Whether the batch size at {@code index} of {@link #BATCH_SIZES} is unlocked at this smithing level. */
+    public static boolean batchUnlocked(int index, int smithingLevel) {
+        return index >= 0 && index < BATCH_SIZES.length && smithingLevel >= BATCH_UNLOCK_LEVELS[index];
+    }
+
+    /** The next unlocked batch size after {@code index}, wrapping back to ×1. */
+    public static int nextBatchIndex(int index, int smithingLevel) {
+        int next = index + 1;
+        return batchUnlocked(next, smithingLevel) ? next : 0;
+    }
+
+    /**
+     * How many items a batch really makes: the chosen size, capped by the materials. Each item takes
+     * {@code perItem} materials and, if the recipe uses a handle, one handle ({@code handles} &lt; 0 means none).
+     */
+    public static int batchTotal(int chosen, int materials, int perItem, int handles) {
+        int affordable = perItem <= 0 ? 0 : materials / perItem;
+        if (handles >= 0) {
+            affordable = Math.min(affordable, handles);
+        }
+        return Math.max(0, Math.min(chosen, affordable));
     }
 
     /** 4 s for a novice, shorter with every smithing level and DEX point, never under 1 s. */
