@@ -6,11 +6,6 @@
     }
   ],
   "placement": {
-    "type": "minecraft:concentric_rings",
-    "distance": 3,
-    "spread": 1,
-    "count": 1,
-    "preferred_biomes": "#overgearedmod:has_structure/bairan",
-    "salt": 1517520851
+    "type": "overgearedmod:starting_village"
   }
 }

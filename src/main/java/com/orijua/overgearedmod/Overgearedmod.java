@@ -21,7 +21,9 @@ import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.registry.ModLoot;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.registry.ModRecipes;
+import com.orijua.overgearedmod.registry.ModWorldgen;
 import com.orijua.overgearedmod.skill.SkillEvents;
+import com.orijua.overgearedmod.structure.StartingVillage;
 import com.orijua.overgearedmod.validation.ContentValidationEvents;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -54,6 +56,7 @@ public class Overgearedmod {
         ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         ModLoot.LOOT_FUNCTIONS.register(modEventBus);
         ModLoot.LOOT_MODIFIERS.register(modEventBus);
+        ModWorldgen.STRUCTURE_PLACEMENTS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         // Mod bus events (JSON registries, networking, creative tabs, entity attributes, datagen).
@@ -74,6 +77,7 @@ public class Overgearedmod {
         ContentValidationEvents.register(NeoForge.EVENT_BUS);
         NotificationEvents.register(NeoForge.EVENT_BUS);
         DebugCommands.register(NeoForge.EVENT_BUS);
+        StartingVillage.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }
