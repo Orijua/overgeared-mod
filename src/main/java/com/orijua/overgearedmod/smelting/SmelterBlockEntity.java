@@ -35,12 +35,12 @@ import java.util.UUID;
 /**
  * The smelter's state: its three slots (metal, fuel, ingots) and its heat, kept while nobody looks.
  * <p>
- * The fuel only burns while it works (melting, or preheating for the bellows), pulling the temperature towards the
- * fuel's heat ({@link #fuelHeat}); idle, the burning piece keeps as embers and it cools slowly.
- * <b>Automatic:</b> a smith starts it (if their smithing level is enough) and it melts one piece after another while
- * it is hot enough, each with a chance of an extra ingot by that smith's level. <b>Preheat</b> burns the fire until
- * the metal's bellows zone and then puts it out. <b>Manual:</b> the smith plays the bellows minigame; its precision
- * decides an extra ingot or slag ({@link #finishManual}). Smithing XP goes to the smith who started it.
+ * <b>Fire:</b> the smith lights it and puts it out. A burning piece of fuel holds the heat at its level
+ * ({@link #fuelHeat}) until it burns out; while lit and with metal to melt the next piece goes in, otherwise the rest
+ * of the fuel waits and the heat drops. <b>Automatic:</b> a smith starts it (if their smithing level is enough) and it
+ * melts one piece after another while it is hot enough, each with a chance of an extra ingot by that smith's level.
+ * <b>Manual:</b> the smith plays the bellows minigame; its precision decides an extra ingot or slag
+ * ({@link #finishManual}). Smithing XP goes to the smith who started it.
  */
 public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     public static final int INPUT = 0;
@@ -55,7 +55,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     public static final int DATA_TIME = 5;
     public static final int DATA_MIN_TEMPERATURE = 6;
     public static final int DATA_MELTING = 7;
-    public static final int DATA_PREHEATING = 8;
+    public static final int DATA_FIRE_ON = 8;
     public static final int DATA_COUNT = 9;
     private static final Component TITLE = Component.translatable("container.overgearedmod.smelter");
 
@@ -72,8 +72,8 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     private int burnTotal;
     private int progress;
     private boolean melting;
-    /** Burning the fire without melting, until hot enough for the bellows ({@link SmelterRules#preheatTarget}). */
-    private boolean preheating;
+    /** Lit by the smith: it takes fuel while there is metal to melt (see {@link #tick}). */
+    private boolean fireOn;
     @Nullable
     private UUID melter;
     private int melterLevel;
@@ -92,7 +92,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
                 case DATA_TIME -> currentRecipe == null ? 0 : currentRecipe.value().time();
                 case DATA_MIN_TEMPERATURE -> currentRecipe == null ? 0 : currentRecipe.value().minTemperature();
                 case DATA_MELTING -> melting ? 1 : 0;
-                case DATA_PREHEATING -> preheating ? 1 : 0;
+                case DATA_FIRE_ON -> fireOn ? 1 : 0;
                 default -> 0;
             };
         }
@@ -153,27 +153,20 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * The fire only burns while the smelter works: melting, or preheating for the bellows. Otherwise the piece of fuel
-     * that was burning stays as embers (its time is kept) and the heat drops slowly.
+     * The piece of fuel that burns always burns out, holding the heat at the fuel's level. While the smelter is lit and
+     * has metal to melt, the next piece goes in as soon as one ends; without metal the rest of the fuel waits. Once
+     * nothing burns, the heat drops.
      */
     private void tick(ServerLevel level, BlockPos pos, BlockState state) {
         currentRecipe = findRecipe(level);
-        if (preheating && currentRecipe == null) {
-            preheating = false;
-        }
-        boolean working = (melting || preheating) && currentRecipe != null;
-        if (working && burnTime <= 0) {
-            burnFuel();
-        }
-        boolean burning = working && burnTime > 0;
-        if (burning) {
+        if (burnTime > 0) {
             burnTime--;
         }
-        temperature = SmelterRules.nextTemperature(temperature, fuelHeat, burning);
-        if (preheating && burning
-                && temperature >= SmelterRules.preheatTarget(currentRecipe.value().minTemperature(), fuelHeat)) {
-            preheating = false; // hot enough for the bellows: the fire goes out by itself
+        if (burnTime <= 0 && fireOn && currentRecipe != null) {
+            burnFuel();
         }
+        boolean burning = burnTime > 0;
+        temperature = SmelterRules.nextTemperature(temperature, fuelHeat, burning);
         if (melting) {
             meltStep(level);
         }
@@ -265,7 +258,6 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         if (!checkCanMelt(smith)) {
             return false;
         }
-        preheating = false;
         melting = true;
         progress = 0;
         melter = smith.getUUID();
@@ -273,21 +265,27 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         return true;
     }
 
-    /** The Preheat button: lights the fire without melting (it goes out by itself once hot enough), or puts it out. */
-    public boolean togglePreheat(ServerPlayer smith) {
-        if (preheating) {
-            preheating = false;
+    /**
+     * The Light / Put out button. Lighting needs fuel; putting it out douses the fire at once, and the piece that was
+     * burning is lost.
+     */
+    public boolean toggleFire(ServerPlayer smith) {
+        if (fireOn) {
+            fireOn = false;
+            burnTime = 0;
+            burnTotal = 0;
             return true;
         }
-        if (melting || !checkCanMelt(smith)) {
+        if (!isFuel(items.getItem(FUEL))) {
+            smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_no_fuel"), true);
             return false;
         }
-        preheating = true;
+        fireOn = true;
         return true;
     }
 
-    public boolean preheating() {
-        return preheating;
+    public boolean fireOn() {
+        return fireOn;
     }
 
     /** Whether the smith can tend a manual melt now: metal, skill, room, no automatic melt running, and enough heat. */
@@ -359,7 +357,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         tag.putInt("burn_total", burnTotal);
         tag.putInt("progress", progress);
         tag.putBoolean("melting", melting);
-        tag.putBoolean("preheating", preheating);
+        tag.putBoolean("fire_on", fireOn);
         if (melter != null) {
             tag.putUUID("melter", melter);
         }
@@ -380,7 +378,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         burnTotal = tag.getInt("burn_total");
         progress = tag.getInt("progress");
         melting = tag.getBoolean("melting");
-        preheating = tag.getBoolean("preheating");
+        fireOn = tag.getBoolean("fire_on");
         melter = tag.hasUUID("melter") ? tag.getUUID("melter") : null;
         melterLevel = tag.getInt("melter_level");
     }

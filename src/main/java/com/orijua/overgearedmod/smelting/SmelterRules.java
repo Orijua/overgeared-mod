@@ -12,7 +12,7 @@ public final class SmelterRules {
     /** Degrees gained per tick while the fuel burns below its heat, and lost per tick while it burns above it. */
     public static final int HEAT_RATE = 6;
     public static final int COOL_RATE = 3;
-    /** Degrees lost per tick with the fire out: slowly, so a preheated smelter stays hot long enough for the bellows. */
+    /** Degrees lost per tick once nothing burns: slowly, as a big furnace keeps its heat. */
     public static final int IDLE_COOL_RATE = 1;
     /** The bellows' good zone: from the metal's melting temperature to this many degrees above it. */
     public static final int ZONE_WIDTH = 150;
@@ -42,14 +42,6 @@ public final class SmelterRules {
             return Math.max(AMBIENT, current - IDLE_COOL_RATE);
         }
         return current < fuelHeat ? Math.min(fuelHeat, current + HEAT_RATE) : Math.max(fuelHeat, current - COOL_RATE);
-    }
-
-    /**
-     * How hot preheating takes the smelter before it puts the fire out by itself: the middle of the metal's bellows
-     * zone, or as hot as the fuel gets if that is less.
-     */
-    public static int preheatTarget(int meltingTemperature, int fuelHeat) {
-        return Math.min(meltingTemperature + ZONE_WIDTH / 2, fuelHeat);
     }
 
     public static double autoExtraChance(int smithingLevel) {

@@ -12,14 +12,8 @@ class SmelterRulesTest {
         assertEquals(26, SmelterRules.nextTemperature(20, 1000, true), "burning fuel heats");
         assertEquals(1000, SmelterRules.nextTemperature(998, 1000, true), "but never above the fuel's heat");
         assertEquals(1497, SmelterRules.nextTemperature(1500, 1000, true), "hotter than the fuel: it cools towards it");
-        assertEquals(999, SmelterRules.nextTemperature(1000, 1000, false), "fire out: it cools slowly");
+        assertEquals(999, SmelterRules.nextTemperature(1000, 1000, false), "nothing burns: it cools slowly");
         assertEquals(SmelterRules.AMBIENT, SmelterRules.nextTemperature(21, 1000, false), "never below the ambient");
-    }
-
-    @Test
-    void preheatingStopsInTheMiddleOfTheZoneOrAtTheFuelsLimit() {
-        assertEquals(900 + SmelterRules.ZONE_WIDTH / 2, SmelterRules.preheatTarget(900, 1050), "iron with coal");
-        assertEquals(1500, SmelterRules.preheatTarget(1450, 1500), "orichalcum with blaze: as hot as blaze gets");
     }
 
     @Test
