@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.EquipRequirements;
 import com.orijua.overgearedmod.progression.StatType;
 import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.smelting.MeltingRecipe;
 import com.orijua.overgearedmod.smithing.ForgingRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -22,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-/** Crafting, smelting and smithing-anvil (forging) recipes. */
+/** Crafting, furnace, smelter (melting) and smithing-anvil (forging) recipes. */
 final class ModRecipeProvider extends RecipeProvider {
     ModRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> lookup) {
         super(output, lookup);
@@ -32,10 +33,16 @@ final class ModRecipeProvider extends RecipeProvider {
     protected void buildRecipes(RecipeOutput output) {
         crafting(output);
         smelting(output);
+        melting(output);
         forging(output);
     }
 
     private void crafting(RecipeOutput output) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SMELTER.get())
+                .pattern("BBB").pattern("BFB").pattern("iii")
+                .define('B', Items.BRICKS).define('F', Items.BLAST_FURNACE).define('i', Items.IRON_INGOT)
+                .unlockedBy("has_blast_furnace", has(Items.BLAST_FURNACE))
+                .save(output, Overgearedmod.id("smelter"));
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SMITHING_ANVIL.get())
                 .pattern("III").pattern(" i ").pattern("iii")
                 .define('I', Items.IRON_BLOCK).define('i', ModItems.MITHRIL_INGOT.get())
@@ -51,8 +58,11 @@ final class ModRecipeProvider extends RecipeProvider {
                 .save(output, Overgearedmod.id("respec_scroll"));
     }
 
+    /**
+     * Furnace recipes. Mithril and blue orichalcum have none: they are advanced metals and only melt in the smelter
+     * ({@link #melting}).
+     */
     private void smelting(RecipeOutput output) {
-        ingot(output, ModItems.MITHRIL_INGOT.get(), 0.8f, ModItems.RAW_MITHRIL.get(), ModItems.MITHRIL_ORE.get(), ModItems.DEEPSLATE_MITHRIL_ORE.get());
         ingot(output, ModItems.JAFFA_INGOT.get(), 0.7f, ModItems.RAW_JAFFA.get(), ModItems.JAFFA_ORE.get(), ModItems.DEEPSLATE_JAFFA_ORE.get());
     }
 
@@ -77,6 +87,29 @@ final class ModRecipeProvider extends RecipeProvider {
                 Optional.of(new EquipRequirements(2, Map.of(StatType.STRENGTH, 2))));
         forge(output, "grid_legendary_sword", Items.DIAMOND, 4, Items.BLAZE_ROD, ModItems.GRID_LEGENDARY_SWORD.get(), 60,
                 Optional.of(new EquipRequirements(10, Map.of(StatType.STRENGTH, 8))));
+    }
+
+    /**
+     * Smelter recipes. Iron and jaffa also melt in the furnace (the smelter is better: a chance of an extra ingot);
+     * mithril and blue orichalcum only here. Coal reaches about 1050 degrees, blaze rods 1500 and lava 1600.
+     */
+    private void melting(RecipeOutput output) {
+        melt(output, "iron_ingot", Items.IRON_INGOT, 900, 0, 160, 3, Items.RAW_IRON, Items.IRON_ORE, Items.DEEPSLATE_IRON_ORE);
+        melt(output, "jaffa_ingot", ModItems.JAFFA_INGOT.get(), 950, 0, 160, 4,
+                ModItems.RAW_JAFFA.get(), ModItems.JAFFA_ORE.get(), ModItems.DEEPSLATE_JAFFA_ORE.get());
+        melt(output, "mithril_ingot", ModItems.MITHRIL_INGOT.get(), 1200, 3, 240, 8,
+                ModItems.RAW_MITHRIL.get(), ModItems.MITHRIL_ORE.get(), ModItems.DEEPSLATE_MITHRIL_ORE.get());
+        melt(output, "blue_orichalcum_ingot", ModItems.BLUE_ORICHALCUM_INGOT.get(), 1450, 8, 400, 20,
+                ModItems.RAW_BLUE_ORICHALCUM.get(), ModItems.BLUE_ORICHALCUM_ORE.get(), ModItems.DEEPSLATE_BLUE_ORICHALCUM_ORE.get());
+    }
+
+    /** A smelter recipe per source at data/overgearedmod/recipe/melting/&lt;result&gt;_from_&lt;source&gt;.json. */
+    private static void melt(RecipeOutput output, String result, ItemLike ingot, int minTemperature, int smithingLevel, int time,
+                             int smithingXp, ItemLike... sources) {
+        for (ItemLike source : sources) {
+            MeltingRecipe recipe = new MeltingRecipe(Ingredient.of(source), new ItemStack(ingot), minTemperature, smithingLevel, time, smithingXp);
+            output.accept(Overgearedmod.id("melting/" + result + "_from_" + getItemName(source)), recipe, null);
+        }
     }
 
     /** A smithing anvil recipe at data/overgearedmod/recipe/forging/<name>.json. {@code handle} may be null. */

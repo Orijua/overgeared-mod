@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_mithril_ore": {
+    "has_blast_furnace": {
       "conditions": {
         "items": [
           {
-            "items": "overgearedmod:mithril_ore"
+            "items": "minecraft:blast_furnace"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "overgearedmod:mithril_ingot_from_blasting_mithril_ore"
+        "recipe": "overgearedmod:smelter"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_mithril_ore"
+      "has_blast_furnace"
     ]
   ],
   "rewards": {
     "recipes": [
-      "overgearedmod:mithril_ingot_from_blasting_mithril_ore"
+      "overgearedmod:smelter"
     ]
   }
 }

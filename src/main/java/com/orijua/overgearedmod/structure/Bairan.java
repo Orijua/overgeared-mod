@@ -79,7 +79,7 @@ public final class Bairan {
         return piece;
     }
 
-    /** Smith's smithy: the mod's smithing anvil, a blast furnace under a smoking chimney, his tool chest, and Smith. */
+    /** Smith's smithy: the mod's smithing anvil, a smelter under a smoking chimney, his tool chest, and Smith. */
     static TemplateBuilder smithy() {
         TemplateBuilder piece = new TemplateBuilder(7, 7, 9)
                 .fill(0, 0, 0, 6, 0, 7, "minecraft:cobblestone")
@@ -95,7 +95,7 @@ public final class Bairan {
                 .set(6, 2, 3, "minecraft:glass_pane")
                 .set(1, 2, 7, "minecraft:glass_pane")
                 .set(5, 2, 7, "minecraft:glass_pane")
-                .set(1, 1, 1, "minecraft:blast_furnace[facing=south]")
+                .set(1, 1, 1, Overgearedmod.MODID + ":smelter[facing=south]")
                 .set(2, 1, 1, "minecraft:furnace[facing=south]")
                 .chest(5, 1, 1, "south", "minecraft:chests/village/village_toolsmith")
                 .set(3, 1, 3, Overgearedmod.MODID + ":smithing_anvil")

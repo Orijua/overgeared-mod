@@ -20,7 +20,13 @@ public final class ModItems {
     public static final DeferredItem<Item> RAW_JAFFA = ITEMS.registerSimpleItem("raw_jaffa");
     public static final DeferredItem<Item> JAFFA_INGOT = ITEMS.registerSimpleItem("jaffa_ingot");
 
-    // Mithril: ore -> raw mithril -> (smelt) ingot -> higher-tier material (enhancement stones, respec scrolls, Grid's sword).
+    // Blue orichalcum: ore -> raw -> (smelter only) ingot -> Fracaso. Textures borrowed from vanilla for now.
+    public static final DeferredItem<BlockItem> BLUE_ORICHALCUM_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.BLUE_ORICHALCUM_ORE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_BLUE_ORICHALCUM_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.DEEPSLATE_BLUE_ORICHALCUM_ORE);
+    public static final DeferredItem<Item> RAW_BLUE_ORICHALCUM = ITEMS.registerSimpleItem("raw_blue_orichalcum");
+    public static final DeferredItem<Item> BLUE_ORICHALCUM_INGOT = ITEMS.registerSimpleItem("blue_orichalcum_ingot");
+
+    // Mithril: ore -> raw mithril -> (smelter only) ingot -> higher-tier material (enhancement stones, respec scrolls, Grid's sword).
     public static final DeferredItem<BlockItem> MITHRIL_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.MITHRIL_ORE);
     public static final DeferredItem<BlockItem> DEEPSLATE_MITHRIL_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.DEEPSLATE_MITHRIL_ORE);
     public static final DeferredItem<Item> RAW_MITHRIL = ITEMS.registerSimpleItem("raw_mithril");
@@ -37,6 +43,7 @@ public final class ModItems {
                     .attributes(SwordItem.createAttributes(Tiers.DIAMOND, 5, -2.4f))));
 
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
+    public static final DeferredItem<BlockItem> SMELTER = ITEMS.registerSimpleBlockItem(ModBlocks.SMELTER);
 
     public static final DeferredItem<Item> ENHANCEMENT_STONE = ITEMS.registerSimpleItem("enhancement_stone");
 

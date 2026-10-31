@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#overgearedmod:has_ore/blue_orichalcum",
+  "features": "overgearedmod:ore_blue_orichalcum",
+  "step": "underground_ores"
+}

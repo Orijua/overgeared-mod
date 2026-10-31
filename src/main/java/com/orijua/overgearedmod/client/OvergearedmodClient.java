@@ -63,6 +63,7 @@ public class OvergearedmodClient {
 
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.SMITHING_ANVIL.get(), SmithingAnvilScreen::new);
+        event.register(ModMenus.SMELTER.get(), SmelterScreen::new);
     }
 
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {

@@ -11,6 +11,7 @@ import com.orijua.overgearedmod.network.ModNetwork;
 import com.orijua.overgearedmod.notification.NotificationEvents;
 import com.orijua.overgearedmod.progression.ProgressionEvents;
 import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModBlockEntities;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModCreativeTabs;
 import com.orijua.overgearedmod.registry.ModDataComponents;
@@ -46,6 +47,7 @@ public class Overgearedmod {
     public Overgearedmod(IEventBus modEventBus, ModContainer modContainer) {
         // Registries (mod bus): content must be registered before the game freezes registries.
         ModBlocks.BLOCKS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         ModEffects.EFFECTS.register(modEventBus);
         ModEntities.ENTITIES.register(modEventBus);

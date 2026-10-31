@@ -1,0 +1,13 @@
+{
+  "type": "overgearedmod:melting",
+  "ingredient": {
+    "item": "overgearedmod:deepslate_jaffa_ore"
+  },
+  "min_temperature": 950,
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:jaffa_ingot"
+  },
+  "smithing_xp": 4,
+  "time": 160
+}

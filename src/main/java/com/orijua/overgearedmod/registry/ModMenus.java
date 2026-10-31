@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.smelting.SmelterMenu;
 import com.orijua.overgearedmod.smithing.SmithingAnvilMenu;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.flag.FeatureFlags;
@@ -13,6 +14,8 @@ public final class ModMenus {
 
     public static final DeferredHolder<MenuType<?>, MenuType<SmithingAnvilMenu>> SMITHING_ANVIL =
             MENUS.register("smithing_anvil", () -> new MenuType<>(SmithingAnvilMenu::new, FeatureFlags.DEFAULT_FLAGS));
+    public static final DeferredHolder<MenuType<?>, MenuType<SmelterMenu>> SMELTER =
+            MENUS.register("smelter", () -> new MenuType<>(SmelterMenu::new, FeatureFlags.DEFAULT_FLAGS));
 
     private ModMenus() {
     }
