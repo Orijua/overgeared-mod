@@ -54,6 +54,7 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
     private static final long RESULT_MILLIS = 1500;
 
     private Button autoButton;
+    private Button preheatButton;
     private Button bellowsButton;
     private Optional<MeltingRecipe> recipe = Optional.empty();
     private SmeltingMinigame minigame;
@@ -72,6 +73,10 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
         autoButton = addRenderableWidget(Button.builder(Component.empty(), b -> pressButton(SmelterMenu.AUTO_BUTTON))
                 .bounds(leftPos + 86, topPos + 58, 40, 14)
                 .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.smelter_auto.tooltip")))
+                .build(SatisfyButton::new));
+        preheatButton = addRenderableWidget(Button.builder(Component.empty(), b -> pressButton(SmelterMenu.PREHEAT_BUTTON))
+                .bounds(leftPos + 129, topPos + 18, 42, 14)
+                .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.smelter_preheat.tooltip")))
                 .build(SatisfyButton::new));
         bellowsButton = addRenderableWidget(Button.builder(Component.translatable("screen.overgearedmod.smelter_bellows"), b -> startMinigame())
                 .bounds(leftPos + 129, topPos + 58, 42, 14)
@@ -92,6 +97,10 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
         recipe = minecraft.level.getRecipeManager().getRecipeFor(ModRecipes.MELTING.get(), input, minecraft.level).map(RecipeHolder::value);
         autoButton.setMessage(Component.translatable(menu.melting() ? "screen.overgearedmod.smelter_stop" : "screen.overgearedmod.smelter_auto"));
         autoButton.visible = recipe.isPresent() || menu.melting();
+        preheatButton.setMessage(Component.translatable(menu.preheating() ? "screen.overgearedmod.smelter_preheat_stop"
+                : "screen.overgearedmod.smelter_preheat"));
+        preheatButton.visible = (recipe.isPresent() || menu.preheating()) && !menu.melting();
+        preheatButton.active = minigame == null;
         bellowsButton.visible = recipe.isPresent();
         autoButton.active = minigame == null;
         bellowsButton.active = minigame == null && !menu.melting() && recipe.filter(r -> menu.temperature() >= r.minTemperature()

@@ -9,9 +9,11 @@ public final class SmelterRules {
     /** Temperatures in degrees: a cold smelter, and the hottest it can get. */
     public static final int AMBIENT = 20;
     public static final int MAX_TEMPERATURE = 1800;
-    /** Degrees gained per tick while the fuel burns below its heat, and lost per tick otherwise. */
+    /** Degrees gained per tick while the fuel burns below its heat, and lost per tick while it burns above it. */
     public static final int HEAT_RATE = 6;
     public static final int COOL_RATE = 3;
+    /** Degrees lost per tick with the fire out: slowly, so a preheated smelter stays hot long enough for the bellows. */
+    public static final int IDLE_COOL_RATE = 1;
     /** The bellows' good zone: from the metal's melting temperature to this many degrees above it. */
     public static final int ZONE_WIDTH = 150;
 
@@ -32,15 +34,22 @@ public final class SmelterRules {
     }
 
     /**
-     * One tick of heat: burning fuel pulls the temperature up towards its {@code fuelHeat}; without fuel (or above
-     * it) the smelter cools, never below the ambient.
+     * One tick of heat: burning fuel pulls the temperature towards its {@code fuelHeat}, up quickly or down to it;
+     * with the fire out the smelter cools slowly, never below the ambient.
      */
     public static int nextTemperature(int current, int fuelHeat, boolean burning) {
-        if (burning && current < fuelHeat) {
-            return Math.min(fuelHeat, current + HEAT_RATE);
+        if (!burning) {
+            return Math.max(AMBIENT, current - IDLE_COOL_RATE);
         }
-        int floor = burning ? fuelHeat : AMBIENT;
-        return Math.max(floor, current - COOL_RATE);
+        return current < fuelHeat ? Math.min(fuelHeat, current + HEAT_RATE) : Math.max(fuelHeat, current - COOL_RATE);
+    }
+
+    /**
+     * How hot preheating takes the smelter before it puts the fire out by itself: the middle of the metal's bellows
+     * zone, or as hot as the fuel gets if that is less.
+     */
+    public static int preheatTarget(int meltingTemperature, int fuelHeat) {
+        return Math.min(meltingTemperature + ZONE_WIDTH / 2, fuelHeat);
     }
 
     public static double autoExtraChance(int smithingLevel) {

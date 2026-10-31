@@ -18,12 +18,14 @@ import javax.annotation.Nullable;
 
 /**
  * The smelter's screen: metal (top), fuel (bottom) and ingots (right, take only), its heat synced from the block
- * entity, and two buttons. <b>Auto</b> starts or stops melting; <b>Bellows</b> starts the manual minigame on the client,
+ * entity, and three buttons. <b>Auto</b> starts or stops melting; <b>Preheat</b> lights the fire until it is hot enough
+ * for the bellows; <b>Bellows</b> starts the manual minigame on the client,
  * whose precision comes back through {@link #finishManual}, refused when it arrives implausibly fast or late.
  */
 public class SmelterMenu extends AbstractContainerMenu {
     public static final int AUTO_BUTTON = 0;
     public static final int MANUAL_BUTTON = 1;
+    public static final int PREHEAT_BUTTON = 2;
     private static final int SLOTS = 3;
     private static final int INVENTORY_END = SLOTS + 36;
 
@@ -91,6 +93,10 @@ public class SmelterMenu extends AbstractContainerMenu {
         return data.get(SmelterBlockEntity.DATA_MIN_TEMPERATURE);
     }
 
+    public boolean preheating() {
+        return data.get(SmelterBlockEntity.DATA_PREHEATING) == 1;
+    }
+
     public boolean melting() {
         return data.get(SmelterBlockEntity.DATA_MELTING) == 1;
     }
@@ -114,6 +120,7 @@ public class SmelterMenu extends AbstractContainerMenu {
         }
         return switch (id) {
             case AUTO_BUTTON -> smelter.toggleAuto(smith);
+            case PREHEAT_BUTTON -> smelter.togglePreheat(smith);
             case MANUAL_BUTTON -> {
                 if (!smelter.canStartManual(smith)) {
                     yield false;

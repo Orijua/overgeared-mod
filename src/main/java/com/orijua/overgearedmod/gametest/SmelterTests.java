@@ -79,18 +79,37 @@ public final class SmelterTests {
         helper.succeed();
     }
 
+    /** Fuel only burns while the smelter works; preheating stops by itself, and the burning piece keeps as embers. */
     @GameTest(template = TestSupport.EMPTY)
-    public static void fuelOnlyBurnsWithMetalToMelt(GameTestHelper helper) {
+    public static void fuelOnlyBurnsWhileItWorks(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
         SmelterBlockEntity smelter = placeSmelter(helper);
+        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON));
         smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL, 4));
         tick(helper, smelter, 50);
-        helper.assertTrue(smelter.temperature() == SmelterRules.AMBIENT, "no metal: the coal waits");
-        helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.FUEL).getCount() == 4, "and isn't spent");
+        helper.assertTrue(smelter.temperature() == SmelterRules.AMBIENT, "metal and coal, but idle: no fire");
+        helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.FUEL).getCount() == 4, "and no coal spent");
 
-        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON));
-        tick(helper, smelter, 300);
-        helper.assertTrue(smelter.temperature() == 1050, "coal heats it up to 1050°, got " + smelter.temperature());
+        helper.assertTrue(menu(helper, smith, smelter).clickMenuButton(smith, SmelterMenu.PREHEAT_BUTTON), "preheating starts");
+        tick(helper, smelter, 20);
         helper.assertTrue(helper.getBlockState(SMELTER).getValue(SmelterBlock.LIT), "it glows while burning");
+        for (int i = 0; i < 400 && smelter.preheating(); i++) {
+            tick(helper, smelter, 1);
+        }
+        int target = SmelterRules.preheatTarget(900, 1050);
+        helper.assertFalse(smelter.preheating(), "it put itself out once hot enough");
+        helper.assertTrue(smelter.temperature() >= target && smelter.temperature() < target + SmelterRules.HEAT_RATE,
+                "ready for the bellows: " + smelter.temperature() + "°");
+        helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.FUEL).getCount() == 3, "one coal lit; the rest waits");
+        helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == 1, "preheating melts nothing");
+
+        int hot = smelter.temperature();
+        tick(helper, smelter, 50);
+        helper.assertTrue(smelter.temperature() == hot - 50 * SmelterRules.IDLE_COOL_RATE, "fire out: it cools slowly");
+        helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.FUEL).getCount() == 3, "the lit coal kept as embers");
+        menu(helper, smith, smelter).clickMenuButton(smith, SmelterMenu.PREHEAT_BUTTON);
+        tick(helper, smelter, 5);
+        helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.FUEL).getCount() == 3, "relit from the embers, no new coal");
         helper.succeed();
     }
 
@@ -133,8 +152,9 @@ public final class SmelterTests {
         helper.assertFalse(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "a cold smelter can't be worked");
 
         smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL, 2));
+        menu.clickMenuButton(smith, SmelterMenu.PREHEAT_BUTTON);
         tick(helper, smelter, 200);
-        helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "hot enough: the bellows start");
+        helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "preheated: the bellows start");
         helper.assertFalse(menu.finishManual(smith, 1.0), "a result in the same tick is too fast to be a real game");
         helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == 3, "refused results spend nothing");
 
