@@ -1,5 +1,9 @@
 {
   "itemGroup.overgearedmod": "Overgeared",
+  "item.overgearedmod.raw_jaffa": "Jaffa en bruto",
+  "item.overgearedmod.jaffa_ingot": "Lingote de jaffa",
+  "block.overgearedmod.jaffa_ore": "Mena de jaffa",
+  "block.overgearedmod.deepslate_jaffa_ore": "Mena de jaffa de pizarra profunda",
   "item.overgearedmod.raw_mithril": "Mitril en bruto",
   "item.overgearedmod.mithril_ingot": "Lingote de mitril",
   "block.overgearedmod.mithril_ore": "Mena de mitril",

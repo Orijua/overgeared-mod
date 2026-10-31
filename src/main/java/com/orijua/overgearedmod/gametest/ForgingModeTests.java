@@ -31,13 +31,13 @@ public final class ForgingModeTests {
     private ForgingModeTests() {
     }
 
-    /** An anvil menu loaded with 2 mithril ingots + a stick (the Jaffa sword recipe). */
+    /** An anvil menu loaded with 2 jaffa ingots + a stick (the Jaffa sword recipe). */
     private static SmithingAnvilMenu anvilWithJaffaInputs(GameTestHelper helper, ServerPlayer smith) {
         SmithingAnvilMenu menu = new SmithingAnvilMenu(1, smith.getInventory(),
                 ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1))));
-        menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(ModItems.MITHRIL_INGOT.get(), 2));
+        menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(ModItems.JAFFA_INGOT.get(), 2));
         menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.STICK));
-        helper.assertTrue(menu.canForge(), "2 mithril + stick should preview the Jaffa sword");
+        helper.assertTrue(menu.canForge(), "2 jaffa + stick should preview the Jaffa sword");
         return menu;
     }
 
@@ -114,7 +114,7 @@ public final class ForgingModeTests {
         ServerPlayer smith = TestSupport.fakePlayer(helper);
         SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
         int recipeXp = helper.getLevel().getRecipeManager().getRecipeFor(ModRecipes.FORGING.get(),
-                new ForgingRecipeInput(new ItemStack(ModItems.MITHRIL_INGOT.get(), 2), new ItemStack(Items.STICK)), helper.getLevel())
+                new ForgingRecipeInput(new ItemStack(ModItems.JAFFA_INGOT.get(), 2), new ItemStack(Items.STICK)), helper.getLevel())
                 .orElseThrow().value().smithingXp();
         menu.clickMenuButton(smith, SmithingAnvilMenu.MANUAL_FORGE_BUTTON);
         helper.runAtTickTime(ForgingRules.MIN_MANUAL_TICKS + 2, () -> {

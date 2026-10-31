@@ -1,5 +1,9 @@
 {
   "itemGroup.overgearedmod": "Overgeared",
+  "item.overgearedmod.raw_jaffa": "Raw Jaffa",
+  "item.overgearedmod.jaffa_ingot": "Jaffa Ingot",
+  "block.overgearedmod.jaffa_ore": "Jaffa Ore",
+  "block.overgearedmod.deepslate_jaffa_ore": "Deepslate Jaffa Ore",
   "item.overgearedmod.raw_mithril": "Raw Mithril",
   "item.overgearedmod.mithril_ingot": "Mithril Ingot",
   "block.overgearedmod.mithril_ore": "Mithril Ore",

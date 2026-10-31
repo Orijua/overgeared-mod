@@ -2,6 +2,8 @@
   "values": [
     "overgearedmod:smithing_anvil",
     "overgearedmod:mithril_ore",
-    "overgearedmod:deepslate_mithril_ore"
+    "overgearedmod:deepslate_mithril_ore",
+    "overgearedmod:jaffa_ore",
+    "overgearedmod:deepslate_jaffa_ore"
   ]
 }

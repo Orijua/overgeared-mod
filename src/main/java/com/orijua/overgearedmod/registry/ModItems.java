@@ -14,13 +14,19 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public final class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(Overgearedmod.MODID);
 
-    // Mithril: ore -> raw mithril -> (smelt) ingot -> forging material.
+    // Jaffa: ore -> raw jaffa -> (smelt) ingot -> the Jaffa sword. Textures borrowed from vanilla copper for now.
+    public static final DeferredItem<BlockItem> JAFFA_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.JAFFA_ORE);
+    public static final DeferredItem<BlockItem> DEEPSLATE_JAFFA_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.DEEPSLATE_JAFFA_ORE);
+    public static final DeferredItem<Item> RAW_JAFFA = ITEMS.registerSimpleItem("raw_jaffa");
+    public static final DeferredItem<Item> JAFFA_INGOT = ITEMS.registerSimpleItem("jaffa_ingot");
+
+    // Mithril: ore -> raw mithril -> (smelt) ingot -> higher-tier material (enhancement stones, respec scrolls, Grid's sword).
     public static final DeferredItem<BlockItem> MITHRIL_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.MITHRIL_ORE);
     public static final DeferredItem<BlockItem> DEEPSLATE_MITHRIL_ORE = ITEMS.registerSimpleBlockItem(ModBlocks.DEEPSLATE_MITHRIL_ORE);
     public static final DeferredItem<Item> RAW_MITHRIL = ITEMS.registerSimpleItem("raw_mithril");
     public static final DeferredItem<Item> MITHRIL_INGOT = ITEMS.registerSimpleItem("mithril_ingot");
 
-    // Original project content. Forged at the smithing anvil, so it usually carries a rating.
+    // Forged at the smithing anvil from 2 jaffa ingots and a stick, so it usually carries a rating.
     public static final DeferredItem<SwordItem> JAFFA_SWORD = ITEMS.register("jaffa_sword",
             () -> new SwordItem(Tiers.IRON, new Item.Properties()
                     .attributes(SwordItem.createAttributes(Tiers.IRON, 3, -2.4f))));

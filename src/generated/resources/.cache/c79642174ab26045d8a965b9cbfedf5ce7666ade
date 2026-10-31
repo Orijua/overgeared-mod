@@ -1,9 +1,15 @@
-// 1.21.1	2026-10-29T23:03:43.819126	Block States: overgearedmod
+// 1.21.1	2026-10-31T10:33:24.4877948	Block States: overgearedmod
+fb562f7819b44852d429376b3b4a8320a34dd0c5 assets/overgearedmod/blockstates/deepslate_jaffa_ore.json
 045607e7149d9f4664d1095be5b8c8c5b373f816 assets/overgearedmod/blockstates/deepslate_mithril_ore.json
+1368e3e6e879bbec35955f39bc114642acdd164b assets/overgearedmod/blockstates/jaffa_ore.json
 73704d795b067a750b2b22a31276a36221e7cfeb assets/overgearedmod/blockstates/mithril_ore.json
 347a2ed3431a0567068253cced66a77d4a79d6f9 assets/overgearedmod/blockstates/smithing_anvil.json
+f44750542389953f8f801dad7c198da9b89c2e6e assets/overgearedmod/models/block/deepslate_jaffa_ore.json
 7dcb3dce46c4a6d66fab353e91c785341a7e1829 assets/overgearedmod/models/block/deepslate_mithril_ore.json
+dbd4c229a41ed1550ed7f4476af62748a14b6200 assets/overgearedmod/models/block/jaffa_ore.json
 dcbf36788ff291c6eba3535fb68b7f4d29371687 assets/overgearedmod/models/block/mithril_ore.json
+5bacd0ff7b870a20a55888d78987e93ea9a14ef0 assets/overgearedmod/models/item/deepslate_jaffa_ore.json
 dd611f0180eb39810b4041c80782ebec1c4e8fb6 assets/overgearedmod/models/item/deepslate_mithril_ore.json
+d0d552a1efb244c17ced060a8c7171caac96e8e3 assets/overgearedmod/models/item/jaffa_ore.json
 0db1d599c298b045f4822eebaa4b1675617477a3 assets/overgearedmod/models/item/mithril_ore.json
 9c9a8fcc0fe537da5794094e45fc4ca8d397d73f assets/overgearedmod/models/item/smithing_anvil.json

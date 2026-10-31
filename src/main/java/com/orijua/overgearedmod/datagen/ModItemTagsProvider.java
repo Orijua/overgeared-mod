@@ -41,7 +41,7 @@ final class ModItemTagsProvider extends ItemTagsProvider {
         tag(ItemTags.SWORDS).add(ModItems.JAFFA_SWORD.get(), ModItems.GRID_LEGENDARY_SWORD.get());
 
         copy(Tags.Blocks.ORES, Tags.Items.ORES);
-        tag(Tags.Items.INGOTS).add(ModItems.MITHRIL_INGOT.get());
-        tag(Tags.Items.RAW_MATERIALS).add(ModItems.RAW_MITHRIL.get());
+        tag(Tags.Items.INGOTS).add(ModItems.MITHRIL_INGOT.get(), ModItems.JAFFA_INGOT.get());
+        tag(Tags.Items.RAW_MATERIALS).add(ModItems.RAW_MITHRIL.get(), ModItems.RAW_JAFFA.get());
     }
 }
