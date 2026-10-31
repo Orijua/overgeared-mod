@@ -31,15 +31,30 @@ public final class RatingRoller {
     }
 
     /**
+     * As {@link #roll(int, int, double, double)}, but only tiers from {@code minimum} to {@code maximum} can come out,
+     * keeping their relative odds. Fracaso (canon) always comes out Unique or Legendary.
+     */
+    public static ItemRating roll(int dexterity, int smithingLevel, double skillBonus, ItemRating minimum, ItemRating maximum,
+                                  double random01) {
+        return pick(limit(weights(dexterity, smithingLevel, skillBonus), minimum, maximum), random01);
+    }
+
+    /**
      * Rating of an item found as loot: {@code luck} plays the part of the smith's skill (0 = base odds)
      * and tiers below {@code minimum} can't come out, so a boss can guarantee at least Rare.
      */
     public static ItemRating rollLoot(int luck, ItemRating minimum, double random01) {
-        double[] weights = weights(luck, 0);
-        for (int i = 0; i < minimum.ordinal(); i++) {
-            weights[i] = 0;
+        return pick(limit(weights(luck, 0), minimum, ItemRating.MYTH), random01);
+    }
+
+    /** Zeroes every tier outside {@code minimum}-{@code maximum}. */
+    private static double[] limit(double[] weights, ItemRating minimum, ItemRating maximum) {
+        for (int i = 0; i < weights.length; i++) {
+            if (i < minimum.ordinal() || i > maximum.ordinal()) {
+                weights[i] = 0;
+            }
         }
-        return pick(weights, random01);
+        return weights;
     }
 
     private static ItemRating pick(double[] weights, double random01) {
@@ -69,7 +84,12 @@ public final class RatingRoller {
 
     /** As {@link #odds(int, int)}, plus {@code skillBonus}, e.g. to show what a perfect manual forge would give. */
     public static double[] odds(int dexterity, int smithingLevel, double skillBonus) {
-        double[] weights = weights(dexterity, smithingLevel, skillBonus);
+        return odds(dexterity, smithingLevel, skillBonus, ItemRating.NORMAL, ItemRating.MYTH);
+    }
+
+    /** As {@link #odds(int, int, double)}, for a recipe that only gives {@code minimum}-{@code maximum}. */
+    public static double[] odds(int dexterity, int smithingLevel, double skillBonus, ItemRating minimum, ItemRating maximum) {
+        double[] weights = limit(weights(dexterity, smithingLevel, skillBonus), minimum, maximum);
         double total = 0;
         for (double weight : weights) {
             total += weight;

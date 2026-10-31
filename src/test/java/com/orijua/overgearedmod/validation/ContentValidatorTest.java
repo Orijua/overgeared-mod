@@ -98,6 +98,17 @@ class ContentValidatorTest {
                 "title test:hoarder: a deliver goal needs a quest with a giver to hand the items to"), ContentValidator.validate(content));
     }
 
+    @Test
+    void aRecipeWithAMissingFixedOptionIsReported() {
+        ResourceLocation agility = id("agility");
+        ContentIndex content = new ContentIndex(Set.of(), Set.of(HERO), Set.of(), Set.of(), Set.of(), Map.of(), Set.of(), List.of(
+                new Reference("forging recipe test:fracaso", Kind.CLASS, HERO),
+                new Reference("forging recipe test:fracaso", Kind.OPTION, agility),
+                new Reference("forging recipe test:fracaso", Kind.OPTION, id("agilty"))),
+                Map.of(), Set.of(), Set.of(), Set.of(agility));
+        assertEquals(List.of("forging recipe test:fracaso: option test:agilty does not exist"), ContentValidator.validate(content));
+    }
+
     /** Content with warrior and the trial quest but no skills, plus the given references. */
     private static ContentIndex references(Reference... references) {
         return new ContentIndex(Set.of(), Set.of(WARRIOR), Set.of(TRIAL), Set.of(), Set.of(), Map.of(), Set.of(), List.of(references));

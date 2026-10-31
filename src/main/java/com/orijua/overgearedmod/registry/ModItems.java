@@ -3,8 +3,10 @@ package com.orijua.overgearedmod.registry;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.progression.RespecScrollItem;
 import com.orijua.overgearedmod.skill.SkillBookItem;
+import com.orijua.overgearedmod.smithing.BlueprintItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.Tiers;
 import net.neoforged.neoforge.common.DeferredSpawnEggItem;
@@ -41,6 +43,14 @@ public final class ModItems {
     public static final DeferredItem<SwordItem> GRID_LEGENDARY_SWORD = ITEMS.register("grid_legendary_sword",
             () -> new SwordItem(Tiers.DIAMOND, new Item.Properties()
                     .attributes(SwordItem.createAttributes(Tiers.DIAMOND, 5, -2.4f))));
+
+    // Fracaso (canon cap. 11): Grid's first legendary work, a blue orichalcum greatsword whose requirements nobody meets.
+    // Forged only from its blueprint, which the Legendary Smith Successor quest gives and the forge uses up.
+    public static final DeferredItem<SwordItem> FRACASO_SWORD = ITEMS.register("fracaso_sword",
+            () -> new SwordItem(Tiers.NETHERITE, new Item.Properties()
+                    .attributes(SwordItem.createAttributes(Tiers.NETHERITE, 7, -2.8f))));
+    public static final DeferredItem<BlueprintItem> FRACASO_BLUEPRINT = ITEMS.registerItem("fracaso_blueprint",
+            BlueprintItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
 
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
     public static final DeferredItem<BlockItem> SMELTER = ITEMS.registerSimpleBlockItem(ModBlocks.SMELTER);

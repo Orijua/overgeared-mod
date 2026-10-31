@@ -23,6 +23,9 @@
   "message.overgearedmod.bone_lord_enraged": "¡%s se enfurece!",
   "item.overgearedmod.jaffa_sword": "Espada de Jaffa",
   "item.overgearedmod.grid_legendary_sword": "Espada legendaria de Grid",
+  "item.overgearedmod.fracaso_sword": "Fracaso",
+  "item.overgearedmod.fracaso_blueprint": "Plano de Fracaso",
+  "item.overgearedmod.fracaso_blueprint.desc": "Solo el Sucesor del herrero legendario puede usarlo: en el yunque, con 15 lingotes de oricalco azul. Se gasta al forjar.",
   "item.overgearedmod.skill_book": "Libro de habilidad",
   "item.overgearedmod.enhancement_stone": "Piedra de mejora",
   "item.overgearedmod.respec_scroll": "Pergamino de reasignación",
@@ -48,6 +51,12 @@
   "option.overgearedmod.life_steal": "Robo de vida",
   "option.overgearedmod.fortitude": "Fortaleza",
   "option.overgearedmod.bleeding": "Sangrado al golpear",
+  "option.overgearedmod.fracaso_agility": "Agilidad",
+  "option.overgearedmod.fracaso_block": "Probabilidad de bloqueo",
+  "option.overgearedmod.fracaso_darkness": "Ataque en la oscuridad",
+  "option.overgearedmod.fracaso_fear": "Miedo a enemigos muy inferiores",
+  "option.overgearedmod.fracaso_bisection": "Habilidad: Bisección",
+  "option.overgearedmod.level_gap": "(%s niveles menos)",
   "effect.overgearedmod.bleeding": "Sangrado",
   "entity.overgearedmod.level": "[Nv %s] %s",
   "entity.overgearedmod.elite_level": "★ Élite [Nv %s] %s",
@@ -117,6 +126,7 @@
   "screen.overgearedmod.enhance": "Mejorar +%s (%s%%)",
   "screen.overgearedmod.anvil_odds": "Probabilidad de rango",
   "screen.overgearedmod.anvil_requirements": "Requisitos del resultado",
+  "screen.overgearedmod.anvil_class": "Forja solo: %s",
   "screen.overgearedmod.anvil_no_requirements": "Sin requisitos",
   "screen.overgearedmod.anvil_col_auto": "Auto",
   "screen.overgearedmod.anvil_col_manual": "Manual*",
@@ -215,6 +225,8 @@
 
   "skill.overgearedmod.pagma_link": "Pagma's Swordsmanship: Link",
   "skill.overgearedmod.pagma_link.desc": "Corte en abanico frente a ti. Escala con STR y DEX. Requiere espada.",
+  "skill.overgearedmod.bisection": "Bisección",
+  "skill.overgearedmod.bisection.desc": "Un tajo largo y recto que parte en dos lo que tienes delante. Escala con STR. Solo con un Fracaso Legendary en la mano, con la tecla de habilidad del arma.",
   "skill.overgearedmod.iron_guard": "Guardia de hierro",
   "skill.overgearedmod.iron_guard.desc": "Resistencia II y absorción durante unos segundos.",
   "skill.overgearedmod.flame_bolt": "Saeta de llamas",
@@ -272,5 +284,6 @@
   "key.overgearedmod.status": "Abrir Status Window",
   "key.overgearedmod.skill_1": "Habilidad 1",
   "key.overgearedmod.skill_2": "Habilidad 2",
-  "key.overgearedmod.skill_3": "Habilidad 3"
+  "key.overgearedmod.skill_3": "Habilidad 3",
+  "key.overgearedmod.weapon_skill": "Habilidad del arma"
 }

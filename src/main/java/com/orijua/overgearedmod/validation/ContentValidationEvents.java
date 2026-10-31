@@ -22,7 +22,7 @@ public final class ContentValidationEvents {
 
     /** Only warns: a broken reference shouldn't stop the server, but it should be easy to spot. */
     private static void onServerStarted(ServerStartedEvent event) {
-        List<String> problems = ContentValidator.validate(ContentScanner.index(event.getServer().registryAccess()));
+        List<String> problems = ContentValidator.validate(ContentScanner.index(event.getServer().registryAccess(), event.getServer().getRecipeManager()));
         if (!problems.isEmpty()) {
             Overgearedmod.LOGGER.warn("Satisfy content has {} problem(s):", problems.size());
             problems.forEach(problem -> Overgearedmod.LOGGER.warn("  - {}", problem));
@@ -35,7 +35,7 @@ public final class ContentValidationEvents {
                 .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("validate")
                         .executes(ctx -> {
-                            List<String> problems = ContentValidator.validate(ContentScanner.index(ctx.getSource().registryAccess()));
+                            List<String> problems = ContentValidator.validate(ContentScanner.index(ctx.getSource().registryAccess(), ctx.getSource().getServer().getRecipeManager()));
                             if (problems.isEmpty()) {
                                 ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.content_valid")
                                         .withStyle(ChatFormatting.GREEN), false);

@@ -20,7 +20,7 @@ public final class ContentTests {
     /** Fails CI when a JSON points to a skill or class that doesn't exist. */
     @GameTest(template = TestSupport.EMPTY)
     public static void realContentHasNoBrokenReferences(GameTestHelper helper) {
-        List<String> problems = ContentValidator.validate(ContentScanner.index(helper.getLevel().registryAccess()));
+        List<String> problems = ContentValidator.validate(ContentScanner.index(helper.getLevel().registryAccess(), helper.getLevel().getRecipeManager()));
         helper.assertTrue(problems.isEmpty(), "content problems:\n" + String.join("\n", problems));
         helper.succeed();
     }
@@ -28,7 +28,7 @@ public final class ContentTests {
     /** Guards the test above: an index that read nothing would pass it without checking anything. */
     @GameTest(template = TestSupport.EMPTY)
     public static void scannerReadsTheRealContent(GameTestHelper helper) {
-        ContentIndex content = ContentScanner.index(helper.getLevel().registryAccess());
+        ContentIndex content = ContentScanner.index(helper.getLevel().registryAccess(), helper.getLevel().getRecipeManager());
         helper.assertTrue(content.skills().contains(Overgearedmod.id("pagma_link")), "skills should be read");
         helper.assertTrue(content.advancedClasses().contains(Overgearedmod.id("legendary_smith_successor")), "advanced classes should be read");
         helper.assertTrue(content.rewardedClasses().contains(Overgearedmod.id("legendary_smith_successor")), "class rewards should be read");
@@ -41,6 +41,13 @@ public final class ContentTests {
         helper.assertTrue(Overgearedmod.id("blacksmith").equals(content.questGivers().get(Overgearedmod.id("smith_firewood"))),
                 "quest givers");
         helper.assertTrue(content.questGiverNpcs().contains(Overgearedmod.id("village_chief")), "NPCs with a quest window");
+        helper.assertTrue(content.itemOptions().contains(Overgearedmod.id("fracaso_bisection")), "item options");
+        helper.assertTrue(content.references().stream().anyMatch(r -> r.from().startsWith("item option ")
+                && r.kind() == ContentIndex.Kind.SKILL), "skill options → skills");
+        helper.assertTrue(content.references().stream().anyMatch(r -> r.from().startsWith("forging recipe ")
+                && r.kind() == ContentIndex.Kind.OPTION), "recipes' fixed options");
+        helper.assertTrue(content.references().stream().anyMatch(r -> r.from().startsWith("forging recipe ")
+                && r.kind() == ContentIndex.Kind.CLASS), "recipes' required class");
         helper.succeed();
     }
 }

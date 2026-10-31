@@ -1,8 +1,10 @@
-// 1.21.1	2026-10-31T12:27:34.6957824	Item Models: overgearedmod
+// 1.21.1	2026-10-31T16:16:21.0663194	Item Models: overgearedmod
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/blacksmith_spawn_egg.json
 66063b17cb93c7336607cef31749a6f0ec6dd344 assets/overgearedmod/models/item/blue_orichalcum_ingot.json
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/bone_lord_spawn_egg.json
 c64ed609ece68994ce23dd2809145040bce13579 assets/overgearedmod/models/item/enhancement_stone.json
+7ccdd143defb54cfa4036b3b0fefb58c51ee5048 assets/overgearedmod/models/item/fracaso_blueprint.json
+01c3ee23ece61ca6fc68829612b2d7856592ec37 assets/overgearedmod/models/item/fracaso_sword.json
 973acedf5c92feef4cf45c9d28b66245f1d2fd5a assets/overgearedmod/models/item/grid_legendary_sword.json
 e6885ed5496c11f28296dedb86482ccdc77686ce assets/overgearedmod/models/item/jaffa_ingot.json
 53020a888ec39acb73b0307b4b088ac5834c8aeb assets/overgearedmod/models/item/jaffa_sword.json

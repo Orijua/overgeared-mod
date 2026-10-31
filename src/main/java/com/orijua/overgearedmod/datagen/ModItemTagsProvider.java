@@ -40,7 +40,7 @@ final class ModItemTagsProvider extends ItemTagsProvider {
                 Items.CHAINMAIL_HELMET, Items.CHAINMAIL_CHESTPLATE, Items.CHAINMAIL_LEGGINGS, Items.CHAINMAIL_BOOTS);
 
         // Being in minecraft:swords also makes them enchantable as swords.
-        tag(ItemTags.SWORDS).add(ModItems.JAFFA_SWORD.get(), ModItems.GRID_LEGENDARY_SWORD.get());
+        tag(ItemTags.SWORDS).add(ModItems.JAFFA_SWORD.get(), ModItems.GRID_LEGENDARY_SWORD.get(), ModItems.FRACASO_SWORD.get());
 
         copy(Tags.Blocks.ORES, Tags.Items.ORES);
         tag(Tags.Items.INGOTS).add(ModItems.MITHRIL_INGOT.get(), ModItems.JAFFA_INGOT.get(), ModItems.BLUE_ORICHALCUM_INGOT.get());

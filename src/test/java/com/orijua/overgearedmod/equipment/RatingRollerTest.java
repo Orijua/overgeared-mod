@@ -76,6 +76,34 @@ class RatingRollerTest {
         assertEquals(0.001, odds[ItemRating.MYTH.ordinal()], 1e-9);
     }
 
+    @Test
+    void aRatingRangeOnlyGivesTiersInsideIt() {
+        // Fracaso: always Unique or Legendary, never Normal-Epic nor Myth, however the roll goes.
+        for (int i = 0; i < 1000; i++) {
+            ItemRating rating = RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, (i + 0.5) / 1000);
+            assertTrue(rating == ItemRating.UNIQUE || rating == ItemRating.LEGENDARY, "got " + rating);
+        }
+        assertEquals(ItemRating.UNIQUE, RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, 0.0));
+        assertEquals(ItemRating.LEGENDARY, RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, 0.99999));
+    }
+
+    @Test
+    void aRatingRangeKeepsTheRelativeOdds() {
+        // Novice base weights: Unique 4, Legendary 0.9, so Legendary is 0.9 / 4.9 of the range.
+        double[] odds = RatingRoller.odds(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY);
+        assertEquals(0, odds[ItemRating.EPIC.ordinal()], 1e-9);
+        assertEquals(0, odds[ItemRating.MYTH.ordinal()], 1e-9);
+        assertEquals(0.9 / 4.9, odds[ItemRating.LEGENDARY.ordinal()], 1e-9);
+        assertEquals(1.0, odds[ItemRating.UNIQUE.ordinal()] + odds[ItemRating.LEGENDARY.ordinal()], 1e-9);
+    }
+
+    @Test
+    void skillRaisesTheChanceOfTheTopOfARange() {
+        double[] novice = RatingRoller.odds(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY);
+        double[] master = RatingRoller.odds(50, 10, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY);
+        assertTrue(master[ItemRating.LEGENDARY.ordinal()] > novice[ItemRating.LEGENDARY.ordinal()]);
+    }
+
     private static double averageTier(int dexterity, int smithingLevel) {
         int samples = 10_000;
         double sum = 0;

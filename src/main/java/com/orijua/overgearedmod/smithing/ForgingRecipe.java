@@ -5,6 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.orijua.overgearedmod.equipment.EquipRequirements;
 import com.orijua.overgearedmod.registry.ModRecipes;
+import io.netty.buffer.ByteBuf;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -21,11 +22,15 @@ import java.util.Optional;
 
 /**
  * A smithing anvil recipe, loaded from data/<namespace>/recipe/*.json with "type": "overgearedmod:forging".
- * Example: data/overgearedmod/recipe/forging/jaffa_sword.json.
+ * Example: data/overgearedmod/recipe/forging/jaffa_sword.json. Special recipes add {@link ForgingExtras}
+ * (a class, a rating range, fixed options), e.g. forging/fracaso_sword.json.
  */
 public record ForgingRecipe(Ingredient material, int materialCount, Ingredient handle, ItemStack result, int smithingXp,
-                            Optional<EquipRequirements> requirements)
+                            Optional<EquipRequirements> requirements, ForgingExtras extras)
         implements Recipe<ForgingRecipeInput> {
+
+    private static final StreamCodec<ByteBuf, Optional<EquipRequirements>> REQUIREMENTS_STREAM_CODEC =
+            ByteBufCodecs.optional(EquipRequirements.STREAM_CODEC);
 
     public static final MapCodec<ForgingRecipe> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             Ingredient.CODEC_NONEMPTY.fieldOf("material").forGetter(ForgingRecipe::material),
@@ -33,17 +38,29 @@ public record ForgingRecipe(Ingredient material, int materialCount, Ingredient h
             Ingredient.CODEC.optionalFieldOf("handle", Ingredient.EMPTY).forGetter(ForgingRecipe::handle),
             ItemStack.STRICT_CODEC.fieldOf("result").forGetter(ForgingRecipe::result),
             Codec.intRange(0, 10_000).optionalFieldOf("smithing_xp", 10).forGetter(ForgingRecipe::smithingXp),
-            EquipRequirements.CODEC.optionalFieldOf("requirements").forGetter(ForgingRecipe::requirements)
+            EquipRequirements.CODEC.optionalFieldOf("requirements").forGetter(ForgingRecipe::requirements),
+            ForgingExtras.MAP_CODEC.forGetter(ForgingRecipe::extras)
     ).apply(instance, ForgingRecipe::new));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, ForgingRecipe> STREAM_CODEC = StreamCodec.composite(
-            Ingredient.CONTENTS_STREAM_CODEC, ForgingRecipe::material,
-            ByteBufCodecs.VAR_INT, ForgingRecipe::materialCount,
-            Ingredient.CONTENTS_STREAM_CODEC, ForgingRecipe::handle,
-            ItemStack.STREAM_CODEC, ForgingRecipe::result,
-            ByteBufCodecs.VAR_INT, ForgingRecipe::smithingXp,
-            ByteBufCodecs.optional(EquipRequirements.STREAM_CODEC), ForgingRecipe::requirements,
-            ForgingRecipe::new);
+    // Written by hand: StreamCodec.composite takes at most six fields.
+    public static final StreamCodec<RegistryFriendlyByteBuf, ForgingRecipe> STREAM_CODEC = StreamCodec.of(
+            (buf, recipe) -> {
+                Ingredient.CONTENTS_STREAM_CODEC.encode(buf, recipe.material());
+                ByteBufCodecs.VAR_INT.encode(buf, recipe.materialCount());
+                Ingredient.CONTENTS_STREAM_CODEC.encode(buf, recipe.handle());
+                ItemStack.STREAM_CODEC.encode(buf, recipe.result());
+                ByteBufCodecs.VAR_INT.encode(buf, recipe.smithingXp());
+                REQUIREMENTS_STREAM_CODEC.encode(buf, recipe.requirements());
+                ForgingExtras.STREAM_CODEC.encode(buf, recipe.extras());
+            },
+            buf -> new ForgingRecipe(
+                    Ingredient.CONTENTS_STREAM_CODEC.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
+                    Ingredient.CONTENTS_STREAM_CODEC.decode(buf),
+                    ItemStack.STREAM_CODEC.decode(buf),
+                    ByteBufCodecs.VAR_INT.decode(buf),
+                    REQUIREMENTS_STREAM_CODEC.decode(buf),
+                    ForgingExtras.STREAM_CODEC.decode(buf)));
 
     @Override
     public boolean matches(ForgingRecipeInput input, Level level) {

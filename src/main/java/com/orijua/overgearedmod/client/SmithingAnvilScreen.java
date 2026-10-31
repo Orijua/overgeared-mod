@@ -8,10 +8,15 @@ import com.orijua.overgearedmod.equipment.EquipmentRules;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.equipment.RatingRoller;
 import com.orijua.overgearedmod.network.ManualForgePayload;
+import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.progression.StatType;
+import com.orijua.overgearedmod.registry.Definitions;
+import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.registry.ModRecipes;
+import com.orijua.overgearedmod.smithing.ForgingExtras;
 import com.orijua.overgearedmod.smithing.ForgingMinigame;
 import com.orijua.overgearedmod.smithing.ForgingRecipe;
 import com.orijua.overgearedmod.smithing.ForgingRecipeInput;
@@ -23,6 +28,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Inventory;
@@ -62,8 +68,8 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
     private Button manualButton;
     private double[] autoOdds = new double[ItemRating.values().length];
     private double[] manualOdds = new double[ItemRating.values().length];
-    /** Empty when the inputs match no forging recipe; holds an empty Optional for a recipe without requirements. */
-    private Optional<Optional<EquipRequirements>> recipeRequirements = Optional.empty();
+    /** The forging recipe the inputs match, if any (found on the client, even one for another class). */
+    private Optional<ForgingRecipe> recipe = Optional.empty();
 
     /** The manual minigame being played over the window, or null. */
     private ForgingMinigame minigame;
@@ -116,14 +122,15 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         autoButton.active = !menu.autoForging() && minigame == null;
         manualButton.active = autoButton.active;
 
-        autoOdds = RatingRoller.odds(stats.dexterity(), smithing);
-        manualOdds = RatingRoller.odds(stats.dexterity(), smithing, ForgingRules.manualSkillBonus(1));
         // Recipes are synced to the client, so the screen can find the one the server will use.
         ForgingRecipeInput input = new ForgingRecipeInput(menu.getSlot(SmithingAnvilMenu.TOP_SLOT).getItem(),
                 menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).getItem());
-        recipeRequirements = minecraft.level.getRecipeManager().getRecipeFor(ModRecipes.FORGING.get(), input, minecraft.level)
-                .map(RecipeHolder::value)
-                .map(ForgingRecipe::requirements);
+        recipe = minecraft.level.getRecipeManager().getRecipeFor(ModRecipes.FORGING.get(), input, minecraft.level)
+                .map(RecipeHolder::value);
+        // A recipe with a rating range (Fracaso: Unique or Legendary) shows the odds within it.
+        ForgingExtras extras = recipe.map(ForgingRecipe::extras).orElse(ForgingExtras.NONE);
+        autoOdds = RatingRoller.odds(stats.dexterity(), smithing, 0, extras.minRating(), extras.maxRating());
+        manualOdds = RatingRoller.odds(stats.dexterity(), smithing, ForgingRules.manualSkillBonus(1), extras.minRating(), extras.maxRating());
     }
 
     @Override
@@ -152,10 +159,15 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
     }
 
     private void sidePanel(GuiGraphics graphics, int x, int y) {
-        int lines = 3 + autoOdds.length + recipeRequirements.map(r -> 2 + r.map(req -> 1 + req.stats().size()).orElse(1)).orElse(0);
-        UiStyle.frame(graphics, x, y, SIDE_WIDTH, PADDING * 2 + lines * LINE, 1.0f);
         int left = x + PADDING;
         int right = x + SIDE_WIDTH - PADDING;
+        // A long class name ("Legendary Smith Successor") wraps, leaving room for the tick on its first line.
+        List<FormattedCharSequence> classLines = requiredClassText()
+                .map(text -> font.split(text, right - left - font.width("✘") - 4))
+                .orElse(List.of());
+        int lines = 3 + autoOdds.length + classLines.size()
+                + recipe.map(r -> 2 + r.requirements().map(req -> 1 + req.stats().size()).orElse(1)).orElse(0);
+        UiStyle.frame(graphics, x, y, SIDE_WIDTH, PADDING * 2 + lines * LINE, 1.0f);
         int autoColumn = right - 44;
         int row = y + PADDING;
 
@@ -173,13 +185,24 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_manual_note"), left, row, UiStyle.MUTED);
         row += LINE;
 
-        if (recipeRequirements.isEmpty()) {
+        if (recipe.isEmpty()) {
             return;
         }
         row += LINE;
         graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_requirements"), left, row, UiStyle.HEADING);
         row += LINE;
-        Optional<EquipRequirements> requirements = recipeRequirements.get();
+        if (!classLines.isEmpty()) {
+            Optional<ResourceLocation> requiredClass = recipe.get().extras().requiredClass();
+            boolean isClass = minecraft.player.getData(ModAttachments.PLAYER_IDENTITY).playerClass().equals(requiredClass);
+            int color = isClass ? UiStyle.GOOD : UiStyle.BAD;
+            String mark = isClass ? "✔" : "✘";
+            graphics.drawString(font, mark, right - font.width(mark), row, color);
+            for (FormattedCharSequence line : classLines) {
+                graphics.drawString(font, line, left, row, color);
+                row += LINE;
+            }
+        }
+        Optional<EquipRequirements> requirements = recipe.get().requirements();
         if (requirements.isEmpty()) {
             graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_no_requirements"), left, row, UiStyle.MUTED);
             return;
@@ -192,6 +215,15 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
             requirement(graphics, stat.getKey().displayName().copy().append(" " + stat.getValue()),
                     stats.get(stat.getKey()) >= stat.getValue(), left, right, row);
         }
+    }
+
+    /** "Only: <class>" when the recipe is for one class (only the Legendary Smith Successor can use Fracaso's blueprint). */
+    private Optional<Component> requiredClassText() {
+        return recipe.flatMap(r -> r.extras().requiredClass()).map(id -> {
+            Component name = Definitions.get(minecraft.level, ModDatapackRegistries.PLAYER_CLASS, id)
+                    .map(PlayerClassDefinition::name).orElse(Component.literal(id.toString()));
+            return Component.translatable("screen.overgearedmod.anvil_class", name);
+        });
     }
 
     private void rightAligned(GuiGraphics graphics, Component text, int right, int y, int color) {

@@ -24,6 +24,7 @@ public final class ContentValidator {
                 case SKILL -> content.skills();
                 case CLASS -> content.classes();
                 case QUEST -> content.quests();
+                case OPTION -> content.itemOptions();
             };
             if (!existing.contains(reference.target())) {
                 problems.add(reference.from() + ": " + reference.kind().name().toLowerCase() + " " + reference.target() + " does not exist");

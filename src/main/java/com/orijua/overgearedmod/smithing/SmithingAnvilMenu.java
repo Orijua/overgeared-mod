@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.equipment.EquipmentService;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.event.ItemForgedEvent;
 import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModItems;
@@ -106,10 +107,14 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         access.execute((level, pos) -> updateResult(level));
     }
 
-    /** Server only (access is NULL on the client); the result slot then syncs by itself. */
+    /**
+     * Server only (access is NULL on the client); the result slot then syncs by itself. A recipe for another class
+     * (Fracaso's blueprint) shows no result, so it can't be forged; the screen tells the player why.
+     */
     private void updateResult(Level level) {
         ForgingRecipeInput input = new ForgingRecipeInput(inputs.getItem(TOP_SLOT), inputs.getItem(BOTTOM_SLOT));
-        Optional<RecipeHolder<ForgingRecipe>> recipe = level.getRecipeManager().getRecipeFor(ModRecipes.FORGING.get(), input, level);
+        Optional<RecipeHolder<ForgingRecipe>> recipe = level.getRecipeManager().getRecipeFor(ModRecipes.FORGING.get(), input, level)
+                .filter(holder -> holder.value().extras().allows(player.getData(ModAttachments.PLAYER_IDENTITY).playerClass()));
         currentRecipe = recipe.orElse(null);
         result.setItem(0, recipe.map(holder -> holder.value().assemble(input, level.registryAccess())).orElse(ItemStack.EMPTY));
     }
@@ -193,7 +198,7 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
     private void forge(ServerPlayer smith, double skillBonus, double extraOptionChance, int xpMultiplier) {
         ForgingRecipe recipe = currentRecipe.value();
         ItemStack forged = result.getItem(0).copy();
-        EquipmentService.stampForged(smith, forged, recipe.requirements(), skillBonus, extraOptionChance);
+        EquipmentService.stampForged(smith, forged, recipe.requirements(), recipe.extras(), skillBonus, extraOptionChance);
         inputs.removeItem(TOP_SLOT, recipe.materialCount());
         if (!inputs.getItem(BOTTOM_SLOT).isEmpty()) {
             inputs.removeItem(BOTTOM_SLOT, 1);

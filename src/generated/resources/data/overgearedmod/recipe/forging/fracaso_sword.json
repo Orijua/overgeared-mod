@@ -1,0 +1,47 @@
+{
+  "type": "overgearedmod:forging",
+  "fixed_options": [
+    {
+      "option": "overgearedmod:fracaso_agility",
+      "value": 30.0
+    },
+    {
+      "option": "overgearedmod:fracaso_block",
+      "value": 0.15
+    },
+    {
+      "option": "overgearedmod:fracaso_darkness",
+      "value": 0.2
+    },
+    {
+      "option": "overgearedmod:fracaso_fear",
+      "value": 50.0
+    },
+    {
+      "min_rating": "legendary",
+      "option": "overgearedmod:fracaso_bisection",
+      "value": 1.0
+    }
+  ],
+  "handle": {
+    "item": "overgearedmod:fracaso_blueprint"
+  },
+  "material": {
+    "item": "overgearedmod:blue_orichalcum_ingot"
+  },
+  "material_count": 15,
+  "max_rating": "legendary",
+  "min_rating": "unique",
+  "required_class": "overgearedmod:legendary_smith_successor",
+  "requirements": {
+    "level": 300,
+    "stats": {
+      "strength": 5000
+    }
+  },
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:fracaso_sword"
+  },
+  "smithing_xp": 500
+}

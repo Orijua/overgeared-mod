@@ -8,6 +8,7 @@ import com.orijua.overgearedmod.notification.ClientNotifications;
 import com.orijua.overgearedmod.registry.ModEntities;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.skill.PlayerSkills;
+import com.orijua.overgearedmod.skill.SkillService;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -39,6 +40,8 @@ public class OvergearedmodClient {
             key("skill_1", GLFW.GLFW_KEY_Z),
             key("skill_2", GLFW.GLFW_KEY_X),
             key("skill_3", GLFW.GLFW_KEY_C));
+    /** Casts the held weapon's own skill (Bisection on a Legendary Fracaso); its HUD slot only shows while one is held. */
+    public static final KeyMapping WEAPON_SKILL = key("weapon_skill", GLFW.GLFW_KEY_V);
 
     public OvergearedmodClient(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(OvergearedmodClient::onRegisterKeys);
@@ -59,6 +62,7 @@ public class OvergearedmodClient {
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(OPEN_STATUS);
         SKILL_KEYS.forEach(event::register);
+        event.register(WEAPON_SKILL);
     }
 
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
@@ -92,6 +96,9 @@ public class OvergearedmodClient {
             while (SKILL_KEYS.get(slot).consumeClick()) {
                 PacketDistributor.sendToServer(new UseSkillPayload(slot));
             }
+        }
+        while (WEAPON_SKILL.consumeClick()) {
+            PacketDistributor.sendToServer(new UseSkillPayload(SkillService.WEAPON_SLOT));
         }
     }
 }

@@ -18,6 +18,7 @@ import java.util.Set;
  * @param questGivers       quest → the NPC (entity type) in its {@code giver}
  * @param questGiverNpcs    the NPCs with a quest window, the only ones a {@code giver} can name
  * @param deliveriesWithoutGiver where a deliver goal sits with no giver to hand the items to ("quest x", "title y")
+ * @param itemOptions       the item options that exist, for recipes' fixed options
  */
 public record ContentIndex(
         Set<ResourceLocation> skills,
@@ -30,7 +31,8 @@ public record ContentIndex(
         List<Reference> references,
         Map<ResourceLocation, ResourceLocation> questGivers,
         Set<ResourceLocation> questGiverNpcs,
-        Set<String> deliveriesWithoutGiver) {
+        Set<String> deliveriesWithoutGiver,
+        Set<ResourceLocation> itemOptions) {
 
     /** Content without NPC quests, as most tests build it. */
     public ContentIndex(Set<ResourceLocation> skills, Set<ResourceLocation> classes, Set<ResourceLocation> quests,
@@ -41,10 +43,21 @@ public record ContentIndex(
                 Map.of(), Set.of(), Set.of());
     }
 
+    /** Content without recipes' fixed options. */
+    public ContentIndex(Set<ResourceLocation> skills, Set<ResourceLocation> classes, Set<ResourceLocation> quests,
+                        Set<ResourceLocation> advancedClasses, Set<ResourceLocation> rewardedClasses,
+                        Map<ResourceLocation, ResourceLocation> questRequirements, Set<ResourceLocation> visibleClassQuests,
+                        List<Reference> references, Map<ResourceLocation, ResourceLocation> questGivers,
+                        Set<ResourceLocation> questGiverNpcs, Set<String> deliveriesWithoutGiver) {
+        this(skills, classes, quests, advancedClasses, rewardedClasses, questRequirements, visibleClassQuests, references,
+                questGivers, questGiverNpcs, deliveriesWithoutGiver, Set.of());
+    }
+
     public enum Kind {
         SKILL,
         CLASS,
-        QUEST
+        QUEST,
+        OPTION
     }
 
     /** "{@code from} needs the {@code kind} {@code target} to exist", e.g. class warrior → skill pagma_link. */

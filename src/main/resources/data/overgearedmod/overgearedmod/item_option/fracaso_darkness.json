@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "option.overgearedmod.fracaso_darkness" },
+  "weight": 0,
+  "min": 0.2,
+  "max": 0.2,
+  "effect": { "type": "dark_damage", "max_light": 7 }
+}
