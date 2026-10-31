@@ -54,7 +54,7 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
     private static final long RESULT_MILLIS = 1500;
 
     private Button autoButton;
-    private Button fireButton;
+    private Button putOutButton;
     private Button bellowsButton;
     private Optional<MeltingRecipe> recipe = Optional.empty();
     private SmeltingMinigame minigame;
@@ -74,7 +74,8 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
                 .bounds(leftPos + 86, topPos + 58, 40, 14)
                 .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.smelter_auto.tooltip")))
                 .build(SatisfyButton::new));
-        fireButton = addRenderableWidget(Button.builder(Component.empty(), b -> pressButton(SmelterMenu.FIRE_BUTTON))
+        putOutButton = addRenderableWidget(Button.builder(Component.translatable("screen.overgearedmod.smelter_fire_off"),
+                        b -> pressButton(SmelterMenu.PUT_OUT_BUTTON))
                 .bounds(leftPos + 129, topPos + 18, 42, 14)
                 .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.smelter_fire.tooltip")))
                 .build(SatisfyButton::new));
@@ -97,13 +98,11 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
         recipe = minecraft.level.getRecipeManager().getRecipeFor(ModRecipes.MELTING.get(), input, minecraft.level).map(RecipeHolder::value);
         autoButton.setMessage(Component.translatable(menu.melting() ? "screen.overgearedmod.smelter_stop" : "screen.overgearedmod.smelter_auto"));
         autoButton.visible = recipe.isPresent() || menu.melting();
-        fireButton.setMessage(Component.translatable(menu.fireOn() ? "screen.overgearedmod.smelter_fire_off"
-                : "screen.overgearedmod.smelter_fire_on"));
-        fireButton.active = minigame == null;
+        putOutButton.visible = menu.fireOn();
+        putOutButton.active = minigame == null;
         bellowsButton.visible = recipe.isPresent();
         autoButton.active = minigame == null;
-        bellowsButton.active = minigame == null && !menu.melting() && recipe.filter(r -> menu.temperature() >= r.minTemperature()
-                && skill() >= r.smithingLevel()).isPresent();
+        bellowsButton.active = minigame == null && !menu.melting() && recipe.filter(r -> skill() >= r.smithingLevel()).isPresent();
     }
 
     private int skill() {
@@ -212,11 +211,15 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
 
     // ---- Manual melting: the bellows minigame ----
 
+    /** Hot enough: the minigame starts. Cold: the server lights the fire and says when it is ready; no game yet. */
     private void startMinigame() {
         if (recipe.isEmpty()) {
             return;
         }
         pressButton(SmelterMenu.MANUAL_BUTTON); // the server checks the heat and notes when it started
+        if (menu.temperature() < recipe.get().minTemperature()) {
+            return;
+        }
         minigame = new SmeltingMinigame(recipe.get().minTemperature());
         lastUpdate = Util.getMillis();
         resultShownUntil = -1;

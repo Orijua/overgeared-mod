@@ -17,6 +17,13 @@ class SmelterRulesTest {
     }
 
     @Test
+    void heatingUpBurnsFuelTwiceAsFast() {
+        assertEquals(2, SmelterRules.fuelTicksPerTick(500, 1050), "still heating");
+        assertEquals(1, SmelterRules.fuelTicksPerTick(1050, 1050), "holding the heat");
+        assertEquals(1, SmelterRules.fuelTicksPerTick(1500, 1050), "hotter than this fuel");
+    }
+
+    @Test
     void automaticExtraIngotGrowsWithSmithing() {
         assertEquals(0.0, SmelterRules.autoExtraChance(0), 1e-9);
         assertEquals(0.1, SmelterRules.autoExtraChance(10), 1e-9);

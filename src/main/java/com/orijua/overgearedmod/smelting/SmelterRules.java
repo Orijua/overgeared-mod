@@ -44,6 +44,11 @@ public final class SmelterRules {
         return current < fuelHeat ? Math.min(fuelHeat, current + HEAT_RATE) : Math.max(fuelHeat, current - COOL_RATE);
     }
 
+    /** Fuel ticks spent per game tick: heating up from cold costs double, holding the heat the normal rate. */
+    public static int fuelTicksPerTick(int temperature, int fuelHeat) {
+        return temperature < fuelHeat ? 2 : 1;
+    }
+
     public static double autoExtraChance(int smithingLevel) {
         return Math.min(MAX_AUTO_EXTRA_CHANCE, Math.max(0, smithingLevel) * 0.01);
     }

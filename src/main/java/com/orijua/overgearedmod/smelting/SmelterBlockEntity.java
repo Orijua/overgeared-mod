@@ -35,10 +35,11 @@ import java.util.UUID;
 /**
  * The smelter's state: its three slots (metal, fuel, ingots) and its heat, kept while nobody looks.
  * <p>
- * <b>Fire:</b> the smith lights it and puts it out. A burning piece of fuel holds the heat at its level
- * ({@link #fuelHeat}) until it burns out; while lit and with metal to melt the next piece goes in, otherwise the rest
- * of the fuel waits and the heat drops. <b>Automatic:</b> a smith starts it (if their smithing level is enough) and it
- * melts one piece after another while it is hot enough, each with a chance of an extra ingot by that smith's level.
+ * <b>Fire:</b> Melt or Bellows light it, Put out douses it. A burning piece of fuel holds the heat at its level
+ * ({@link #fuelHeat}) until it burns out, twice as fast while still heating up; while lit and with metal to melt the
+ * next piece goes in, otherwise the rest of the fuel waits and the heat drops. <b>Automatic:</b> a smith starts it (if
+ * their smithing level is enough) and it melts one piece after another while it is hot enough, each with a chance of
+ * an extra ingot by that smith's level.
  * <b>Manual:</b> the smith plays the bellows minigame; its precision decides an extra ingot or slag
  * ({@link #finishManual}). Smithing XP goes to the smith who started it.
  */
@@ -72,8 +73,11 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     private int burnTotal;
     private int progress;
     private boolean melting;
-    /** Lit by the smith: it takes fuel while there is metal to melt (see {@link #tick}). */
+    /** Lit by Melt or Bellows (until Put out): it takes fuel while there is metal to melt (see {@link #tick}). */
     private boolean fireOn;
+    /** The smith waiting for a cold smelter to heat up for the bellows, told when it is ready. */
+    @Nullable
+    private UUID readyNotice;
     @Nullable
     private UUID melter;
     private int melterLevel;
@@ -160,13 +164,14 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     private void tick(ServerLevel level, BlockPos pos, BlockState state) {
         currentRecipe = findRecipe(level);
         if (burnTime > 0) {
-            burnTime--;
+            burnTime = Math.max(0, burnTime - SmelterRules.fuelTicksPerTick(temperature, fuelHeat));
         }
         if (burnTime <= 0 && fireOn && currentRecipe != null) {
             burnFuel();
         }
         boolean burning = burnTime > 0;
         temperature = SmelterRules.nextTemperature(temperature, fuelHeat, burning);
+        notifyWhenReady(level);
         if (melting) {
             meltStep(level);
         }
@@ -255,7 +260,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
             stopMelting();
             return true;
         }
-        if (!checkCanMelt(smith)) {
+        if (!checkCanMelt(smith) || !light(smith)) {
             return false;
         }
         melting = true;
@@ -265,18 +270,9 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         return true;
     }
 
-    /**
-     * The Light / Put out button. Lighting needs fuel; putting it out douses the fire at once, and the piece that was
-     * burning is lost.
-     */
-    public boolean toggleFire(ServerPlayer smith) {
-        if (fireOn) {
-            fireOn = false;
-            burnTime = 0;
-            burnTotal = 0;
-            return true;
-        }
-        if (!isFuel(items.getItem(FUEL))) {
+    /** Lights the fire if it isn't already; needs fuel, burning or in its slot. */
+    private boolean light(ServerPlayer smith) {
+        if (!fireOn && burnTime <= 0 && !isFuel(items.getItem(FUEL))) {
             smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_no_fuel"), true);
             return false;
         }
@@ -284,19 +280,50 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         return true;
     }
 
+    /** The Put out button: douses the fire at once (the piece that was burning is lost) and stops any melting. */
+    public boolean putOut() {
+        if (!fireOn && burnTime <= 0) {
+            return false;
+        }
+        fireOn = false;
+        burnTime = 0;
+        burnTotal = 0;
+        readyNotice = null;
+        stopMelting();
+        return true;
+    }
+
+    /** Tells the smith who asked for the bellows on a cold smelter when it is hot enough for them. */
+    private void notifyWhenReady(ServerLevel level) {
+        if (readyNotice == null || currentRecipe == null || temperature < currentRecipe.value().minTemperature()) {
+            return;
+        }
+        ServerPlayer smith = level.getServer().getPlayerList().getPlayer(readyNotice);
+        if (smith != null) {
+            smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_ready"), true);
+            level.playSound(null, worldPosition, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 0.6f, 1.2f);
+        }
+        readyNotice = null;
+    }
+
     public boolean fireOn() {
         return fireOn;
     }
 
-    /** Whether the smith can tend a manual melt now: metal, skill, room, no automatic melt running, and enough heat. */
+    /**
+     * Whether the smith can tend a manual melt now: metal, skill, room, no automatic melt running, and enough heat.
+     * On a cold smelter it lights the fire instead, and tells the smith when it is ready.
+     */
     public boolean canStartManual(ServerPlayer smith) {
         if (melting || !checkCanMelt(smith)) {
             return false;
         }
         MeltingRecipe recipe = currentRecipe.value();
         if (temperature < recipe.minTemperature()) {
-            smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_too_cold", temperature,
-                    recipe.minTemperature()), true);
+            if (light(smith)) {
+                readyNotice = smith.getUUID();
+                smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_heating", recipe.minTemperature()), true);
+            }
             return false;
         }
         return true;
