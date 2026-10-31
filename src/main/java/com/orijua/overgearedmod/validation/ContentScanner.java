@@ -1,14 +1,18 @@
 package com.orijua.overgearedmod.validation;
 
+import com.orijua.overgearedmod.goal.DeliverGoal;
 import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.quest.QuestDefinition;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.registry.ModEntities;
+import com.orijua.overgearedmod.title.TitleDefinition;
 import com.orijua.overgearedmod.validation.ContentIndex.Kind;
 import com.orijua.overgearedmod.validation.ContentIndex.Reference;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -31,6 +35,8 @@ public final class ContentScanner {
         Map<ResourceLocation, ResourceLocation> questRequirements = new HashMap<>();
         Set<ResourceLocation> visibleClassQuests = new HashSet<>();
         List<Reference> references = new ArrayList<>();
+        Map<ResourceLocation, ResourceLocation> questGivers = new HashMap<>();
+        Set<String> deliveriesWithoutGiver = new HashSet<>();
 
         for (Map.Entry<ResourceLocation, PlayerClassDefinition> entry : entries(access, ModDatapackRegistries.PLAYER_CLASS)) {
             String from = "class " + entry.getKey();
@@ -60,11 +66,26 @@ public final class ContentScanner {
                     references.add(new Reference(from, Kind.SKILL, skill));
                 }
             }
+            quest.giver().ifPresent(giver -> questGivers.put(entry.getKey(), BuiltInRegistries.ENTITY_TYPE.getKey(giver)));
+            if (quest.goal() instanceof DeliverGoal && quest.giver().isEmpty()) {
+                deliveriesWithoutGiver.add(from);
+            }
+            if (quest.discoverWhen().filter(DeliverGoal.class::isInstance).isPresent()) {
+                deliveriesWithoutGiver.add(from + " (discover_when)");
+            }
+        }
+        for (Map.Entry<ResourceLocation, TitleDefinition> entry : entries(access, ModDatapackRegistries.TITLE)) {
+            if (entry.getValue().goal() instanceof DeliverGoal) {
+                deliveriesWithoutGiver.add("title " + entry.getKey());
+            }
         }
         BlacksmithNpc.SOLD_SKILLS.forEach(skill -> references.add(new Reference("blacksmith trades", Kind.SKILL, skill)));
+        Set<ResourceLocation> questGiverNpcs = new HashSet<>();
+        ModEntities.questGivers().forEach(type -> questGiverNpcs.add(BuiltInRegistries.ENTITY_TYPE.getKey(type)));
 
         return new ContentIndex(ids(access, ModDatapackRegistries.SKILL), ids(access, ModDatapackRegistries.PLAYER_CLASS),
-                ids(access, ModDatapackRegistries.QUEST), advancedClasses, rewardedClasses, questRequirements, visibleClassQuests, references);
+                ids(access, ModDatapackRegistries.QUEST), advancedClasses, rewardedClasses, questRequirements, visibleClassQuests, references,
+                questGivers, questGiverNpcs, deliveriesWithoutGiver);
     }
 
     private static <T> Set<ResourceLocation> ids(RegistryAccess access, ResourceKey<Registry<T>> key) {

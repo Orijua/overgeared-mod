@@ -8,8 +8,10 @@ import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.title.TitleService;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 
+import java.util.List;
 import java.util.Optional;
 
 /** Listens to the domain events of "something countable happened": updates counters, then checks titles and hidden quests. */
@@ -34,12 +36,15 @@ public final class GoalTracker {
         update(event.player(), counters);
     }
 
-    /** A forge of rating R also counts for every "at least X" goal with X ≤ R. */
+    /** A forge of rating R also counts for every "at least X" goal with X ≤ R, for any item and for this item. */
     private static void onForged(ItemForgedEvent event) {
-        PlayerCounters counters = counters(event.player()).increment(ForgeGoal.counterKey(Optional.empty()));
-        for (ItemRating tier : ItemRating.values()) {
-            if (tier.ordinal() <= event.rating().ordinal()) {
-                counters = counters.increment(ForgeGoal.counterKey(Optional.of(tier)));
+        PlayerCounters counters = counters(event.player());
+        for (Optional<Item> item : List.of(Optional.<Item>empty(), Optional.of(event.forged().getItem()))) {
+            counters = counters.increment(ForgeGoal.counterKey(item, Optional.empty()));
+            for (ItemRating tier : ItemRating.values()) {
+                if (tier.ordinal() <= event.rating().ordinal()) {
+                    counters = counters.increment(ForgeGoal.counterKey(item, Optional.of(tier)));
+                }
             }
         }
         update(event.player(), counters);

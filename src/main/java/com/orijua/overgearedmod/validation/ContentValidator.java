@@ -42,6 +42,14 @@ public final class ContentValidator {
                 problems.add("quest " + quest + ": its requires_quest chain loops back to it, so it can never be accepted");
             }
         }
+        content.questGivers().forEach((quest, giver) -> {
+            if (!content.questGiverNpcs().contains(giver)) {
+                problems.add("quest " + quest + ": giver " + giver + " has no quest window, so nobody can accept it");
+            }
+        });
+        for (String owner : content.deliveriesWithoutGiver()) {
+            problems.add(owner + ": a deliver goal needs a quest with a giver to hand the items to");
+        }
         problems.sort(null);
         return problems;
     }

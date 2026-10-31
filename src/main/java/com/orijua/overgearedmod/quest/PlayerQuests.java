@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Accepted quests (with the goal's progress at the moment of accepting, so only later kills/forges count),
+ * Accepted quests, each with the value its goal stored (the goal's progress at the moment of accepting, so only later
+ * kills/forges count, or for a deliver goal what has been handed over so far),
  * the ids of quests already completed, the hidden quests the player has discovered, and which of those
  * discoveries they have already seen in the Quests tab (the rest are marked "New!").
  */
@@ -55,6 +56,16 @@ public record PlayerQuests(Map<ResourceLocation, Integer> active, List<ResourceL
     public PlayerQuests accept(ResourceLocation quest, int baseline) {
         Map<ResourceLocation, Integer> newActive = new HashMap<>(active);
         newActive.put(quest, baseline);
+        return new PlayerQuests(Map.copyOf(newActive), completed, discovered, seen);
+    }
+
+    /** Adds {@code amount} to what an active deliver quest has received; unchanged if the quest isn't active. */
+    public PlayerQuests deliver(ResourceLocation quest, int amount) {
+        if (!isActive(quest) || amount <= 0) {
+            return this;
+        }
+        Map<ResourceLocation, Integer> newActive = new HashMap<>(active);
+        newActive.merge(quest, amount, Integer::sum);
         return new PlayerQuests(Map.copyOf(newActive), completed, discovered, seen);
     }
 

@@ -1,0 +1,9 @@
+{
+  "name": { "translate": "quest.overgearedmod.smith_jaffa_ingots" },
+  "description": { "translate": "quest.overgearedmod.smith_jaffa_ingots.desc" },
+  "giver": "overgearedmod:blacksmith",
+  "goal": { "type": "deliver", "items": "overgearedmod:jaffa_ingot", "count": 8 },
+  "requires_quest": "overgearedmod:smith_iron",
+  "xp_reward": 150,
+  "item_rewards": [{ "id": "overgearedmod:enhancement_stone", "count": 2 }]
+}

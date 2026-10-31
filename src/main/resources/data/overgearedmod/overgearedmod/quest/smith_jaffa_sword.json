@@ -1,0 +1,9 @@
+{
+  "name": { "translate": "quest.overgearedmod.smith_jaffa_sword" },
+  "description": { "translate": "quest.overgearedmod.smith_jaffa_sword.desc" },
+  "giver": "overgearedmod:blacksmith",
+  "goal": { "type": "forge", "item": "overgearedmod:jaffa_sword", "count": 1 },
+  "requires_quest": "overgearedmod:smith_jaffa_ingots",
+  "xp_reward": 200,
+  "item_rewards": [{ "id": "overgearedmod:jaffa_ingot", "count": 4 }, { "id": "overgearedmod:enhancement_stone", "count": 1 }]
+}

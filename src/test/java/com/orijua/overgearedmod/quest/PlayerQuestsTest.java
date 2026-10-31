@@ -50,4 +50,12 @@ class PlayerQuestsTest {
     void discoveringOneQuestDoesNotRevealAnother() {
         assertFalse(PlayerQuests.EMPTY.discover(OTHER).isDiscovered(SECRET));
     }
+
+    @Test
+    void deliveriesAddUpOnlyOnActiveQuests() {
+        PlayerQuests quests = PlayerQuests.EMPTY.accept(OTHER, 0).deliver(OTHER, 40).deliver(OTHER, 24);
+        assertEquals(64, quests.active().get(OTHER), "partial deliveries add up");
+        assertSame(quests, quests.deliver(SECRET, 5), "a quest that isn't active takes nothing");
+        assertSame(quests, quests.deliver(OTHER, 0), "nothing delivered, nothing changes");
+    }
 }

@@ -2,7 +2,8 @@
   "name": { "translate": "quest.overgearedmod.night_watch" },
   "description": { "translate": "quest.overgearedmod.night_watch.desc" },
   "goal": { "type": "kill", "entity": "minecraft:skeleton", "count": 8 },
-  "requires_quest": "overgearedmod:quality_test",
+  "giver": "overgearedmod:village_chief",
+  "requires_quest": "overgearedmod:zombie_plague",
   "xp_reward": 250,
   "item_rewards": [{ "id": "overgearedmod:mithril_ingot", "count": 4 }]
 }

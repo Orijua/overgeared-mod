@@ -1,7 +1,7 @@
 package com.orijua.overgearedmod.npc;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.client.tab.SatisfyTabs;
+import com.orijua.overgearedmod.client.NpcQuestScreen;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.skill.SkillBookItem;
 import net.minecraft.resources.ResourceLocation;
@@ -31,7 +31,7 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 /**
- * A blacksmith NPC: right-click to trade, sneak + right-click to open the Quests tab.
+ * A blacksmith NPC: right-click opens his quest window (with a Trade button for the shop).
  * Reuses vanilla's merchant logic (AbstractVillager) and the villager model. It stays where it is
  * placed (no wandering), never despawns and only takes damage from creative players or /kill.
  */
@@ -69,21 +69,25 @@ public class BlacksmithNpc extends AbstractVillager {
         }
     }
 
+    /** Right-click: his quest window, whose Trade button opens the shop ({@link #startTrading}). */
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (!isAlive() || isTrading()) {
             return super.mobInteract(player, hand);
         }
-        if (player.isSecondaryUseActive()) {
-            if (level().isClientSide) {
-                // Only runs on the client, so the client-only class is never loaded on a server.
-                SatisfyTabs.openQuests();
-            }
-        } else if (!level().isClientSide) {
+        if (level().isClientSide) {
+            // Only runs on the client, so the client-only class is never loaded on a server.
+            NpcQuestScreen.open(this, true);
+        }
+        return InteractionResult.sidedSuccess(level().isClientSide);
+    }
+
+    /** Opens the shop for {@code player}, unless someone is already trading with him. */
+    public void startTrading(Player player) {
+        if (isAlive() && !isTrading()) {
             setTradingPlayer(player);
             openTradingScreen(player, getDisplayName(), 1);
         }
-        return InteractionResult.sidedSuccess(level().isClientSide);
     }
 
     @Override

@@ -22,5 +22,16 @@ public interface Goal {
         return true;
     }
 
+    /** What a quest stores when accepted: the count so far for counted goals (so only later events count), else 0. */
+    default int startingValue(PlayerCounters counters, PlayerStats stats) {
+        return cumulative() ? progress(counters, stats) : 0;
+    }
+
+    /** A quest's progress, from the value it stored when accepted (see {@link #startingValue}). */
+    default int questProgress(int stored, PlayerCounters counters, PlayerStats stats) {
+        int current = progress(counters, stats);
+        return cumulative() ? current - stored : current;
+    }
+
     Component describe();
 }

@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "quest.overgearedmod.smith_firewood" },
+  "description": { "translate": "quest.overgearedmod.smith_firewood.desc" },
+  "giver": "overgearedmod:blacksmith",
+  "goal": { "type": "deliver", "items": "#minecraft:logs", "count": 64 },
+  "xp_reward": 60,
+  "item_rewards": [{ "id": "minecraft:bread", "count": 4 }]
+}

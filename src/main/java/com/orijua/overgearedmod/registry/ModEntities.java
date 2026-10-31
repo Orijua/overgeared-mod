@@ -11,6 +11,8 @@ import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.Set;
+
 /** Custom entities. Each living one also needs its attributes (below) and a renderer (OvergearedmodClient). */
 public final class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(Registries.ENTITY_TYPE, Overgearedmod.MODID);
@@ -34,6 +36,11 @@ public final class ModEntities {
                     .build("bone_lord"));
 
     private ModEntities() {
+    }
+
+    /** The NPCs with a quest window: a quest's "giver" must be one of them. */
+    public static Set<EntityType<?>> questGivers() {
+        return Set.of(BLACKSMITH.get(), VILLAGE_CHIEF.get());
     }
 
     public static void registerAttributes(EntityAttributeCreationEvent event) {

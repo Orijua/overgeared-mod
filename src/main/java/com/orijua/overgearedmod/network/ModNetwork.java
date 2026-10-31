@@ -22,6 +22,8 @@ public final class ModNetwork {
         registrar.playToServer(ChooseClassPayload.TYPE, ChooseClassPayload.STREAM_CODEC, ServerPayloadHandler::chooseClass);
         registrar.playToServer(QuestActionPayload.TYPE, QuestActionPayload.STREAM_CODEC, ServerPayloadHandler::questAction);
         registrar.playToServer(QuestsSeenPayload.TYPE, QuestsSeenPayload.STREAM_CODEC, ServerPayloadHandler::questsSeen);
+        registrar.playToServer(NpcQuestPayload.TYPE, NpcQuestPayload.STREAM_CODEC, ServerPayloadHandler::npcQuest);
+        registrar.playToServer(NpcTradePayload.TYPE, NpcTradePayload.STREAM_CODEC, ServerPayloadHandler::npcTrade);
         registrar.playToServer(ManualForgePayload.TYPE, ManualForgePayload.STREAM_CODEC, ServerPayloadHandler::manualForge);
         // The handler only touches ClientNotifications (no client classes), so this is safe on a dedicated server.
         registrar.playToClient(SystemNotificationPayload.TYPE, SystemNotificationPayload.STREAM_CODEC,

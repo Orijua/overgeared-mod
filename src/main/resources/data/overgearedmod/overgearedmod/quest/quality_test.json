@@ -2,6 +2,7 @@
   "name": { "translate": "quest.overgearedmod.quality_test" },
   "description": { "translate": "quest.overgearedmod.quality_test.desc" },
   "goal": { "type": "forge", "min_rating": "rare", "count": 2 },
+  "giver": "overgearedmod:blacksmith",
   "requires_quest": "overgearedmod:first_commission",
   "xp_reward": 150,
   "item_rewards": [{ "id": "overgearedmod:enhancement_stone", "count": 3 }]

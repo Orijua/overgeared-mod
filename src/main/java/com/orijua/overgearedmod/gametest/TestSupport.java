@@ -1,9 +1,16 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.mojang.authlib.GameProfile;
+import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.event.ItemForgedEvent;
 import com.orijua.overgearedmod.event.MobKilledEvent;
+import com.orijua.overgearedmod.npc.BlacksmithNpc;
+import com.orijua.overgearedmod.npc.VillageChiefNpc;
+import com.orijua.overgearedmod.quest.PlayerQuests;
+import com.orijua.overgearedmod.quest.QuestService;
+import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModEntities;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -11,6 +18,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -52,7 +60,30 @@ final class TestSupport {
 
     /** Posts a forge of the given rating, as taking it out of the smithing anvil would. */
     static void forge(ServerPlayer player, ItemRating rating) {
-        NeoForge.EVENT_BUS.post(new ItemForgedEvent(player, new ItemStack(Items.IRON_SWORD), rating));
+        forge(player, Items.IRON_SWORD, rating);
+    }
+
+    static void forge(ServerPlayer player, Item item, ItemRating rating) {
+        NeoForge.EVENT_BUS.post(new ItemForgedEvent(player, new ItemStack(item), rating));
+    }
+
+    /** Smith (the blacksmith NPC), next to the fake player: the NPC to deal with for the quests he gives. */
+    static BlacksmithNpc smith(GameTestHelper helper) {
+        return helper.spawn(ModEntities.BLACKSMITH.get(), 1, 1, 2);
+    }
+
+    /** The village chief, next to the fake player. */
+    static VillageChiefNpc chief(GameTestHelper helper) {
+        return helper.spawn(ModEntities.VILLAGE_CHIEF.get(), 1, 1, 2);
+    }
+
+    /** Marks quests as already completed, to start a test further along a chain. */
+    static void completed(ServerPlayer player, String... quests) {
+        PlayerQuests state = QuestService.get(player);
+        for (String quest : quests) {
+            state = state.complete(Overgearedmod.id(quest));
+        }
+        player.setData(ModAttachments.PLAYER_QUESTS, state);
     }
 
     /** Attack damage {@code weapon} gives on top of a plain iron sword. */

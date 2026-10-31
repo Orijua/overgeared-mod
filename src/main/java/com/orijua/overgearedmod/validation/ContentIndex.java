@@ -15,6 +15,9 @@ import java.util.Set;
  * @param questRequirements quest → the quest its {@code requires_quest} points to, to find chains that loop
  * @param visibleClassQuests quests with a {@code class_reward} but no {@code discover_when}: in Satisfy every
  *                           class quest is found by the player, never listed for everyone
+ * @param questGivers       quest → the NPC (entity type) in its {@code giver}
+ * @param questGiverNpcs    the NPCs with a quest window, the only ones a {@code giver} can name
+ * @param deliveriesWithoutGiver where a deliver goal sits with no giver to hand the items to ("quest x", "title y")
  */
 public record ContentIndex(
         Set<ResourceLocation> skills,
@@ -24,7 +27,19 @@ public record ContentIndex(
         Set<ResourceLocation> rewardedClasses,
         Map<ResourceLocation, ResourceLocation> questRequirements,
         Set<ResourceLocation> visibleClassQuests,
-        List<Reference> references) {
+        List<Reference> references,
+        Map<ResourceLocation, ResourceLocation> questGivers,
+        Set<ResourceLocation> questGiverNpcs,
+        Set<String> deliveriesWithoutGiver) {
+
+    /** Content without NPC quests, as most tests build it. */
+    public ContentIndex(Set<ResourceLocation> skills, Set<ResourceLocation> classes, Set<ResourceLocation> quests,
+                        Set<ResourceLocation> advancedClasses, Set<ResourceLocation> rewardedClasses,
+                        Map<ResourceLocation, ResourceLocation> questRequirements, Set<ResourceLocation> visibleClassQuests,
+                        List<Reference> references) {
+        this(skills, classes, quests, advancedClasses, rewardedClasses, questRequirements, visibleClassQuests, references,
+                Map.of(), Set.of(), Set.of());
+    }
 
     public enum Kind {
         SKILL,

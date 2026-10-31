@@ -1,6 +1,8 @@
 {
   "name": { "translate": "quest.overgearedmod.first_commission" },
   "description": { "translate": "quest.overgearedmod.first_commission.desc" },
+  "giver": "overgearedmod:blacksmith",
+  "requires_quest": "overgearedmod:smith_jaffa_sword",
   "goal": { "type": "forge", "count": 1 },
   "xp_reward": 50,
   "item_rewards": [{ "id": "overgearedmod:enhancement_stone", "count": 2 }]

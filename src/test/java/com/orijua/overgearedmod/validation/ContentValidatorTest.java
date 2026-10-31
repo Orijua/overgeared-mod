@@ -86,6 +86,18 @@ class ContentValidatorTest {
                 "quest test:b: skill test:slash does not exist"), ContentValidator.validate(content));
     }
 
+    @Test
+    void npcQuestsNeedAGiverWithAQuestWindow() {
+        ResourceLocation smith = id("smith");
+        ResourceLocation cow = ResourceLocation.withDefaultNamespace("cow");
+        ContentIndex content = new ContentIndex(Set.of(), Set.of(), Set.of(TRIAL, HUNT), Set.of(), Set.of(), Map.of(), Set.of(), List.of(),
+                Map.of(TRIAL, smith, HUNT, cow), Set.of(smith), Set.of("quest test:finale", "title test:hoarder"));
+        assertEquals(List.of(
+                "quest test:finale: a deliver goal needs a quest with a giver to hand the items to",
+                "quest test:hunt: giver minecraft:cow has no quest window, so nobody can accept it",
+                "title test:hoarder: a deliver goal needs a quest with a giver to hand the items to"), ContentValidator.validate(content));
+    }
+
     /** Content with warrior and the trial quest but no skills, plus the given references. */
     private static ContentIndex references(Reference... references) {
         return new ContentIndex(Set.of(), Set.of(WARRIOR), Set.of(TRIAL), Set.of(), Set.of(), Map.of(), Set.of(), List.of(references));
