@@ -58,4 +58,51 @@ class PlayerQuestsTest {
         assertSame(quests, quests.deliver(SECRET, 5), "a quest that isn't active takes nothing");
         assertSame(quests, quests.deliver(OTHER, 0), "nothing delivered, nothing changes");
     }
+
+    @Test
+    void completionsAreCounted() {
+        PlayerQuests quests = PlayerQuests.EMPTY.accept(OTHER, 0).complete(OTHER).accept(OTHER, 0).complete(OTHER);
+        assertEquals(2, quests.timesCompleted(OTHER));
+        assertEquals(List.of(OTHER), quests.completed(), "listed as completed once");
+        assertEquals(0, quests.timesCompleted(SECRET));
+    }
+
+    @Test
+    void savesFromBeforeCountingStillCountACompletedQuestOnce() {
+        PlayerQuests loaded = PlayerQuests.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"completed\": [\"test:other\"]}")).getOrThrow();
+        assertEquals(1, loaded.timesCompleted(OTHER));
+        assertEquals(List.of(), loaded.tracked());
+    }
+
+    @Test
+    void acceptedQuestsAreFollowedWhileThereIsRoom() {
+        PlayerQuests quests = PlayerQuests.EMPTY;
+        for (int i = 0; i < PlayerQuests.MAX_TRACKED + 1; i++) {
+            quests = quests.accept(ResourceLocation.fromNamespaceAndPath("test", "q" + i), 0);
+        }
+        assertEquals(PlayerQuests.MAX_TRACKED, quests.tracked().size());
+        assertFalse(quests.isTracked(ResourceLocation.fromNamespaceAndPath("test", "q" + PlayerQuests.MAX_TRACKED)), "no room for the last");
+    }
+
+    @Test
+    void followingTogglesOnlyActiveQuestsAndStopsWhenTheyEnd() {
+        PlayerQuests quests = PlayerQuests.EMPTY.accept(OTHER, 0);
+        assertTrue(quests.isTracked(OTHER));
+        assertFalse(quests.toggleTracked(OTHER).isTracked(OTHER), "unfollowed");
+        assertTrue(quests.toggleTracked(OTHER).toggleTracked(OTHER).isTracked(OTHER), "followed again");
+        assertSame(quests, quests.toggleTracked(SECRET), "a quest that isn't active can't be followed");
+        assertFalse(quests.complete(OTHER).isTracked(OTHER), "a completed quest stops being followed");
+        assertFalse(quests.abandon(OTHER).isTracked(OTHER), "so does an abandoned one");
+    }
+
+    @Test
+    void aFullHudFollowsNothingMore() {
+        PlayerQuests quests = PlayerQuests.EMPTY;
+        for (int i = 0; i < PlayerQuests.MAX_TRACKED; i++) {
+            quests = quests.accept(ResourceLocation.fromNamespaceAndPath("test", "q" + i), 0);
+        }
+        quests = quests.accept(OTHER, 0);
+        assertSame(quests, quests.toggleTracked(OTHER));
+    }
 }

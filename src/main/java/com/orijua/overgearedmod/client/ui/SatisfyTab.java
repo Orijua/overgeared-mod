@@ -39,11 +39,21 @@ public abstract class SatisfyTab {
     protected void addWidgets(Consumer<AbstractWidget> addWidget) {
     }
 
+    /** Width of the Satisfy window while this tab is open. */
+    public int panelWidth() {
+        return SatisfyScreen.PANEL_WIDTH;
+    }
+
     public void tick() {
     }
 
     /** Mouse wheel over the window. Return true if the tab scrolled, so its widgets are rebuilt. */
     public boolean mouseScrolled(double wheel) {
+        return false;
+    }
+
+    /** Left click on the window that no widget took. Return true if the tab changed, so its widgets are rebuilt. */
+    public boolean mouseClicked(double mouseX, double mouseY) {
         return false;
     }
 

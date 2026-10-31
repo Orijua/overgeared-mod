@@ -11,8 +11,8 @@ import com.orijua.overgearedmod.playerclass.PlayerClassDefinition;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.quest.QuestDefinition;
-import com.orijua.overgearedmod.quest.QuestRoute;
 import com.orijua.overgearedmod.quest.QuestService;
+import com.orijua.overgearedmod.quest.QuestTree;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
@@ -22,9 +22,13 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
@@ -39,38 +43,55 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
-/** Every quest with its state: accept it, follow its progress, claim it when done. */
+/**
+ * Every quest as a tree ({@link QuestTree}): on the left the chains grouped by who gives them, in three sections
+ * (story, repeatable, completed); on the right the chosen quest with its goal, progress, rewards and buttons.
+ */
 public class QuestsTab extends SatisfyTab {
-    private static final int ROW = 22;
-    private static final int LIST_TOP = 16;
-    private static final int VISIBLE_ROWS = 7;
-    private static final int BUTTON_WIDTH = 64;
+    private static final int PANEL_WIDTH = 340;
+    private static final int SECTION_WIDTH = 78;
+    private static final int LIST_TOP = 17;
+    private static final int LIST_WIDTH = 150;
+    private static final int ROW = 11;
+    /** How far each branch of a chain is indented. */
+    private static final int INDENT = 8;
+    private static final int DETAIL_GAP = 10;
+    private static final int ITEM = 18;
 
-    /** Height of a step of an unfolded route, under its quest. */
-    private static final int STEP_ROW = 11;
-    /** Room for the route toggle (▸/▾) before a quest's name. */
-    private static final int NAME_X = 14;
+    private static final int GUIDE = 0x709DC4EA;
+    private static final int SELECTED = 0x50FFFFFF;
+    private static final int HOVERED = 0x25FFFFFF;
+    private static final int DIVIDER = 0x609DC4EA;
+
+    private enum Section { STORY, REPEATABLE, COMPLETED }
+
+    private enum Kind { GROUP, QUEST, LOCKED, CHAIN }
 
     /**
-     * A line of the list: a quest, or one step of a quest's unfolded route ({@code step}). {@code button} is the quest's
-     * Accept/Claim, null for steps and for an NPC's quest, which has no Accept/Claim here.
+     * A line of the list. A group or a finished chain folds what is under it ({@code foldKey}); a quest can be chosen.
+     * {@code depth} is the indent inside its group; {@code mark} goes before the text ("✔", "»", "○"); {@code right} is
+     * drawn at the end of the line (an accepted quest shows its live progress there instead).
      */
-    private record Row(Definitions.Entry<QuestDefinition> quest, boolean step, int y, @Nullable Button button) {
+    private record Line(Kind kind, Component text, int color, @Nullable ResourceLocation quest, int depth, String mark,
+                        Component right, int rightColor, String foldKey) {
     }
 
-    /**
-     * Whether the list also shows the route: quests already done and those still locked behind another. Off, it only
-     * lists what can be accepted or is in progress. Kept while the game runs.
-     */
-    private static boolean showRoute;
-    /** Quests whose own route is unfolded under them (their ▸/▾ button). Kept while the game runs. */
-    private static final Set<ResourceLocation> UNFOLDED = new HashSet<>();
+    // What the player was looking at, kept while the game runs.
+    private static Section section = Section.STORY;
+    @Nullable
+    private static ResourceLocation selected;
+    /** Folded groups, and finished chains that are unfolded (they start folded). */
+    private static final Set<String> TOGGLED = new HashSet<>();
 
-    private final List<Row> rows = new ArrayList<>();
-    private boolean routeToggled;
+    private final List<Line> lines = new ArrayList<>();
+    /** Made once the tab knows its height; a new one (back to the top) for each section. */
+    @Nullable
+    private ScrollList scroll;
+    private boolean dirty;
     private PlayerQuests shownState;
-    private final ScrollList scroll = new ScrollList(VISIBLE_ROWS);
-    private int lineCount;
+    @Nullable
+    private Button claimButton;
+    private int repeatableCount;
     /**
      * Discoveries that were unseen when this tab was first shown. They keep their "New!" mark while the
      * window stays open, even though the server already counts them as seen.
@@ -89,8 +110,12 @@ public class QuestsTab extends SatisfyTab {
     }
 
     @Override
+    public int panelWidth() {
+        return PANEL_WIDTH;
+    }
+
+    @Override
     protected void addWidgets(Consumer<AbstractWidget> addWidget) {
-        rows.clear();
         shownState = QuestService.get(player());
         if (newWhenOpened == null) {
             newWhenOpened = shownState.discovered().stream().filter(shownState::isNew).collect(Collectors.toSet());
@@ -98,124 +123,163 @@ public class QuestsTab extends SatisfyTab {
                 PacketDistributor.sendToServer(QuestsSeenPayload.INSTANCE);
             }
         }
-        addWidget.accept(Button.builder(Component.translatable(showRoute ? "screen.overgearedmod.quest_route_hide"
-                                : "screen.overgearedmod.quest_route_show"), b -> {
-                            showRoute = !showRoute;
-                            routeToggled = true;
-                        })
-                .bounds(left + width - 96, top - 3, 96, 14)
-                .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_route_tooltip")))
-                .build(SatisfyButton::new));
+        buildLines();
+        if (scroll == null) {
+            scroll = new ScrollList(visibleRows());
+        }
+        scroll.clamp(lines.size());
+
+        for (Section each : Section.values()) {
+            Component label = Component.translatable("screen.overgearedmod.quest_section_" + each.name().toLowerCase());
+            if (each == Section.REPEATABLE) {
+                label = label.copy().append(" (" + repeatableCount + ")");
+            }
+            Button button = Button.builder(label, b -> {
+                        section = each;
+                        scroll = new ScrollList(visibleRows());
+                        dirty = true;
+                    })
+                    .bounds(left + each.ordinal() * (SECTION_WIDTH + 2), top - 3, SECTION_WIDTH, 14)
+                    .build(SatisfyButton::new);
+            button.active = each != section;
+            addWidget.accept(button);
+        }
+        addDetailButtons(addWidget);
+    }
+
+    /** The list of the open section, and the chosen quest kept (or a sensible one picked) among its lines. */
+    private void buildLines() {
+        lines.clear();
         List<Definitions.Entry<QuestDefinition>> all = Definitions.all(player().level(), ModDatapackRegistries.QUEST);
-        Map<ResourceLocation, Definitions.Entry<QuestDefinition>> byId = new HashMap<>();
-        Map<ResourceLocation, ResourceLocation> requires = new HashMap<>();
+        Map<ResourceLocation, QuestDefinition> byId = new HashMap<>();
+        List<QuestTree.Quest> quests = new ArrayList<>();
         for (Definitions.Entry<QuestDefinition> entry : all) {
-            byId.put(entry.id(), entry);
-            entry.value().requiresQuest().ifPresent(previous -> requires.put(entry.id(), previous));
+            byId.put(entry.id(), entry.value());
+            QuestDefinition quest = entry.value();
+            quests.add(new QuestTree.Quest(entry.id(), quest.requiresQuest(), groupKey(quest), quest.repeatable(), quest.isHidden()));
         }
-        // Hidden quests stay out of the list (not even locked) until the player discovers them.
-        List<Definitions.Entry<QuestDefinition>> quests = all.stream()
-                .filter(entry -> entry.value().isVisibleTo(entry.id(), shownState))
-                .filter(entry -> showRoute || shownState.isActive(entry.id()) || QuestService.canAccept(player(), entry.id(), entry.value()))
-                .toList();
-        // Each quest, followed by the other steps of its route when unfolded.
-        List<Row> lines = new ArrayList<>();
-        Set<ResourceLocation> inChains = new HashSet<>();
-        for (Definitions.Entry<QuestDefinition> entry : quests) {
-            lines.add(new Row(entry, false, 0, null));
-            List<ResourceLocation> route = QuestRoute.of(entry.id(), requires);
-            if (route.size() > 1) {
-                inChains.add(entry.id());
-            }
-            if (UNFOLDED.contains(entry.id())) {
-                route.stream().filter(step -> !step.equals(entry.id()) && byId.containsKey(step))
-                        .forEach(step -> lines.add(new Row(byId.get(step), true, 0, null)));
-            }
+        QuestTree.View view = QuestTree.build(quests, shownState);
+        repeatableCount = view.repeatable().size();
+
+        switch (section) {
+            case STORY -> view.story().forEach(group -> addGroup(group, byId, false));
+            case COMPLETED -> view.completed().forEach(group -> addGroup(group, byId, true));
+            case REPEATABLE -> view.repeatable().forEach(id -> {
+                int times = shownState.timesCompleted(id);
+                if (isNew(id)) {
+                    addQuest(id, byId.get(id), 0, newMark(), UiStyle.GOLD);
+                } else {
+                    addQuest(id, byId.get(id), 0, times > 0 ? Component.literal("×" + times) : Component.empty(), UiStyle.MUTED);
+                }
+            });
         }
-        lineCount = lines.size();
-        scroll.clamp(lineCount);
-        int y = top + LIST_TOP;
-        int bottom = top + LIST_TOP + VISIBLE_ROWS * ROW;
-        for (int i = scroll.first(); i < lineCount; i++) {
-            Row line = lines.get(i);
-            int lineHeight = line.step() ? STEP_ROW : ROW;
-            if (y + lineHeight > bottom) {
-                break;
-            }
-            Button button = null;
-            if (!line.step()) {
-                Definitions.Entry<QuestDefinition> entry = line.quest();
-                if (inChains.contains(entry.id())) {
-                    addWidget.accept(routeButton(entry, y - 2));
-                }
-                // An NPC's quest is accepted and claimed at the NPC: here it only shows where to go.
-                button = entry.value().giver().isPresent() ? null : actionButton(entry, y - 4);
-                if (button != null) {
-                    addWidget.accept(button);
-                }
-                if (shownState.isActive(entry.id())) {
-                    addWidget.accept(abandonButton(entry, y - 4));
-                }
-            }
-            rows.add(new Row(line.quest(), line.step(), y, button));
-            y += lineHeight;
+
+        List<ResourceLocation> shown = lines.stream().filter(line -> line.kind() == Kind.QUEST).map(Line::quest).toList();
+        if (selected == null || !shown.contains(selected)) {
+            selected = shown.stream().filter(shownState::isActive).findFirst().orElse(shown.isEmpty() ? null : shown.getFirst());
         }
     }
 
-    /** ▸ unfolds this quest's route under it (done ✔, in progress », to come ○); ▾ folds it again. */
-    private Button routeButton(Definitions.Entry<QuestDefinition> entry, int y) {
-        boolean unfolded = UNFOLDED.contains(entry.id());
-        return Button.builder(Component.literal(unfolded ? "▾" : "▸"), b -> {
-                    if (!UNFOLDED.remove(entry.id())) {
-                        UNFOLDED.add(entry.id());
-                    }
-                    routeToggled = true;
-                })
-                .bounds(left, y, 12, 12)
-                .tooltip(Tooltip.create(Component.translatable(unfolded ? "screen.overgearedmod.quest_route_fold"
-                        : "screen.overgearedmod.quest_route_unfold")))
-                .build(SatisfyButton::new);
+    private void addGroup(QuestTree.Group group, Map<ResourceLocation, QuestDefinition> byId, boolean finished) {
+        String groupFold = (finished ? "done/" : "story/") + group.key();
+        boolean groupFolded = TOGGLED.contains(groupFold);
+        lines.add(new Line(Kind.GROUP, Component.translatable(group.key()), UiStyle.HEADING, null, 0, groupFolded ? "▸" : "▾",
+                Component.empty(), 0, groupFold));
+        if (groupFolded) {
+            return;
+        }
+        for (QuestTree.Chain chain : group.chains()) {
+            if (finished && chain.nodes().size() > 1) {
+                // A finished chain is one line, "✔ Smith · Bairan 6/6", unfolded on demand.
+                String chainFold = "chain/" + chain.root();
+                boolean chainFolded = !TOGGLED.contains(chainFold);
+                Component label = group.chains().size() == 1 ? Component.translatable(group.key()) : byId.get(chain.root()).name();
+                lines.add(new Line(Kind.CHAIN, label, UiStyle.GOOD, null, 0, chainFolded ? "▸" : "▾",
+                        Component.literal(chain.done() + "/" + chain.nodes().size()), UiStyle.GOOD, chainFold));
+                if (chainFolded) {
+                    continue;
+                }
+                chain.nodes().forEach(node -> addQuest(node.id(), byId.get(node.id()), node.depth() + 1, Component.empty(), 0));
+                continue;
+            }
+            for (QuestTree.Node node : chain.nodes()) {
+                if (node.state() == QuestTree.State.LOCKED) {
+                    lines.add(new Line(Kind.LOCKED, Component.literal("???"), UiStyle.MUTED, null, node.depth(), "·",
+                            Component.empty(), 0, ""));
+                } else {
+                    addQuest(node.id(), byId.get(node.id()), node.depth(), isNew(node.id()) ? newMark() : Component.empty(), UiStyle.GOLD);
+                }
+            }
+        }
     }
 
-    private Button abandonButton(Definitions.Entry<QuestDefinition> entry, int y) {
-        return Button.builder(Component.literal("✖"),
-                        b -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), QuestActionPayload.Action.ABANDON)))
-                .bounds(left + width - BUTTON_WIDTH - 18, y, 16, 16)
-                .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_abandon")))
-                .build(SatisfyButton::new);
-    }
-
-    private Button actionButton(Definitions.Entry<QuestDefinition> entry, int y) {
-        PlayerQuests state = shownState;
-        boolean active = state.isActive(entry.id());
-        Component label;
-        boolean enabled;
-        QuestActionPayload.Action action;
-        if (active) {
-            label = Component.translatable("screen.overgearedmod.quest_claim");
-            enabled = isDone(entry, state);
-            action = QuestActionPayload.Action.CLAIM;
+    /** A quest line: ✔ done, » accepted, ○ to accept (grey when its class can't). */
+    private void addQuest(ResourceLocation id, QuestDefinition quest, int depth, Component right, int rightColor) {
+        String mark;
+        int color;
+        if (shownState.isActive(id)) {
+            mark = "»";
+            color = UiStyle.GOLD;
+        } else if (shownState.isCompleted(id) && !quest.repeatable()) {
+            mark = "✔";
+            color = UiStyle.GOOD;
         } else {
-            boolean available = QuestService.canAccept(player(), entry.id(), entry.value());
-            boolean locked = !entry.value().allowsClass(player().getData(ModAttachments.PLAYER_IDENTITY).playerClass())
-                    || !entry.value().isUnlockedBy(state);
-            label = available ? Component.translatable("screen.overgearedmod.quest_accept")
-                    : locked ? Component.translatable("screen.overgearedmod.quest_locked")
-                    : Component.literal("✔");
-            enabled = available;
-            action = QuestActionPayload.Action.ACCEPT;
+            mark = "○";
+            color = classAllows(quest) ? UiStyle.TEXT : UiStyle.MUTED;
         }
-        Button button = Button.builder(label, b -> press(entry, action))
-                .bounds(left + width - BUTTON_WIDTH, y, BUTTON_WIDTH, 16)
-                .build(SatisfyButton::new);
-        button.active = enabled;
-        return button;
+        lines.add(new Line(Kind.QUEST, quest.name(), color, id, depth, mark, right, rightColor, ""));
+    }
+
+    /** Accept or Claim (only quests without a giver: the rest are dealt with at the NPC), follow on the HUD, abandon. */
+    private void addDetailButtons(Consumer<AbstractWidget> addWidget) {
+        claimButton = null;
+        Optional<QuestDefinition> found = selectedQuest();
+        if (found.isEmpty()) {
+            return;
+        }
+        ResourceLocation id = selected;
+        QuestDefinition quest = found.get();
+        int x = detailX();
+        int y = top + height - 16;
+        boolean active = shownState.isActive(id);
+        if (quest.giver().isEmpty()) {
+            if (active) {
+                Button claim = Button.builder(Component.translatable("screen.overgearedmod.quest_claim"),
+                                b -> press(id, quest, QuestActionPayload.Action.CLAIM))
+                        .bounds(x, y, 60, 16).build(SatisfyButton::new);
+                claim.active = isDone(id, quest);
+                claimButton = claim;
+                addWidget.accept(claim);
+                x += 62;
+            } else if (QuestService.canAccept(player(), id, quest)) {
+                addWidget.accept(Button.builder(Component.translatable("screen.overgearedmod.quest_accept"),
+                                b -> press(id, quest, QuestActionPayload.Action.ACCEPT))
+                        .bounds(x, y, 60, 16).build(SatisfyButton::new));
+                x += 62;
+            }
+        }
+        if (active) {
+            boolean tracked = shownState.isTracked(id);
+            Button track = Button.builder(Component.translatable(tracked ? "screen.overgearedmod.quest_untrack"
+                                    : "screen.overgearedmod.quest_track"),
+                            b -> PacketDistributor.sendToServer(new QuestActionPayload(id, QuestActionPayload.Action.TRACK)))
+                    .bounds(x, y, 70, 16)
+                    .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_track_tooltip", PlayerQuests.MAX_TRACKED)))
+                    .build(SatisfyButton::new);
+            track.active = tracked || shownState.tracked().size() < PlayerQuests.MAX_TRACKED;
+            addWidget.accept(track);
+            addWidget.accept(Button.builder(Component.literal("✖"),
+                            b -> PacketDistributor.sendToServer(new QuestActionPayload(id, QuestActionPayload.Action.ABANDON)))
+                    .bounds(left + width - 16, y, 16, 16)
+                    .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.quest_abandon")))
+                    .build(SatisfyButton::new));
+        }
     }
 
     /** Claiming a quest that gives a class replaces the current one, so it asks first. */
-    private static void press(Definitions.Entry<QuestDefinition> entry, QuestActionPayload.Action action) {
-        Runnable send = () -> PacketDistributor.sendToServer(new QuestActionPayload(entry.id(), action));
-        Optional<Component> newClass = entry.value().classReward().flatMap(QuestsTab::className);
+    private static void press(ResourceLocation id, QuestDefinition quest, QuestActionPayload.Action action) {
+        Runnable send = () -> PacketDistributor.sendToServer(new QuestActionPayload(id, action));
+        Optional<Component> newClass = quest.classReward().flatMap(QuestsTab::className);
         if (action != QuestActionPayload.Action.CLAIM || newClass.isEmpty()) {
             send.run();
             return;
@@ -228,97 +292,242 @@ public class QuestsTab extends SatisfyTab {
                 Component.translatable("screen.overgearedmod.confirm_class_title"), message, send));
     }
 
-    private boolean isDone(Definitions.Entry<QuestDefinition> entry, PlayerQuests state) {
-        Integer baseline = state.active().get(entry.id());
-        return baseline != null && QuestService.progress(player(), entry.value(), baseline) >= entry.value().goal().target();
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY) {
+        Line line = lineAt(mouseX, mouseY);
+        if (line == null) {
+            return false;
+        }
+        switch (line.kind()) {
+            case GROUP, CHAIN -> {
+                if (!TOGGLED.remove(line.foldKey())) {
+                    TOGGLED.add(line.foldKey());
+                }
+            }
+            case QUEST -> selected = line.quest();
+            case LOCKED -> {
+                return false;
+            }
+        }
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f));
+        return true;
     }
 
     @Override
     public boolean mouseScrolled(double wheel) {
-        return scroll.scroll(wheel, lineCount);
+        return scroll.scroll(wheel, lines.size());
     }
 
-    /** Buttons depend on quest state and progress, so rebuild whenever either changes. */
+    /** Rebuild when the quests changed, a section or fold was clicked, or the chosen quest's Claim became possible. */
     @Override
     public boolean needsRebuild() {
-        if (routeToggled) {
-            routeToggled = false;
+        if (dirty) {
+            dirty = false;
             return true;
         }
-        PlayerQuests state = QuestService.get(player());
-        if (!state.equals(shownState)) {
+        if (!QuestService.get(player()).equals(shownState)) {
             return true;
         }
-        return rows.stream().anyMatch(row -> row.button() != null && state.isActive(row.quest().id())
-                && row.button().active != isDone(row.quest(), state));
+        return claimButton != null && selected != null && selectedQuest().isPresent()
+                && claimButton.active != isDone(selected, selectedQuest().get());
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (rows.isEmpty()) {
-            UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.no_quests"), left, top, UiStyle.MUTED);
-            return;
+        int listTop = top + LIST_TOP;
+        graphics.fill(left + LIST_WIDTH + DETAIL_GAP / 2, listTop - 2, left + LIST_WIDTH + DETAIL_GAP / 2 + 1, top + height, DIVIDER);
+        if (lines.isEmpty()) {
+            UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.no_quests_" + section.name().toLowerCase()),
+                    left, listTop, UiStyle.MUTED);
         }
-        UiStyle.heading(graphics, font(), Component.translatable("tab.overgearedmod.quests"), left, top);
-        PlayerQuests state = QuestService.get(player());
-        for (Row row : rows) {
-            Definitions.Entry<QuestDefinition> entry = row.quest();
-            QuestDefinition quest = entry.value();
-            int y = row.y();
-            if (row.step()) {
-                renderStep(graphics, entry, state, y);
-                continue;
-            }
-            UiStyle.text(graphics, font(), quest.name(), left + NAME_X, y, UiStyle.TEXT);
-            if (newWhenOpened.contains(entry.id())) {
-                UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.quest_new"),
-                        left + NAME_X + font().width(quest.name()) + 4, y, UiStyle.GOLD);
-            }
-
-            Integer stored = state.active().get(entry.id());
-            if (stored != null) {
-                int progress = QuestService.progress(player(), quest, stored);
-                UiStyle.text(graphics, font(), Component.literal(progress + "/" + quest.goal().target()), left + 124, y,
-                        progress >= quest.goal().target() ? UiStyle.GOOD : UiStyle.MUTED);
-            }
-            quest.giverHint().ifPresent(hint -> graphics.drawString(font(), Component.literal("↳ ").append(hint), left + NAME_X + 6,
-                    y + 10, UiStyle.GOLD));
-            if (mouseX >= left + NAME_X && mouseX < left + width - BUTTON_WIDTH && mouseY >= y - 2 && mouseY < y + ROW - 4) {
-                graphics.renderTooltip(font(), tooltip(quest), mouseX, mouseY);
-            }
+        Line hovered = lineAt(mouseX, mouseY);
+        int y = listTop;
+        for (int i = scroll.first(); i < scroll.end(lines.size()); i++) {
+            renderLine(graphics, lines.get(i), y, lines.get(i) == hovered, mouseX, mouseY);
+            y += ROW;
         }
-        scroll.renderBar(graphics, left + width + 3, top + LIST_TOP - 6, VISIBLE_ROWS * ROW - 4, lineCount);
+        scroll.renderBar(graphics, left + LIST_WIDTH + 1, listTop, visibleRows() * ROW, lines.size());
+        selectedQuest().ifPresent(quest -> renderDetail(graphics, selected, quest, mouseX, mouseY));
     }
 
-    /** One step of an unfolded route: ✔ done, » in progress, ○ still to come; an undiscovered hidden quest stays "???". */
-    private void renderStep(GuiGraphics graphics, Definitions.Entry<QuestDefinition> step, PlayerQuests state, int y) {
-        boolean done = state.isCompleted(step.id());
-        boolean active = state.isActive(step.id());
-        String mark = done ? "✔ " : active ? "» " : "○ ";
-        Component name = step.value().isVisibleTo(step.id(), state) ? step.value().name() : Component.literal("???");
-        int color = done ? UiStyle.GOOD : active ? UiStyle.GOLD : UiStyle.MUTED;
-        graphics.drawString(font(), Component.literal(mark).append(name), left + NAME_X + 8, y, color);
+    private void renderLine(GuiGraphics graphics, Line line, int y, boolean hovered, int mouseX, int mouseY) {
+        if (line.kind() == Kind.QUEST && line.quest().equals(selected)) {
+            graphics.fill(left, y - 1, left + LIST_WIDTH, y + ROW - 1, SELECTED);
+        } else if (hovered && line.kind() != Kind.LOCKED) {
+            graphics.fill(left, y - 1, left + LIST_WIDTH, y + ROW - 1, HOVERED);
+        }
+        int x = left + 1;
+        if (line.kind() == Kind.QUEST || line.kind() == Kind.LOCKED) {
+            // The chain's guide line, then the step's mark.
+            int guide = left + 4 + line.depth() * INDENT;
+            graphics.fill(guide, y - 1, guide + 1, y + ROW - 1, GUIDE);
+            graphics.fill(guide + 1, y + 3, guide + 4, y + 4, GUIDE);
+            x = guide + 6;
+        }
+        int markColor = line.kind() == Kind.GROUP ? UiStyle.HEADING : line.color();
+        graphics.drawString(font(), line.mark(), x, y, markColor);
+        x += font().width(line.mark()) + 3;
+
+        Component right = line.right();
+        int rightColor = line.rightColor();
+        Integer stored = line.kind() == Kind.QUEST ? shownState.active().get(line.quest()) : null;
+        if (stored != null) {
+            // Live: kills and forges move it without the quest state changing.
+            QuestDefinition quest = Definitions.get(player().level(), ModDatapackRegistries.QUEST, line.quest()).orElseThrow();
+            int progress = QuestService.progress(player(), quest, stored);
+            right = Component.literal(progress + "/" + quest.goal().target());
+            rightColor = progress >= quest.goal().target() ? UiStyle.GOOD : UiStyle.MUTED;
+        }
+        int rightWidth = font().width(right);
+        int room = left + LIST_WIDTH - 3 - rightWidth - x - (rightWidth > 0 ? 4 : 0);
+        String full = line.text().getString();
+        String shown = font().plainSubstrByWidth(full, room);
+        boolean cut = shown.length() < full.length();
+        if (cut) {
+            shown = font().plainSubstrByWidth(full, room - font().width("…")) + "…";
+        }
+        graphics.drawString(font(), shown, x, y, line.color());
+        if (rightWidth > 0) {
+            graphics.drawString(font(), right, left + LIST_WIDTH - 3 - rightWidth, y, rightColor);
+        }
+        if (cut && hovered) {
+            graphics.renderTooltip(font(), line.text(), mouseX, mouseY);
+        }
     }
 
-    private static List<FormattedCharSequence> tooltip(QuestDefinition quest) {
-        List<FormattedCharSequence> lines = new ArrayList<>(font().split(quest.description(), 180));
-        lines.add(quest.goal().describe().getVisualOrderText());
-        quest.giverHint().ifPresent(hint -> lines.add(hint.getVisualOrderText()));
-        lines.add(Component.translatable("screen.overgearedmod.quest_reward", quest.xpReward(), quest.itemRewards().size()).getVisualOrderText());
-        quest.requiredClass().flatMap(QuestsTab::className).ifPresent(name ->
-                lines.add(Component.translatable("screen.overgearedmod.quest_requires_class", name).getVisualOrderText()));
-        quest.requiresQuest().flatMap(QuestsTab::questName).ifPresent(name ->
-                lines.add(Component.translatable("screen.overgearedmod.quest_requires_quest", name).getVisualOrderText()));
-        quest.classReward().flatMap(QuestsTab::className).ifPresent(name ->
-                lines.add(Component.translatable("screen.overgearedmod.quest_class_reward", name).getVisualOrderText()));
-        return lines;
+    /** The chosen quest: name, where to go, story, goal and progress, requirements, rewards. Buttons sit at the bottom. */
+    private void renderDetail(GuiGraphics graphics, ResourceLocation id, QuestDefinition quest, int mouseX, int mouseY) {
+        int x = detailX();
+        int detailWidth = left + width - x;
+        int y = top + LIST_TOP;
+        for (FormattedCharSequence line : font().split(quest.name(), detailWidth)) {
+            graphics.drawString(font(), line, x, y, UiStyle.HEADING);
+            y += 10;
+        }
+        if (quest.giver().isPresent()) {
+            for (FormattedCharSequence line : font().split(quest.giverHint().orElseThrow(), detailWidth)) {
+                graphics.drawString(font(), line, x, y, UiStyle.GOLD);
+                y += 10;
+            }
+        }
+        // Up to 4 lines of story, fewer when the name or the hint took two lines, so the buttons stay clear.
+        int storyLines = Math.max(2, 4 - (y - top - LIST_TOP) / 10 + 2);
+        y += 3;
+        List<FormattedCharSequence> story = font().split(quest.description(), detailWidth);
+        for (int i = 0; i < Math.min(story.size(), storyLines); i++) {
+            graphics.drawString(font(), story.get(i), x, y, UiStyle.MUTED);
+            y += 10;
+        }
+        y += 3;
+        for (FormattedCharSequence line : font().split(quest.goal().describe(), detailWidth)) {
+            graphics.drawString(font(), line, x, y, UiStyle.TEXT);
+            y += 10;
+        }
+
+        Integer stored = shownState.active().get(id);
+        if (stored != null) {
+            int progress = QuestService.progress(player(), quest, stored);
+            int target = quest.goal().target();
+            boolean done = progress >= target;
+            Component count = Component.literal(progress + "/" + target);
+            int barWidth = detailWidth - font().width(count) - 6;
+            UiStyle.bar(graphics, x + 1, y + 2, barWidth, 5, target == 0 ? 1 : (float) progress / target, done ? UiStyle.XP : UiStyle.COOLDOWN);
+            graphics.drawString(font(), count, x + barWidth + 5, y, done ? UiStyle.GOOD : UiStyle.TEXT);
+            y += 12;
+        } else if (shownState.isCompleted(id)) {
+            Component completed = quest.repeatable()
+                    ? Component.translatable("screen.overgearedmod.quest_completed_times", shownState.timesCompleted(id))
+                    : Component.translatable("screen.overgearedmod.quest_completed");
+            graphics.drawString(font(), Component.literal("✔ ").append(completed), x, y, UiStyle.GOOD);
+            y += 12;
+        }
+        Optional<Component> requiredClass = classAllows(quest) ? Optional.empty() : quest.requiredClass().flatMap(QuestsTab::className);
+        if (requiredClass.isPresent()) {
+            graphics.drawString(font(), Component.translatable("screen.overgearedmod.quest_requires_class", requiredClass.get()), x, y, UiStyle.BAD);
+            y += 10;
+        }
+
+        y += 2;
+        graphics.drawString(font(), Component.translatable("screen.overgearedmod.quest_rewards"), x, y, UiStyle.MUTED);
+        y += 10;
+        int rewardX = x;
+        if (quest.xpReward() > 0) {
+            Component xp = Component.literal("+" + quest.xpReward() + " XP");
+            graphics.drawString(font(), xp, rewardX, y + 5, UiStyle.GOOD);
+            rewardX += font().width(xp) + 4;
+        }
+        ItemStack hoveredItem = ItemStack.EMPTY;
+        for (ItemStack reward : quest.itemRewards()) {
+            graphics.renderItem(reward, rewardX, y);
+            graphics.renderItemDecorations(font(), reward, rewardX, y);
+            if (mouseX >= rewardX && mouseX < rewardX + 16 && mouseY >= y && mouseY < y + 16) {
+                hoveredItem = reward;
+            }
+            rewardX += ITEM;
+        }
+        y += ITEM;
+        Optional<Component> newClass = quest.classReward().flatMap(QuestsTab::className);
+        if (newClass.isPresent()) {
+            graphics.drawString(font(), Component.translatable("screen.overgearedmod.quest_class_reward", newClass.get()), x, y, UiStyle.GOLD);
+        }
+        if (!hoveredItem.isEmpty()) {
+            graphics.renderTooltip(font(), hoveredItem, mouseX, mouseY);
+        }
+    }
+
+    @Nullable
+    private Line lineAt(double mouseX, double mouseY) {
+        int listTop = top + LIST_TOP;
+        if (mouseX < left || mouseX >= left + LIST_WIDTH || mouseY < listTop - 1) {
+            return null;
+        }
+        int index = scroll.first() + (int) ((mouseY - listTop + 1) / ROW);
+        return index < scroll.end(lines.size()) ? lines.get(index) : null;
+    }
+
+    private Optional<QuestDefinition> selectedQuest() {
+        return selected == null ? Optional.empty() : Definitions.get(player().level(), ModDatapackRegistries.QUEST, selected);
+    }
+
+    private int visibleRows() {
+        return (height - LIST_TOP) / ROW;
+    }
+
+    private int detailX() {
+        return left + LIST_WIDTH + DETAIL_GAP;
+    }
+
+    private boolean isNew(ResourceLocation id) {
+        return newWhenOpened.contains(id);
+    }
+
+    private static Component newMark() {
+        return Component.translatable("screen.overgearedmod.quest_new");
+    }
+
+    private boolean isDone(ResourceLocation id, QuestDefinition quest) {
+        Integer stored = QuestService.get(player()).active().get(id);
+        return stored != null && QuestService.progress(player(), quest, stored) >= quest.goal().target();
+    }
+
+    private static boolean classAllows(QuestDefinition quest) {
+        return quest.allowsClass(player().getData(ModAttachments.PLAYER_IDENTITY).playerClass());
+    }
+
+    /**
+     * What a quest is grouped under: its giver ("quest.&lt;namespace&gt;.group.&lt;npc&gt;", e.g. "Smith · Bairan"), the
+     * secret class quests, or general adventure. A translation key, drawn as the group's heading.
+     */
+    private static String groupKey(QuestDefinition quest) {
+        if (quest.giver().isPresent()) {
+            ResourceLocation npc = BuiltInRegistries.ENTITY_TYPE.getKey(quest.giver().get());
+            return "quest." + npc.getNamespace() + ".group." + npc.getPath();
+        }
+        return quest.isHidden() || quest.requiredClass().isPresent()
+                ? "screen.overgearedmod.quest_group_class" : "screen.overgearedmod.quest_group_general";
     }
 
     private static Optional<Component> className(ResourceLocation classId) {
         return Definitions.get(player().level(), ModDatapackRegistries.PLAYER_CLASS, classId).map(PlayerClassDefinition::name);
-    }
-
-    private static Optional<Component> questName(ResourceLocation questId) {
-        return Definitions.get(player().level(), ModDatapackRegistries.QUEST, questId).map(QuestDefinition::name);
     }
 }

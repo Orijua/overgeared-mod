@@ -10,7 +10,8 @@ import java.util.function.Supplier;
 
 /** The Satisfy window (key K): a panel with one button per tab on top and the active tab below. */
 public class SatisfyScreen extends Screen {
-    private static final int PANEL_WIDTH = 260;
+    /** Width of the window unless the open tab asks for more ({@link SatisfyTab#panelWidth}). */
+    public static final int PANEL_WIDTH = 260;
     private static final int PANEL_HEIGHT = 210;
     private static final int TAB_BAR_HEIGHT = 26;
     private static int lastTab;
@@ -18,6 +19,7 @@ public class SatisfyScreen extends Screen {
     private final List<SatisfyTab> tabs;
     private int left;
     private int top;
+    private int panelWidth;
 
     public SatisfyScreen(List<Supplier<SatisfyTab>> tabFactories) {
         super(Component.translatable("screen.overgearedmod.status"));
@@ -41,10 +43,11 @@ public class SatisfyScreen extends Screen {
 
     @Override
     protected void init() {
-        left = (width - PANEL_WIDTH) / 2;
+        panelWidth = current().panelWidth();
+        left = (width - panelWidth) / 2;
         top = (height - PANEL_HEIGHT) / 2;
 
-        int tabWidth = (PANEL_WIDTH - 8) / tabs.size();
+        int tabWidth = (panelWidth - 8) / tabs.size();
         for (int i = 0; i < tabs.size(); i++) {
             int index = i;
             Button button = Button.builder(tabs.get(i).title(), b -> select(index))
@@ -53,7 +56,7 @@ public class SatisfyScreen extends Screen {
             button.active = i != lastTab;
             addRenderableWidget(button);
         }
-        current().init(left + 8, top + TAB_BAR_HEIGHT + 4, PANEL_WIDTH - 16, PANEL_HEIGHT - TAB_BAR_HEIGHT - 12,
+        current().init(left + 8, top + TAB_BAR_HEIGHT + 4, panelWidth - 16, PANEL_HEIGHT - TAB_BAR_HEIGHT - 12,
                 this::addRenderableWidget);
     }
 
@@ -80,9 +83,21 @@ public class SatisfyScreen extends Screen {
     }
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (super.mouseClicked(mouseX, mouseY, button)) {
+            return true;
+        }
+        if (button == 0 && current().mouseClicked(mouseX, mouseY)) {
+            rebuildWidgets();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(graphics, mouseX, mouseY, partialTick);
-        UiStyle.panel(graphics, left, top, PANEL_WIDTH, PANEL_HEIGHT);
+        UiStyle.panel(graphics, left, top, panelWidth, PANEL_HEIGHT);
     }
 
     @Override
