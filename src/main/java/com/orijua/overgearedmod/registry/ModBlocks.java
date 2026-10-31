@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.pagma.GoldenTableBlock;
 import com.orijua.overgearedmod.smelting.SmelterBlock;
 import com.orijua.overgearedmod.smithing.SmithingAnvilBlock;
 import net.minecraft.world.level.block.Block;
@@ -57,6 +58,18 @@ public final class ModBlocks {
     public static final DeferredBlock<Block> DEEPSLATE_MITHRIL_ORE = BLOCKS.registerSimpleBlock("deepslate_mithril_ore",
             BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE).strength(4.5f, 3.0f).requiresCorrectToolForDrops()
                     .sound(SoundType.DEEPSLATE));
+
+    // The golden table at the back of the Northern End Cave, with Pagma's book on it (canon, cap. 1). Unbreakable and
+    // drops nothing; it glows while the book is still there.
+    public static final DeferredBlock<GoldenTableBlock> GOLDEN_TABLE = BLOCKS.registerBlock("golden_table",
+            GoldenTableBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.GOLD)
+                    .strength(-1.0f, 3_600_000.0f)
+                    .noLootTable()
+                    .sound(SoundType.METAL)
+                    .noOcclusion()
+                    .lightLevel(state -> state.getValue(GoldenTableBlock.BOOK) ? 10 : 4));
 
     private ModBlocks() {
     }

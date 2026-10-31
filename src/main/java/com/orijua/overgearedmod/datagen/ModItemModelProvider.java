@@ -28,6 +28,7 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.RESPEC_SCROLL.get(), "paper");
         vanillaTexture(ModItems.SKILL_BOOK.get(), "writable_book");
         vanillaTexture(ModItems.FRACASO_BLUEPRINT.get(), "map");
+        vanillaTexture(ModItems.UNAPPRAISED_BOOK.get(), "book");
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
         vanillaTexture(ModItems.JAFFA_INGOT.get(), "copper_ingot");
         vanillaTexture(ModItems.RAW_BLUE_ORICHALCUM.get(), "prismarine_crystals");

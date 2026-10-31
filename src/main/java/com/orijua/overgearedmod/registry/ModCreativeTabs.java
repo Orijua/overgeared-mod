@@ -39,6 +39,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.GRID_LEGENDARY_SWORD);
                         output.accept(ModItems.FRACASO_SWORD);
                         output.accept(ModItems.FRACASO_BLUEPRINT);
+                        output.accept(ModItems.UNAPPRAISED_BOOK);
                         output.accept(ModItems.ENHANCEMENT_STONE);
                         output.accept(ModItems.RESPEC_SCROLL);
                         output.accept(ModItems.BLACKSMITH_SPAWN_EGG);
@@ -81,6 +82,7 @@ public final class ModCreativeTabs {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ModItems.SMITHING_ANVIL);
             event.accept(ModItems.SMELTER);
+            event.accept(ModItems.GOLDEN_TABLE);
         }
     }
 

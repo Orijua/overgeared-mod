@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.pagma.UnappraisedItem;
 import com.orijua.overgearedmod.progression.RespecScrollItem;
 import com.orijua.overgearedmod.skill.SkillBookItem;
 import com.orijua.overgearedmod.smithing.BlueprintItem;
@@ -51,6 +52,11 @@ public final class ModItems {
                     .attributes(SwordItem.createAttributes(Tiers.NETHERITE, 7, -2.8f))));
     public static final DeferredItem<BlueprintItem> FRACASO_BLUEPRINT = ITEMS.registerItem("fracaso_blueprint",
             BlueprintItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC));
+
+    // The book on the golden table of the Northern End Cave (canon, cap. 1): unknown until it is appraised.
+    public static final DeferredItem<UnappraisedItem> UNAPPRAISED_BOOK = ITEMS.registerItem("unappraised_book",
+            UnappraisedItem::new, new Item.Properties().stacksTo(1).fireResistant());
+    public static final DeferredItem<BlockItem> GOLDEN_TABLE = ITEMS.registerSimpleBlockItem(ModBlocks.GOLDEN_TABLE);
 
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
     public static final DeferredItem<BlockItem> SMELTER = ITEMS.registerSimpleBlockItem(ModBlocks.SMELTER);

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "book=false": {
+      "model": "overgearedmod:block/golden_table"
+    },
+    "book=true": {
+      "model": "overgearedmod:block/golden_table_book"
+    }
+  }
+}

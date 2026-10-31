@@ -11,6 +11,7 @@ public final class StructurePieces {
     public static Map<String, TemplateBuilder> all() {
         Map<String, TemplateBuilder> pieces = new LinkedHashMap<>(AdventurerCamp.pieces());
         pieces.putAll(Bairan.pieces());
+        pieces.putAll(NorthEndCave.pieces());
         return pieces;
     }
 }

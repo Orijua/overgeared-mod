@@ -24,6 +24,7 @@ import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.registry.ModRecipes;
 import com.orijua.overgearedmod.registry.ModWorldgen;
 import com.orijua.overgearedmod.skill.SkillEvents;
+import com.orijua.overgearedmod.structure.NorthEndCaveProtection;
 import com.orijua.overgearedmod.structure.StartingVillage;
 import com.orijua.overgearedmod.validation.ContentValidationEvents;
 import net.minecraft.resources.ResourceLocation;
@@ -80,6 +81,7 @@ public class Overgearedmod {
         NotificationEvents.register(NeoForge.EVENT_BUS);
         DebugCommands.register(NeoForge.EVENT_BUS);
         StartingVillage.register(NeoForge.EVENT_BUS);
+        NorthEndCaveProtection.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }

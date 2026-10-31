@@ -1,0 +1,12 @@
+{
+  "structures": [
+    {
+      "structure": "overgearedmod:north_end_cave",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "overgearedmod:world_site",
+    "site": "north_end_cave"
+  }
+}

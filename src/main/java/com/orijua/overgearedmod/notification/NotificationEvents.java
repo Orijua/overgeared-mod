@@ -66,7 +66,7 @@ public final class NotificationEvents {
         return lines;
     }
 
-    private static void send(ServerPlayer player, Kind kind, List<Component> lines) {
+    public static void send(ServerPlayer player, Kind kind, List<Component> lines) {
         PacketDistributor.sendToPlayer(player, new SystemNotificationPayload(new SystemNotification(kind, lines)));
     }
 }

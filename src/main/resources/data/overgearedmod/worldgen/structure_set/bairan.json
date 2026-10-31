@@ -6,6 +6,7 @@
     }
   ],
   "placement": {
-    "type": "overgearedmod:starting_village"
+    "type": "overgearedmod:world_site",
+    "site": "bairan"
   }
 }
