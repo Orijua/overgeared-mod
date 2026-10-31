@@ -71,6 +71,8 @@
   "screen.overgearedmod.quest_route_show": "Show route",
   "screen.overgearedmod.quest_route_hide": "Hide route",
   "screen.overgearedmod.quest_route_tooltip": "Shows or hides the quests already done and those still locked.",
+  "screen.overgearedmod.quest_route_unfold": "Show this quest's route",
+  "screen.overgearedmod.quest_route_fold": "Hide this quest's route",
   "screen.overgearedmod.quest_accept": "Accept",
   "screen.overgearedmod.quest_claim": "Claim",
   "screen.overgearedmod.quest_deliver": "Deliver",

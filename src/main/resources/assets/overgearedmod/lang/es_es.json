@@ -71,6 +71,8 @@
   "screen.overgearedmod.quest_route_show": "Ver trayecto",
   "screen.overgearedmod.quest_route_hide": "Ocultar trayecto",
   "screen.overgearedmod.quest_route_tooltip": "Muestra u oculta las misiones ya hechas y las que aún están bloqueadas.",
+  "screen.overgearedmod.quest_route_unfold": "Ver el trayecto de esta misión",
+  "screen.overgearedmod.quest_route_fold": "Ocultar el trayecto de esta misión",
   "screen.overgearedmod.quest_accept": "Aceptar",
   "screen.overgearedmod.quest_claim": "Reclamar",
   "screen.overgearedmod.quest_deliver": "Entregar",
