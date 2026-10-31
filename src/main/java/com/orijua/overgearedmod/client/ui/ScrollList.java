@@ -11,10 +11,15 @@ public final class ScrollList {
     private static final int TRACK = 0x60FFFFFF;
     private static final int THUMB = 0xFFA0A0D0;
 
-    private final int visibleRows;
+    private int visibleRows;
     private int offset;
 
     public ScrollList(int visibleRows) {
+        setVisibleRows(visibleRows);
+    }
+
+    /** For a list whose height changes with what is above it; call {@link #clamp} after. */
+    public void setVisibleRows(int visibleRows) {
         this.visibleRows = Math.max(1, visibleRows);
     }
 
