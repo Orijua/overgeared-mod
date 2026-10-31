@@ -12,6 +12,7 @@ import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.registry.ModMenus;
 import com.orijua.overgearedmod.registry.ModRecipes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -30,6 +31,7 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.NeoForge;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
@@ -39,7 +41,10 @@ import java.util.Optional;
  *     one of two buttons and goes straight to the inventory. <b>Automatic:</b> takes 1-4 s by smithing level
  *     and DEX (progress synced to the screen); changing the inputs or closing the anvil cancels it, spending
  *     nothing. <b>Manual:</b> the client plays the minigame and sends its precision ({@link #finishManual});
- *     the server clamps it and refuses results that came back implausibly fast or late.</li>
+ *     the server clamps it and refuses results that came back implausibly fast or late.
+ *     <b>Batch:</b> from smithing 10 the ×1 button picks ×5, ×10 or All (see {@link ForgingRules#BATCH_SIZES});
+ *     Auto then forges them one after another, each with its own roll, and stops early when the materials run
+ *     out, the inputs change, the player presses Stop or closes the anvil (what was forged stays forged).</li>
  *     <li>Enhancing: equipment (top) + enhancement stone (bottom) → "Enhance" button (+1, may fail).</li>
  * </ul>
  * Slot positions follow vanilla's furnace layout; the screen draws its own Satisfy-styled slots around them.
@@ -51,11 +56,17 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
     public static final int ENHANCE_BUTTON = 0;
     public static final int AUTO_FORGE_BUTTON = 1;
     public static final int MANUAL_FORGE_BUTTON = 2;
+    public static final int BATCH_BUTTON = 3;
+    public static final int STOP_BUTTON = 4;
     private static final int INVENTORY_START = 3;
     private static final int INVENTORY_END = INVENTORY_START + 36;
     /** Synced to the client: automatic forging progress and total, in ticks (total 0 = not forging). */
     private static final int DATA_PROGRESS = 0;
     private static final int DATA_TOTAL = 1;
+    /** Synced too: the chosen batch size (index into BATCH_SIZES), and the running batch's items done and count. */
+    private static final int DATA_BATCH_CHOICE = 2;
+    private static final int DATA_BATCH_DONE = 3;
+    private static final int DATA_BATCH_COUNT = 4;
 
     private final ContainerLevelAccess access;
     private final Player player;
@@ -67,12 +78,14 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         }
     };
     private final ResultContainer result = new ResultContainer();
-    private final ContainerData forging = new SimpleContainerData(2);
+    private final ContainerData forging = new SimpleContainerData(5);
     private RecipeHolder<ForgingRecipe> currentRecipe;
     // Server only: when the automatic or manual forge began (game time), and the recipe the automatic one is for.
     private long autoStart = -1;
     private RecipeHolder<ForgingRecipe> autoRecipe;
     private long manualStart = -1;
+    /** Server only: how many items of each rating the running batch made, for the summary at the end. */
+    private final int[] batchRatings = new int[ItemRating.values().length];
 
     /** Client-side constructor, called by the MenuType when the server opens the menu. */
     public SmithingAnvilMenu(int containerId, Inventory inventory) {
@@ -134,38 +147,118 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         return total <= 0 ? 0 : forging.get(DATA_PROGRESS) / (float) total;
     }
 
+    /** The chosen batch size, as an index into {@link ForgingRules#BATCH_SIZES} (0 = ×1). */
+    public int batchChoice() {
+        return forging.get(DATA_BATCH_CHOICE);
+    }
+
+    /** Items the running batch has made so far, and how many it makes in all (1 for a single forge). */
+    public int batchDone() {
+        return forging.get(DATA_BATCH_DONE);
+    }
+
+    public int batchCount() {
+        return forging.get(DATA_BATCH_COUNT);
+    }
+
+    /** Picks the next batch size the smith has unlocked, wrapping back to ×1. */
+    private boolean cycleBatch(ServerPlayer smith) {
+        if (autoForging()) {
+            return false;
+        }
+        forging.set(DATA_BATCH_CHOICE, ForgingRules.nextBatchIndex(batchChoice(), ProgressionService.effectiveSmithingLevel(smith)));
+        return true;
+    }
+
+    /** Starts the chosen batch, capped by what the inputs can make. A single forge is a batch of one. */
     private boolean startAutoForge(ServerPlayer smith) {
         if (currentRecipe == null || autoForging()) {
             return false;
         }
+        int smithing = ProgressionService.effectiveSmithingLevel(smith);
+        int choice = ForgingRules.batchUnlocked(batchChoice(), smithing) ? batchChoice() : 0;
+        ForgingRecipe recipe = currentRecipe.value();
+        int handles = recipe.handle().isEmpty() ? -1 : inputs.getItem(BOTTOM_SLOT).getCount();
+        int count = ForgingRules.batchTotal(ForgingRules.BATCH_SIZES[choice], inputs.getItem(TOP_SLOT).getCount(), recipe.materialCount(), handles);
+        forging.set(DATA_BATCH_DONE, 0);
+        forging.set(DATA_BATCH_COUNT, Math.max(1, count));
+        Arrays.fill(batchRatings, 0);
+        autoRecipe = currentRecipe;
+        startNextItem(smith);
+        return true;
+    }
+
+    /** Times the next item; DEX and smithing are read again, so a level gained mid-batch already counts. */
+    private void startNextItem(ServerPlayer smith) {
         int dexterity = ProgressionService.effectiveStats(smith).dexterity();
         forging.set(DATA_TOTAL, ForgingRules.autoForgeTicks(dexterity, ProgressionService.effectiveSmithingLevel(smith)));
         forging.set(DATA_PROGRESS, 0);
         autoStart = smith.level().getGameTime();
-        autoRecipe = currentRecipe;
-        return true;
     }
 
-    private void stopAutoForge() {
+    /** Ends the automatic forge or batch; the item being forged is cancelled, nothing spent. A batch sums up what it made. */
+    private void stopAutoForge(ServerPlayer smith) {
+        if (batchCount() > 1 && batchDone() > 0) {
+            smith.sendSystemMessage(batchSummary(autoRecipe.value().result().getHoverName()));
+        }
         forging.set(DATA_TOTAL, 0);
         forging.set(DATA_PROGRESS, 0);
+        forging.set(DATA_BATCH_DONE, 0);
+        forging.set(DATA_BATCH_COUNT, 0);
         autoStart = -1;
         autoRecipe = null;
+    }
+
+    /** "Lote terminado: 10 × Espada de jaffa (6 Normal, 3 Raro, 1 Épico)", leaving out the ratings it didn't make. */
+    private Component batchSummary(Component itemName) {
+        MutableComponent ratings = Component.empty();
+        for (ItemRating rating : ItemRating.values()) {
+            int count = batchRatings[rating.ordinal()];
+            if (count > 0) {
+                if (!ratings.getSiblings().isEmpty()) {
+                    ratings.append(", ");
+                }
+                ratings.append(Component.literal(count + " ").append(rating.displayName()));
+            }
+        }
+        return Component.translatable("message.overgearedmod.batch_done", batchDone(), itemName, ratings);
     }
 
     /** Runs every server tick while the menu is open (ServerPlayer.tick calls broadcastChanges). */
     private void tickAutoForge(ServerPlayer smith) {
         if (currentRecipe == null || !currentRecipe.id().equals(autoRecipe.id())) {
-            stopAutoForge(); // inputs changed: cancel, nothing spent
+            stopAutoForge(smith); // inputs changed: cancel this item, nothing spent
             return;
         }
         long elapsed = smith.level().getGameTime() - autoStart;
         int total = forging.get(DATA_TOTAL);
         forging.set(DATA_PROGRESS, (int) Math.min(elapsed, total));
-        if (elapsed >= total) {
-            stopAutoForge();
-            forge(smith, 0, 0, 1);
+        if (elapsed < total) {
+            return;
         }
+        int done = batchDone() + 1;
+        forging.set(DATA_BATCH_DONE, done);
+        // Not forging while the inputs are spent: slotsChanged calls broadcastChanges, which would tick back in here.
+        forging.set(DATA_TOTAL, 0);
+        ItemRating rating = forge(smith, 0, 0, 1);
+        if (rating != null) {
+            batchRatings[rating.ordinal()]++;
+        }
+        // Spending the inputs updated the recipe: it is gone when the materials ran out.
+        boolean more = done < batchCount() && currentRecipe != null && currentRecipe.id().equals(autoRecipe.id());
+        if (more) {
+            startNextItem(smith);
+        } else {
+            stopAutoForge(smith);
+        }
+    }
+
+    private boolean stopPressed(ServerPlayer smith) {
+        if (!autoForging()) {
+            return false;
+        }
+        stopAutoForge(smith);
+        return true;
     }
 
     /** The client asked to play the minigame: remember when, to judge the result it sends back. */
@@ -194,8 +287,11 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         return true;
     }
 
-    /** Makes the previewed item for real: rolls it, spends the inputs, rewards the smith and gives it to them. */
-    private void forge(ServerPlayer smith, double skillBonus, double extraOptionChance, int xpMultiplier) {
+    /**
+     * Makes the previewed item for real: rolls it, spends the inputs, rewards the smith and gives it to them.
+     * Returns its rating (null for an unrated result).
+     */
+    private ItemRating forge(ServerPlayer smith, double skillBonus, double extraOptionChance, int xpMultiplier) {
         ForgingRecipe recipe = currentRecipe.value();
         ItemStack forged = result.getItem(0).copy();
         EquipmentService.stampForged(smith, forged, recipe.requirements(), recipe.extras(), skillBonus, extraOptionChance);
@@ -207,12 +303,16 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         ItemRating rating = forged.get(ModDataComponents.ITEM_RATING);
         if (rating != null) {
             NeoForge.EVENT_BUS.post(new ItemForgedEvent(smith, forged, rating));
-            smith.displayClientMessage(Component.translatable("message.overgearedmod.forged", forged.getHoverName(), rating.displayName()), true);
+            Component message = batchCount() > 1
+                    ? Component.translatable("message.overgearedmod.forged_batch", forged.getHoverName(), rating.displayName(), batchDone(), batchCount())
+                    : Component.translatable("message.overgearedmod.forged", forged.getHoverName(), rating.displayName());
+            smith.displayClientMessage(message, true);
         }
         access.execute((level, pos) -> level.playSound(null, pos, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.0f, 1.0f));
         if (!smith.getInventory().add(forged)) {
             smith.drop(forged, false);
         }
+        return rating;
     }
 
     @Override
@@ -271,6 +371,8 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
             case ENHANCE_BUTTON -> enhance(smith);
             case AUTO_FORGE_BUTTON -> startAutoForge(smith);
             case MANUAL_FORGE_BUTTON -> startManualForge(smith);
+            case BATCH_BUTTON -> cycleBatch(smith);
+            case STOP_BUTTON -> stopPressed(smith);
             default -> false;
         };
     }
@@ -302,6 +404,9 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
 
     @Override
     public void removed(Player player) {
+        if (player instanceof ServerPlayer smith && autoForging()) {
+            stopAutoForge(smith); // closing the anvil ends the batch; what was forged stays forged
+        }
         super.removed(player);
         access.execute((level, pos) -> clearContainer(player, inputs));
     }

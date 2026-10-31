@@ -49,4 +49,25 @@ class ForgingRulesTest {
         assertTrue(perfect[normal] < auto[normal], "a perfect one is less likely Normal");
         assertTrue(perfect[ItemRating.EPIC.ordinal()] > auto[ItemRating.EPIC.ordinal()], "and more likely Epic");
     }
+
+    @Test
+    void batchSizesUnlockWithSmithing() {
+        assertFalse(ForgingRules.batchUnlocked(1, 9), "×5 needs smithing 10");
+        assertTrue(ForgingRules.batchUnlocked(1, 10));
+        assertTrue(ForgingRules.batchUnlocked(0, 0), "×1 is always there");
+        assertEquals(0, ForgingRules.nextBatchIndex(0, 0), "a novice stays at ×1");
+        assertEquals(2, ForgingRules.nextBatchIndex(1, 25), "×5 → ×10 at smithing 25");
+        assertEquals(0, ForgingRules.nextBatchIndex(2, 25), "All is locked until 30, so it wraps to ×1");
+        assertEquals(3, ForgingRules.nextBatchIndex(2, 30));
+        assertEquals(0, ForgingRules.nextBatchIndex(3, 30), "after All comes ×1 again");
+    }
+
+    @Test
+    void batchIsCappedByTheMaterials() {
+        assertEquals(5, ForgingRules.batchTotal(5, 20, 2, 64), "enough for 10, five asked");
+        assertEquals(3, ForgingRules.batchTotal(10, 7, 2, 64), "7 ingots at 2 each make 3");
+        assertEquals(2, ForgingRules.batchTotal(10, 20, 2, 2), "only 2 handles");
+        assertEquals(32, ForgingRules.batchTotal(ForgingRules.BATCH_ALL, 64, 2, -1), "All, with no handle needed");
+        assertEquals(0, ForgingRules.batchTotal(5, 1, 2, -1), "not even one");
+    }
 }

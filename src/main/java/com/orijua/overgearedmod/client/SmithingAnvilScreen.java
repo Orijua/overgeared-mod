@@ -28,6 +28,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
@@ -66,6 +67,9 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
     private Button enhanceButton;
     private Button autoButton;
     private Button manualButton;
+    private Button batchButton;
+    /** Which tooltip the batch button shows now, so it is only rebuilt when that changes. */
+    private String batchTooltipKey = "";
     private double[] autoOdds = new double[ItemRating.values().length];
     private double[] manualOdds = new double[ItemRating.values().length];
     /** The forging recipe the inputs match, if any (found on the client, even one for another class). */
@@ -90,7 +94,7 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
                 .bounds(leftPos + 96, topPos + 56, 72, 14)
                 .build(SatisfyButton::new));
         autoButton = addRenderableWidget(Button.builder(Component.translatable("screen.overgearedmod.forge_auto"),
-                        b -> pressButton(SmithingAnvilMenu.AUTO_FORGE_BUTTON))
+                        b -> pressButton(menu.autoForging() ? SmithingAnvilMenu.STOP_BUTTON : SmithingAnvilMenu.AUTO_FORGE_BUTTON))
                 .bounds(leftPos + 86, topPos + 58, 38, 14)
                 .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.forge_auto.tooltip")))
                 .build(SatisfyButton::new));
@@ -98,6 +102,11 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
                 .bounds(leftPos + 127, topPos + 58, 42, 14)
                 .tooltip(Tooltip.create(Component.translatable("screen.overgearedmod.forge_manual.tooltip")))
                 .build(SatisfyButton::new));
+        // Right of the result slot: how many items one press of Auto makes.
+        batchButton = addRenderableWidget(Button.builder(Component.empty(), b -> pressButton(SmithingAnvilMenu.BATCH_BUTTON))
+                .bounds(leftPos + 138, topPos + 37, 30, 14)
+                .build(SatisfyButton::new));
+        batchTooltipKey = "";
         containerTick();
     }
 
@@ -119,8 +128,13 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         boolean forgeable = menu.canForge() && !enhanceButton.visible;
         autoButton.visible = forgeable;
         manualButton.visible = forgeable;
-        autoButton.active = !menu.autoForging() && minigame == null;
-        manualButton.active = autoButton.active;
+        batchButton.visible = forgeable;
+        boolean idle = !menu.autoForging() && minigame == null;
+        autoButton.active = minigame == null; // while forging it is the Stop button
+        autoButton.setMessage(Component.translatable(menu.autoForging() ? "screen.overgearedmod.forge_stop" : "screen.overgearedmod.forge_auto"));
+        manualButton.active = idle;
+        batchButton.active = idle && ForgingRules.batchUnlocked(1, smithing);
+        updateBatchButton(smithing);
 
         // Recipes are synced to the client, so the screen can find the one the server will use.
         ForgingRecipeInput input = new ForgingRecipeInput(menu.getSlot(SmithingAnvilMenu.TOP_SLOT).getItem(),
@@ -131,6 +145,37 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         ForgingExtras extras = recipe.map(ForgingRecipe::extras).orElse(ForgingExtras.NONE);
         autoOdds = RatingRoller.odds(stats.dexterity(), smithing, 0, extras.minRating(), extras.maxRating());
         manualOdds = RatingRoller.odds(stats.dexterity(), smithing, ForgingRules.manualSkillBonus(1), extras.minRating(), extras.maxRating());
+    }
+
+    /** "×5" (or "Máx") while idle, "3/10" while a batch runs; the tooltip says what it does and the next unlock. */
+    private void updateBatchButton(int smithing) {
+        int choice = menu.batchChoice();
+        if (menu.batchCount() > 1) {
+            batchButton.setMessage(Component.literal(Math.min(menu.batchDone() + 1, menu.batchCount()) + "/" + menu.batchCount()));
+        } else {
+            batchButton.setMessage(batchLabel(choice));
+        }
+        int next = choice + 1;
+        while (next < ForgingRules.BATCH_SIZES.length && ForgingRules.batchUnlocked(next, smithing)) {
+            next++;
+        }
+        String key = choice + ":" + next;
+        if (key.equals(batchTooltipKey)) {
+            return;
+        }
+        batchTooltipKey = key;
+        MutableComponent text = Component.translatable(ForgingRules.batchUnlocked(1, smithing)
+                ? "screen.overgearedmod.batch.tooltip" : "screen.overgearedmod.batch.locked");
+        if (next < ForgingRules.BATCH_SIZES.length) {
+            text.append("\n").append(Component.translatable("screen.overgearedmod.batch.next",
+                    batchLabel(next), ForgingRules.BATCH_UNLOCK_LEVELS[next]).withStyle(s -> s.withColor(UiStyle.MUTED)));
+        }
+        batchButton.setTooltip(Tooltip.create(text));
+    }
+
+    private static Component batchLabel(int index) {
+        int size = ForgingRules.BATCH_SIZES[index];
+        return size == ForgingRules.BATCH_ALL ? Component.translatable("screen.overgearedmod.batch.all") : Component.literal("×" + size);
     }
 
     @Override
