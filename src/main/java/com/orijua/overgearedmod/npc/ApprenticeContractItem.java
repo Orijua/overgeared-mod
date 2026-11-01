@@ -84,9 +84,10 @@ public class ApprenticeContractItem extends Item {
             return;
         }
         GoalTracker.milestone(player, INTRODUCED);
-        ItemStack contract = new ItemStack(ModItems.APPRENTICE_CONTRACT.get());
-        if (!player.getInventory().add(contract)) {
-            player.drop(contract, false);
+        for (ItemStack gift : List.of(new ItemStack(ModItems.APPRENTICE_CONTRACT.get()), new ItemStack(ModItems.WORKSHOP_LEDGER.get()))) {
+            if (!player.getInventory().add(gift)) {
+                player.drop(gift, false);
+            }
         }
         player.displayClientMessage(Component.translatable("message.overgearedmod.smith_apprentice"), false);
     }

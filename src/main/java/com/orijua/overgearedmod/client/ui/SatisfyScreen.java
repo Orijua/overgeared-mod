@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 /** The Satisfy window (key K): a panel with one button per tab on top and the active tab below. */
 public class SatisfyScreen extends Screen {
     /** Width of the window unless the open tab asks for more ({@link SatisfyTab#panelWidth}). */
-    public static final int PANEL_WIDTH = 260;
+    public static final int PANEL_WIDTH = 320;
     private static final int PANEL_HEIGHT = 210;
     private static final int TAB_BAR_HEIGHT = 26;
     private static int lastTab;

@@ -43,6 +43,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.EYE_OF_PALLALIAN);
                         output.accept(ModItems.PAGMA_RARE_BOOK);
                         output.accept(ModItems.APPRENTICE_CONTRACT);
+                        output.accept(ModItems.WORKSHOP_LEDGER);
                         output.accept(ModItems.ENHANCEMENT_STONE);
                         output.accept(ModItems.RESPEC_SCROLL);
                         output.accept(ModItems.BLACKSMITH_SPAWN_EGG);
