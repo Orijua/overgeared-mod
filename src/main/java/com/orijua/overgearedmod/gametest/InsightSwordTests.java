@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.insight.InsightRules;
 import com.orijua.overgearedmod.insight.Observation;
 import com.orijua.overgearedmod.insight.TalentSearch;
 import com.orijua.overgearedmod.insight.Talents;
@@ -47,7 +48,9 @@ public final class InsightSwordTests {
         }
         helper.assertTrue(gained && Observation.insight(player) == 1, "a point in seven seconds");
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.RULERS_SWORD.get()));
-        helper.assertTrue(Observation.observeTicks(player) == 100 && Observation.effectiveInsight(player) == 26, "5 s and +25 with the Ruler's");
+        // 5 s for the sword, a little less with the point just learned (more Insight, faster).
+        helper.assertTrue(Observation.observeTicks(player) == InsightRules.observeTicks(100, 1) && Observation.observeTicks(player) < 100
+                && Observation.effectiveInsight(player) == 26, "under 5 s and +25 with the Ruler's");
         villager.discard();
         helper.succeed();
     }

@@ -477,7 +477,7 @@
   "message.overgearedmod.observed_today": "You already studied %s today.",
   "message.overgearedmod.insight_gained": "You studied %s: Insight %s",
   "screen.overgearedmod.insight": "Insight: %s",
-  "screen.overgearedmod.insight.tooltip": "Not allocated with points: it grows by observing. Sneak while looking at an NPC or a monster for %s seconds (each one teaches once a day). The more Insight, the more Character Observation shows you.",
+  "screen.overgearedmod.insight.tooltip": "Not allocated with points: it grows by observing. Sneak while looking at an NPC or a monster for %s seconds (each one teaches once a day; the more Insight, the quicker). The more Insight, the more Character Observation shows you.",
   "notification.overgearedmod.insight": "Your Insight has grown",
   "notification.overgearedmod.insight.body": "Insight %s",
   "notification.overgearedmod.insight.medium": "You now see your apprentices' level, fail chance and pace.",

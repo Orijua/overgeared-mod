@@ -58,9 +58,10 @@ public final class Observation {
         return insight(player) + (player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.insightBonus() : 0);
     }
 
-    /** Ticks of steady looking for a point: shorter with a sword of observation in the main hand. */
+    /** Ticks of steady looking for a point: shorter with a sword of observation in the main hand, and with more Insight. */
     public static int observeTicks(Player player) {
-        return player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.observeTicks() : InsightRules.OBSERVE_TICKS;
+        int base = player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.observeTicks() : InsightRules.OBSERVE_TICKS;
+        return InsightRules.observeTicks(base, insight(player));
     }
 
     private static void onTick(PlayerTickEvent.Post event) {

@@ -54,7 +54,7 @@ import java.util.Optional;
  */
 public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMenu> {
     private static final int SIDE_GAP = 4;
-    private static final int SIDE_WIDTH = 140;
+    private static final int SIDE_WIDTH = 170;
     private static final int PADDING = 6;
     private static final int LINE = 10;
     /** Space before the great success row, with a line across it. */
@@ -224,7 +224,7 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         int lines = 5 + autoOdds.length + classLines.size()
                 + recipe.map(r -> 2 + r.requirements().map(req -> 1 + req.stats().size()).orElse(1)).orElse(0);
         UiStyle.frame(graphics, x, y, SIDE_WIDTH, PADDING * 2 + lines * LINE + GREAT_GAP, 1.0f);
-        int autoColumn = right - 44;
+        int autoColumn = right - 54;
         int row = y + PADDING;
 
         graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_odds"), left, row, UiStyle.HEADING);
