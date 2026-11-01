@@ -37,6 +37,8 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.IRON_SMITHING_HAMMER.get(), "mace");
         vanillaTexture(ModItems.JAFFA_SMITHING_HAMMER.get(), "mace");
         vanillaTexture(ModItems.MITHRIL_SMITHING_HAMMER.get(), "mace");
+        handheld(ModItems.COMMANDERS_SWORD.get(), "iron_sword");
+        handheld(ModItems.RULERS_SWORD.get(), "golden_sword");
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
         vanillaTexture(ModItems.JAFFA_INGOT.get(), "copper_ingot");
         vanillaTexture(ModItems.RAW_BLUE_ORICHALCUM.get(), "prismarine_crystals");
@@ -45,6 +47,12 @@ final class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.BLACKSMITH_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.VILLAGE_CHIEF_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.BONE_LORD_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+    }
+
+    /** A tool or weapon (held like a sword) that borrows a vanilla texture. */
+    private void handheld(Item item, String vanillaTexture) {
+        withExistingParent(BuiltInRegistries.ITEM.getKey(item).getPath(), mcLoc("item/handheld"))
+                .texture("layer0", mcLoc("item/" + vanillaTexture));
     }
 
     private void vanillaTexture(Item item, String vanillaTexture) {

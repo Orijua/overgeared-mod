@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.npc.ApprenticeContractItem;
+import com.orijua.overgearedmod.insight.InsightSwordItem;
 import com.orijua.overgearedmod.npc.WorkshopLedgerItem;
 import com.orijua.overgearedmod.smithing.SmithingHammerItem;
 import com.orijua.overgearedmod.pagma.EyeOfPallalianItem;
@@ -78,6 +79,13 @@ public final class ModItems {
             properties -> new SmithingHammerItem(10, properties), new Item.Properties().durability(500));
     public static final DeferredItem<SmithingHammerItem> MITHRIL_SMITHING_HAMMER = ITEMS.registerItem("mithril_smithing_hammer",
             properties -> new SmithingHammerItem(20, properties), new Item.Properties().durability(1000).rarity(Rarity.UNCOMMON));
+    // Swords of observation (canon, cap. 157): the Commander's (the chief's watch quest) and the Ruler's (lent by the chief).
+    public static final DeferredItem<InsightSwordItem> COMMANDERS_SWORD = ITEMS.registerItem("commanders_sword",
+            properties -> new InsightSwordItem(Tiers.IRON, 140, 10, false, properties.attributes(SwordItem.createAttributes(Tiers.IRON, 3, -2.4f))),
+            new Item.Properties().rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<InsightSwordItem> RULERS_SWORD = ITEMS.registerItem("rulers_sword",
+            properties -> new InsightSwordItem(Tiers.DIAMOND, 100, 25, true, properties.attributes(SwordItem.createAttributes(Tiers.DIAMOND, 3, -2.4f))),
+            new Item.Properties().rarity(Rarity.RARE));
     // Opens the Workshop tab: Smith gives it with the first contract; also crafted (book + iron ingot).
     public static final DeferredItem<WorkshopLedgerItem> WORKSHOP_LEDGER = ITEMS.registerItem("workshop_ledger",
             WorkshopLedgerItem::new, new Item.Properties().stacksTo(1));

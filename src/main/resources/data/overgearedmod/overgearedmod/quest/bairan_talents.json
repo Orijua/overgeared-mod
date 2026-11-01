@@ -1,0 +1,10 @@
+{
+  "name": { "translate": "quest.overgearedmod.bairan_talents" },
+  "description": { "translate": "quest.overgearedmod.bairan_talents.desc" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:talent_found", "count": 3 },
+  "giver": "overgearedmod:village_chief",
+  "requires_quest": "overgearedmod:watch_commander",
+  "xp_reward": 500,
+  "loaned_items": [{ "id": "overgearedmod:rulers_sword" }],
+  "item_rewards": [{ "id": "minecraft:emerald", "count": 16 }]
+}

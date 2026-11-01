@@ -1,7 +1,10 @@
 package com.orijua.overgearedmod.structure;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.insight.Talents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.LinkedHashMap;
@@ -160,9 +163,20 @@ public final class Bairan {
                 .set(4, 1, 1, "minecraft:potted_poppy")
                 .set(3, 3, 3, "minecraft:lantern[hanging=true]");
         bed(piece, 1, 1, "minecraft:white_bed");
+        piece.entity(3, 1, 3, "minecraft:villager", resident());
         pillars(piece, 6, 6, "minecraft:oak_log");
         door(piece, 3, 6, "minecraft:oak_door");
         return front(piece, 3, 7);
+    }
+
+    /** A resident of Bairan: stays in the village and hides a talent (canon, cap. 157; see insight.Talents). */
+    private static CompoundTag resident() {
+        CompoundTag villager = new CompoundTag();
+        villager.putBoolean("PersistenceRequired", true);
+        ListTag tags = new ListTag();
+        tags.add(StringTag.valueOf(Talents.BAIRAN_RESIDENT));
+        villager.put("Tags", tags);
+        return villager;
     }
 
     /** A smaller spruce house with a fenced flower garden in front. */
@@ -192,6 +206,7 @@ public final class Bairan {
                 .set(4, 1, 7, "minecraft:cornflower")
                 .set(5, 1, 6, "minecraft:composter");
         bed(piece, 5, 1, "minecraft:light_blue_bed");
+        piece.entity(3, 1, 3, "minecraft:villager", resident());
         pillars(piece, 6, 5, "minecraft:spruce_log");
         door(piece, 3, 5, "minecraft:spruce_door");
         return front(piece, 3, 9);

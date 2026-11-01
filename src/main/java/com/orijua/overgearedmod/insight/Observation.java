@@ -53,6 +53,16 @@ public final class Observation {
         return player.getData(ModAttachments.INSIGHT);
     }
 
+    /** What NPC windows reveal by: Insight plus what a sword of observation in the main hand adds. */
+    public static int effectiveInsight(Player player) {
+        return insight(player) + (player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.insightBonus() : 0);
+    }
+
+    /** Ticks of steady looking for a point: shorter with a sword of observation in the main hand. */
+    public static int observeTicks(Player player) {
+        return player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.observeTicks() : InsightRules.OBSERVE_TICKS;
+    }
+
     private static void onTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             observe(player, player.isShiftKeyDown() ? lookedAt(player) : null);
@@ -98,10 +108,11 @@ public final class Observation {
             }
             return false;
         }
-        if (ticks < InsightRules.OBSERVE_TICKS) {
+        int needed = observeTicks(player);
+        if (ticks < needed) {
             if (ticks % 10 == 1) {
                 player.displayClientMessage(Component.translatable("message.overgearedmod.observing", target.getDisplayName(),
-                        bar(ticks / (double) InsightRules.OBSERVE_TICKS)), true);
+                        bar(ticks / (double) needed)), true);
             }
             return false;
         }
