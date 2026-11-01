@@ -7,7 +7,8 @@ import com.orijua.overgearedmod.registry.ModEntities;
 import com.orijua.overgearedmod.structure.AdventurerCamp;
 import com.orijua.overgearedmod.structure.Bairan;
 import com.orijua.overgearedmod.structure.StartingVillage;
-import com.orijua.overgearedmod.structure.StartingVillagePlacement;
+import com.orijua.overgearedmod.structure.WorldSitePlacement;
+import com.orijua.overgearedmod.structure.WorldSites;
 import com.orijua.overgearedmod.structure.StructurePieces;
 import com.orijua.overgearedmod.structure.TemplateBuilder;
 import net.minecraft.core.BlockPos;
@@ -121,13 +122,13 @@ public final class StructureTests {
         var registries = helper.getLevel().registryAccess();
         helper.assertTrue(registries.registryOrThrow(Registries.STRUCTURE).containsKey(Bairan.STRUCTURE), "structure");
         StructureSet set = registries.registryOrThrow(Registries.STRUCTURE_SET).get(Bairan.STRUCTURE);
-        helper.assertTrue(set != null && set.placement() instanceof StartingVillagePlacement, "placed as the starting village");
-        StartingVillagePlacement placement = (StartingVillagePlacement) set.placement();
+        helper.assertTrue(set != null && set.placement() instanceof WorldSitePlacement site && site.site().equals(WorldSites.BAIRAN), "placed at Bairan's site");
+        WorldSitePlacement placement = (WorldSitePlacement) set.placement();
 
         long seed = -7_123_456_789L; // no real world in the test server has it
         helper.assertFalse(placement.applyAdditionalChunkRestrictions(0, 0, seed), "a world without a site has no Bairan");
         ChunkPos site = new ChunkPos(12, -40);
-        StartingVillage.remember(seed, site);
+        WorldSites.remember(seed, WorldSites.BAIRAN, site);
         try {
             helper.assertTrue(placement.applyAdditionalChunkRestrictions(0, 0, seed), "a world with a site has it");
             for (ChunkPos region : List.of(new ChunkPos(0, 0), new ChunkPos(500, -300), new ChunkPos(-64, 64))) {
@@ -135,7 +136,7 @@ public final class StructureTests {
                         "every region points /locate at the site, from " + region);
             }
         } finally {
-            StartingVillage.forget(seed);
+            WorldSites.forget(seed, WorldSites.BAIRAN);
         }
         TagKey<Biome> biomes = TagKey.create(Registries.BIOME, Overgearedmod.id("has_structure/bairan"));
         helper.assertTrue(registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS).is(biomes), "plains");

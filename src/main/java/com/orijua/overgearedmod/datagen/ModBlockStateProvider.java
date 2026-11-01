@@ -1,12 +1,16 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.pagma.GoldenTableBlock;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.smelting.SmelterBlock;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.level.block.Block;
+import net.neoforged.neoforge.client.model.generators.BlockModelBuilder;
 import net.neoforged.neoforge.client.model.generators.BlockStateProvider;
+import net.neoforged.neoforge.client.model.generators.ConfiguredModel;
 import net.neoforged.neoforge.client.model.generators.ModelFile;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 
@@ -39,6 +43,27 @@ final class ModBlockStateProvider extends BlockStateProvider {
                 mcLoc("block/blast_furnace_top"));
         horizontalBlock(ModBlocks.SMELTER.get(), state -> state.getValue(SmelterBlock.LIT) ? smelterLit : smelter);
         simpleBlockItem(ModBlocks.SMELTER.get(), smelter);
+
+        // The golden table: a gold-block table, with Pagma's book (vanilla's enchanted book) lying on it until taken.
+        ModelFile table = goldenTable("golden_table", false);
+        ModelFile tableWithBook = goldenTable("golden_table_book", true);
+        getVariantBuilder(ModBlocks.GOLDEN_TABLE.get()).forAllStates(state -> ConfiguredModel.builder()
+                .modelFile(state.getValue(GoldenTableBlock.BOOK) ? tableWithBook : table).build());
+        simpleBlockItem(ModBlocks.GOLDEN_TABLE.get(), tableWithBook);
+    }
+
+    private ModelFile goldenTable(String name, boolean book) {
+        BlockModelBuilder model = models().getBuilder(name).renderType("cutout")
+                .texture("gold", mcLoc("block/gold_block")).texture("particle", mcLoc("block/gold_block"));
+        model.element().from(0, 12, 0).to(16, 14, 16).allFaces((side, face) -> face.texture("#gold")).end();
+        for (int[] leg : new int[][]{{1, 1}, {13, 1}, {1, 13}, {13, 13}}) {
+            model.element().from(leg[0], 0, leg[1]).to(leg[0] + 2, 12, leg[1] + 2).allFaces((side, face) -> face.texture("#gold")).end();
+        }
+        if (book) {
+            model.texture("book", mcLoc("item/enchanted_book"));
+            model.element().from(2, 14, 2).to(14, 14.25f, 14).face(Direction.UP).texture("#book").end().end();
+        }
+        return model;
     }
 
     private void vanillaCubeWithItem(Block block, String vanillaTexture) {

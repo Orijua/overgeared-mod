@@ -1,4 +1,4 @@
-// 1.21.1	2026-10-31T12:27:34.6977858	Structure pieces
+// 1.21.1	2026-11-01T00:38:38.0025634	Structure pieces
 a36be0aa31752a62f5f0450a50017a6d2112e334 data/overgearedmod/structure/adventurer_camp/center.nbt
 bce457789f0c3a1c9846360fa4b12982c582b8cd data/overgearedmod/structure/adventurer_camp/forge.nbt
 632d0684768d57158d404a7fc59a78208db8b6fd data/overgearedmod/structure/adventurer_camp/tent.nbt
@@ -8,3 +8,7 @@ bce457789f0c3a1c9846360fa4b12982c582b8cd data/overgearedmod/structure/adventurer
 d4f7b99cf3fc9c73960d71bffa9c727b4a153d77 data/overgearedmod/structure/bairan/mine.nbt
 c495c3d9a186fc94576eecd5655f9f3fac2cec85 data/overgearedmod/structure/bairan/plaza.nbt
 46a702be87625c21e6315307d046f48401b88870 data/overgearedmod/structure/bairan/smithy.nbt
+3940774b9df216198a47cb99343bfc54fa965f25 data/overgearedmod/structure/north_end_cave/descent.nbt
+653bb48598d3a95e0ced48151c67e0ea4b760386 data/overgearedmod/structure/north_end_cave/entrance.nbt
+e8fedc54a889842cc564357c9dbc619716535374 data/overgearedmod/structure/north_end_cave/hall.nbt
+a0d9b7257dcbba9b6cca6b652ec7f302d6042a63 data/overgearedmod/structure/north_end_cave/sanctum.nbt

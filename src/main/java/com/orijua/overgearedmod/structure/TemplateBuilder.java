@@ -80,6 +80,18 @@ public final class TemplateBuilder {
         return put(x, y, z, BlockSpec.parse("minecraft:chest[facing=" + facing + ",type=single,waterlogged=false]"), nbt);
     }
 
+    /** A monster spawner of {@code entity} ("minecraft:stray"). */
+    public TemplateBuilder spawner(int x, int y, int z, String entity) {
+        CompoundTag spawned = new CompoundTag();
+        spawned.putString("id", entity);
+        CompoundTag spawnData = new CompoundTag();
+        spawnData.put("entity", spawned);
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString("id", "minecraft:mob_spawner");
+        nbt.put("SpawnData", spawnData);
+        return put(x, y, z, BlockSpec.parse("minecraft:spawner"), nbt);
+    }
+
     /**
      * A jigsaw block: where this piece joins another. A jigsaw looks in {@code pool} for a piece with a jigsaw named
      * {@code target} and fastens it in front of itself, facing back; it then turns into {@code finalState}.

@@ -25,15 +25,14 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Bairan as the world's starting village. When a new world is created, it looks for the nearest place around the
  * usual spawn where the whole village fits on dry land in one of its biomes, saves it, and makes that the spawn: the
  * player starts on the square by the well, as Grid starts in Bairan. Bairan then generates there with the terrain,
- * like any village ({@link StartingVillagePlacement}).
+ * like any village ({@link WorldSitePlacement}). The Northern End Cave's site is chosen at the same time, far to the north
+ * ({@link NorthEndCave}); worlds that already had Bairan get theirs the next time they load.
  * <p>
  * Worlds created before this have no site, so no Bairan. So do worlds whose generator doesn't use the structure (a
  * superflat preset, for example) and the rare world with no fitting land nearby; those keep the vanilla spawn.
@@ -42,8 +41,6 @@ public final class StartingVillage {
     /** How far around the usual spawn to look: 32 chunks is 512 blocks each way. */
     static final int SEARCH_RADIUS = 32;
     private static final ResourceKey<Structure> VILLAGE = ResourceKey.create(Registries.STRUCTURE, Bairan.STRUCTURE);
-    /** The site of each running world, by seed: the placement only knows the seed. */
-    private static final Map<Long, ChunkPos> SITES = new ConcurrentHashMap<>();
 
     private StartingVillage() {
     }
@@ -58,24 +55,27 @@ public final class StartingVillage {
         gameBus.addListener(StartingVillage::onServerStopped);
     }
 
-    public static Optional<ChunkPos> siteFor(long seed) {
-        return Optional.ofNullable(SITES.get(seed));
-    }
-
-    /** For tests: what a world with this seed would have saved. */
-    public static void remember(long seed, ChunkPos site) {
-        SITES.put(seed, site);
-    }
-
-    public static void forget(long seed) {
-        SITES.remove(seed);
-    }
-
-    /** An existing world: its saved site (if any) has to be known before its chunks generate. */
+    /**
+     * An existing world: its saved sites have to be known before its chunks generate. A world with Bairan but from
+     * before the cave gets the cave's site now (far to the north, where nothing has generated yet).
+     */
     private static void onLevelLoad(LevelEvent.Load event) {
         if (event.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) {
-            StartingVillageData.get(level).site().ifPresent(site -> SITES.put(level.getSeed(), site));
+            WorldSitesData data = WorldSitesData.get(level);
+            data.sites().forEach((name, site) -> WorldSites.remember(level.getSeed(), name, site));
+            data.site(WorldSites.BAIRAN).filter(bairan -> data.site(WorldSites.NORTH_END_CAVE).isEmpty())
+                    .ifPresent(bairan -> chooseCave(level, bairan));
         }
+    }
+
+    private static void chooseCave(ServerLevel level, ChunkPos bairan) {
+        ServerChunkCache chunks = level.getChunkSource();
+        NorthEndCave.findSite(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(),
+                level.getSeed(), level, bairan).ifPresent(cave -> {
+            WorldSites.remember(level.getSeed(), WorldSites.NORTH_END_CAVE, cave);
+            WorldSitesData.get(level).setSite(WorldSites.NORTH_END_CAVE, cave);
+            Overgearedmod.LOGGER.info("Northern End Cave at chunk {} ({} blocks north of Bairan)", cave, (bairan.z - cave.z) * 16);
+        });
     }
 
     /** A new world: choose the site and spawn there instead of the vanilla spawn. */
@@ -95,8 +95,9 @@ public final class StartingVillage {
             Overgearedmod.LOGGER.warn("No room for Bairan within {} chunks of spawn; this world has no starting village", SEARCH_RADIUS);
             return;
         }
-        SITES.put(level.getSeed(), site.get().chunk());
-        StartingVillageData.get(level).setSite(site.get().chunk());
+        WorldSites.remember(level.getSeed(), WorldSites.BAIRAN, site.get().chunk());
+        WorldSitesData.get(level).setSite(WorldSites.BAIRAN, site.get().chunk());
+        chooseCave(level, site.get().chunk());
         event.getSettings().setSpawn(site.get().spawn(), 0.0f);
         // Start by the well, not anywhere within 10 blocks of it (a roof, the mine).
         level.getGameRules().getRule(GameRules.RULE_SPAWN_RADIUS).set(0, level.getServer());
@@ -110,7 +111,7 @@ public final class StartingVillage {
     }
 
     private static void onServerStopped(ServerStoppedEvent event) {
-        SITES.clear();
+        WorldSites.clear();
     }
 
     /**
