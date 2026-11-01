@@ -26,6 +26,7 @@ import com.orijua.overgearedmod.registry.ModWorldgen;
 import com.orijua.overgearedmod.skill.SkillEvents;
 import com.orijua.overgearedmod.structure.NorthEndCaveProtection;
 import com.orijua.overgearedmod.npc.ApprenticeAssignments;
+import com.orijua.overgearedmod.npc.Illumination;
 import com.orijua.overgearedmod.pagma.AshurBetrayal;
 import com.orijua.overgearedmod.pagma.LegendTitle;
 import com.orijua.overgearedmod.structure.StartingVillage;
@@ -86,6 +87,7 @@ public class Overgearedmod {
         StartingVillage.register(NeoForge.EVENT_BUS);
         NorthEndCaveProtection.register(NeoForge.EVENT_BUS);
         ApprenticeAssignments.register(NeoForge.EVENT_BUS);
+        Illumination.register(NeoForge.EVENT_BUS);
         AshurBetrayal.register(NeoForge.EVENT_BUS);
         LegendTitle.register(NeoForge.EVENT_BUS);
 

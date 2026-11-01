@@ -1,9 +1,19 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.npc.ApprenticeAssignments;
 import com.orijua.overgearedmod.npc.ApprenticeContractItem;
+import com.orijua.overgearedmod.npc.ApprenticeMaterials;
 import com.orijua.overgearedmod.npc.ApprenticeSmith;
+import com.orijua.overgearedmod.npc.Illumination;
+import com.orijua.overgearedmod.npc.MasteryStage;
+import com.orijua.overgearedmod.npc.NpcGrade;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextColor;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.phys.Vec3;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.ModAttachments;
@@ -174,6 +184,62 @@ public final class ApprenticeTests {
         helper.assertFalse(apprentice.assign(player, ApprenticeSmith.Slot.MATERIALS, helper.absolutePos(CHEST)), "too far");
         helper.assertTrue(apprentice.assigned(ApprenticeSmith.Slot.MATERIALS).isEmpty(), "nothing assigned");
         apprentice.discard();
+        helper.succeed();
+    }
+
+    /** Gold, diamond and the master metals wait for the right stage; iron and jaffa are a beginner's. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void materialsNeedTheirMastery(GameTestHelper helper) {
+        helper.assertTrue(ApprenticeMaterials.requiredStage(Ingredient.of(Items.IRON_INGOT)) == MasteryStage.BEGINNER, "iron");
+        helper.assertTrue(ApprenticeMaterials.requiredStage(Ingredient.of(ModItems.JAFFA_INGOT.get())) == MasteryStage.BEGINNER, "jaffa");
+        helper.assertTrue(ApprenticeMaterials.requiredStage(Ingredient.of(Items.GOLD_INGOT)) == MasteryStage.INTERMEDIATE, "gold");
+        helper.assertTrue(ApprenticeMaterials.requiredStage(Ingredient.of(Items.DIAMOND)) == MasteryStage.ADVANCED, "diamond");
+        helper.assertTrue(ApprenticeMaterials.requiredStage(Ingredient.of(ModItems.MITHRIL_INGOT.get(), Items.IRON_INGOT)) == MasteryStage.MASTER,
+                "the hardest item in the ingredient decides");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void hisGradeDecidesHowFarHeGrows(GameTestHelper helper) {
+        ServerPlayer player = smithOfLevel(helper, 80);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        apprentice.setGrade(NpcGrade.NORMAL);
+        apprentice.setSmithingXp(65 * 65 * 10);
+        helper.assertTrue(apprentice.smithingLevel() == 40 && apprentice.stage() == MasteryStage.ADVANCED, "a normal NPC stops at 40");
+        apprentice.setGrade(NpcGrade.NAMED);
+        helper.assertTrue(apprentice.smithingLevel() == 65 && apprentice.stage() == MasteryStage.MASTER, "a named one goes on");
+        helper.assertTrue(apprentice.shownLevel() == 65 && apprentice.shownStage() == MasteryStage.MASTER, "synced to the window");
+        helper.assertTrue(apprentice.getCustomName().getStyle().getColor() == TextColor.fromLegacyFormat(ChatFormatting.GOLD), "with a gold name");
+        apprentice.discard();
+        helper.succeed();
+    }
+
+    /** Only a Master: by his own Unique piece, or by watching his master forge a Legendary nearby (illumination). */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aMasterBecomesACraftsman(GameTestHelper helper) {
+        ServerPlayer player = smithOfLevel(helper, 80);
+        player.moveTo(helper.absoluteVec(Vec3.atBottomCenterOf(STAND)));
+        ApprenticeSmith master = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        ApprenticeSmith advanced = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        ApprenticeSmith proud = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        for (ApprenticeSmith apprentice : new ApprenticeSmith[]{master, advanced, proud}) {
+            apprentice.setGrade(NpcGrade.SEMI_NAMED);
+            apprentice.setSmithingXp(65 * 65 * 10);
+        }
+        advanced.setSmithingXp(50 * 50 * 10);
+
+        helper.assertTrue(Illumination.enlighten(player, ItemRating.EPIC) == 0, "an Epic enlightens nobody");
+        helper.assertTrue(Illumination.enlighten(player, ItemRating.LEGENDARY) == 2, "a Legendary enlightens both Masters");
+        helper.assertTrue(master.isCraftsman() && !advanced.isCraftsman(), "not the Advanced one");
+        helper.assertTrue(master.getCustomName().getString().endsWith(Component.translatable("entity.overgearedmod.apprentice_smith.craftsman_suffix").getString()),
+                "his name says it");
+
+        advanced.setSmithingXp(65 * 65 * 10);
+        helper.assertFalse(advanced.judgePiece(ItemRating.EPIC, true), "his own Epic is not a masterpiece");
+        helper.assertTrue(advanced.judgePiece(ItemRating.UNIQUE, true), "his own Unique is");
+        master.discard();
+        advanced.discard();
+        proud.discard();
         helper.succeed();
     }
 
