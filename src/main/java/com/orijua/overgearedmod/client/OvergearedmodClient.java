@@ -74,6 +74,7 @@ public class OvergearedmodClient {
         event.registerEntityRenderer(ModEntities.BLACKSMITH.get(), context -> new NpcRenderer<>(context, NpcRenderer.BLACKSMITH));
         event.registerEntityRenderer(ModEntities.VILLAGE_CHIEF.get(), context -> new NpcRenderer<>(context, NpcRenderer.VILLAGE_CHIEF));
         event.registerEntityRenderer(ModEntities.BONE_LORD.get(), BoneLordRenderer::new);
+        event.registerEntityRenderer(ModEntities.APPRENTICE_SMITH.get(), context -> new NpcRenderer<>(context, NpcRenderer.BLACKSMITH));
         event.registerEntityRenderer(ModEntities.EARL_ASHUR.get(), context -> new AshurRenderer<>(context, AshurRenderer.ASHUR));
         event.registerEntityRenderer(ModEntities.ASHUR_KNIGHT.get(), context -> new AshurRenderer<>(context, AshurRenderer.KNIGHT));
     }

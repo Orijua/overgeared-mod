@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.client.NpcQuestScreen;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.skill.SkillBookItem;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -69,6 +70,13 @@ public class BlacksmithNpc extends AbstractVillager {
                     SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), skill), 3, 0, 0.05f));
         }
         offers.add(eyeOfPallalian());
+        offers.add(apprenticeContract());
+    }
+
+    /** More apprentice blacksmiths, once the smith's level allows them (the first contract he gives for free). */
+    private static MerchantOffer apprenticeContract() {
+        return new MerchantOffer(new ItemCost(Items.EMERALD, ApprenticeRules.CONTRACT_PRICE), new ItemStack(ModItems.APPRENTICE_CONTRACT.get()),
+                5, 0, 0.05f);
     }
 
     /** The most expensive appraisal item (canon, cap. 1), to know what Pagma's old book is. */
@@ -77,11 +85,14 @@ public class BlacksmithNpc extends AbstractVillager {
                 new ItemStack(ModItems.EYE_OF_PALLALIAN.get()), 2, 0, 0.05f);
     }
 
-    /** Smiths whose shop was stocked before the eye existed get it added. */
-    private void stockEyeOfPallalian() {
+    /** Smiths whose shop was stocked before these offers existed get them added. */
+    private void stockNewOffers() {
         MerchantOffers offers = getOffers();
         if (offers.stream().noneMatch(offer -> offer.getResult().is(ModItems.EYE_OF_PALLALIAN.get()))) {
             offers.add(eyeOfPallalian());
+        }
+        if (offers.stream().noneMatch(offer -> offer.getResult().is(ModItems.APPRENTICE_CONTRACT.get()))) {
+            offers.add(apprenticeContract());
         }
     }
 
@@ -94,6 +105,8 @@ public class BlacksmithNpc extends AbstractVillager {
         if (level().isClientSide) {
             // Only runs on the client, so the client-only class is never loaded on a server.
             NpcQuestScreen.open(this, true);
+        } else if (player instanceof ServerPlayer serverPlayer) {
+            ApprenticeContractItem.introduce(serverPlayer);
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
     }
@@ -101,7 +114,7 @@ public class BlacksmithNpc extends AbstractVillager {
     /** Opens the shop for {@code player}, unless someone is already trading with him. */
     public void startTrading(Player player) {
         if (isAlive() && !isTrading()) {
-            stockEyeOfPallalian();
+            stockNewOffers();
             setTradingPlayer(player);
             openTradingScreen(player, getDisplayName(), 1);
         }

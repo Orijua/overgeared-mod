@@ -51,9 +51,14 @@ public final class EquipmentService {
     public static void stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements,
                                    ForgingExtras extras, double skillBonus, double extraOptionChance) {
         PlayerStats stats = ProgressionService.effectiveStats(smith);
-        RandomSource random = smith.getRandom();
-        ItemRating rating = RatingRoller.roll(stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith), skillBonus,
-                extras.minRating(), extras.maxRating(), random.nextDouble());
+        stampForged(smith.level(), stack, requirements, extras, stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith),
+                skillBonus, extraOptionChance, smith.getRandom());
+    }
+
+    /** As above, for a smith who isn't a player (an apprentice): their dexterity and smithing level are given. */
+    public static void stampForged(Level level, ItemStack stack, Optional<EquipRequirements> requirements, ForgingExtras extras,
+                                   int dexterity, int smithingLevel, double skillBonus, double extraOptionChance, RandomSource random) {
+        ItemRating rating = RatingRoller.roll(dexterity, smithingLevel, skillBonus, extras.minRating(), extras.maxRating(), random.nextDouble());
         requirements.ifPresent(r -> stack.set(ModDataComponents.REQUIREMENTS, r));
         if (!extras.fixedOptions().isEmpty()) {
             stack.set(ModDataComponents.ITEM_RATING, rating);
@@ -62,7 +67,7 @@ public final class EquipmentService {
             return;
         }
         int extraOptions = random.nextDouble() < extraOptionChance ? 1 : 0;
-        applyRating(smith.level(), stack, rating, extraOptions, random);
+        applyRating(level, stack, rating, extraOptions, random);
     }
 
     /**

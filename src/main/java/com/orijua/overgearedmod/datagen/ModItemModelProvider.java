@@ -31,6 +31,7 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.UNAPPRAISED_BOOK.get(), "book");
         vanillaTexture(ModItems.EYE_OF_PALLALIAN.get(), "ender_eye");
         vanillaTexture(ModItems.PAGMA_RARE_BOOK.get(), "enchanted_book");
+        vanillaTexture(ModItems.APPRENTICE_CONTRACT.get(), "paper");
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
         vanillaTexture(ModItems.JAFFA_INGOT.get(), "copper_ingot");
         vanillaTexture(ModItems.RAW_BLUE_ORICHALCUM.get(), "prismarine_crystals");

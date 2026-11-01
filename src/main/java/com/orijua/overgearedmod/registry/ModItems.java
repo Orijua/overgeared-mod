@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.npc.ApprenticeContractItem;
 import com.orijua.overgearedmod.pagma.EyeOfPallalianItem;
 import com.orijua.overgearedmod.pagma.PagmaRareBookItem;
 import com.orijua.overgearedmod.pagma.UnappraisedItem;
@@ -64,6 +65,10 @@ public final class ModItems {
     public static final DeferredItem<PagmaRareBookItem> PAGMA_RARE_BOOK = ITEMS.registerItem("pagma_rare_book",
             PagmaRareBookItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant());
     public static final DeferredItem<BlockItem> GOLDEN_TABLE = ITEMS.registerSimpleBlockItem(ModBlocks.GOLDEN_TABLE);
+
+    // An apprentice blacksmith's contract (mass production, phase 2): Smith gives the first at smithing 50 and sells the rest.
+    public static final DeferredItem<ApprenticeContractItem> APPRENTICE_CONTRACT = ITEMS.registerItem("apprentice_contract",
+            ApprenticeContractItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
 
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
     public static final DeferredItem<BlockItem> SMELTER = ITEMS.registerSimpleBlockItem(ModBlocks.SMELTER);
