@@ -235,6 +235,7 @@
   "screen.overgearedmod.xp": "%s / %s XP",
   "hud.overgearedmod.level": "Nv %s",
   "hud.overgearedmod.xp": " · %s/%s XP",
+  "hud.overgearedmod.xp_gain": "+%s XP",
   "screen.overgearedmod.mana": "Maná %s / %s",
   "screen.overgearedmod.smithing": "Herrería nv. %s",
   "screen.overgearedmod.free_points": "Puntos libres: %s",
