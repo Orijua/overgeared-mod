@@ -16,6 +16,8 @@ import com.orijua.overgearedmod.quest.QuestTree;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.rumor.RumorDefinition;
+import com.orijua.overgearedmod.rumor.Rumors;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,6 +36,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,7 +48,8 @@ import javax.annotation.Nullable;
 
 /**
  * Every quest as a tree ({@link QuestTree}): on the left the chains grouped by who gives them, in three sections
- * (story, repeatable, completed); on the right the chosen quest with its goal, progress, rewards and buttons.
+ * (story, repeatable, completed); on the right the chosen quest with its goal, progress, rewards and buttons. A fourth
+ * section is the Journal of rumors heard from NPCs.
  */
 public class QuestsTab extends SatisfyTab {
     private static final int PANEL_WIDTH = 340;
@@ -63,12 +67,13 @@ public class QuestsTab extends SatisfyTab {
     private static final int HOVERED = 0x25FFFFFF;
     private static final int DIVIDER = 0x609DC4EA;
 
-    private enum Section { STORY, REPEATABLE, COMPLETED }
+    private enum Section { STORY, REPEATABLE, COMPLETED, RUMORS }
 
-    private enum Kind { GROUP, QUEST, LOCKED, CHAIN }
+    private enum Kind { GROUP, QUEST, LOCKED, CHAIN, RUMOR }
 
     /**
-     * A line of the list. A group or a finished chain folds what is under it ({@code foldKey}); a quest can be chosen.
+     * A line of the list. A group or a finished chain folds what is under it ({@code foldKey}); a quest or a rumor (its
+     * id in {@code quest}) can be chosen.
      * {@code depth} is the indent inside its group; {@code mark} goes before the text ("✔", "»", "○"); {@code right} is
      * drawn at the end of the line (an accepted quest shows its live progress there instead).
      */
@@ -80,6 +85,8 @@ public class QuestsTab extends SatisfyTab {
     private static Section section = Section.STORY;
     @Nullable
     private static ResourceLocation selected;
+    @Nullable
+    private static ResourceLocation selectedRumor;
     /** Folded groups, and finished chains that are unfolded (they start folded). */
     private static final Set<String> TOGGLED = new HashSet<>();
 
@@ -89,6 +96,9 @@ public class QuestsTab extends SatisfyTab {
     private ScrollList scroll;
     private boolean dirty;
     private PlayerQuests shownState;
+    /** The rumors heard and which of them were solved when the list was built. */
+    private List<ResourceLocation> shownRumors = List.of();
+    private Set<ResourceLocation> shownSolved = Set.of();
     @Nullable
     private Button claimButton;
     private int repeatableCount;
@@ -172,12 +182,74 @@ public class QuestsTab extends SatisfyTab {
                     addQuest(id, byId.get(id), 0, times > 0 ? Component.literal("×" + times) : Component.empty(), UiStyle.MUTED);
                 }
             });
+            case RUMORS -> {
+                addRumors();
+                return;
+            }
         }
 
         List<ResourceLocation> shown = lines.stream().filter(line -> line.kind() == Kind.QUEST).map(Line::quest).toList();
         if (selected == null || !shown.contains(selected)) {
             selected = shown.stream().filter(shownState::isActive).findFirst().orElse(shown.isEmpty() ? null : shown.getFirst());
         }
+    }
+
+    /** The rumors heard, under who told them (the same groups as their quests): ? still a secret, ✔ found. */
+    private void addRumors() {
+        shownRumors = Rumors.heard(player());
+        Map<String, List<ResourceLocation>> byGroup = new LinkedHashMap<>();
+        Set<ResourceLocation> solved = new HashSet<>();
+        for (ResourceLocation id : shownRumors) {
+            Definitions.get(player().level(), ModDatapackRegistries.RUMOR, id).ifPresent(rumor -> {
+                byGroup.computeIfAbsent(groupKey(rumor), key -> new ArrayList<>()).add(id);
+                if (Rumors.solved(player(), rumor)) {
+                    solved.add(id);
+                }
+            });
+        }
+        shownSolved = solved;
+        byGroup.forEach((group, ids) -> {
+            lines.add(new Line(Kind.GROUP, Component.translatable(group), UiStyle.HEADING, null, 0, "", Component.empty(), 0, ""));
+            for (ResourceLocation id : ids) {
+                RumorDefinition rumor = Definitions.get(player().level(), ModDatapackRegistries.RUMOR, id).orElseThrow();
+                boolean found = solved.contains(id);
+                lines.add(new Line(Kind.RUMOR, rumor.text(), found ? UiStyle.MUTED : UiStyle.TEXT, id, 0, found ? "✔" : "?",
+                        Component.empty(), 0, ""));
+            }
+        });
+        List<ResourceLocation> shown = lines.stream().filter(line -> line.kind() == Kind.RUMOR).map(Line::quest).toList();
+        if (selectedRumor == null || !shown.contains(selectedRumor)) {
+            selectedRumor = shown.isEmpty() ? null : shown.getLast();
+        }
+    }
+
+    private static String groupKey(RumorDefinition rumor) {
+        ResourceLocation npc = BuiltInRegistries.ENTITY_TYPE.getKey(rumor.givers().getFirst());
+        return "quest." + npc.getNamespace() + ".group." + npc.getPath();
+    }
+
+    private Optional<RumorDefinition> selectedRumor() {
+        return selectedRumor == null ? Optional.empty() : Definitions.get(player().level(), ModDatapackRegistries.RUMOR, selectedRumor);
+    }
+
+    /** The chosen rumor: who tells it, all of it, and whether its secret was found. */
+    private void renderRumorDetail(GuiGraphics graphics, ResourceLocation id, RumorDefinition rumor) {
+        int x = detailX();
+        int detailWidth = left + width - x;
+        int y = top + LIST_TOP;
+        graphics.drawString(font(), Component.translatable("screen.overgearedmod.npc_rumor"), x, y, UiStyle.HEADING);
+        y += 10;
+        Component teller = Component.translatable("screen.overgearedmod.rumor_from", Component.translatable(groupKey(rumor)));
+        graphics.drawString(font(), teller, x, y, UiStyle.GOLD);
+        y += 13;
+        for (FormattedCharSequence line : font().split(rumor.text().copy().withStyle(ChatFormatting.ITALIC), detailWidth)) {
+            graphics.drawString(font(), line, x, y, UiStyle.TEXT);
+            y += 10;
+        }
+        y += 4;
+        boolean found = shownSolved.contains(id);
+        graphics.drawString(font(), Component.translatable(found ? "screen.overgearedmod.rumor_solved" : "screen.overgearedmod.rumor_open"),
+                x, y, found ? UiStyle.GOOD : UiStyle.MUTED);
     }
 
     private void addGroup(QuestTree.Group group, Map<ResourceLocation, QuestDefinition> byId, boolean finished) {
@@ -234,7 +306,7 @@ public class QuestsTab extends SatisfyTab {
     private void addDetailButtons(Consumer<AbstractWidget> addWidget) {
         claimButton = null;
         Optional<QuestDefinition> found = selectedQuest();
-        if (found.isEmpty()) {
+        if (found.isEmpty() || section == Section.RUMORS) {
             return;
         }
         ResourceLocation id = selected;
@@ -300,11 +372,15 @@ public class QuestsTab extends SatisfyTab {
         }
         switch (line.kind()) {
             case GROUP, CHAIN -> {
+                if (line.foldKey().isEmpty()) {
+                    return false;
+                }
                 if (!TOGGLED.remove(line.foldKey())) {
                     TOGGLED.add(line.foldKey());
                 }
             }
             case QUEST -> selected = line.quest();
+            case RUMOR -> selectedRumor = line.quest();
             case LOCKED -> {
                 return false;
             }
@@ -328,6 +404,11 @@ public class QuestsTab extends SatisfyTab {
         if (!QuestService.get(player()).equals(shownState)) {
             return true;
         }
+        if (section == Section.RUMORS && (!Rumors.heard(player()).equals(shownRumors) || shownRumors.stream().anyMatch(id ->
+                shownSolved.contains(id) != Definitions.get(player().level(), ModDatapackRegistries.RUMOR, id)
+                        .map(rumor -> Rumors.solved(player(), rumor)).orElse(false)))) {
+            return true;
+        }
         return claimButton != null && selected != null && selectedQuest().isPresent()
                 && claimButton.active != isDone(selected, selectedQuest().get());
     }
@@ -347,17 +428,21 @@ public class QuestsTab extends SatisfyTab {
             y += ROW;
         }
         scroll.renderBar(graphics, left + LIST_WIDTH + 1, listTop, visibleRows() * ROW, lines.size());
-        selectedQuest().ifPresent(quest -> renderDetail(graphics, selected, quest, mouseX, mouseY));
+        if (section == Section.RUMORS) {
+            selectedRumor().ifPresent(rumor -> renderRumorDetail(graphics, selectedRumor, rumor));
+        } else {
+            selectedQuest().ifPresent(quest -> renderDetail(graphics, selected, quest, mouseX, mouseY));
+        }
     }
 
     private void renderLine(GuiGraphics graphics, Line line, int y, boolean hovered, int mouseX, int mouseY) {
-        if (line.kind() == Kind.QUEST && line.quest().equals(selected)) {
+        if (line.kind() == Kind.QUEST && line.quest().equals(selected) || line.kind() == Kind.RUMOR && line.quest().equals(selectedRumor)) {
             graphics.fill(left, y - 1, left + LIST_WIDTH, y + ROW - 1, SELECTED);
-        } else if (hovered && line.kind() != Kind.LOCKED) {
+        } else if (hovered && line.kind() != Kind.LOCKED && line.kind() != Kind.GROUP || hovered && !line.foldKey().isEmpty()) {
             graphics.fill(left, y - 1, left + LIST_WIDTH, y + ROW - 1, HOVERED);
         }
         int x = left + 1;
-        if (line.kind() == Kind.QUEST || line.kind() == Kind.LOCKED) {
+        if (line.kind() == Kind.QUEST || line.kind() == Kind.LOCKED || line.kind() == Kind.RUMOR) {
             // The chain's guide line, then the step's mark.
             int guide = left + 4 + line.depth() * INDENT;
             graphics.fill(guide, y - 1, guide + 1, y + ROW - 1, GUIDE);

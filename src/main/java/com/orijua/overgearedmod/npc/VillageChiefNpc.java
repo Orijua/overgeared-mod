@@ -1,6 +1,8 @@
 package com.orijua.overgearedmod.npc;
 
 import com.orijua.overgearedmod.client.NpcQuestScreen;
+import com.orijua.overgearedmod.rumor.Rumors;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -44,6 +46,8 @@ public class VillageChiefNpc extends PathfinderMob {
         if (level().isClientSide) {
             // Only runs on the client, so the client-only class is never loaded on a server.
             NpcQuestScreen.open(this, false);
+        } else if (player instanceof ServerPlayer serverPlayer) {
+            Rumors.hear(serverPlayer, getType());
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
     }

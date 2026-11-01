@@ -1,0 +1,6 @@
+{
+  "givers": ["overgearedmod:earl_ashur"],
+  "text": { "translate": "rumor.overgearedmod.old_relics" },
+  "requires_quest": "overgearedmod:quality_test",
+  "solved_by": { "milestones": ["overgearedmod:appraised_pagma_book"] }
+}
