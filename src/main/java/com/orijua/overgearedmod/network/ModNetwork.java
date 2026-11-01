@@ -27,6 +27,7 @@ public final class ModNetwork {
         registrar.playToServer(ManualForgePayload.TYPE, ManualForgePayload.STREAM_CODEC, ServerPayloadHandler::manualForge);
         registrar.playToServer(ManualSmeltPayload.TYPE, ManualSmeltPayload.STREAM_CODEC, ServerPayloadHandler::manualSmelt);
         registrar.playToServer(ReadPagmaBookPayload.TYPE, ReadPagmaBookPayload.STREAM_CODEC, ServerPayloadHandler::readPagmaBook);
+        registrar.playToServer(ApprenticeActionPayload.TYPE, ApprenticeActionPayload.STREAM_CODEC, ServerPayloadHandler::apprenticeAction);
         // The handler only touches ClientNotifications (no client classes), so this is safe on a dedicated server.
         registrar.playToClient(SystemNotificationPayload.TYPE, SystemNotificationPayload.STREAM_CODEC,
                 (payload, context) -> ClientNotifications.QUEUE.push(payload.notification()));
