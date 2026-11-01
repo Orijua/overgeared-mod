@@ -73,6 +73,8 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
     private String batchTooltipKey = "";
     private double[] autoOdds = new double[ItemRating.values().length];
     private double[] manualOdds = new double[ItemRating.values().length];
+    private double greatAuto;
+    private double greatManual;
     /** The forging recipe the inputs match, if any (found on the client, even one for another class). */
     private Optional<ForgingRecipe> recipe = Optional.empty();
 
@@ -148,6 +150,8 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         double hammer = SmithingHammers.skillBonus(minecraft.level.registryAccess(), minecraft.player.getOffhandItem());
         autoOdds = RatingRoller.odds(stats.dexterity(), smithing, hammer, extras.minRating(), extras.maxRating());
         manualOdds = RatingRoller.odds(stats.dexterity(), smithing, ForgingRules.manualSkillBonus(1) + hammer, extras.minRating(), extras.maxRating());
+        greatAuto = ForgingRules.greatSuccessChance(stats.dexterity(), smithing, -1);
+        greatManual = ForgingRules.greatSuccessChance(stats.dexterity(), smithing, 1);
     }
 
     /** "×5" (or "Máx") while idle, "3/10" while a batch runs; the tooltip says what it does and the next unlock. */
@@ -213,7 +217,7 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         List<FormattedCharSequence> classLines = requiredClassText()
                 .map(text -> font.split(text, right - left - font.width("✘") - 4))
                 .orElse(List.of());
-        int lines = 3 + autoOdds.length + classLines.size()
+        int lines = 4 + autoOdds.length + classLines.size()
                 + recipe.map(r -> 2 + r.requirements().map(req -> 1 + req.stats().size()).orElse(1)).orElse(0);
         UiStyle.frame(graphics, x, y, SIDE_WIDTH, PADDING * 2 + lines * LINE, 1.0f);
         int autoColumn = right - 44;
@@ -230,6 +234,11 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
             rightAligned(graphics, Component.literal(percent(manualOdds[rating.ordinal()])), right, row, UiStyle.GOLD);
             row += LINE;
         }
+        // The chance of a great success: the piece comes out one rating higher.
+        graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_great_success"), left, row, UiStyle.GOLD);
+        rightAligned(graphics, Component.literal(percent(greatAuto)), autoColumn, row, UiStyle.TEXT);
+        rightAligned(graphics, Component.literal(percent(greatManual)), right, row, UiStyle.GOLD);
+        row += LINE;
         graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_manual_note"), left, row, UiStyle.MUTED);
         row += LINE;
 

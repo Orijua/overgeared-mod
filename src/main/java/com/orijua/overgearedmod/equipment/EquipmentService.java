@@ -10,6 +10,7 @@ import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.smithing.ForgingExtras;
+import com.orijua.overgearedmod.smithing.ForgingRules;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -50,24 +51,43 @@ public final class EquipmentService {
      */
     public static void stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements,
                                    ForgingExtras extras, double skillBonus, double extraOptionChance) {
+        stampForged(smith, stack, requirements, extras, skillBonus, extraOptionChance, 0);
+    }
+
+    /**
+     * As above, with a chance of a great success (the rating goes one step up, within the recipe's range). Returns
+     * whether it happened.
+     */
+    public static boolean stampForged(ServerPlayer smith, ItemStack stack, Optional<EquipRequirements> requirements,
+                                      ForgingExtras extras, double skillBonus, double extraOptionChance, double greatSuccessChance) {
         PlayerStats stats = ProgressionService.effectiveStats(smith);
-        stampForged(smith.level(), stack, requirements, extras, stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith),
-                skillBonus, extraOptionChance, smith.getRandom());
+        return stampForged(smith.level(), stack, requirements, extras, stats.dexterity(), ProgressionService.effectiveSmithingLevel(smith),
+                skillBonus, extraOptionChance, greatSuccessChance, smith.getRandom());
     }
 
     /** As above, for a smith who isn't a player (an apprentice): their dexterity and smithing level are given. */
     public static void stampForged(Level level, ItemStack stack, Optional<EquipRequirements> requirements, ForgingExtras extras,
                                    int dexterity, int smithingLevel, double skillBonus, double extraOptionChance, RandomSource random) {
-        ItemRating rating = RatingRoller.roll(dexterity, smithingLevel, skillBonus, extras.minRating(), extras.maxRating(), random.nextDouble());
+        stampForged(level, stack, requirements, extras, dexterity, smithingLevel, skillBonus, extraOptionChance, 0, random);
+    }
+
+    private static boolean stampForged(Level level, ItemStack stack, Optional<EquipRequirements> requirements, ForgingExtras extras,
+                                       int dexterity, int smithingLevel, double skillBonus, double extraOptionChance,
+                                       double greatSuccessChance, RandomSource random) {
+        ItemRating rolled = RatingRoller.roll(dexterity, smithingLevel, skillBonus, extras.minRating(), extras.maxRating(), random.nextDouble());
+        // Only rolled when there is a chance, so smiths without one keep the same random sequence.
+        boolean great = greatSuccessChance > 0 && rolled != extras.maxRating() && random.nextDouble() < greatSuccessChance;
+        ItemRating rating = great ? ForgingRules.raise(rolled, extras.maxRating()) : rolled;
         requirements.ifPresent(r -> stack.set(ModDataComponents.REQUIREMENTS, r));
         if (!extras.fixedOptions().isEmpty()) {
             stack.set(ModDataComponents.ITEM_RATING, rating);
             stack.set(ModDataComponents.ITEM_OPTIONS, FixedOption.forRating(extras.fixedOptions(), rating));
             refreshName(stack);
-            return;
+            return great;
         }
         int extraOptions = random.nextDouble() < extraOptionChance ? 1 : 0;
         applyRating(level, stack, rating, extraOptions, random);
+        return great;
     }
 
     /**

@@ -1,5 +1,7 @@
 package com.orijua.overgearedmod.smithing;
 
+import com.orijua.overgearedmod.equipment.ItemRating;
+
 /**
  * Pure rules of the two ways to forge. Canon: Satisfy has automatic production (press the button, it takes
  * longer for unskilled smiths) and manual production (more chance of a high rating and extra options).
@@ -77,6 +79,32 @@ public final class ForgingRules {
             return 0;
         }
         return (p - EXTRA_OPTION_FROM) / (1 - EXTRA_OPTION_FROM) * MAX_EXTRA_OPTION_CHANCE;
+    }
+
+    /** Great success (own design, a "small surprise"): the chance a piece comes out one rating higher. */
+    public static final double GREAT_SUCCESS_BASE = 0.01;
+    public static final double GREAT_SUCCESS_PER_SMITHING_LEVEL = 0.0004;
+    public static final double GREAT_SUCCESS_PER_DEXTERITY = 0.0001;
+    public static final double MAX_GREAT_SUCCESS = 0.08;
+    /** A manual forge this precise or better doubles it. */
+    public static final double GREAT_SUCCESS_MANUAL_FROM = 0.8;
+
+    /**
+     * Chance of a great success for a smith with this dexterity and smithing level. {@code precision} is the manual
+     * forge's (0-1), or negative for an automatic one.
+     */
+    public static double greatSuccessChance(int dexterity, int smithingLevel, double precision) {
+        double chance = Math.min(MAX_GREAT_SUCCESS,
+                GREAT_SUCCESS_BASE + smithingLevel * GREAT_SUCCESS_PER_SMITHING_LEVEL + dexterity * GREAT_SUCCESS_PER_DEXTERITY);
+        return precision >= GREAT_SUCCESS_MANUAL_FROM ? chance * 2 : chance;
+    }
+
+    /** The rating one step above {@code rolled}, never past {@code maximum} (or past Myth). */
+    public static ItemRating raise(ItemRating rolled, ItemRating maximum) {
+        if (rolled.ordinal() >= maximum.ordinal()) {
+            return rolled;
+        }
+        return ItemRating.values()[rolled.ordinal() + 1];
     }
 
     /** Whether a manual forge that started {@code elapsedTicks} ago can be a real, honest minigame. */
