@@ -1,16 +1,16 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.EquipmentService;
-import com.orijua.overgearedmod.equipment.EquipRequirements;
-import com.orijua.overgearedmod.equipment.option.RolledOption;
-import com.orijua.overgearedmod.progression.ProgressionService;
-import com.orijua.overgearedmod.progression.StatType;
-import com.orijua.overgearedmod.registry.ModDataComponents;
-import com.orijua.overgearedmod.registry.ModItems;
-import com.orijua.overgearedmod.registry.ModRecipes;
-import com.orijua.overgearedmod.smithing.ForgingRecipe;
-import com.orijua.overgearedmod.smithing.ForgingRecipeInput;
+import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.core.registry.ModRecipes;
+import com.orijua.overgearedmod.feature.equipment.EquipRequirements;
+import com.orijua.overgearedmod.feature.equipment.EquipmentService;
+import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
+import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.progression.StatType;
+import com.orijua.overgearedmod.feature.smithing.ForgingRecipe;
+import com.orijua.overgearedmod.feature.smithing.ForgingRecipeInput;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;

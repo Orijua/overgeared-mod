@@ -1,8 +1,8 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.option.ApplyEffectOptionEffect;
-import com.orijua.overgearedmod.registry.ModEffects;
+import com.orijua.overgearedmod.core.registry.ModEffects;
+import com.orijua.overgearedmod.feature.equipment.option.ApplyEffectOptionEffect;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;

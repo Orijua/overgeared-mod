@@ -1,8 +1,8 @@
 package com.orijua.overgearedmod.datagen;
 
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.loot.RateEquipmentFunction;
-import com.orijua.overgearedmod.registry.ModEntities;
+import com.orijua.overgearedmod.core.registry.ModEntities;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.equipment.RateEquipmentFunction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.loot.EntityLootSubProvider;
 import net.minecraft.world.entity.EntityType;

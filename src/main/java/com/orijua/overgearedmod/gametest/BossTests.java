@@ -1,13 +1,13 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.boss.BoneLord;
-import com.orijua.overgearedmod.equipment.EquipmentService;
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.mob.MobLevelService;
-import com.orijua.overgearedmod.registry.ModDataComponents;
-import com.orijua.overgearedmod.registry.ModEffects;
-import com.orijua.overgearedmod.registry.ModEntities;
+import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.core.registry.ModEffects;
+import com.orijua.overgearedmod.core.registry.ModEntities;
+import com.orijua.overgearedmod.feature.equipment.EquipmentService;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.mob.BoneLord;
+import com.orijua.overgearedmod.feature.mob.MobLevelService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;

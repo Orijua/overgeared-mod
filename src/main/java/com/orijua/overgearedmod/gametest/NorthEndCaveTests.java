@@ -1,15 +1,15 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.pagma.GoldenTableBlock;
-import com.orijua.overgearedmod.registry.ModBlocks;
-import com.orijua.overgearedmod.registry.ModItems;
-import com.orijua.overgearedmod.structure.AshurManor;
-import com.orijua.overgearedmod.structure.NorthEndCave;
-import com.orijua.overgearedmod.structure.NorthEndCaveProtection;
-import com.orijua.overgearedmod.structure.StartingVillage;
-import com.orijua.overgearedmod.structure.WorldSitePlacement;
-import com.orijua.overgearedmod.structure.WorldSites;
+import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.pagma.GoldenTableBlock;
+import com.orijua.overgearedmod.feature.world.AshurManor;
+import com.orijua.overgearedmod.feature.world.NorthEndCave;
+import com.orijua.overgearedmod.feature.world.NorthEndCaveProtection;
+import com.orijua.overgearedmod.feature.world.StartingVillage;
+import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
+import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;

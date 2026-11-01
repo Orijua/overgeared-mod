@@ -1,14 +1,14 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.npc.BlacksmithNpc;
-import com.orijua.overgearedmod.npc.VillageChiefNpc;
-import com.orijua.overgearedmod.playerclass.ClassService;
-import com.orijua.overgearedmod.progression.ProgressionService;
-import com.orijua.overgearedmod.quest.PlayerQuests;
-import com.orijua.overgearedmod.quest.QuestService;
-import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
+import com.orijua.overgearedmod.feature.npc.VillageChiefNpc;
+import com.orijua.overgearedmod.feature.progression.ClassService;
+import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.quest.PlayerQuests;
+import com.orijua.overgearedmod.feature.quest.QuestService;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;

@@ -1,13 +1,13 @@
 package com.orijua.overgearedmod.gametest;
 
-import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.EquipRequirements;
-import com.orijua.overgearedmod.equipment.EquipmentRules;
-import com.orijua.overgearedmod.equipment.EquipmentService;
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.equipment.option.RolledOption;
-import com.orijua.overgearedmod.registry.ModDataComponents;
+import com.orijua.overgearedmod.core.config.Balance;
+import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.feature.equipment.EquipRequirements;
+import com.orijua.overgearedmod.feature.equipment.EquipmentRules;
+import com.orijua.overgearedmod.feature.equipment.EquipmentService;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;

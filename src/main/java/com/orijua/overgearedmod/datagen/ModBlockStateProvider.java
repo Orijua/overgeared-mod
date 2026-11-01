@@ -1,9 +1,9 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.pagma.GoldenTableBlock;
-import com.orijua.overgearedmod.registry.ModBlocks;
-import com.orijua.overgearedmod.smelting.SmelterBlock;
+import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.feature.pagma.GoldenTableBlock;
+import com.orijua.overgearedmod.feature.smelting.SmelterBlock;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
