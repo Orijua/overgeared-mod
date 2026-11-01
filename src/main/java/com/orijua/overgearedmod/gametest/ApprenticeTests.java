@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.npc.ApprenticeAssignments;
 import com.orijua.overgearedmod.npc.ApprenticeContractItem;
 import com.orijua.overgearedmod.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.progression.PlayerStats;
@@ -116,6 +117,79 @@ public final class ApprenticeTests {
         apprentice.forgeOne(0.0);
         helper.assertTrue(chest.getItem(0).isEmpty() && chest.getItem(1).isEmpty(), "a botch spends the materials");
         helper.assertTrue(barrel.getItem(1).isEmpty(), "and makes nothing");
+        apprentice.discard();
+        helper.succeed();
+    }
+
+    /** Assigned containers (not touching the anvil) replace the anvil's; once one is broken he goes back to the anvil's. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void heUsesTheContainersHisMasterAssigns(GameTestHelper helper) {
+        BlockPos store = new BlockPos(0, 1, 2);
+        BlockPos crate = new BlockPos(2, 1, 2);
+        helper.setBlock(ANVIL, ModBlocks.SMITHING_ANVIL.get());
+        helper.setBlock(CHEST, Blocks.CHEST);
+        helper.setBlock(BARREL, Blocks.BARREL);
+        helper.setBlock(store, Blocks.CHEST);
+        helper.setBlock(crate, Blocks.BARREL);
+        ServerPlayer player = smithOfLevel(helper, 50);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        apprentice.takeOrder(player, ModItems.JAFFA_SWORD.get());
+        Container chest = helper.getBlockEntity(CHEST);
+        Container barrel = helper.getBlockEntity(BARREL);
+        Container storeChest = helper.getBlockEntity(store);
+        Container crateBarrel = helper.getBlockEntity(crate);
+        chest.setItem(0, new ItemStack(ModItems.JAFFA_INGOT.get(), 2));
+        chest.setItem(1, new ItemStack(Items.STICK, 1));
+        storeChest.setItem(0, new ItemStack(ModItems.JAFFA_INGOT.get(), 2));
+        storeChest.setItem(1, new ItemStack(Items.STICK, 1));
+
+        helper.assertTrue(apprentice.assign(player, ApprenticeSmith.Slot.MATERIALS, helper.absolutePos(store)), "a chest near the anvil");
+        ApprenticeAssignments.start(player, apprentice, ApprenticeSmith.Slot.OUTPUT);
+        helper.assertTrue(ApprenticeAssignments.click(player, helper.absolutePos(crate)), "the armed click picks the barrel");
+        helper.assertTrue(apprentice.assigned(ApprenticeSmith.Slot.OUTPUT).equals(Optional.of(helper.absolutePos(crate))), "assigned");
+        helper.assertFalse(ApprenticeAssignments.click(player, helper.absolutePos(crate)), "one click per Assign");
+
+        helper.assertTrue(apprentice.forgeOne(0.99) == ApprenticeSmith.Status.WORKING, "a piece");
+        helper.assertTrue(storeChest.getItem(0).isEmpty() && chest.getItem(0).getCount() == 2, "from the assigned chest only");
+        helper.assertTrue(crateBarrel.getItem(0).is(ModItems.JAFFA_SWORD.get()) && barrel.getItem(0).isEmpty(), "into the assigned barrel only");
+
+        helper.setBlock(store, Blocks.AIR);
+        helper.assertTrue(apprentice.forgeOne(0.99) == ApprenticeSmith.Status.WORKING, "the broken chest is forgotten");
+        helper.assertTrue(apprentice.assigned(ApprenticeSmith.Slot.MATERIALS).isEmpty() && chest.getItem(0).isEmpty(), "and the anvil's is used");
+
+        apprentice.clearAssignments(player);
+        helper.assertTrue(apprentice.assigned(ApprenticeSmith.Slot.OUTPUT).isEmpty(), "cleared");
+        apprentice.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void onlyNearbyContainersCanBeAssigned(GameTestHelper helper) {
+        helper.setBlock(CHEST, Blocks.CHEST);
+        ServerPlayer player = smithOfLevel(helper, 50);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        helper.assertFalse(apprentice.assign(player, ApprenticeSmith.Slot.MATERIALS, helper.absolutePos(ANVIL)), "air holds nothing");
+        BlockPos far = helper.absolutePos(STAND).south(ApprenticeSmith.ASSIGN_REACH + 4);
+        apprentice.setPos(far.getX() + 0.5, far.getY(), far.getZ() + 0.5); // no anvil: measured from himself
+        helper.assertFalse(apprentice.assign(player, ApprenticeSmith.Slot.MATERIALS, helper.absolutePos(CHEST)), "too far");
+        helper.assertTrue(apprentice.assigned(ApprenticeSmith.Slot.MATERIALS).isEmpty(), "nothing assigned");
+        apprentice.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void hisWindowPaysADayFromTheInventory(GameTestHelper helper) {
+        ServerPlayer player = smithOfLevel(helper, 50);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        helper.assertFalse(apprentice.payDay(player), "no emeralds");
+        player.getInventory().add(new ItemStack(Items.EMERALD, 5));
+        helper.assertTrue(apprentice.payDay(player), "three emeralds from the inventory");
+        helper.assertTrue(apprentice.daysPaid() == 2 && apprentice.shownDaysPaid() == 2, "two days, synced to the window");
+        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 2, "two emeralds left");
+        apprentice.takeOrder(player, ModItems.JAFFA_SWORD.get());
+        helper.assertTrue(apprentice.shownOrder().is(ModItems.JAFFA_SWORD.get()), "the order is synced");
+        apprentice.cancelOrder(player);
+        helper.assertTrue(apprentice.order().isEmpty() && apprentice.shownOrder().isEmpty(), "cancelled");
         apprentice.discard();
         helper.succeed();
     }

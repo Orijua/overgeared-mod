@@ -1,5 +1,7 @@
 package com.orijua.overgearedmod.network;
 
+import com.orijua.overgearedmod.npc.ApprenticeAssignments;
+import com.orijua.overgearedmod.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.pagma.PagmaBook;
 import com.orijua.overgearedmod.playerclass.ClassService;
@@ -102,6 +104,22 @@ final class ServerPayloadHandler {
     static void readPagmaBook(ReadPagmaBookPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             PagmaBook.read(player);
+        }
+    }
+
+    /** From an apprentice's window: only his master, standing near him. */
+    static void apprenticeAction(ApprenticeActionPayload payload, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player) || !(player.level().getEntity(payload.apprentice()) instanceof ApprenticeSmith apprentice)
+                || !apprentice.isOwnedBy(player) || apprentice.distanceToSqr(player) > ApprenticeSmith.WINDOW_REACH * ApprenticeSmith.WINDOW_REACH) {
+            return;
+        }
+        switch (payload.action()) {
+            case PAY_DAY -> apprentice.payDay(player);
+            case CANCEL_ORDER -> apprentice.cancelOrder(player);
+            case ASSIGN_MATERIALS -> ApprenticeAssignments.start(player, apprentice, ApprenticeSmith.Slot.MATERIALS);
+            case ASSIGN_OUTPUT -> ApprenticeAssignments.start(player, apprentice, ApprenticeSmith.Slot.OUTPUT);
+            case CLEAR_CONTAINERS -> apprentice.clearAssignments(player);
+            case DISMISS -> apprentice.dismiss(player);
         }
     }
 }

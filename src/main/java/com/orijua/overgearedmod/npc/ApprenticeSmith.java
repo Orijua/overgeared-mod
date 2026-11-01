@@ -1,8 +1,10 @@
 package com.orijua.overgearedmod.npc;
 
+import com.orijua.overgearedmod.client.ApprenticeScreen;
 import com.orijua.overgearedmod.equipment.EquipmentService;
 import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModRecipes;
@@ -13,6 +15,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -40,6 +45,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.block.entity.HopperBlockEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,30 +54,49 @@ import java.util.UUID;
 
 /**
  * An apprentice blacksmith (own design inspired by the canon, caps. 622, 624 and 925). He works for the smith who
- * hired him, at a smithing anvil within {@link #STATION_REACH} blocks: he takes the materials of his order from a
- * chest touching the anvil and leaves each piece in a barrel touching it. One piece every
- * {@link ApprenticeRules#ticksPerPiece} ticks, rated a bit worse than his master would, sometimes botched (the materials
- * are lost). Every piece teaches him; his level never reaches his master's. Without his daily wage he stops.
+ * hired him, at a smithing anvil within {@link #STATION_REACH} blocks: he takes the materials of his order from the
+ * chests touching the anvil and leaves each piece in a barrel touching it, unless his master assigned other containers
+ * (within {@link #ASSIGN_REACH} blocks of the anvil). One piece every {@link ApprenticeRules#ticksPerPiece} ticks, rated
+ * a bit worse than his master would, sometimes botched (the materials are lost). Every piece teaches him; his level
+ * never reaches his master's. Without his daily wage he stops.
  * <p>
- * His master deals with him by right-clicking: with emeralds, pays his wage; with an item, orders it (any forging
- * recipe without a class); empty-handed, asks how it goes; sneaking empty-handed, dismisses him.
+ * His master deals with him by right-clicking: empty-handed, opens his window (status, wage, containers, dismiss); with
+ * emeralds, pays his wage; with an item, orders it (any forging recipe without a class). What the window shows is synced
+ * to the client through the entity data.
  */
 public class ApprenticeSmith extends PathfinderMob {
     static final int STATION_REACH = 4;
+    /** How far from his anvil an assigned container may be. */
+    public static final int ASSIGN_REACH = 8;
+    /** How close his master must stand to use his window. */
+    public static final double WINDOW_REACH = QuestService.GIVER_REACH;
     private static final int WORK_STEP = 20;
     private static final List<String> NAMES = List.of("Bran", "Tomas", "Gerd", "Ilse", "Marek", "Rolf", "Hilda", "Otto", "Lena", "Ivo");
 
-    /** Why he isn't working, shown when his master asks. */
+    private static final EntityDataAccessor<Optional<UUID>> DATA_OWNER = SynchedEntityData.defineId(ApprenticeSmith.class,
+            EntityDataSerializers.OPTIONAL_UUID);
+    private static final EntityDataAccessor<Integer> DATA_LEVEL = SynchedEntityData.defineId(ApprenticeSmith.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> DATA_STATUS = SynchedEntityData.defineId(ApprenticeSmith.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<ItemStack> DATA_ORDER = SynchedEntityData.defineId(ApprenticeSmith.class,
+            EntityDataSerializers.ITEM_STACK);
+    private static final EntityDataAccessor<Integer> DATA_DAYS_PAID = SynchedEntityData.defineId(ApprenticeSmith.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Optional<BlockPos>> DATA_MATERIALS = SynchedEntityData.defineId(ApprenticeSmith.class,
+            EntityDataSerializers.OPTIONAL_BLOCK_POS);
+    private static final EntityDataAccessor<Optional<BlockPos>> DATA_OUTPUT = SynchedEntityData.defineId(ApprenticeSmith.class,
+            EntityDataSerializers.OPTIONAL_BLOCK_POS);
+
+    /** Why he isn't working, shown in his window. */
     public enum Status { WORKING, NO_ORDER, NO_ANVIL, UNPAID, NO_MATERIALS, BARREL_FULL }
 
-    private UUID owner;
+    /** The containers his master can assign him. */
+    public enum Slot { MATERIALS, OUTPUT }
+
     private int smithingXp = ApprenticeRules.STARTING_XP;
     private int masterLevel = ApprenticeRules.FIRST_APPRENTICE_LEVEL;
     private Item order;
     private BlockPos anvil;
     private long paidUntil;
     private int workTicks;
-    private Status status = Status.NO_ORDER;
     /** What stopped the last piece (no materials, full barrel), or null if it went through. */
     private Status blocked;
 
@@ -85,6 +110,18 @@ public class ApprenticeSmith extends PathfinderMob {
     }
 
     @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DATA_OWNER, Optional.empty());
+        builder.define(DATA_LEVEL, 0);
+        builder.define(DATA_STATUS, Status.NO_ORDER.ordinal());
+        builder.define(DATA_ORDER, ItemStack.EMPTY);
+        builder.define(DATA_DAYS_PAID, 0);
+        builder.define(DATA_MATERIALS, Optional.empty());
+        builder.define(DATA_OUTPUT, Optional.empty());
+    }
+
+    @Override
     protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, new LookAtPlayerGoal(this, Player.class, 6.0f));
@@ -93,18 +130,21 @@ public class ApprenticeSmith extends PathfinderMob {
 
     /** A new apprentice for {@code master}, with a name from the village. */
     public void hireBy(ServerPlayer master) {
-        owner = master.getUUID();
+        entityData.set(DATA_OWNER, Optional.of(master.getUUID()));
         masterLevel = ProgressionService.effectiveSmithingLevel(master);
         paidUntil = level().getGameTime() + ApprenticeRules.DAY_TICKS; // the first day is on Smith
         setCustomName(Component.literal(NAMES.get(getRandom().nextInt(NAMES.size()))));
         setCustomNameVisible(true);
         findAnvil();
+        sync();
     }
 
+    /** Works on both sides: the owner is synced. */
     public boolean isOwnedBy(Player player) {
-        return player.getUUID().equals(owner);
+        return entityData.get(DATA_OWNER).filter(player.getUUID()::equals).isPresent();
     }
 
+    /** Server side: his working level, from his experience and below his master's. */
     public int smithingLevel() {
         return ApprenticeRules.workingLevel(ProgressionRules.smithingLevel(smithingXp), masterLevel);
     }
@@ -113,16 +153,51 @@ public class ApprenticeSmith extends PathfinderMob {
         return smithingXp;
     }
 
+    /** Server side: whole days of wage still paid ahead. */
+    public int daysPaid() {
+        return (int) Math.max(0, (paidUntil - level().getGameTime() + ApprenticeRules.DAY_TICKS - 1) / ApprenticeRules.DAY_TICKS);
+    }
+
+    // What his window shows; synced, so these work on the client too.
+
+    public int shownLevel() {
+        return entityData.get(DATA_LEVEL);
+    }
+
     public Status status() {
-        return status;
+        return Status.values()[entityData.get(DATA_STATUS)];
+    }
+
+    public ItemStack shownOrder() {
+        return entityData.get(DATA_ORDER);
+    }
+
+    public int shownDaysPaid() {
+        return entityData.get(DATA_DAYS_PAID);
+    }
+
+    /** The container assigned to {@code slot}, if any; without one he uses those touching the anvil. */
+    public Optional<BlockPos> assigned(Slot slot) {
+        return entityData.get(accessor(slot));
+    }
+
+    private static EntityDataAccessor<Optional<BlockPos>> accessor(Slot slot) {
+        return slot == Slot.MATERIALS ? DATA_MATERIALS : DATA_OUTPUT;
     }
 
     public Optional<Item> order() {
         return Optional.ofNullable(order);
     }
 
-    public int daysPaid() {
-        return (int) Math.max(0, (paidUntil - level().getGameTime() + ApprenticeRules.DAY_TICKS - 1) / ApprenticeRules.DAY_TICKS);
+    /** Pushes what his window shows to the clients watching him. */
+    private void sync() {
+        entityData.set(DATA_LEVEL, smithingLevel());
+        entityData.set(DATA_ORDER, order == null ? ItemStack.EMPTY : new ItemStack(order));
+        entityData.set(DATA_DAYS_PAID, daysPaid());
+    }
+
+    private void setStatus(Status status) {
+        entityData.set(DATA_STATUS, status.ordinal());
     }
 
     @Override
@@ -130,21 +205,22 @@ public class ApprenticeSmith extends PathfinderMob {
         if (!isAlive()) {
             return super.mobInteract(player, hand);
         }
-        if (level().isClientSide || !(player instanceof ServerPlayer master)) {
+        ItemStack held = player.getItemInHand(hand);
+        if (level().isClientSide) {
+            if (isOwnedBy(player) && held.isEmpty()) {
+                // Client only: the screen class is never loaded on a dedicated server.
+                ApprenticeScreen.open(this);
+            }
             return InteractionResult.SUCCESS;
+        }
+        if (!(player instanceof ServerPlayer master)) {
+            return InteractionResult.CONSUME;
         }
         if (!isOwnedBy(master)) {
             master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_not_yours", getDisplayName()), true);
-            return InteractionResult.CONSUME;
-        }
-        ItemStack held = master.getItemInHand(hand);
-        if (held.isEmpty() && master.isShiftKeyDown()) {
-            dismiss(master);
-        } else if (held.isEmpty()) {
-            report(master);
         } else if (held.is(Items.EMERALD)) {
             pay(master, held);
-        } else {
+        } else if (!held.isEmpty()) {
             takeOrder(master, held.getItem());
         }
         return InteractionResult.CONSUME;
@@ -158,7 +234,28 @@ public class ApprenticeSmith extends PathfinderMob {
             return;
         }
         emeralds.shrink(days * ApprenticeRules.DAILY_WAGE);
+        addPaidDays(master, days);
+    }
+
+    /** From his window: one day of wage, taken from anywhere in the inventory. */
+    public boolean payDay(ServerPlayer master) {
+        if (ApprenticeRules.daysBought(ApprenticeRules.DAILY_WAGE, daysPaid()) == 0) {
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_paid_enough", getDisplayName()), true);
+            return false;
+        }
+        if (master.getInventory().countItem(Items.EMERALD) < ApprenticeRules.DAILY_WAGE) {
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_no_emeralds", ApprenticeRules.DAILY_WAGE), true);
+            return false;
+        }
+        master.getInventory().clearOrCountMatchingItems(stack -> stack.is(Items.EMERALD), ApprenticeRules.DAILY_WAGE,
+                master.inventoryMenu.getCraftSlots());
+        addPaidDays(master, 1);
+        return true;
+    }
+
+    private void addPaidDays(ServerPlayer master, int days) {
         paidUntil = Math.max(paidUntil, level().getGameTime()) + days * ApprenticeRules.DAY_TICKS;
+        sync();
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_paid", getDisplayName(), days, daysPaid()), true);
         playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
     }
@@ -173,18 +270,55 @@ public class ApprenticeSmith extends PathfinderMob {
         order = item;
         workTicks = 0;
         findAnvil();
+        sync();
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_order", getDisplayName(), item.getDescription()), true);
         playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
         return true;
     }
 
-    private void report(ServerPlayer master) {
-        Component orderName = order().map(Item::getDescription).orElse(Component.translatable("message.overgearedmod.apprentice_no_order_name"));
-        master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_report", getDisplayName(), smithingLevel(),
-                orderName, daysPaid(), Component.translatable("message.overgearedmod.apprentice_status." + status.name().toLowerCase())), false);
+    public void cancelOrder(ServerPlayer master) {
+        if (order == null) {
+            return;
+        }
+        order = null;
+        workTicks = 0;
+        blocked = null;
+        setStatus(Status.NO_ORDER);
+        sync();
+        master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_order_cancelled", getDisplayName()), true);
     }
 
-    private void dismiss(ServerPlayer master) {
+    /**
+     * Assigns the container at {@code pos} to {@code slot}: it has to hold items and stand within {@link #ASSIGN_REACH}
+     * blocks of his anvil (of himself while he has none).
+     */
+    public boolean assign(ServerPlayer master, Slot slot, BlockPos pos) {
+        if (HopperBlockEntity.getContainerAt(level(), pos) == null) {
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_assign_not_container"), true);
+            return false;
+        }
+        BlockPos workplace = anvil != null ? anvil : blockPosition();
+        if (pos.distSqr(workplace) > ASSIGN_REACH * ASSIGN_REACH) {
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_assign_far", getDisplayName(), ASSIGN_REACH), true);
+            return false;
+        }
+        entityData.set(accessor(slot), Optional.of(pos.immutable()));
+        blocked = null;
+        master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_assigned_" + slot.name().toLowerCase(),
+                getDisplayName(), level().getBlockState(pos).getBlock().getName()), true);
+        playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
+        return true;
+    }
+
+    /** Back to the containers touching the anvil. */
+    public void clearAssignments(ServerPlayer master) {
+        entityData.set(DATA_MATERIALS, Optional.empty());
+        entityData.set(DATA_OUTPUT, Optional.empty());
+        blocked = null;
+        master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_assign_cleared", getDisplayName()), true);
+    }
+
+    public void dismiss(ServerPlayer master) {
         List<UUID> hired = new ArrayList<>(master.getData(ModAttachments.APPRENTICES));
         hired.remove(getUUID());
         master.setData(ModAttachments.APPRENTICES, List.copyOf(hired));
@@ -198,15 +332,14 @@ public class ApprenticeSmith extends PathfinderMob {
         if (tickCount % WORK_STEP != 0 || !(level() instanceof ServerLevel level)) {
             return;
         }
-        if (owner != null && level.getPlayerByUUID(owner) instanceof ServerPlayer master) {
+        if (entityData.get(DATA_OWNER).map(level::getPlayerByUUID).orElse(null) instanceof ServerPlayer master) {
             masterLevel = ProgressionService.effectiveSmithingLevel(master);
         }
-        status = readyStatus();
-        if (status != Status.WORKING) {
+        sync();
+        Status ready = readyStatus();
+        setStatus(ready != Status.WORKING || blocked == null ? ready : blocked);
+        if (ready != Status.WORKING) {
             return;
-        }
-        if (blocked != null) {
-            status = blocked;
         }
         workTicks += WORK_STEP;
         if (workTicks % 100 == 0) {
@@ -237,8 +370,9 @@ public class ApprenticeSmith extends PathfinderMob {
     }
 
     /**
-     * One piece of his order: the materials leave the chest, and then either the piece is botched ({@code roll01} under
-     * his fail chance) or it lands in the barrel, rated by his level. Either way he learns. Returns what happened.
+     * One piece of his order: the materials leave their containers, and then either the piece is botched ({@code roll01}
+     * under his fail chance) or it lands in the output container, rated by his level. Either way he learns. Returns what
+     * happened.
      */
     public Status forgeOne(double roll01) {
         Optional<ForgingRecipe> found = order().flatMap(this::recipeFor);
@@ -246,20 +380,21 @@ public class ApprenticeSmith extends PathfinderMob {
             return blocked = Status.NO_ORDER;
         }
         ForgingRecipe recipe = found.get();
-        List<Container> chests = touching(ChestBlockEntity.class);
-        Optional<Container> barrel = touching(BarrelBlockEntity.class).stream().findFirst();
-        if (barrel.isEmpty() || !hasRoom(barrel.get())) {
+        List<Container> sources = assignedContainer(Slot.MATERIALS).map(List::of).orElseGet(() -> touching(ChestBlockEntity.class));
+        Optional<Container> output = assignedContainer(Slot.OUTPUT).or(() -> touching(BarrelBlockEntity.class).stream().findFirst());
+        if (output.isEmpty() || !hasRoom(output.get())) {
             return blocked = Status.BARREL_FULL;
         }
-        if (!has(chests, recipe.material(), recipe.materialCount()) || !recipe.handle().isEmpty() && !has(chests, recipe.handle(), 1)) {
+        if (!has(sources, recipe.material(), recipe.materialCount()) || !recipe.handle().isEmpty() && !has(sources, recipe.handle(), 1)) {
             return blocked = Status.NO_MATERIALS;
         }
         blocked = null;
-        take(chests, recipe.material(), recipe.materialCount());
+        take(sources, recipe.material(), recipe.materialCount());
         if (!recipe.handle().isEmpty()) {
-            take(chests, recipe.handle(), 1);
+            take(sources, recipe.handle(), 1);
         }
         smithingXp += recipe.smithingXp();
+        sync();
         if (roll01 < ApprenticeRules.failChance(smithingLevel())) {
             level().playSound(null, anvil, SoundEvents.ANVIL_DESTROY, SoundSource.BLOCKS, 0.6f, 1.0f);
             return Status.WORKING;
@@ -267,9 +402,22 @@ public class ApprenticeSmith extends PathfinderMob {
         ItemStack piece = recipe.result().copy();
         EquipmentService.stampForged(level(), piece, recipe.requirements(), recipe.extras(), 0, smithingLevel(), ApprenticeRules.RATING_PENALTY, 0,
                 getRandom());
-        put(barrel.get(), piece);
+        put(output.get(), piece);
         level().playSound(null, anvil, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.8f, 1.0f);
         return Status.WORKING;
+    }
+
+    /** The assigned container, while it is still there (a broken one is forgotten). */
+    private Optional<Container> assignedContainer(Slot slot) {
+        Optional<BlockPos> pos = assigned(slot);
+        if (pos.isEmpty()) {
+            return Optional.empty();
+        }
+        Container container = HopperBlockEntity.getContainerAt(level(), pos.get());
+        if (container == null) {
+            entityData.set(accessor(slot), Optional.empty());
+        }
+        return Optional.ofNullable(container);
     }
 
     /** The forging recipe that makes {@code item}, if it has no class requirement (no blueprints for apprentices). */
@@ -370,9 +518,7 @@ public class ApprenticeSmith extends PathfinderMob {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        if (owner != null) {
-            tag.putUUID("Owner", owner);
-        }
+        entityData.get(DATA_OWNER).ifPresent(owner -> tag.putUUID("Owner", owner));
         tag.putInt("SmithingXp", smithingXp);
         tag.putInt("MasterLevel", masterLevel);
         if (order != null) {
@@ -381,6 +527,8 @@ public class ApprenticeSmith extends PathfinderMob {
         if (anvil != null) {
             tag.put("Anvil", NbtUtils.writeBlockPos(anvil));
         }
+        assigned(Slot.MATERIALS).ifPresent(pos -> tag.put("Materials", NbtUtils.writeBlockPos(pos)));
+        assigned(Slot.OUTPUT).ifPresent(pos -> tag.put("Output", NbtUtils.writeBlockPos(pos)));
         tag.putLong("PaidUntil", paidUntil);
         tag.putInt("WorkTicks", workTicks);
     }
@@ -388,12 +536,17 @@ public class ApprenticeSmith extends PathfinderMob {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
+        entityData.set(DATA_OWNER, tag.hasUUID("Owner") ? Optional.of(tag.getUUID("Owner")) : Optional.empty());
         smithingXp = tag.getInt("SmithingXp");
         masterLevel = tag.getInt("MasterLevel");
         order = tag.contains("Order") ? BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(tag.getString("Order"))).orElse(null) : null;
         anvil = NbtUtils.readBlockPos(tag, "Anvil").orElse(null);
+        entityData.set(DATA_MATERIALS, NbtUtils.readBlockPos(tag, "Materials"));
+        entityData.set(DATA_OUTPUT, NbtUtils.readBlockPos(tag, "Output"));
         paidUntil = tag.getLong("PaidUntil");
         workTicks = tag.getInt("WorkTicks");
+        if (!level().isClientSide) {
+            sync();
+        }
     }
 }
