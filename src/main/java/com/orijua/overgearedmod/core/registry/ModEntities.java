@@ -8,6 +8,7 @@ import com.orijua.overgearedmod.feature.npc.VillageChiefNpc;
 import com.orijua.overgearedmod.feature.pagma.AshurKnight;
 import com.orijua.overgearedmod.feature.pagma.EarlAshur;
 import com.orijua.overgearedmod.feature.winston.KhanNpc;
+import com.orijua.overgearedmod.feature.winston.MeroThug;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -66,6 +67,13 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .build("khan"));
 
+    // The Mero Company's thugs (canon, cap. 24): sent into Khan's smithy for the player who takes "The Blacksmith's Rage".
+    public static final DeferredHolder<EntityType<?>, EntityType<MeroThug>> MERO_THUG = ENTITIES.register("mero_thug",
+            () -> EntityType.Builder.of(MeroThug::new, MobCategory.MISC)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("mero_thug"));
+
     private ModEntities() {
     }
 
@@ -82,5 +90,6 @@ public final class ModEntities {
         event.put(EARL_ASHUR.get(), EarlAshur.createAttributes().build());
         event.put(ASHUR_KNIGHT.get(), AshurKnight.createAttributes().build());
         event.put(KHAN.get(), KhanNpc.createAttributes().build());
+        event.put(MERO_THUG.get(), MeroThug.createAttributes().build());
     }
 }

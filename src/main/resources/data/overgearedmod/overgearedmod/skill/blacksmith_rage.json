@@ -1,0 +1,13 @@
+{
+  "name": { "translate": "skill.overgearedmod.blacksmith_rage" },
+  "description": { "translate": "skill.overgearedmod.blacksmith_rage.desc" },
+  "icon": "overgearedmod:iron_smithing_hammer",
+  "mana_cost": 10,
+  "cooldown_ticks": 2400,
+  "effect": {
+    "type": "self_buff",
+    "effects": [
+      { "id": "overgearedmod:blacksmith_rage", "amplifier": 0, "duration": 600 }
+    ]
+  }
+}

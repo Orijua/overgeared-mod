@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.feature.winston;
 import com.orijua.overgearedmod.feature.npc.NpcRules;
 import com.orijua.overgearedmod.feature.quest.client.NpcQuestScreen;
 import com.orijua.overgearedmod.feature.rumor.Rumors;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -21,7 +22,7 @@ import net.minecraft.world.level.Level;
 /**
  * Khan, Winston's old blacksmith (canon, cap. 24): once excellent, he took to drink when the Mero Company took his
  * customers, and his smithy fell into ruin. He sends everyone away except Pagma's successor, who gets his quest
- * window. Like the other NPCs, he stays where he is placed, never despawns and only takes damage from creative players
+ * window (unless they let his time run out: then he no longer speaks to them). Like the other NPCs, he stays where he is placed, never despawns and only takes damage from creative players
  * or /kill.
  */
 public class KhanNpc extends PathfinderMob {
@@ -46,17 +47,26 @@ public class KhanNpc extends PathfinderMob {
             return super.mobInteract(player, hand);
         }
         if (level().isClientSide) {
-            if (WinstonStory.isPagmasSuccessor(player)) {
+            if (WinstonStory.heardByKhan(player)) {
                 // Only runs on the client, so the client-only class is never loaded on a server.
                 NpcQuestScreen.open(this, false);
             }
         } else if (player instanceof ServerPlayer serverPlayer) {
-            WinstonStory.talkToKhan(serverPlayer);
-            if (WinstonStory.isPagmasSuccessor(serverPlayer)) {
+            WinstonStory.talkToKhan(serverPlayer, this);
+            if (WinstonStory.heardByKhan(serverPlayer)) {
                 Rumors.hear(serverPlayer, getType());
             }
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
+    }
+
+    /** Once he has died for the whole world (see {@link WinstonStory#killKhan}), he is buried as soon as his chunk loads. */
+    @Override
+    protected void customServerAiStep() {
+        super.customServerAiStep();
+        if (tickCount % 20 == 0 && WinstonStory.isKhanDead((ServerLevel) level())) {
+            WinstonStory.bury(this);
+        }
     }
 
     @Override

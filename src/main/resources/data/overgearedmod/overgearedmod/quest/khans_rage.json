@@ -1,0 +1,10 @@
+{
+  "name": { "translate": "quest.overgearedmod.khans_rage" },
+  "description": { "translate": "quest.overgearedmod.khans_rage.desc" },
+  "discover_when": { "type": "milestone", "milestone": "overgearedmod:met_khan" },
+  "giver": "overgearedmod:khan",
+  "goal": { "type": "milestone", "milestone": "overgearedmod:contract_destroyed" },
+  "time_limit_days": 7,
+  "accept_skill": "overgearedmod:blacksmith_rage",
+  "xp_reward": 1500
+}

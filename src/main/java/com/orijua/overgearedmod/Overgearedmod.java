@@ -29,9 +29,11 @@ import com.orijua.overgearedmod.feature.npc.Illumination;
 import com.orijua.overgearedmod.feature.pagma.AshurBetrayal;
 import com.orijua.overgearedmod.feature.pagma.LegendTitle;
 import com.orijua.overgearedmod.feature.progression.ProgressionEvents;
+import com.orijua.overgearedmod.feature.quest.QuestDeadlines;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.rumor.MaterialFinds;
 import com.orijua.overgearedmod.feature.skill.SkillEvents;
+import com.orijua.overgearedmod.feature.winston.WinstonStory;
 import com.orijua.overgearedmod.feature.world.NorthEndCaveProtection;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
 import net.minecraft.resources.ResourceLocation;
@@ -84,6 +86,7 @@ public class Overgearedmod {
         LootEvents.register(NeoForge.EVENT_BUS);
         // Our own domain events (event/) have their subscribers on the same game bus.
         GoalTracker.register(NeoForge.EVENT_BUS);
+        QuestDeadlines.register(NeoForge.EVENT_BUS);
         ContentValidationEvents.register(NeoForge.EVENT_BUS);
         NotificationEvents.register(NeoForge.EVENT_BUS);
         DebugCommands.register(NeoForge.EVENT_BUS);
@@ -93,6 +96,7 @@ public class Overgearedmod {
         Illumination.register(NeoForge.EVENT_BUS);
         Observation.register(NeoForge.EVENT_BUS);
         AshurBetrayal.register(NeoForge.EVENT_BUS);
+        WinstonStory.register(NeoForge.EVENT_BUS);
         LegendTitle.register(NeoForge.EVENT_BUS);
         MaterialFinds.register(NeoForge.EVENT_BUS);
 

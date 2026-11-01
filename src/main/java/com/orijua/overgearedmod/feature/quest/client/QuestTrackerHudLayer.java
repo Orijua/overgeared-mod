@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
+import com.orijua.overgearedmod.feature.quest.QuestDeadlines;
 import com.orijua.overgearedmod.feature.quest.QuestDefinition;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import net.minecraft.client.DeltaTracker;
@@ -12,6 +13,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.LayeredDraw;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
@@ -46,7 +48,9 @@ public final class QuestTrackerHudLayer implements LayeredDraw.Layer {
             }
             int progress = QuestService.progress(player, quest, stored);
             int target = quest.goal().target();
-            lines.add(new Line(quest.name().copy().append(" " + progress + "/" + target), progress >= target));
+            MutableComponent text = quest.name().copy().append(" " + progress + "/" + target);
+            quests.deadline(id).ifPresent(deadline -> text.append(" ⌛").append(QuestDeadlines.timeLeft(deadline, QuestDeadlines.now(player))));
+            lines.add(new Line(text, progress >= target));
         }
         if (lines.isEmpty()) {
             return;

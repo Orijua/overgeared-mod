@@ -129,7 +129,7 @@ public final class AshurBetrayal {
      * {@code count} places to stand 3 to 7 blocks around {@code center} (free for two blocks, on solid ground), nearest
      * first; where there aren't enough, the center itself fills the rest.
      */
-    static List<BlockPos> spotsAround(ServerLevel level, BlockPos center, int count) {
+    public static List<BlockPos> spotsAround(ServerLevel level, BlockPos center, int count) {
         List<BlockPos> spots = new ArrayList<>();
         for (int radius = 3; radius <= 7 && spots.size() < count; radius++) {
             for (int step = 0; step < 16 && spots.size() < count; step++) {

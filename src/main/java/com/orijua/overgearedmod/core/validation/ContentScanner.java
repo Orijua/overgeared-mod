@@ -72,6 +72,7 @@ public final class ContentScanner {
                     references.add(new Reference(from, Kind.SKILL, skill));
                 }
             }
+            quest.acceptSkill().ifPresent(skill -> references.add(new Reference(from, Kind.SKILL, skill)));
             quest.giver().ifPresent(giver -> questGivers.put(entry.getKey(), BuiltInRegistries.ENTITY_TYPE.getKey(giver)));
             if (quest.goal() instanceof DeliverGoal && quest.giver().isEmpty()) {
                 deliveriesWithoutGiver.add(from);

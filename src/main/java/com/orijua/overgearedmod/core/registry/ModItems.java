@@ -11,6 +11,7 @@ import com.orijua.overgearedmod.feature.progression.RespecScrollItem;
 import com.orijua.overgearedmod.feature.skill.SkillBookItem;
 import com.orijua.overgearedmod.feature.smithing.BlueprintItem;
 import com.orijua.overgearedmod.feature.smithing.SmithingHammerItem;
+import com.orijua.overgearedmod.feature.winston.TransferContractItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
@@ -106,6 +107,9 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.BONE_LORD, 0x1E1E1E, 0xD9D3C1, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> KHAN_SPAWN_EGG = ITEMS.register("khan_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.KHAN, 0x4A3A2A, 0x8C8C8C, new Item.Properties()));
+
+    public static final DeferredItem<TransferContractItem> TRANSFER_CONTRACT = ITEMS.registerItem("transfer_contract",
+            TransferContractItem::new, new Item.Properties().stacksTo(1));
 
     public static final DeferredItem<RespecScrollItem> RESPEC_SCROLL = ITEMS.registerItem("respec_scroll",
             RespecScrollItem::new, new Item.Properties().stacksTo(16));

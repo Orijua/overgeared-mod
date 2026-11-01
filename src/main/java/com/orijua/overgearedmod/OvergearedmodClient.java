@@ -20,6 +20,7 @@ import com.orijua.overgearedmod.feature.skill.client.ManaHudLayer;
 import com.orijua.overgearedmod.feature.skill.client.SkillSlotsHudLayer;
 import com.orijua.overgearedmod.feature.smelting.client.SmelterScreen;
 import com.orijua.overgearedmod.feature.smithing.client.SmithingAnvilScreen;
+import com.orijua.overgearedmod.feature.winston.client.MeroThugRenderer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
@@ -89,6 +90,7 @@ public class OvergearedmodClient {
         event.registerEntityRenderer(ModEntities.EARL_ASHUR.get(), context -> new AshurRenderer<>(context, AshurRenderer.ASHUR));
         event.registerEntityRenderer(ModEntities.ASHUR_KNIGHT.get(), context -> new AshurRenderer<>(context, AshurRenderer.KNIGHT));
         event.registerEntityRenderer(ModEntities.KHAN.get(), context -> new NpcRenderer<>(context, NpcRenderer.KHAN));
+        event.registerEntityRenderer(ModEntities.MERO_THUG.get(), MeroThugRenderer::new);
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
