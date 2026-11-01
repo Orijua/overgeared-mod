@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.network.ApprenticeActionPayload;
 import com.orijua.overgearedmod.npc.ApprenticeRules;
 import com.orijua.overgearedmod.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.npc.NpcGrade;
+import com.orijua.overgearedmod.smithing.SmithingHammers;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -36,13 +37,14 @@ public final class ApprenticeScreen extends Screen {
     private static final int ROW = 22;
     private static final int LABEL_WIDTH = 70;
     private static final int BUTTON_WIDTH = 70;
-    private static final int ROWS = 7;
+    private static final int ROWS = 8;
 
     private final ApprenticeSmith apprentice;
     private List<FormattedCharSequence> hint = List.of();
     private Button cancel;
     private Button pay;
     private Button clear;
+    private Button hammer;
     private int left;
     private int top;
     private int panelHeight;
@@ -82,6 +84,11 @@ public final class ApprenticeScreen extends Screen {
                 .bounds(buttonX, rowY(3) - 4, BUTTON_WIDTH, 16).build(SatisfyButton::new));
         addRenderableWidget(Button.builder(Component.translatable("screen.overgearedmod.apprentice.assign"), b -> assign(ApprenticeActionPayload.Action.ASSIGN_OUTPUT))
                 .bounds(buttonX, rowY(4) - 4, BUTTON_WIDTH, 16).build(SatisfyButton::new));
+        // One button: give him your best hammer, or take his back.
+        hammer = addRenderableWidget(Button.builder(Component.empty(), b -> send(apprentice.getMainHandItem().isEmpty()
+                        ? ApprenticeActionPayload.Action.GIVE_HAMMER : ApprenticeActionPayload.Action.TAKE_HAMMER))
+                .bounds(buttonX, rowY(5) - 4, BUTTON_WIDTH, 16).build(SatisfyButton::new));
+        hammer.setTooltip(Tooltip.create(Component.translatable("screen.overgearedmod.apprentice.hammer_tooltip")));
         int bottomWidth = 120;
         clear = addRenderableWidget(Button.builder(Component.translatable("screen.overgearedmod.apprentice.clear"),
                         b -> send(ApprenticeActionPayload.Action.CLEAR_CONTAINERS))
@@ -115,6 +122,9 @@ public final class ApprenticeScreen extends Screen {
         pay.active = apprentice.shownDaysPaid() < ApprenticeRules.MAX_PAID_DAYS
                 && minecraft.player.getInventory().countItem(Items.EMERALD) >= ApprenticeRules.DAILY_WAGE;
         clear.active = apprentice.assigned(ApprenticeSmith.Slot.MATERIALS).isPresent() || apprentice.assigned(ApprenticeSmith.Slot.OUTPUT).isPresent();
+        boolean hasHammer = !apprentice.getMainHandItem().isEmpty();
+        hammer.setMessage(Component.translatable(hasHammer ? "screen.overgearedmod.apprentice.hammer_take" : "screen.overgearedmod.apprentice.hammer_give"));
+        hammer.active = hasHammer || SmithingHammers.bestSlot(minecraft.level.registryAccess(), minecraft.player.getInventory()) >= 0;
     }
 
     /** Closes when he is gone or left behind; the buttons follow his synced state. */
@@ -170,22 +180,33 @@ public final class ApprenticeScreen extends Screen {
         row(graphics, 3, "materials", container(ApprenticeSmith.Slot.MATERIALS, "screen.overgearedmod.apprentice.materials_default"), UiStyle.TEXT);
         row(graphics, 4, "output", container(ApprenticeSmith.Slot.OUTPUT, "screen.overgearedmod.apprentice.output_default"), UiStyle.TEXT);
 
+        ItemStack held = apprentice.getMainHandItem();
+        if (held.isEmpty()) {
+            row(graphics, 5, "hammer", Component.translatable("screen.overgearedmod.apprentice.no_hammer"), UiStyle.MUTED);
+        } else {
+            int x = left + PADDING + LABEL_WIDTH;
+            graphics.renderItem(held, x, rowY(5) - 4);
+            label(graphics, 5, "hammer");
+            Component text = held.getHoverName().copy().append(" " + SmithingHammers.format(SmithingHammers.skillBonus(minecraft.level.registryAccess(), held)));
+            graphics.drawString(font, clip(text, valueWidth() - 18), x + 18, rowY(5), UiStyle.TEXT);
+        }
+
         // Character Observation: how much more is revealed depends on the player's Insight.
         if (detail == InsightRules.Detail.LOW) {
-            wideRow(graphics, 5, "work", hidden(insight, InsightRules.MEDIUM), UiStyle.MUTED);
+            wideRow(graphics, 6, "work", hidden(insight, InsightRules.MEDIUM), UiStyle.MUTED);
         } else {
             int failPercent = (int) Math.round(ApprenticeRules.failChance(apprentice.shownLevel()) * 100);
-            wideRow(graphics, 5, "work", Component.translatable("screen.overgearedmod.apprentice.work_value", failPercent,
+            wideRow(graphics, 6, "work", Component.translatable("screen.overgearedmod.apprentice.work_value", failPercent,
                     ApprenticeRules.ticksPerPiece(apprentice.shownLevel()) / 20), UiStyle.TEXT);
         }
         if (detail == InsightRules.Detail.HIGH) {
             NpcGrade grade = apprentice.grade();
             Component cap = grade.levelCap() == Integer.MAX_VALUE ? Component.translatable("screen.overgearedmod.apprentice.no_cap")
                     : Component.literal(String.valueOf(grade.levelCap()));
-            wideRow(graphics, 6, "grade", Component.translatable("screen.overgearedmod.apprentice.grade_value",
+            wideRow(graphics, 7, "grade", Component.translatable("screen.overgearedmod.apprentice.grade_value",
                     Component.translatable("npc.overgearedmod.grade." + grade.name().toLowerCase()), cap), grade == NpcGrade.NAMED ? UiStyle.GOLD : UiStyle.TEXT);
         } else {
-            wideRow(graphics, 6, "grade", hidden(insight, InsightRules.HIGH), UiStyle.MUTED);
+            wideRow(graphics, 7, "grade", hidden(insight, InsightRules.HIGH), UiStyle.MUTED);
         }
 
         int hintY = buttonsY() + 18 + 8;

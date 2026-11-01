@@ -15,6 +15,9 @@ import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModRecipes;
 import com.orijua.overgearedmod.smithing.ForgingRecipe;
+import com.orijua.overgearedmod.smithing.HammerRules;
+import com.orijua.overgearedmod.smithing.SmithingHammers;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -395,7 +398,43 @@ public class ApprenticeSmith extends PathfinderMob {
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_assign_cleared", getDisplayName()), true);
     }
 
+    /** From his window: he takes the best smithing hammer his master carries (handing back the one he had). */
+    public boolean giveHammer(ServerPlayer master) {
+        int slot = SmithingHammers.bestSlot(master.registryAccess(), master.getInventory());
+        if (slot < 0) {
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_no_hammer"), true);
+            return false;
+        }
+        ItemStack hammer = master.getInventory().removeItemNoUpdate(slot);
+        returnHammer(master);
+        setItemSlot(EquipmentSlot.MAINHAND, hammer);
+        setDropChance(EquipmentSlot.MAINHAND, 0.0f);
+        master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_hammer_given", getDisplayName(), hammer.getHoverName()), true);
+        playSound(SoundEvents.ARMOR_EQUIP_IRON.value(), 1.0f, 1.0f);
+        return true;
+    }
+
+    /** From his window: his hammer goes back to his master. */
+    public void takeHammer(ServerPlayer master) {
+        if (returnHammer(master)) {
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_hammer_taken", getDisplayName()), true);
+        }
+    }
+
+    private boolean returnHammer(ServerPlayer master) {
+        ItemStack hammer = getMainHandItem();
+        if (hammer.isEmpty()) {
+            return false;
+        }
+        setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        if (!master.getInventory().add(hammer)) {
+            master.drop(hammer, false);
+        }
+        return true;
+    }
+
     public void dismiss(ServerPlayer master) {
+        returnHammer(master);
         List<UUID> hired = new ArrayList<>(master.getData(ModAttachments.APPRENTICES));
         hired.remove(getUUID());
         master.setData(ModAttachments.APPRENTICES, List.copyOf(hired));
@@ -475,7 +514,11 @@ public class ApprenticeSmith extends PathfinderMob {
         if (!recipe.handle().isEmpty()) {
             take(sources, recipe.handle(), 1);
         }
-        smithingXp += ApprenticeRules.xpGained(recipe.smithingXp(), grade());
+        ItemStack hammer = getMainHandItem();
+        double hammerSkill = SmithingHammers.skillBonus(level().registryAccess(), hammer);
+        int xp = HammerRules.smithingXp(recipe.smithingXp(), SmithingHammers.xpBonus(level().registryAccess(), hammer));
+        smithingXp += ApprenticeRules.xpGained(xp, grade());
+        SmithingHammers.wear(this, EquipmentSlot.MAINHAND);
         sync();
         if (roll01 < ApprenticeRules.failChance(smithingLevel())) {
             level().playSound(null, anvil, SoundEvents.ANVIL_DESTROY, SoundSource.BLOCKS, 0.6f, 1.0f);
@@ -483,7 +526,8 @@ public class ApprenticeSmith extends PathfinderMob {
         }
         ItemStack piece = recipe.result().copy();
         double penalty = isCraftsman() ? ApprenticeRules.CRAFTSMAN_RATING_PENALTY : ApprenticeRules.RATING_PENALTY;
-        EquipmentService.stampForged(level(), piece, recipe.requirements(), recipe.extras(), 0, smithingLevel(), penalty, 0, getRandom());
+        EquipmentService.stampForged(level(), piece, recipe.requirements(), recipe.extras(), 0, smithingLevel(), penalty + hammerSkill, 0,
+                getRandom());
         put(output.get(), piece);
         level().playSound(null, anvil, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.8f, 1.0f);
         ItemRating rating = piece.get(ModDataComponents.ITEM_RATING);

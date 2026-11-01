@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "option.overgearedmod.hammer_precision" },
+  "weight": 20,
+  "min": 2.0,
+  "max": 6.0,
+  "applies_to": "overgearedmod:smithing_hammers",
+  "effect": { "type": "forging_skill" }
+}

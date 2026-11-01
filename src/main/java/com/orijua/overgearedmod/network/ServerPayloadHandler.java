@@ -120,6 +120,8 @@ final class ServerPayloadHandler {
             case ASSIGN_OUTPUT -> ApprenticeAssignments.start(player, apprentice, ApprenticeSmith.Slot.OUTPUT);
             case CLEAR_CONTAINERS -> apprentice.clearAssignments(player);
             case DISMISS -> apprentice.dismiss(player);
+            case GIVE_HAMMER -> apprentice.giveHammer(player);
+            case TAKE_HAMMER -> apprentice.takeHammer(player);
         }
     }
 }

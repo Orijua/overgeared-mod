@@ -9,7 +9,7 @@ import net.minecraft.util.ByIdMap;
 
 /** Client → server, from an apprentice's window: one of its buttons. */
 public record ApprenticeActionPayload(int apprentice, Action action) implements CustomPacketPayload {
-    public enum Action { PAY_DAY, CANCEL_ORDER, ASSIGN_MATERIALS, ASSIGN_OUTPUT, CLEAR_CONTAINERS, DISMISS }
+    public enum Action { PAY_DAY, CANCEL_ORDER, ASSIGN_MATERIALS, ASSIGN_OUTPUT, CLEAR_CONTAINERS, DISMISS, GIVE_HAMMER, TAKE_HAMMER }
 
     private static final StreamCodec<ByteBuf, Action> ACTION_CODEC = ByteBufCodecs.idMapper(
             ByIdMap.continuous(Action::ordinal, Action.values(), ByIdMap.OutOfBoundsStrategy.CLAMP), Action::ordinal);

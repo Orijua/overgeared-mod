@@ -1,0 +1,15 @@
+{
+  "type": "overgearedmod:forging",
+  "handle": {
+    "item": "minecraft:leather"
+  },
+  "material": {
+    "item": "overgearedmod:mithril_ingot"
+  },
+  "material_count": 4,
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:mithril_smithing_hammer"
+  },
+  "smithing_xp": 45
+}

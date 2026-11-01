@@ -18,6 +18,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -294,12 +295,17 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
     private ItemRating forge(ServerPlayer smith, double skillBonus, double extraOptionChance, int xpMultiplier) {
         ForgingRecipe recipe = currentRecipe.value();
         ItemStack forged = result.getItem(0).copy();
-        EquipmentService.stampForged(smith, forged, recipe.requirements(), recipe.extras(), skillBonus, extraOptionChance);
+        // A smithing hammer in the off hand adds its skill to the roll (and its options more experience), and wears.
+        ItemStack hammer = smith.getOffhandItem();
+        double hammerSkill = SmithingHammers.skillBonus(smith.registryAccess(), hammer);
+        double hammerXp = SmithingHammers.xpBonus(smith.registryAccess(), hammer);
+        EquipmentService.stampForged(smith, forged, recipe.requirements(), recipe.extras(), skillBonus + hammerSkill, extraOptionChance);
         inputs.removeItem(TOP_SLOT, recipe.materialCount());
         if (!inputs.getItem(BOTTOM_SLOT).isEmpty()) {
             inputs.removeItem(BOTTOM_SLOT, 1);
         }
-        ProgressionService.addSmithingXp(smith, recipe.smithingXp() * xpMultiplier);
+        ProgressionService.addSmithingXp(smith, HammerRules.smithingXp(recipe.smithingXp() * xpMultiplier, hammerXp));
+        SmithingHammers.wear(smith, EquipmentSlot.OFFHAND);
         ItemRating rating = forged.get(ModDataComponents.ITEM_RATING);
         if (rating != null) {
             NeoForge.EVENT_BUS.post(new ItemForgedEvent(smith, forged, rating));
