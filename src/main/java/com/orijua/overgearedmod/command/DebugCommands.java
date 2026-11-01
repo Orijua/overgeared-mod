@@ -41,6 +41,7 @@ import java.util.Arrays;
  *   <li>{@code /satisfy debug smithing <level>}: sets the smithing level (its experience).</li>
  *   <li>{@code /satisfy debug level <level>}: sets the level; levels gained bring their stat points.</li>
  *   <li>{@code /satisfy debug stat <stat> <value>}: sets the points spent in a stat.</li>
+ *   <li>{@code /satisfy debug insight <value>}: sets Insight.</li>
  * </ul>
  * Simulations post the same domain events as real play, so every listener (counters, titles,
  * hidden quests, notifications) reacts the same way. No mob dies and no item is created.
@@ -84,7 +85,16 @@ public final class DebugCommands {
                                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
                                                 Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
                                         .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
-                                                .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value")))))))
+                                                .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("insight")
+                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
+                                        .executes(ctx -> {
+                                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                            int value = IntegerArgumentType.getInteger(ctx, "value");
+                                            player.setData(ModAttachments.INSIGHT, value);
+                                            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
+                                            return 1;
+                                        }))))
                 .then(Commands.literal("quest")
                         .then(Commands.literal("reset")
                                 .executes(ctx -> {

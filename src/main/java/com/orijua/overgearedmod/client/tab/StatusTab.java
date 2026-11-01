@@ -3,6 +3,8 @@ package com.orijua.overgearedmod.client.tab;
 import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.client.ui.SatisfyButton;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
+import com.orijua.overgearedmod.insight.InsightRules;
+import com.orijua.overgearedmod.insight.Observation;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.AllocateStatPayload;
 import com.orijua.overgearedmod.progression.PlayerStats;
@@ -83,6 +85,9 @@ public class StatusTab extends SatisfyTab {
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.smithing", ProgressionService.effectiveSmithingLevel(player())), half, top + 16, UiStyle.MUTED);
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.free_points", stats.freePoints()), left, top + 30,
                 stats.freePoints() > 0 ? UiStyle.GOOD : UiStyle.MUTED);
+        Component insight = Component.translatable("screen.overgearedmod.insight", Observation.insight(player()));
+        UiStyle.text(graphics, font(), insight, half, top + 30, UiStyle.MUTED);
+        boolean overInsight = mouseX >= half && mouseX < half + font().width(insight) && mouseY >= top + 28 && mouseY < top + 40;
 
         StatType[] types = StatType.values();
         StatType hovered = null;
@@ -100,6 +105,9 @@ public class StatusTab extends SatisfyTab {
         }
         if (hovered != null) {
             graphics.renderTooltip(font(), tooltip(hovered), mouseX, mouseY);
+        } else if (overInsight) {
+            graphics.renderTooltip(font(), font().split(Component.translatable("screen.overgearedmod.insight.tooltip",
+                    InsightRules.OBSERVE_TICKS / 20), 200), mouseX, mouseY);
         }
     }
 

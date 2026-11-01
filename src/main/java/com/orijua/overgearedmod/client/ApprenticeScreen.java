@@ -3,9 +3,12 @@ package com.orijua.overgearedmod.client;
 import com.orijua.overgearedmod.client.ui.SatisfyButton;
 import com.orijua.overgearedmod.client.ui.SatisfyConfirmScreen;
 import com.orijua.overgearedmod.client.ui.UiStyle;
+import com.orijua.overgearedmod.insight.InsightRules;
+import com.orijua.overgearedmod.insight.Observation;
 import com.orijua.overgearedmod.network.ApprenticeActionPayload;
 import com.orijua.overgearedmod.npc.ApprenticeRules;
 import com.orijua.overgearedmod.npc.ApprenticeSmith;
+import com.orijua.overgearedmod.npc.NpcGrade;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -33,7 +36,7 @@ public final class ApprenticeScreen extends Screen {
     private static final int ROW = 22;
     private static final int LABEL_WIDTH = 70;
     private static final int BUTTON_WIDTH = 70;
-    private static final int ROWS = 5;
+    private static final int ROWS = 7;
 
     private final ApprenticeSmith apprentice;
     private List<FormattedCharSequence> hint = List.of();
@@ -137,7 +140,10 @@ public final class ApprenticeScreen extends Screen {
         graphics.drawCenteredString(font, title, centerX, top + PADDING, UiStyle.HEADING);
         Component role = Component.translatable(apprentice.isCraftsman() ? "screen.overgearedmod.apprentice.craftsman" : "entity.overgearedmod.apprentice_smith");
         Component stage = Component.translatable("npc.overgearedmod.stage." + apprentice.shownStage().key());
-        graphics.drawCenteredString(font, Component.translatable("screen.overgearedmod.apprentice.subtitle", role, stage, apprentice.shownLevel()),
+        int insight = Observation.insight(minecraft.player);
+        InsightRules.Detail detail = InsightRules.detail(insight);
+        String level = detail == InsightRules.Detail.LOW ? "??" : String.valueOf(apprentice.shownLevel());
+        graphics.drawCenteredString(font, Component.translatable("screen.overgearedmod.apprentice.subtitle", role, stage, level),
                 centerX, top + PADDING + UiStyle.LINE, apprentice.isCraftsman() ? UiStyle.GOLD : UiStyle.MUTED);
         int lineY = top + PADDING + 2 * UiStyle.LINE + 2;
         graphics.fill(left + PADDING, lineY, left + WIDTH - PADDING, lineY + 1, UiStyle.LINE_SOFT);
@@ -164,6 +170,24 @@ public final class ApprenticeScreen extends Screen {
         row(graphics, 3, "materials", container(ApprenticeSmith.Slot.MATERIALS, "screen.overgearedmod.apprentice.materials_default"), UiStyle.TEXT);
         row(graphics, 4, "output", container(ApprenticeSmith.Slot.OUTPUT, "screen.overgearedmod.apprentice.output_default"), UiStyle.TEXT);
 
+        // Character Observation: how much more is revealed depends on the player's Insight.
+        if (detail == InsightRules.Detail.LOW) {
+            wideRow(graphics, 5, "work", hidden(insight, InsightRules.MEDIUM), UiStyle.MUTED);
+        } else {
+            int failPercent = (int) Math.round(ApprenticeRules.failChance(apprentice.shownLevel()) * 100);
+            wideRow(graphics, 5, "work", Component.translatable("screen.overgearedmod.apprentice.work_value", failPercent,
+                    ApprenticeRules.ticksPerPiece(apprentice.shownLevel()) / 20), UiStyle.TEXT);
+        }
+        if (detail == InsightRules.Detail.HIGH) {
+            NpcGrade grade = apprentice.grade();
+            Component cap = grade.levelCap() == Integer.MAX_VALUE ? Component.translatable("screen.overgearedmod.apprentice.no_cap")
+                    : Component.literal(String.valueOf(grade.levelCap()));
+            wideRow(graphics, 6, "grade", Component.translatable("screen.overgearedmod.apprentice.grade_value",
+                    Component.translatable("npc.overgearedmod.grade." + grade.name().toLowerCase()), cap), grade == NpcGrade.NAMED ? UiStyle.GOLD : UiStyle.TEXT);
+        } else {
+            wideRow(graphics, 6, "grade", hidden(insight, InsightRules.HIGH), UiStyle.MUTED);
+        }
+
         int hintY = buttonsY() + 18 + 8;
         for (FormattedCharSequence line : hint) {
             graphics.drawString(font, line, left + PADDING, hintY, UiStyle.MUTED);
@@ -182,6 +206,17 @@ public final class ApprenticeScreen extends Screen {
     private void row(GuiGraphics graphics, int row, String key, Component value, int color) {
         label(graphics, row, key);
         graphics.drawString(font, clip(value, valueWidth()), left + PADDING + LABEL_WIDTH, rowY(row), color);
+    }
+
+    /** A row with no button: its value may use the whole width. */
+    private void wideRow(GuiGraphics graphics, int row, String key, Component value, int color) {
+        label(graphics, row, key);
+        graphics.drawString(font, clip(value, WIDTH - 2 * PADDING - LABEL_WIDTH), left + PADDING + LABEL_WIDTH, rowY(row), color);
+    }
+
+    /** What stays hidden until the player's Insight reaches {@code needed}. */
+    private static Component hidden(int insight, int needed) {
+        return Component.translatable("screen.overgearedmod.apprentice.hidden", insight, needed);
     }
 
     private String clip(Component text, int maxWidth) {
