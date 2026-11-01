@@ -1,12 +1,12 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.EquipmentService;
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.goal.GoalTracker;
-import com.orijua.overgearedmod.registry.ModDataComponents;
-import com.orijua.overgearedmod.smithing.ForgingExtras;
-import com.orijua.overgearedmod.smithing.GreatSuccess;
+import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.feature.equipment.EquipmentService;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.smithing.ForgingExtras;
+import com.orijua.overgearedmod.feature.smithing.GreatSuccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;

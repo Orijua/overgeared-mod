@@ -1,7 +1,7 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.registry.ModBlocks;
+import com.orijua.overgearedmod.core.registry.ModBlocks;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;

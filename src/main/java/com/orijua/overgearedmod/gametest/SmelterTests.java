@@ -1,15 +1,15 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.progression.ProgressionService;
-import com.orijua.overgearedmod.registry.ModBlocks;
-import com.orijua.overgearedmod.registry.ModItems;
-import com.orijua.overgearedmod.registry.ModRecipes;
-import com.orijua.overgearedmod.smelting.MeltingRecipe;
-import com.orijua.overgearedmod.smelting.SmelterBlock;
-import com.orijua.overgearedmod.smelting.SmelterBlockEntity;
-import com.orijua.overgearedmod.smelting.SmelterMenu;
-import com.orijua.overgearedmod.smelting.SmelterRules;
+import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.core.registry.ModRecipes;
+import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.smelting.MeltingRecipe;
+import com.orijua.overgearedmod.feature.smelting.SmelterBlock;
+import com.orijua.overgearedmod.feature.smelting.SmelterBlockEntity;
+import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
+import com.orijua.overgearedmod.feature.smelting.SmelterRules;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;

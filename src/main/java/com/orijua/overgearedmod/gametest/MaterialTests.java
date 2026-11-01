@@ -1,10 +1,10 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.registry.ModBlocks;
-import com.orijua.overgearedmod.registry.ModItems;
-import com.orijua.overgearedmod.registry.ModRecipes;
-import com.orijua.overgearedmod.smithing.ForgingRecipeInput;
+import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.core.registry.ModRecipes;
+import com.orijua.overgearedmod.feature.smithing.ForgingRecipeInput;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;

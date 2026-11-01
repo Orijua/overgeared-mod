@@ -1,9 +1,9 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.insight.InsightRules;
-import com.orijua.overgearedmod.insight.Observation;
-import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.insight.InsightRules;
+import com.orijua.overgearedmod.feature.insight.Observation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;

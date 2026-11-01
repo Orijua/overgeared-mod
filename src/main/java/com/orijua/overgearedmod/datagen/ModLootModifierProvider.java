@@ -1,8 +1,8 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.loot.RateEquipmentModifier;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.equipment.RateEquipmentModifier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;

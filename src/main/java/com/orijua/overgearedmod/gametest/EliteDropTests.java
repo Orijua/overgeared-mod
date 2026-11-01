@@ -1,12 +1,12 @@
 package com.orijua.overgearedmod.gametest;
 
-import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.loot.LootEvents;
-import com.orijua.overgearedmod.mob.MobLevel;
-import com.orijua.overgearedmod.mob.MobLevelService;
-import com.orijua.overgearedmod.registry.ModDataComponents;
+import com.orijua.overgearedmod.core.config.Balance;
+import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.equipment.LootEvents;
+import com.orijua.overgearedmod.feature.mob.MobLevel;
+import com.orijua.overgearedmod.feature.mob.MobLevelService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;

@@ -1,7 +1,7 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.core.registry.ModItems;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.item.Item;

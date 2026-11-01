@@ -1,10 +1,10 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.loot.LootEvents;
-import com.orijua.overgearedmod.npc.ApprenticeMaterials;
-import com.orijua.overgearedmod.smithing.SmithingHammers;
-import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.equipment.LootEvents;
+import com.orijua.overgearedmod.feature.npc.ApprenticeMaterials;
+import com.orijua.overgearedmod.feature.smithing.SmithingHammers;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.ItemTagsProvider;

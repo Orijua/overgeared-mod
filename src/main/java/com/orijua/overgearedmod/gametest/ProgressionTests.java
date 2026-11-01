@@ -1,10 +1,10 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.progression.PlayerStats;
-import com.orijua.overgearedmod.progression.ProgressionService;
-import com.orijua.overgearedmod.progression.StatEffects;
-import com.orijua.overgearedmod.progression.StatType;
+import com.orijua.overgearedmod.feature.progression.PlayerStats;
+import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.progression.StatEffects;
+import com.orijua.overgearedmod.feature.progression.StatType;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;

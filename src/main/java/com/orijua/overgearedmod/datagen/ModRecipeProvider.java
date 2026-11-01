@@ -1,14 +1,14 @@
 package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.equipment.EquipRequirements;
-import com.orijua.overgearedmod.equipment.ItemRating;
-import com.orijua.overgearedmod.equipment.option.FixedOption;
-import com.orijua.overgearedmod.progression.StatType;
-import com.orijua.overgearedmod.registry.ModItems;
-import com.orijua.overgearedmod.smelting.MeltingRecipe;
-import com.orijua.overgearedmod.smithing.ForgingExtras;
-import com.orijua.overgearedmod.smithing.ForgingRecipe;
+import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.equipment.EquipRequirements;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import com.orijua.overgearedmod.feature.equipment.option.FixedOption;
+import com.orijua.overgearedmod.feature.progression.StatType;
+import com.orijua.overgearedmod.feature.smelting.MeltingRecipe;
+import com.orijua.overgearedmod.feature.smithing.ForgingExtras;
+import com.orijua.overgearedmod.feature.smithing.ForgingRecipe;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.RecipeCategory;

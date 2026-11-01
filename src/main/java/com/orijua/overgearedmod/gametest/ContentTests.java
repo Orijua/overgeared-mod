@@ -1,9 +1,9 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.validation.ContentIndex;
-import com.orijua.overgearedmod.validation.ContentScanner;
-import com.orijua.overgearedmod.validation.ContentValidator;
+import com.orijua.overgearedmod.core.validation.ContentIndex;
+import com.orijua.overgearedmod.core.validation.ContentScanner;
+import com.orijua.overgearedmod.core.validation.ContentValidator;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.neoforge.gametest.GameTestHolder;

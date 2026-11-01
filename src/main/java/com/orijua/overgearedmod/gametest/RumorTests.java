@@ -1,15 +1,15 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
-import com.orijua.overgearedmod.goal.GoalTracker;
-import com.orijua.overgearedmod.registry.Definitions;
-import com.orijua.overgearedmod.registry.ModBlocks;
-import com.orijua.overgearedmod.registry.ModDatapackRegistries;
-import com.orijua.overgearedmod.registry.ModEntities;
-import com.orijua.overgearedmod.rumor.MaterialFinds;
-import com.orijua.overgearedmod.rumor.RumorDefinition;
-import com.orijua.overgearedmod.rumor.Rumors;
-import com.orijua.overgearedmod.smithing.GreatSuccess;
+import com.orijua.overgearedmod.core.registry.Definitions;
+import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.core.registry.ModEntities;
+import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.rumor.MaterialFinds;
+import com.orijua.overgearedmod.feature.rumor.RumorDefinition;
+import com.orijua.overgearedmod.feature.rumor.Rumors;
+import com.orijua.overgearedmod.feature.smithing.GreatSuccess;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
