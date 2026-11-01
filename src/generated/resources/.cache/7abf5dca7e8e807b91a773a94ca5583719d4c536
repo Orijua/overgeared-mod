@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-01T16:29:48.2651548	Structure pieces
+// 1.21.1	2026-11-01T22:52:37.0197821	Structure pieces
 a36be0aa31752a62f5f0450a50017a6d2112e334 data/overgearedmod/structure/adventurer_camp/center.nbt
 bce457789f0c3a1c9846360fa4b12982c582b8cd data/overgearedmod/structure/adventurer_camp/forge.nbt
 632d0684768d57158d404a7fc59a78208db8b6fd data/overgearedmod/structure/adventurer_camp/tent.nbt
@@ -13,3 +13,7 @@ c495c3d9a186fc94576eecd5655f9f3fac2cec85 data/overgearedmod/structure/bairan/pla
 653bb48598d3a95e0ced48151c67e0ea4b760386 data/overgearedmod/structure/north_end_cave/entrance.nbt
 e8fedc54a889842cc564357c9dbc619716535374 data/overgearedmod/structure/north_end_cave/hall.nbt
 a0d9b7257dcbba9b6cca6b652ec7f302d6042a63 data/overgearedmod/structure/north_end_cave/sanctum.nbt
+c2812f6fb38fd8b310216265184e31d14f8ab219 data/overgearedmod/structure/winston/house.nbt
+7056e95b063a46a1339d5d31d00da01a8eb52d6b data/overgearedmod/structure/winston/khan_smithy.nbt
+a3b1e04569c12bd521486fb31f64ff298ba4fa2d data/overgearedmod/structure/winston/mero_office.nbt
+82a9fb04cc9ab52c73046ccad52e44fc3957cb74 data/overgearedmod/structure/winston/square.nbt

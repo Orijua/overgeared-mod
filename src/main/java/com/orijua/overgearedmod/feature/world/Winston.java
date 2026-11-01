@@ -1,0 +1,282 @@
+package com.orijua.overgearedmod.feature.world;
+
+import com.orijua.overgearedmod.Overgearedmod;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.LevelHeightAccessor;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.RandomState;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructurePiece;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * A district of Winston, the city of the Eternal Kingdom that Bairan belonged to (canon, caps. 24 and 36-42). Khan, an
+ * excellent blacksmith ruined by the Mero Company, drinks in his smithy here, and the item production contest is held on
+ * its central square. The city, Khan, his smithy, the Mero Company and the square are canon; the layout and how they
+ * look are our own design. The whole city (castle, walls) comes in phase 10.
+ * <p>
+ * One per world, {@link #MIN_DISTANCE}-{@link #MAX_DISTANCE} chunks from Bairan, chosen with it. The central square with
+ * a fountain and the contest stage, and around it, joined by jigsaws: Khan's ruined smithy (north), the Mero Company's
+ * office (east) and houses (south and west).
+ */
+public final class Winston {
+    public static final ResourceLocation STRUCTURE = Overgearedmod.id("winston");
+    public static final ResourceKey<Structure> KEY = ResourceKey.create(Registries.STRUCTURE, STRUCTURE);
+    public static final String SQUARE = "winston/square";
+    public static final String KHAN_SMITHY = "winston/khan_smithy";
+    public static final String MERO_OFFICE = "winston/mero_office";
+    public static final String HOUSE = "winston/house";
+    /** Winston's old blacksmith (canon), shown above his head. */
+    public static final String KHAN_NAME = "Khan";
+
+    /** How far from Bairan, in chunks (the nearest that fits wins); farther in worlds that existed before Winston. */
+    public static final int MIN_DISTANCE = 30;
+    public static final int MAX_DISTANCE = 50;
+    static final int LATE_MIN_DISTANCE = 45;
+    static final int LATE_MAX_DISTANCE = 65;
+    /** Never this close, in chunks, to another one-per-world place (the cave can lie in the same ring). */
+    private static final int KEEP_AWAY = 8;
+
+    private static final String SQUARE_JOINT = Overgearedmod.MODID + ":winston_square";
+    /** Every building joins the square through a jigsaw with this name, in the middle of its front. */
+    private static final String ENTRY = Overgearedmod.MODID + ":winston_entry";
+    private static final String NO_POOL = "minecraft:empty";
+    private static final String STREET = "minecraft:stone_bricks";
+    private static final String AIR = "minecraft:air";
+
+    private Winston() {
+    }
+
+    /** Every piece by its template path (data/overgearedmod/structure/&lt;path&gt;.nbt). */
+    public static Map<String, TemplateBuilder> pieces() {
+        Map<String, TemplateBuilder> pieces = new LinkedHashMap<>();
+        pieces.put(SQUARE, square());
+        pieces.put(KHAN_SMITHY, khanSmithy());
+        pieces.put(MERO_OFFICE, meroOffice());
+        pieces.put(HOUSE, house());
+        return pieces;
+    }
+
+    /**
+     * 17x17 central square (canon: where the contest is held and the residents crowd to watch): a fountain in the middle,
+     * four lamp posts and, on the south side, a raised stage with two smithing anvils facing the crowd.
+     */
+    static TemplateBuilder square() {
+        TemplateBuilder piece = new TemplateBuilder(17, 7, 17)
+                .fill(0, 0, 0, 16, 0, 16, STREET)
+                .fill(0, 1, 0, 16, 6, 16, AIR)
+                .walls(3, 0, 3, 13, 0, 13, "minecraft:polished_andesite")
+                // The fountain.
+                .walls(6, 1, 6, 10, 1, 10, "minecraft:stone_brick_wall")
+                .fill(7, 0, 7, 9, 0, 9, "minecraft:water[level=0]")
+                .fill(8, 1, 8, 8, 2, 8, "minecraft:chiseled_stone_bricks")
+                .set(8, 3, 8, "minecraft:water[level=0]")
+                // The contest stage: a platform of polished andesite, an anvil for each smith.
+                .fill(3, 1, 12, 13, 1, 14, "minecraft:polished_andesite")
+                .fill(3, 1, 11, 13, 1, 11, "minecraft:polished_andesite_slab[type=bottom]")
+                .set(6, 2, 13, Overgearedmod.MODID + ":smithing_anvil")
+                .set(10, 2, 13, Overgearedmod.MODID + ":smithing_anvil")
+                .set(8, 2, 14, "minecraft:barrel[facing=up]")
+                .set(3, 2, 14, "minecraft:yellow_banner[rotation=8]")
+                .set(13, 2, 14, "minecraft:yellow_banner[rotation=8]");
+        lampPost(piece, 2, 2);
+        lampPost(piece, 14, 2);
+        lampPost(piece, 2, 9);
+        lampPost(piece, 14, 9);
+        piece.jigsaw(8, 0, 0, "north_up", SQUARE_JOINT, ENTRY, pool("khan_smithy"), STREET);
+        piece.jigsaw(16, 0, 4, "east_up", SQUARE_JOINT, ENTRY, pool("mero_office"), STREET);
+        piece.jigsaw(0, 0, 6, "west_up", SQUARE_JOINT, ENTRY, pool("houses"), STREET);
+        piece.jigsaw(0, 0, 13, "west_up", SQUARE_JOINT, ENTRY, pool("houses"), STREET);
+        piece.jigsaw(16, 0, 13, "east_up", SQUARE_JOINT, ENTRY, pool("houses"), STREET);
+        return piece;
+    }
+
+    /**
+     * Khan's smithy, in ruins (canon, cap. 24: the Mero Company took his customers and he took to drink): cracked and
+     * mossy walls with holes, a roof half fallen in, a cold forge, a damaged anvil, cobwebs, and Khan.
+     */
+    static TemplateBuilder khanSmithy() {
+        TemplateBuilder piece = new TemplateBuilder(11, 7, 10)
+                .fill(0, 0, 0, 10, 0, 8, "minecraft:cobblestone")
+                .fill(0, 0, 9, 10, 0, 9, STREET)
+                .fill(0, 1, 0, 10, 6, 9, AIR);
+        // Walls of mixed worn stone, always the same for the same position, with a few blocks fallen out.
+        for (int y = 1; y <= 3; y++) {
+            for (int x = 0; x <= 10; x++) {
+                for (int z = 0; z <= 8; z++) {
+                    if (x == 0 || x == 10 || z == 0 || z == 8) {
+                        int mix = Math.floorMod(x * 31 + y * 17 + z * 7, 7);
+                        piece.set(x, y, z, mix == 0 ? (y == 3 ? AIR : "minecraft:mossy_cobblestone")
+                                : mix <= 2 ? "minecraft:cracked_stone_bricks" : mix == 3 ? "minecraft:mossy_stone_bricks" : "minecraft:stone_bricks");
+                    }
+                }
+            }
+        }
+        // The roof: spruce planks, fallen in over the east half.
+        piece.fill(0, 4, 0, 10, 4, 8, "minecraft:spruce_planks")
+                .fill(6, 4, 2, 9, 4, 6, AIR)
+                .set(5, 4, 4, "minecraft:spruce_slab[type=top]")
+                .fill(7, 1, 3, 8, 1, 4, "minecraft:spruce_slab[type=bottom]")
+                .set(9, 1, 6, "minecraft:spruce_planks")
+                .fill(0, 0, 2, 0, 0, 3, "minecraft:gravel");
+        for (int[] corner : new int[][]{{0, 0}, {10, 0}, {0, 8}, {10, 8}}) {
+            piece.fill(corner[0], 1, corner[1], corner[0], 3, corner[1], "minecraft:spruce_log");
+        }
+        // The cold forge: a brick chimney with no fire, an anvil past its best, an empty quenching cauldron.
+        piece.fill(1, 1, 1, 2, 3, 1, "minecraft:bricks")
+                .fill(1, 4, 1, 1, 6, 1, "minecraft:bricks")
+                .set(2, 1, 2, "minecraft:blast_furnace[facing=south,lit=false]")
+                .set(4, 1, 3, "minecraft:damaged_anvil[facing=east]")
+                .set(2, 1, 5, "minecraft:cauldron")
+                .set(3, 1, 1, "minecraft:grindstone[face=floor,facing=south]")
+                .set(9, 1, 1, "minecraft:barrel[facing=up]")
+                .set(9, 2, 1, "minecraft:barrel[facing=up]")
+                .set(8, 1, 1, "minecraft:barrel[facing=north]")
+                // His bed in the corner, and what he drinks by it.
+                .set(9, 1, 3, "minecraft:brown_bed[facing=north,part=head]")
+                .set(9, 1, 4, "minecraft:brown_bed[facing=north,part=foot]")
+                .set(7, 1, 1, "minecraft:flower_pot")
+                .set(1, 3, 7, "minecraft:cobweb")
+                .set(9, 3, 7, "minecraft:cobweb")
+                .set(1, 3, 3, "minecraft:cobweb")
+                .set(5, 3, 4, "minecraft:lantern[hanging=true]")
+                // The doorway: the door is long gone.
+                .fill(5, 1, 8, 5, 2, 8, AIR);
+        CompoundTag khan = new CompoundTag();
+        khan.putString("CustomName", "{\"text\":\"" + KHAN_NAME + "\"}");
+        piece.entity(5, 1, 4, Overgearedmod.MODID + ":khan", khan);
+        return front(piece, 5, 9);
+    }
+
+    /**
+     * The Mero Company's office (canon: the merchant company that ruined Khan and exploits Winston's residents): smart
+     * where the smithy is ruined, polished stone and dark oak with the company's yellow, a counter and its records.
+     */
+    static TemplateBuilder meroOffice() {
+        TemplateBuilder piece = new TemplateBuilder(9, 7, 10)
+                .fill(0, 0, 0, 8, 0, 8, "minecraft:polished_diorite")
+                .fill(0, 0, 9, 8, 0, 9, STREET)
+                .fill(0, 1, 0, 8, 6, 9, AIR)
+                .walls(0, 1, 0, 8, 1, 8, "minecraft:polished_andesite")
+                .walls(0, 2, 0, 8, 3, 8, "minecraft:smooth_quartz")
+                .fill(0, 4, 0, 8, 4, 8, "minecraft:dark_oak_planks")
+                .fill(1, 5, 1, 7, 5, 7, "minecraft:dark_oak_slab[type=bottom]")
+                .walls(0, 5, 0, 8, 5, 8, "minecraft:polished_andesite_wall")
+                .fill(1, 3, 8, 7, 3, 8, "minecraft:yellow_wool")
+                .set(2, 2, 8, "minecraft:glass_pane")
+                .set(6, 2, 8, "minecraft:glass_pane")
+                .set(0, 2, 4, "minecraft:glass_pane")
+                .set(8, 2, 4, "minecraft:glass_pane")
+                // The counter, the records and the strongroom at the back.
+                .fill(1, 1, 4, 7, 1, 4, "minecraft:dark_oak_planks")
+                .set(4, 1, 4, "minecraft:dark_oak_fence_gate[facing=south,open=false]")
+                .fill(1, 1, 1, 3, 2, 1, "minecraft:bookshelf")
+                .set(4, 1, 2, "minecraft:lectern[facing=south]")
+                .fill(6, 1, 1, 7, 1, 1, "minecraft:barrel[facing=up]")
+                .set(7, 1, 2, "minecraft:barrel[facing=west]")
+                .set(2, 3, 2, "minecraft:lantern[hanging=true]")
+                .set(6, 3, 6, "minecraft:lantern[hanging=true]");
+        for (int[] corner : new int[][]{{0, 0}, {8, 0}, {0, 8}, {8, 8}}) {
+            piece.fill(corner[0], 1, corner[1], corner[0], 4, corner[1], "minecraft:dark_oak_log");
+        }
+        door(piece, 4, 8, "minecraft:dark_oak_door");
+        return front(piece, 4, 9);
+    }
+
+    /** A resident's house: half-timbered over a stone base, with a bed, a table and a resident. */
+    static TemplateBuilder house() {
+        TemplateBuilder piece = new TemplateBuilder(7, 7, 8)
+                .fill(0, 0, 0, 6, 0, 6, "minecraft:spruce_planks")
+                .fill(0, 0, 7, 6, 0, 7, STREET)
+                .fill(0, 1, 0, 6, 6, 7, AIR)
+                .walls(0, 1, 0, 6, 1, 6, "minecraft:stone_bricks")
+                .walls(0, 2, 0, 6, 3, 6, "minecraft:white_terracotta")
+                .fill(0, 4, 0, 6, 4, 6, "minecraft:dark_oak_planks")
+                .fill(1, 5, 0, 5, 5, 6, "minecraft:dark_oak_planks")
+                .fill(2, 6, 0, 4, 6, 6, "minecraft:dark_oak_slab[type=bottom]")
+                .set(1, 2, 6, "minecraft:glass_pane")
+                .set(5, 2, 6, "minecraft:glass_pane")
+                .set(0, 2, 3, "minecraft:glass_pane")
+                .set(6, 2, 3, "minecraft:glass_pane")
+                .set(5, 1, 1, "minecraft:crafting_table")
+                .set(5, 1, 3, "minecraft:spruce_fence")
+                .set(5, 2, 3, "minecraft:spruce_pressure_plate")
+                .set(3, 3, 3, "minecraft:lantern[hanging=true]")
+                .set(1, 1, 1, "minecraft:red_bed[facing=north,part=head]")
+                .set(1, 1, 2, "minecraft:red_bed[facing=north,part=foot]");
+        for (int[] corner : new int[][]{{0, 0}, {6, 0}, {0, 6}, {6, 6}}) {
+            piece.fill(corner[0], 1, corner[1], corner[0], 3, corner[1], "minecraft:spruce_log");
+        }
+        CompoundTag resident = new CompoundTag();
+        resident.putBoolean("PersistenceRequired", true);
+        piece.entity(3, 1, 3, "minecraft:villager", resident);
+        door(piece, 3, 6, "minecraft:spruce_door");
+        return front(piece, 3, 7);
+    }
+
+    /**
+     * The site for this world's Winston: the nearest chunk {@code minDistance}-{@code maxDistance} chunks from Bairan
+     * where the district assembles (its biome check included) with every piece on dry land, at least
+     * {@link #KEEP_AWAY} chunks from the places in {@code avoid}. Empty if the generator doesn't have it or nothing fits.
+     */
+    public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                              StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan,
+                                              int minDistance, int maxDistance, List<ChunkPos> avoid) {
+        Structure winston = registries.registryOrThrow(Registries.STRUCTURE).get(KEY);
+        if (winston == null) {
+            return Optional.empty();
+        }
+        for (ChunkPos chunk : ChunkSpiral.around(bairan, maxDistance)) {
+            if (bairan.getChessboardDistance(chunk) < minDistance
+                    || avoid.stream().anyMatch(other -> other.getChessboardDistance(chunk) < KEEP_AWAY)) {
+                continue;
+            }
+            StructureStart start = winston.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
+                    height, winston.biomes()::contains);
+            if (start.isValid() && start.getPieces().stream().allMatch(piece -> onDryLand(piece, generator, random, height))) {
+                return Optional.of(chunk);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /** Whether the ground under the middle of a piece is land, not the bottom of a lake, river or sea. */
+    private static boolean onDryLand(StructurePiece piece, ChunkGenerator generator, RandomState random, LevelHeightAccessor height) {
+        BlockPos middle = piece.getBoundingBox().getCenter();
+        int surface = generator.getBaseHeight(middle.getX(), middle.getZ(), Heightmap.Types.WORLD_SURFACE_WG, height, random);
+        int ground = generator.getBaseHeight(middle.getX(), middle.getZ(), Heightmap.Types.OCEAN_FLOOR_WG, height, random);
+        return surface == ground;
+    }
+
+    private static String pool(String name) {
+        return Overgearedmod.MODID + ":winston/" + name;
+    }
+
+    private static void lampPost(TemplateBuilder piece, int x, int z) {
+        piece.fill(x, 1, z, x, 2, z, "minecraft:stone_brick_wall").set(x, 3, z, "minecraft:lantern");
+    }
+
+    /** A two-block door in the south wall, opening outwards to the front. */
+    private static void door(TemplateBuilder piece, int x, int z, String door) {
+        piece.set(x, 1, z, door + "[facing=south,half=lower,hinge=left,open=false]")
+                .set(x, 2, z, door + "[facing=south,half=upper,hinge=left,open=false]");
+    }
+
+    /** The jigsaw that joins a building to the square: in the middle of its front row, facing out. */
+    private static TemplateBuilder front(TemplateBuilder piece, int x, int z) {
+        return piece.jigsaw(x, 0, z, "south_up", ENTRY, SQUARE_JOINT, NO_POOL, STREET);
+    }
+}

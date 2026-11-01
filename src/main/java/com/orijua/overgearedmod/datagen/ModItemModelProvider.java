@@ -47,6 +47,7 @@ final class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.BLACKSMITH_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.VILLAGE_CHIEF_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.BONE_LORD_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.KHAN_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
     }
 
     /** A tool or weapon (held like a sword) that borrows a vanilla texture. */

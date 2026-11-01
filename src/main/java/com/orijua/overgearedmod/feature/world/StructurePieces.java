@@ -13,6 +13,7 @@ public final class StructurePieces {
         pieces.putAll(Bairan.pieces());
         pieces.putAll(NorthEndCave.pieces());
         pieces.putAll(AshurManor.pieces());
+        pieces.putAll(Winston.pieces());
         return pieces;
     }
 }

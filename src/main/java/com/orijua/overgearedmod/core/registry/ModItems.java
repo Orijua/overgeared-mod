@@ -104,6 +104,8 @@ public final class ModItems {
             () -> new DeferredSpawnEggItem(ModEntities.VILLAGE_CHIEF, 0x6B4A2B, 0xC9A64B, new Item.Properties()));
     public static final DeferredItem<DeferredSpawnEggItem> BONE_LORD_SPAWN_EGG = ITEMS.register("bone_lord_spawn_egg",
             () -> new DeferredSpawnEggItem(ModEntities.BONE_LORD, 0x1E1E1E, 0xD9D3C1, new Item.Properties()));
+    public static final DeferredItem<DeferredSpawnEggItem> KHAN_SPAWN_EGG = ITEMS.register("khan_spawn_egg",
+            () -> new DeferredSpawnEggItem(ModEntities.KHAN, 0x4A3A2A, 0x8C8C8C, new Item.Properties()));
 
     public static final DeferredItem<RespecScrollItem> RESPEC_SCROLL = ITEMS.registerItem("respec_scroll",
             RespecScrollItem::new, new Item.Properties().stacksTo(16));

@@ -18,6 +18,8 @@ public final class NpcRenderer<T extends Mob> extends MobRenderer<T, VillagerMod
     public static final ResourceLocation BLACKSMITH = Overgearedmod.id("textures/entity/blacksmith.png");
     /** Provisional: vanilla's plain villager until the chief has its own art. */
     public static final ResourceLocation VILLAGE_CHIEF = ResourceLocation.withDefaultNamespace("textures/entity/villager/villager.png");
+    /** Provisional: the wandering trader's worn robes until Khan has his own art. */
+    public static final ResourceLocation KHAN = ResourceLocation.withDefaultNamespace("textures/entity/wandering_trader.png");
 
     private static final Component ALERT = Component.literal("!").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
     /** How far above the name tag the "!" floats. */

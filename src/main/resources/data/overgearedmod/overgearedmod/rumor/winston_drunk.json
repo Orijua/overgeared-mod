@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:village_chief"],
+  "text": { "translate": "rumor.overgearedmod.winston_drunk" },
+  "solved_by": { "milestones": ["overgearedmod:met_khan"] }
+}

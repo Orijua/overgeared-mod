@@ -17,6 +17,8 @@ public final class WorldSites {
     public static final String NORTH_END_CAVE = "north_end_cave";
     /** Earl Ashur's manor, near Bairan. */
     public static final String ASHUR_MANOR = "ashur_manor";
+    /** The district of Winston with Khan's smithy. */
+    public static final String WINSTON = "winston";
 
     private static final Map<Long, Map<String, ChunkPos>> SITES = new ConcurrentHashMap<>();
 

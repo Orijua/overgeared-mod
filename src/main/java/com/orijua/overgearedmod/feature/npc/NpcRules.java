@@ -5,12 +5,12 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 
 /** What every NPC of the mod shares. */
-final class NpcRules {
+public final class NpcRules {
     private NpcRules() {
     }
 
     /** NPCs only take damage from creative players or what bypasses invulnerability (/kill, the void). */
-    static boolean isInvulnerableTo(DamageSource source) {
+    public static boolean isInvulnerableTo(DamageSource source) {
         boolean creativePlayer = source.getEntity() instanceof Player player && player.isCreative();
         return !creativePlayer && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
     }

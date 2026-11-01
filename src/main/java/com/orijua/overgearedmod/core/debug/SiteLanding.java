@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.core.debug;
 
 import com.orijua.overgearedmod.feature.world.AshurManor;
 import com.orijua.overgearedmod.feature.world.NorthEndCave;
+import com.orijua.overgearedmod.feature.world.Winston;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -23,11 +24,13 @@ import java.util.Optional;
  */
 public final class SiteLanding {
     /** The places that can be visited, by the name typed in the command. */
-    public static final List<String> SITES = List.of(WorldSites.BAIRAN, WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR);
+    public static final List<String> SITES = List.of(WorldSites.BAIRAN, WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR,
+            WorldSites.WINSTON);
     private static final Map<String, ResourceKey<Structure>> STRUCTURES = Map.of(
             WorldSites.NORTH_END_CAVE, NorthEndCave.KEY,
-            WorldSites.ASHUR_MANOR, AshurManor.KEY);
-    /** How far in front of the first piece (the cave mouth, the manor) the player lands. */
+            WorldSites.ASHUR_MANOR, AshurManor.KEY,
+            WorldSites.WINSTON, Winston.KEY);
+    /** How far in front of the first piece (the cave mouth, the manor, Winston's square) the player lands. */
     private static final int GAP = 3;
 
     private SiteLanding() {
