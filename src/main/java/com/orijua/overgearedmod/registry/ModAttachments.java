@@ -51,6 +51,10 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<List<UUID>>> APPRENTICES =
             playerData("apprentices", List::of, UUIDUtil.CODEC.listOf(), ByteBufCodecs.fromCodec(UUIDUtil.CODEC.listOf()), true);
 
+    /** Insight (Perspicacia): not allocated, it grows by observing (see insight.Observation). */
+    public static final Supplier<AttachmentType<Integer>> INSIGHT =
+            playerData("insight", () -> 0, Codec.INT, ByteBufCodecs.VAR_INT, true);
+
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());

@@ -19,7 +19,8 @@ public record SystemNotification(Kind kind, List<Component> lines) {
         CLASS("class"),
         QUEST_DISCOVERED("quest_discovered"),
         ITEM("item"),
-        APPRENTICE("apprentice");
+        APPRENTICE("apprentice"),
+        INSIGHT("insight");
 
         // CLAMP: a bogus id can never index outside the enum.
         public static final StreamCodec<ByteBuf, Kind> STREAM_CODEC = ByteBufCodecs.idMapper(
