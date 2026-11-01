@@ -153,6 +153,7 @@ public class ApprenticeSmith extends PathfinderMob {
         setGrade(NpcGrade.roll(getRandom().nextDouble()));
         findAnvil();
         sync();
+        Workshop.report(master, this);
         if (grade() == NpcGrade.NAMED) {
             NotificationEvents.send(master, SystemNotification.Kind.APPRENTICE,
                     List.of(Component.translatable("notification.overgearedmod.apprentice.named", getDisplayName())));
@@ -174,6 +175,11 @@ public class ApprenticeSmith extends PathfinderMob {
         entityData.set(DATA_GRADE, grade.ordinal());
         refreshName();
         sync();
+    }
+
+    /** His name without colour or title. */
+    public String baseName() {
+        return baseName;
     }
 
     /** Synced: whether he has been recognised as a Craftsman. */
@@ -393,6 +399,7 @@ public class ApprenticeSmith extends PathfinderMob {
         List<UUID> hired = new ArrayList<>(master.getData(ModAttachments.APPRENTICES));
         hired.remove(getUUID());
         master.setData(ModAttachments.APPRENTICES, List.copyOf(hired));
+        Workshop.forget(master, getUUID());
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_dismissed", getDisplayName()), false);
         discard();
     }
@@ -403,12 +410,16 @@ public class ApprenticeSmith extends PathfinderMob {
         if (tickCount % WORK_STEP != 0 || !(level() instanceof ServerLevel level)) {
             return;
         }
-        if (entityData.get(DATA_OWNER).map(level::getPlayerByUUID).orElse(null) instanceof ServerPlayer master) {
+        ServerPlayer master = entityData.get(DATA_OWNER).map(level::getPlayerByUUID).orElse(null) instanceof ServerPlayer online ? online : null;
+        if (master != null) {
             masterLevel = ProgressionService.effectiveSmithingLevel(master);
         }
         sync();
         Status ready = readyStatus();
         setStatus(ready != Status.WORKING || blocked == null ? ready : blocked);
+        if (master != null) {
+            Workshop.report(master, this);
+        }
         if (ready != Status.WORKING) {
             return;
         }

@@ -9,6 +9,10 @@ import com.orijua.overgearedmod.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.npc.Illumination;
 import com.orijua.overgearedmod.npc.MasteryStage;
 import com.orijua.overgearedmod.npc.NpcGrade;
+import com.orijua.overgearedmod.npc.Workshop;
+import com.orijua.overgearedmod.npc.WorkshopEntry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
@@ -85,6 +89,7 @@ public final class ApprenticeTests {
         ApprenticeContractItem.introduce(player);
         ApprenticeContractItem.introduce(player);
         helper.assertTrue(player.getInventory().countItem(ModItems.APPRENTICE_CONTRACT.get()) == 1, "one contract, once");
+        helper.assertTrue(player.getInventory().countItem(ModItems.WORKSHOP_LEDGER.get()) == 1, "and the workshop ledger");
         helper.succeed();
     }
 
@@ -240,6 +245,23 @@ public final class ApprenticeTests {
         master.discard();
         advanced.discard();
         proud.discard();
+        helper.succeed();
+    }
+
+    /** The Workshop tab's entry appears at hiring, follows his order and goes away when he is dismissed. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theWorkshopFollowsHisApprentices(GameTestHelper helper) {
+        ServerPlayer player = smithOfLevel(helper, 50);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        List<WorkshopEntry> entries = Workshop.entries(player);
+        helper.assertTrue(entries.size() == 1 && entries.get(0).name().equals(apprentice.baseName())
+                && entries.get(0).statusValue() == ApprenticeSmith.Status.NO_ORDER && entries.get(0).daysPaid() == 1, "listed at hiring");
+        apprentice.takeOrder(player, ModItems.JAFFA_SWORD.get());
+        Workshop.report(player, apprentice);
+        helper.assertTrue(Workshop.entries(player).get(0).order().equals(Optional.of(BuiltInRegistries.ITEM.getKey(ModItems.JAFFA_SWORD.get()))),
+                "with his order");
+        apprentice.dismiss(player);
+        helper.assertTrue(Workshop.entries(player).isEmpty(), "gone when dismissed");
         helper.succeed();
     }
 

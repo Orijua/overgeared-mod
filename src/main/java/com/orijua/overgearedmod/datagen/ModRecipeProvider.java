@@ -52,6 +52,10 @@ final class ModRecipeProvider extends RecipeProvider {
                 .define('I', Items.IRON_BLOCK).define('i', ModItems.MITHRIL_INGOT.get())
                 .unlockedBy("has_mithril_ingot", has(ModItems.MITHRIL_INGOT.get()))
                 .save(output, Overgearedmod.id("smithing_anvil"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.WORKSHOP_LEDGER.get())
+                .requires(Items.BOOK).requires(Items.IRON_INGOT)
+                .unlockedBy("has_apprentice_contract", has(ModItems.APPRENTICE_CONTRACT.get()))
+                .save(output, Overgearedmod.id("workshop_ledger"));
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.ENHANCEMENT_STONE.get(), 2)
                 .requires(ModItems.MITHRIL_INGOT.get()).requires(Items.AMETHYST_SHARD)
                 .unlockedBy("has_mithril_ingot", has(ModItems.MITHRIL_INGOT.get()))

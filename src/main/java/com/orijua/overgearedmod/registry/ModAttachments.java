@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.goal.PlayerCounters;
 import com.orijua.overgearedmod.mob.MobLevel;
+import com.orijua.overgearedmod.npc.WorkshopEntry;
 import com.orijua.overgearedmod.progression.PlayerIdentity;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.quest.PlayerQuests;
@@ -50,6 +51,10 @@ public final class ModAttachments {
     /** The apprentice blacksmiths a player has hired (their UUIDs), to know how many more they may hire. */
     public static final Supplier<AttachmentType<List<UUID>>> APPRENTICES =
             playerData("apprentices", List::of, UUIDUtil.CODEC.listOf(), ByteBufCodecs.fromCodec(UUIDUtil.CODEC.listOf()), true);
+
+    /** What the Workshop tab shows of each apprentice (see npc.Workshop). */
+    public static final Supplier<AttachmentType<List<WorkshopEntry>>> WORKSHOP =
+            playerData("workshop", List::of, WorkshopEntry.CODEC.listOf(), ByteBufCodecs.fromCodec(WorkshopEntry.CODEC.listOf()), true);
 
     /** Insight (Perspicacia): not allocated, it grows by observing (see insight.Observation). */
     public static final Supplier<AttachmentType<Integer>> INSIGHT =

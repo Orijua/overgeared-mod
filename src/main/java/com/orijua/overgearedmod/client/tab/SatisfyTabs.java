@@ -13,7 +13,8 @@ public final class SatisfyTabs {
             StatusTab::new,
             SkillsTab::new,
             ProfileTab::new,
-            QuestsTab::new);
+            QuestsTab::new,
+            WorkshopTab::new);
 
     private SatisfyTabs() {
     }
@@ -24,5 +25,9 @@ public final class SatisfyTabs {
 
     public static void openQuests() {
         Minecraft.getInstance().setScreen(createScreen().showing(QuestsTab.class));
+    }
+
+    public static void openWorkshop() {
+        Minecraft.getInstance().setScreen(createScreen().showing(WorkshopTab.class));
     }
 }

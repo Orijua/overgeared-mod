@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-01T10:49:36.3200117	Item Models: overgearedmod
+// 1.21.1	2026-11-01T15:48:07.2585523	Item Models: overgearedmod
 9186aec3aa11a45a2b24103e84126c200f2ac5c2 assets/overgearedmod/models/item/apprentice_contract.json
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/blacksmith_spawn_egg.json
 66063b17cb93c7336607cef31749a6f0ec6dd344 assets/overgearedmod/models/item/blue_orichalcum_ingot.json
@@ -19,3 +19,4 @@ da297ba6fa75447c667dcbcf080d507f34292528 assets/overgearedmod/models/item/raw_bl
 2af470b6f3845c30915965c3b3844b9d2f60ab4a assets/overgearedmod/models/item/skill_book.json
 d2c9091593298510a2eefa07b65f9a765b5ae185 assets/overgearedmod/models/item/unappraised_book.json
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/village_chief_spawn_egg.json
+2af470b6f3845c30915965c3b3844b9d2f60ab4a assets/overgearedmod/models/item/workshop_ledger.json
