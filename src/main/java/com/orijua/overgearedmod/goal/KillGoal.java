@@ -17,7 +17,7 @@ public record KillGoal(Optional<EntityType<?>> entity, int count) implements Goa
             Codec.intRange(1, 100_000).fieldOf("count").forGetter(KillGoal::count)
     ).apply(instance, KillGoal::new));
 
-    static String counterKey(Optional<EntityType<?>> entity) {
+    public static String counterKey(Optional<EntityType<?>> entity) {
         return entity.map(type -> "kill/" + BuiltInRegistries.ENTITY_TYPE.getKey(type)).orElse("kill");
     }
 

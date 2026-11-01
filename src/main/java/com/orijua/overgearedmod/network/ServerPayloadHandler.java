@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.network;
 
 import com.orijua.overgearedmod.npc.BlacksmithNpc;
+import com.orijua.overgearedmod.pagma.PagmaBook;
 import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.QuestService;
@@ -95,6 +96,12 @@ final class ServerPayloadHandler {
         if (context.player() instanceof ServerPlayer player && player.level().getEntity(payload.npc()) instanceof BlacksmithNpc smith
                 && smith.distanceToSqr(player) <= QuestService.GIVER_REACH * QuestService.GIVER_REACH) {
             smith.startTrading(player);
+        }
+    }
+
+    static void readPagmaBook(ReadPagmaBookPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player) {
+            PagmaBook.read(player);
         }
     }
 }

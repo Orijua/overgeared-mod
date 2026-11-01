@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.noble_killer" },
+  "description": { "translate": "title.overgearedmod.noble_killer.desc" },
+  "goal": { "type": "kill", "entity": "overgearedmod:earl_ashur", "count": 1 },
+  "bonus_stats": { "strength": 10 }
+}

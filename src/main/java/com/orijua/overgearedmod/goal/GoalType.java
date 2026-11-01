@@ -10,7 +10,8 @@ public enum GoalType implements StringRepresentable {
     KILL("kill", () -> KillGoal.CODEC),
     FORGE("forge", () -> ForgeGoal.CODEC),
     LEVEL("level", () -> LevelGoal.CODEC),
-    DELIVER("deliver", () -> DeliverGoal.CODEC);
+    DELIVER("deliver", () -> DeliverGoal.CODEC),
+    MILESTONE("milestone", () -> MilestoneGoal.CODEC);
 
     public static final Codec<GoalType> CODEC = StringRepresentable.fromEnum(GoalType::values);
 

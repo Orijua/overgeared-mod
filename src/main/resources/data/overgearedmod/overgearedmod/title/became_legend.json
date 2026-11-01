@@ -1,0 +1,5 @@
+{
+  "name": { "translate": "title.overgearedmod.became_legend" },
+  "description": { "translate": "title.overgearedmod.became_legend.desc" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:read_pagma_book" }
+}

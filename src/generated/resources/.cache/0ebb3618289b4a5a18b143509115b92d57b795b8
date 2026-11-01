@@ -1,14 +1,16 @@
-// 1.21.1	2026-11-01T00:38:38.0025634	Item Models: overgearedmod
+// 1.21.1	2026-11-01T01:37:11.2162353	Item Models: overgearedmod
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/blacksmith_spawn_egg.json
 66063b17cb93c7336607cef31749a6f0ec6dd344 assets/overgearedmod/models/item/blue_orichalcum_ingot.json
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/bone_lord_spawn_egg.json
 c64ed609ece68994ce23dd2809145040bce13579 assets/overgearedmod/models/item/enhancement_stone.json
+149b21777b2124b2530441629195a024b016140d assets/overgearedmod/models/item/eye_of_pallalian.json
 7ccdd143defb54cfa4036b3b0fefb58c51ee5048 assets/overgearedmod/models/item/fracaso_blueprint.json
 01c3ee23ece61ca6fc68829612b2d7856592ec37 assets/overgearedmod/models/item/fracaso_sword.json
 973acedf5c92feef4cf45c9d28b66245f1d2fd5a assets/overgearedmod/models/item/grid_legendary_sword.json
 e6885ed5496c11f28296dedb86482ccdc77686ce assets/overgearedmod/models/item/jaffa_ingot.json
 53020a888ec39acb73b0307b4b088ac5834c8aeb assets/overgearedmod/models/item/jaffa_sword.json
 3ad6d1692d38e6f080de1c0f9e4b2c0a568a3803 assets/overgearedmod/models/item/mithril_ingot.json
+5eb9254a356375ad1384a2a7d2c14f125b9769ae assets/overgearedmod/models/item/pagma_rare_book.json
 da297ba6fa75447c667dcbcf080d507f34292528 assets/overgearedmod/models/item/raw_blue_orichalcum.json
 3c6e848570952e236e3f0c7b64e4adcba243d661 assets/overgearedmod/models/item/raw_jaffa.json
 9432ed90011c59cc0d6d4dbf3ef836509e4c2f15 assets/overgearedmod/models/item/raw_mithril.json

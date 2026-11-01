@@ -1,6 +1,8 @@
 package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.pagma.EyeOfPallalianItem;
+import com.orijua.overgearedmod.pagma.PagmaRareBookItem;
 import com.orijua.overgearedmod.pagma.UnappraisedItem;
 import com.orijua.overgearedmod.progression.RespecScrollItem;
 import com.orijua.overgearedmod.skill.SkillBookItem;
@@ -56,6 +58,11 @@ public final class ModItems {
     // The book on the golden table of the Northern End Cave (canon, cap. 1): unknown until it is appraised.
     public static final DeferredItem<UnappraisedItem> UNAPPRAISED_BOOK = ITEMS.registerItem("unappraised_book",
             UnappraisedItem::new, new Item.Properties().stacksTo(1).fireResistant());
+    // The Eye of Pallalian appraises it (sold by Smith, expensive): it becomes Pagma's rare book, and Earl Ashur comes for it.
+    public static final DeferredItem<EyeOfPallalianItem> EYE_OF_PALLALIAN = ITEMS.registerItem("eye_of_pallalian",
+            EyeOfPallalianItem::new, new Item.Properties().stacksTo(16).rarity(Rarity.RARE));
+    public static final DeferredItem<PagmaRareBookItem> PAGMA_RARE_BOOK = ITEMS.registerItem("pagma_rare_book",
+            PagmaRareBookItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC).fireResistant());
     public static final DeferredItem<BlockItem> GOLDEN_TABLE = ITEMS.registerSimpleBlockItem(ModBlocks.GOLDEN_TABLE);
 
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);

@@ -15,6 +15,8 @@ public final class WorldSites {
     public static final String BAIRAN = "bairan";
     /** The Northern End Cave, with Pagma's rare book. */
     public static final String NORTH_END_CAVE = "north_end_cave";
+    /** Earl Ashur's manor, near Bairan. */
+    public static final String ASHUR_MANOR = "ashur_manor";
 
     private static final Map<Long, Map<String, ChunkPos>> SITES = new ConcurrentHashMap<>();
 

@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.pagma.GoldenTableBlock;
 import com.orijua.overgearedmod.registry.ModBlocks;
 import com.orijua.overgearedmod.registry.ModItems;
+import com.orijua.overgearedmod.structure.AshurManor;
 import com.orijua.overgearedmod.structure.NorthEndCave;
 import com.orijua.overgearedmod.structure.NorthEndCaveProtection;
 import com.orijua.overgearedmod.structure.StartingVillage;
@@ -115,7 +116,7 @@ public final class NorthEndCaveTests {
      * The search reads only the noise: nothing generates.
      */
     @GameTest(template = TestSupport.EMPTY, timeoutTicks = 4000)
-    public static void caveFindsASiteNorthOfBairanInRealWorlds(GameTestHelper helper) {
+    public static void caveAndManorFindSitesInRealWorlds(GameTestHelper helper) {
         RegistryAccess registries = helper.getLevel().registryAccess();
         Holder<NoiseGeneratorSettings> settings = registries.registryOrThrow(Registries.NOISE_SETTINGS)
                 .getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
@@ -135,6 +136,8 @@ public final class NorthEndCaveTests {
             Optional<ChunkPos> cave = NorthEndCave.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed,
                     height, bairan);
             helper.assertTrue(cave.isPresent(), "no cave for seed " + seed);
+            helper.assertTrue(AshurManor.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed, height, bairan,
+                    AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE).isPresent(), "no room for Ashur's manor near Bairan, seed " + seed);
             int north = bairan.z - cave.get().z;
             helper.assertTrue(north >= 30, "seed " + seed + ": only " + north + " chunks north of Bairan");
             nearest = Math.min(nearest, north);

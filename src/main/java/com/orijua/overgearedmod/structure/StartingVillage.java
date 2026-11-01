@@ -32,7 +32,7 @@ import java.util.Optional;
  * usual spawn where the whole village fits on dry land in one of its biomes, saves it, and makes that the spawn: the
  * player starts on the square by the well, as Grid starts in Bairan. Bairan then generates there with the terrain,
  * like any village ({@link WorldSitePlacement}). The Northern End Cave's site is chosen at the same time, far to the north
- * ({@link NorthEndCave}); worlds that already had Bairan get theirs the next time they load.
+ * ({@link NorthEndCave}), and Earl Ashur's manor near it ({@link AshurManor}); worlds that already had Bairan get theirs\n * the next time they load.
  * <p>
  * Worlds created before this have no site, so no Bairan. So do worlds whose generator doesn't use the structure (a
  * superflat preset, for example) and the rare world with no fitting land nearby; those keep the vanilla spawn.
@@ -57,15 +57,32 @@ public final class StartingVillage {
 
     /**
      * An existing world: its saved sites have to be known before its chunks generate. A world with Bairan but from
-     * before the cave gets the cave's site now (far to the north, where nothing has generated yet).
+     * before the cave or the manor gets their sites now: the cave far to the north, where nothing has generated yet,
+     * and the manor farther from Bairan than usual, past the land players have most likely explored.
      */
     private static void onLevelLoad(LevelEvent.Load event) {
         if (event.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) {
             WorldSitesData data = WorldSitesData.get(level);
             data.sites().forEach((name, site) -> WorldSites.remember(level.getSeed(), name, site));
-            data.site(WorldSites.BAIRAN).filter(bairan -> data.site(WorldSites.NORTH_END_CAVE).isEmpty())
-                    .ifPresent(bairan -> chooseCave(level, bairan));
+            data.site(WorldSites.BAIRAN).ifPresent(bairan -> {
+                if (data.site(WorldSites.NORTH_END_CAVE).isEmpty()) {
+                    chooseCave(level, bairan);
+                }
+                if (data.site(WorldSites.ASHUR_MANOR).isEmpty()) {
+                    chooseManor(level, bairan, AshurManor.LATE_MIN_DISTANCE, AshurManor.LATE_MAX_DISTANCE);
+                }
+            });
         }
+    }
+
+    private static void chooseManor(ServerLevel level, ChunkPos bairan, int minDistance, int maxDistance) {
+        ServerChunkCache chunks = level.getChunkSource();
+        AshurManor.findSite(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(),
+                level.getSeed(), level, bairan, minDistance, maxDistance).ifPresent(manor -> {
+            WorldSites.remember(level.getSeed(), WorldSites.ASHUR_MANOR, manor);
+            WorldSitesData.get(level).setSite(WorldSites.ASHUR_MANOR, manor);
+            Overgearedmod.LOGGER.info("Earl Ashur's manor at chunk {}", manor);
+        });
     }
 
     private static void chooseCave(ServerLevel level, ChunkPos bairan) {
@@ -98,6 +115,7 @@ public final class StartingVillage {
         WorldSites.remember(level.getSeed(), WorldSites.BAIRAN, site.get().chunk());
         WorldSitesData.get(level).setSite(WorldSites.BAIRAN, site.get().chunk());
         chooseCave(level, site.get().chunk());
+        chooseManor(level, site.get().chunk(), AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE);
         event.getSettings().setSpawn(site.get().spawn(), 0.0f);
         // Start by the well, not anywhere within 10 blocks of it (a roof, the mine).
         level.getGameRules().getRule(GameRules.RULE_SPAWN_RADIUS).set(0, level.getServer());

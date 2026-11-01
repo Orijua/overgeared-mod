@@ -1,0 +1,12 @@
+{
+  "structures": [
+    {
+      "structure": "overgearedmod:ashur_manor",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "overgearedmod:world_site",
+    "site": "ashur_manor"
+  }
+}

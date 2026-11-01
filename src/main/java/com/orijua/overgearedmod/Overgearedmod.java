@@ -25,6 +25,8 @@ import com.orijua.overgearedmod.registry.ModRecipes;
 import com.orijua.overgearedmod.registry.ModWorldgen;
 import com.orijua.overgearedmod.skill.SkillEvents;
 import com.orijua.overgearedmod.structure.NorthEndCaveProtection;
+import com.orijua.overgearedmod.pagma.AshurBetrayal;
+import com.orijua.overgearedmod.pagma.LegendTitle;
 import com.orijua.overgearedmod.structure.StartingVillage;
 import com.orijua.overgearedmod.validation.ContentValidationEvents;
 import net.minecraft.resources.ResourceLocation;
@@ -82,6 +84,8 @@ public class Overgearedmod {
         DebugCommands.register(NeoForge.EVENT_BUS);
         StartingVillage.register(NeoForge.EVENT_BUS);
         NorthEndCaveProtection.register(NeoForge.EVENT_BUS);
+        AshurBetrayal.register(NeoForge.EVENT_BUS);
+        LegendTitle.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }

@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.event.MobKilledEvent;
 import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.title.TitleService;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -52,6 +53,16 @@ public final class GoalTracker {
 
     private static void onLevelUp(LevelUpEvent event) {
         checkGoals(event.player());
+    }
+
+    /** A story milestone happened to {@code player} (see {@link MilestoneGoal}): counted, then titles and hidden quests checked. */
+    public static void milestone(ServerPlayer player, ResourceLocation milestone) {
+        update(player, counters(player).increment(MilestoneGoal.counterKey(milestone)));
+    }
+
+    /** How many times {@code player} has reached a milestone. */
+    public static int milestones(ServerPlayer player, ResourceLocation milestone) {
+        return counters(player).get(MilestoneGoal.counterKey(milestone));
     }
 
     private static void update(ServerPlayer player, PlayerCounters counters) {
