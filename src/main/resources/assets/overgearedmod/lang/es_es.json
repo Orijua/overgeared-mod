@@ -328,6 +328,10 @@
   "message.overgearedmod.simulate_not_a_mob": "Esa entidad no es un mob",
   "message.overgearedmod.simulate_bad_rating": "Rango desconocido: %s",
   "message.overgearedmod.quests_reset": "Misiones reiniciadas",
+  "message.overgearedmod.debug_smithing": "Herrería a nivel %s (efectiva, con la clase: %s)",
+  "message.overgearedmod.debug_level": "Nivel %s (+%s puntos de estadística)",
+  "message.overgearedmod.debug_stat": "%s: %s puntos",
+  "message.overgearedmod.debug_bad_stat": "Estadística desconocida: %s",
   "message.overgearedmod.content_valid": "Contenido correcto: ninguna referencia rota.",
   "message.overgearedmod.content_problems": "%s problema(s) en el contenido:",
 
