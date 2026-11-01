@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:blacksmith"],
+  "text": { "translate": "rumor.overgearedmod.north_cave" },
+  "solved_by": { "milestones": ["overgearedmod:ashur_secret", "overgearedmod:read_pagma_book", "overgearedmod:appraised_pagma_book"] }
+}

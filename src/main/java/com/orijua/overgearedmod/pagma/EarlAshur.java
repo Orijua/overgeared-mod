@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.pagma;
 
 import com.orijua.overgearedmod.client.NpcQuestScreen;
+import com.orijua.overgearedmod.rumor.Rumors;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerBossEvent;
@@ -94,6 +95,7 @@ public class EarlAshur extends AshurRetinue {
             NpcQuestScreen.open(this, false);
         } else if (player instanceof ServerPlayer serverPlayer) {
             AshurBetrayal.talk(serverPlayer);
+            Rumors.hear(serverPlayer, getType());
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
     }

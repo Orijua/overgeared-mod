@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.npc;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.client.NpcQuestScreen;
+import com.orijua.overgearedmod.rumor.Rumors;
 import com.orijua.overgearedmod.registry.ModItems;
 import com.orijua.overgearedmod.skill.SkillBookItem;
 import net.minecraft.resources.ResourceLocation;
@@ -107,6 +108,7 @@ public class BlacksmithNpc extends AbstractVillager {
             NpcQuestScreen.open(this, true);
         } else if (player instanceof ServerPlayer serverPlayer) {
             ApprenticeContractItem.introduce(serverPlayer);
+            Rumors.hear(serverPlayer, getType());
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
     }

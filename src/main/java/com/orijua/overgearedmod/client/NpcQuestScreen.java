@@ -10,6 +10,8 @@ import com.orijua.overgearedmod.quest.QuestDefinition;
 import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.rumor.Rumors;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -26,7 +28,8 @@ import java.util.List;
 
 /**
  * An NPC's quest window (right-click on Smith or the village chief): the quests it gives that the player can accept or
- * has active, each with Accept, Deliver or Claim. A merchant also gets a Trade button. Quests with a giver can only be
+ * has active, each with Accept, Deliver or Claim, and under them today's rumor (see {@link Rumors}). A merchant also
+ * gets a Trade button. Quests with a giver can only be
  * dealt with here; the server checks it again (QuestService.atGiver).
  */
 public final class NpcQuestScreen extends Screen {
@@ -35,6 +38,7 @@ public final class NpcQuestScreen extends Screen {
     private static final int ROW = 28;
     private static final int MAX_ROWS = 5;
     private static final int BUTTON_WIDTH = 64;
+    private static final int MAX_RUMOR_LINES = 4;
 
     private record Row(Definitions.Entry<QuestDefinition> quest, Button button, NpcQuestPayload.Action action) {
     }
@@ -42,6 +46,7 @@ public final class NpcQuestScreen extends Screen {
     private final Entity npc;
     private final boolean merchant;
     private final List<Row> rows = new ArrayList<>();
+    private List<FormattedCharSequence> rumor = List.of();
     private PlayerQuests shownState;
     private int left;
     private int top;
@@ -66,6 +71,11 @@ public final class NpcQuestScreen extends Screen {
         return top + PADDING + UiStyle.LINE + 6;
     }
 
+    /** Today's rumor sits under the quests: a heading and its lines, or nothing when the NPC has none left. */
+    private int rumorHeight() {
+        return rumor.isEmpty() ? 0 : 6 + UiStyle.LINE + rumor.size() * 10;
+    }
+
     @Override
     protected void init() {
         rows.clear();
@@ -75,7 +85,11 @@ public final class NpcQuestScreen extends Screen {
                 .filter(entry -> shownState.isActive(entry.id()) || QuestService.canAccept(player(), entry.id(), entry.value()))
                 .limit(MAX_ROWS)
                 .toList();
-        panelHeight = PADDING + UiStyle.LINE + 6 + Math.max(1, quests.size()) * ROW + (merchant ? 24 : 0) + PADDING;
+        rumor = Rumors.today(player(), npc.getType())
+                .map(entry -> font.split(entry.value().text().copy().withStyle(ChatFormatting.ITALIC), WIDTH - 2 * PADDING))
+                .map(lines -> lines.subList(0, Math.min(lines.size(), MAX_RUMOR_LINES)))
+                .orElse(List.of());
+        panelHeight = PADDING + UiStyle.LINE + 6 + Math.max(1, quests.size()) * ROW + rumorHeight() + (merchant ? 24 : 0) + PADDING;
         left = (width - WIDTH) / 2;
         top = (height - panelHeight) / 2;
         for (int i = 0; i < quests.size(); i++) {
@@ -164,6 +178,7 @@ public final class NpcQuestScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, left + WIDTH / 2, top + PADDING, UiStyle.HEADING);
         graphics.fill(left + PADDING, top + PADDING + UiStyle.LINE, left + WIDTH - PADDING, top + PADDING + UiStyle.LINE + 1, UiStyle.LINE_SOFT);
+        renderRumor(graphics);
         if (rows.isEmpty()) {
             UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.npc_no_quests"), left + PADDING, listTop() + 4,
                     UiStyle.MUTED);
@@ -187,6 +202,21 @@ public final class NpcQuestScreen extends Screen {
             if (mouseX >= left + PADDING && mouseX < left + PADDING + textWidth && mouseY >= y - 2 && mouseY < y + ROW - 4) {
                 graphics.renderTooltip(font, tooltip(quest), mouseX, mouseY);
             }
+        }
+    }
+
+    private void renderRumor(GuiGraphics graphics) {
+        if (rumor.isEmpty()) {
+            return;
+        }
+        int y = listTop() + Math.max(1, rows.size()) * ROW;
+        graphics.fill(left + PADDING, y, left + WIDTH - PADDING, y + 1, UiStyle.LINE_SOFT);
+        y += 6;
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.npc_rumor"), left + PADDING, y, UiStyle.GOLD);
+        y += UiStyle.LINE;
+        for (FormattedCharSequence line : rumor) {
+            graphics.drawString(font, line, left + PADDING, y, UiStyle.TEXT);
+            y += 10;
         }
     }
 

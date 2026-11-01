@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:village_chief"],
+  "text": { "translate": "rumor.overgearedmod.night_calls" },
+  "solved_by": { "quests": ["overgearedmod:call_of_the_night"] }
+}

@@ -1,0 +1,6 @@
+{
+  "givers": ["overgearedmod:earl_ashur"],
+  "text": { "translate": "rumor.overgearedmod.moonlit_ore" },
+  "requires_quest": "overgearedmod:quality_test",
+  "solved_by": { "milestones": ["overgearedmod:found_blue_orichalcum"] }
+}

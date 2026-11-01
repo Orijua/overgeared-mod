@@ -1,0 +1,6 @@
+{
+  "givers": ["overgearedmod:blacksmith"],
+  "text": { "translate": "rumor.overgearedmod.an_apprentice" },
+  "requires_quest": "overgearedmod:smith_jaffa_sword",
+  "solved_by": { "milestones": ["overgearedmod:apprentice_introduced"] }
+}

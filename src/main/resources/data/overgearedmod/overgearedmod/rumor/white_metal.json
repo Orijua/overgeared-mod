@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:blacksmith"],
+  "text": { "translate": "rumor.overgearedmod.white_metal" },
+  "solved_by": { "milestones": ["overgearedmod:found_mithril"] }
+}

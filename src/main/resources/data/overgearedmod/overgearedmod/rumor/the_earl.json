@@ -1,0 +1,6 @@
+{
+  "givers": ["overgearedmod:village_chief"],
+  "text": { "translate": "rumor.overgearedmod.the_earl" },
+  "requires_quest": "overgearedmod:quality_test",
+  "solved_by": { "milestones": ["overgearedmod:ashur_secret"] }
+}

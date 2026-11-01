@@ -30,6 +30,7 @@ import com.orijua.overgearedmod.npc.ApprenticeAssignments;
 import com.orijua.overgearedmod.npc.Illumination;
 import com.orijua.overgearedmod.pagma.AshurBetrayal;
 import com.orijua.overgearedmod.pagma.LegendTitle;
+import com.orijua.overgearedmod.rumor.MaterialFinds;
 import com.orijua.overgearedmod.structure.StartingVillage;
 import com.orijua.overgearedmod.validation.ContentValidationEvents;
 import net.minecraft.resources.ResourceLocation;
@@ -92,6 +93,7 @@ public class Overgearedmod {
         Observation.register(NeoForge.EVENT_BUS);
         AshurBetrayal.register(NeoForge.EVENT_BUS);
         LegendTitle.register(NeoForge.EVENT_BUS);
+        MaterialFinds.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }

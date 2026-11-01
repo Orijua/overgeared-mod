@@ -1,0 +1,6 @@
+{
+  "givers": ["overgearedmod:earl_ashur"],
+  "text": { "translate": "rumor.overgearedmod.unchosen_paths" },
+  "requires_quest": "overgearedmod:quality_test",
+  "solved_by": { "quests": ["overgearedmod:call_of_the_night", "overgearedmod:pagma_legacy"] }
+}

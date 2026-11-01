@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:blacksmith"],
+  "text": { "translate": "rumor.overgearedmod.singing_anvil" },
+  "solved_by": { "milestones": ["overgearedmod:great_success"] }
+}

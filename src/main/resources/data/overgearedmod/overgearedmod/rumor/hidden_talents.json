@@ -1,0 +1,6 @@
+{
+  "givers": ["overgearedmod:village_chief"],
+  "text": { "translate": "rumor.overgearedmod.hidden_talents" },
+  "requires_quest": "overgearedmod:watch_commander",
+  "solved_by": { "milestones": ["overgearedmod:talent_found"] }
+}
