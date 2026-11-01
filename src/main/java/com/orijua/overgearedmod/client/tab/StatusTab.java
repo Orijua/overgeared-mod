@@ -85,7 +85,9 @@ public class StatusTab extends SatisfyTab {
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.smithing", ProgressionService.effectiveSmithingLevel(player())), half, top + 16, UiStyle.MUTED);
         UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.free_points", stats.freePoints()), left, top + 30,
                 stats.freePoints() > 0 ? UiStyle.GOOD : UiStyle.MUTED);
-        Component insight = Component.translatable("screen.overgearedmod.insight", Observation.insight(player()));
+        int swordBonus = Observation.effectiveInsight(player()) - Observation.insight(player());
+        Component insight = Component.translatable("screen.overgearedmod.insight", Observation.insight(player()))
+                .append(swordBonus > 0 ? Component.literal(" +" + swordBonus).withColor(UiStyle.GOOD) : Component.empty());
         UiStyle.text(graphics, font(), insight, half, top + 30, UiStyle.MUTED);
         boolean overInsight = mouseX >= half && mouseX < half + font().width(insight) && mouseY >= top + 28 && mouseY < top + 40;
 

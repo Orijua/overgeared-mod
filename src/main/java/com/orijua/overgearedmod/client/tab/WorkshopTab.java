@@ -52,7 +52,7 @@ public class WorkshopTab extends SatisfyTab {
             }
             return;
         }
-        boolean showLevel = InsightRules.detail(Observation.insight(player())) != InsightRules.Detail.LOW;
+        boolean showLevel = InsightRules.detail(Observation.effectiveInsight(player())) != InsightRules.Detail.LOW;
         for (int i = 0; i < entries.size(); i++) {
             renderEntry(graphics, entries.get(i), top + LIST_TOP + i * ROW, showLevel);
         }

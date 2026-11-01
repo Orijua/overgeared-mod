@@ -1,0 +1,9 @@
+{
+  "name": { "translate": "quest.overgearedmod.watch_commander" },
+  "description": { "translate": "quest.overgearedmod.watch_commander.desc" },
+  "goal": { "type": "kill", "entity": "minecraft:zombie", "count": 30 },
+  "giver": "overgearedmod:village_chief",
+  "requires_quest": "overgearedmod:night_watch",
+  "xp_reward": 400,
+  "item_rewards": [{ "id": "overgearedmod:commanders_sword" }]
+}

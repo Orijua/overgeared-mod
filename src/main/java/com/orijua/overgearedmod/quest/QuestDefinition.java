@@ -21,6 +21,7 @@ import java.util.Optional;
  * (counted over their whole life, like titles), then it shows up and can be accepted.
  * {@code giver} is the NPC (entity type) that gives it: such a quest is only accepted, delivered to and claimed at an NPC
  * of that type, from its quest window; the Quests tab lists it with a hint to go and talk to them.
+ * {@code loaned_items} are lent on accepting it and taken back (from the inventory) when it is claimed or abandoned.
  */
 public record QuestDefinition(
         Component name,
@@ -33,7 +34,8 @@ public record QuestDefinition(
         List<ItemStack> itemRewards,
         Optional<ResourceLocation> classReward,
         boolean repeatable,
-        Optional<EntityType<?>> giver) {
+        Optional<EntityType<?>> giver,
+        List<ItemStack> loanedItems) {
 
     public static final Codec<QuestDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ComponentSerialization.CODEC.fieldOf("name").forGetter(QuestDefinition::name),
@@ -46,7 +48,8 @@ public record QuestDefinition(
             ItemStack.CODEC.listOf().optionalFieldOf("item_rewards", List.of()).forGetter(QuestDefinition::itemRewards),
             ResourceLocation.CODEC.optionalFieldOf("class_reward").forGetter(QuestDefinition::classReward),
             Codec.BOOL.optionalFieldOf("repeatable", false).forGetter(QuestDefinition::repeatable),
-            BuiltInRegistries.ENTITY_TYPE.byNameCodec().optionalFieldOf("giver").forGetter(QuestDefinition::giver)
+            BuiltInRegistries.ENTITY_TYPE.byNameCodec().optionalFieldOf("giver").forGetter(QuestDefinition::giver),
+            ItemStack.CODEC.listOf().optionalFieldOf("loaned_items", List.of()).forGetter(QuestDefinition::loanedItems)
     ).apply(instance, QuestDefinition::new));
 
     public boolean allowsClass(Optional<ResourceLocation> playerClass) {

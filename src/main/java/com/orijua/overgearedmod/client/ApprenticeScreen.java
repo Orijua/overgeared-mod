@@ -150,7 +150,7 @@ public final class ApprenticeScreen extends Screen {
         graphics.drawCenteredString(font, title, centerX, top + PADDING, UiStyle.HEADING);
         Component role = Component.translatable(apprentice.isCraftsman() ? "screen.overgearedmod.apprentice.craftsman" : "entity.overgearedmod.apprentice_smith");
         Component stage = Component.translatable("npc.overgearedmod.stage." + apprentice.shownStage().key());
-        int insight = Observation.insight(minecraft.player);
+        int insight = Observation.effectiveInsight(minecraft.player);
         InsightRules.Detail detail = InsightRules.detail(insight);
         String level = detail == InsightRules.Detail.LOW ? "??" : String.valueOf(apprentice.shownLevel());
         graphics.drawCenteredString(font, Component.translatable("screen.overgearedmod.apprentice.subtitle", role, stage, level),

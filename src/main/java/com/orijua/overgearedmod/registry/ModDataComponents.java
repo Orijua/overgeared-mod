@@ -6,6 +6,7 @@ import com.orijua.overgearedmod.equipment.EquipRequirements;
 import com.orijua.overgearedmod.equipment.EquipmentRules;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.equipment.option.RolledOption;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -14,6 +15,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.List;
+import java.util.UUID;
 
 /** Typed data stored on an ItemStack: saved with the item ("persistent") and sent to clients ("networkSynchronized"). */
 public final class ModDataComponents {
@@ -44,6 +46,18 @@ public final class ModDataComponents {
             DATA_COMPONENTS.registerComponentType("skill_book", builder -> builder
                     .persistent(ResourceLocation.CODEC)
                     .networkSynchronized(ResourceLocation.STREAM_CODEC));
+
+    /** On an item a quest giver lends: the quest it is lent for; it is taken back when that quest ends. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ResourceLocation>> LOANED_FOR =
+            DATA_COMPONENTS.registerComponentType("loaned_for", builder -> builder
+                    .persistent(ResourceLocation.CODEC)
+                    .networkSynchronized(ResourceLocation.STREAM_CODEC));
+
+    /** On the Ruler's Sword: the villagers whose talent it has already revealed. */
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<List<UUID>>> TALENTS_FOUND =
+            DATA_COMPONENTS.registerComponentType("talents_found", builder -> builder
+                    .persistent(UUIDUtil.CODEC.listOf())
+                    .networkSynchronized(UUIDUtil.STREAM_CODEC.apply(ByteBufCodecs.list())));
 
     private ModDataComponents() {
     }

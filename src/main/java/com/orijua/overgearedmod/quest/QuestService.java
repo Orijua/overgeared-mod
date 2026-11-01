@@ -10,6 +10,7 @@ import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -121,7 +122,35 @@ public final class QuestService {
         int stored = quest.get().goal().startingValue(player.getData(ModAttachments.PLAYER_COUNTERS), ProgressionService.get(player));
         player.setData(ModAttachments.PLAYER_QUESTS, quests.accept(id, stored));
         player.displayClientMessage(Component.translatable("message.overgearedmod.quest_accepted", quest.get().name()), true);
+        lend(player, id, quest.get());
         return Result.SUCCESS;
+    }
+
+    /** Hands over the quest's loaned items, marked as lent for it. */
+    private static void lend(ServerPlayer player, ResourceLocation id, QuestDefinition quest) {
+        for (ItemStack loan : quest.loanedItems()) {
+            ItemStack copy = loan.copy();
+            copy.set(ModDataComponents.LOANED_FOR, id);
+            if (!player.getInventory().add(copy)) {
+                player.drop(copy, false);
+            }
+        }
+        if (!quest.loanedItems().isEmpty()) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.quest_loaned", quest.name()), false);
+        }
+    }
+
+    /** Takes back, from the inventory, everything lent for quest {@code id}. Returns how many stacks. */
+    public static int reclaimLoans(ServerPlayer player, ResourceLocation id) {
+        Inventory inventory = player.getInventory();
+        int taken = 0;
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            if (id.equals(inventory.getItem(slot).get(ModDataComponents.LOANED_FOR))) {
+                inventory.setItem(slot, ItemStack.EMPTY);
+                taken++;
+            }
+        }
+        return taken;
     }
 
     /**
@@ -171,6 +200,7 @@ public final class QuestService {
             return Result.NOT_ACTIVE;
         }
         player.setData(ModAttachments.PLAYER_QUESTS, quests.abandon(id));
+        reclaimLoans(player, id);
         Definitions.get(player.level(), ModDatapackRegistries.QUEST, id).ifPresent(quest ->
                 player.displayClientMessage(Component.translatable("message.overgearedmod.quest_abandoned", quest.name()), true));
         return Result.SUCCESS;
@@ -215,6 +245,9 @@ public final class QuestService {
         }
 
         player.setData(ModAttachments.PLAYER_QUESTS, quests.complete(id));
+        if (reclaimLoans(player, id) > 0) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.quest_loan_returned", quest.name()), false);
+        }
         for (ItemStack reward : quest.itemRewards()) {
             ItemStack copy = reward.copy();
             if (!player.getInventory().add(copy)) {

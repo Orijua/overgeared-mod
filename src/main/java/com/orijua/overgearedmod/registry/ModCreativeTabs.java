@@ -47,6 +47,8 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.IRON_SMITHING_HAMMER);
                         output.accept(ModItems.JAFFA_SMITHING_HAMMER);
                         output.accept(ModItems.MITHRIL_SMITHING_HAMMER);
+                        output.accept(ModItems.COMMANDERS_SWORD);
+                        output.accept(ModItems.RULERS_SWORD);
                         output.accept(ModItems.ENHANCEMENT_STONE);
                         output.accept(ModItems.RESPEC_SCROLL);
                         output.accept(ModItems.BLACKSMITH_SPAWN_EGG);
