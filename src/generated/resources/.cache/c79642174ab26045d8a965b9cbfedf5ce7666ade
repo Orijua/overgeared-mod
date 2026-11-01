@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-01T00:38:38.0008272	Block States: overgearedmod
+// 1.21.1	2026-11-01T22:01:13.5015319	Block States: overgearedmod
 9db3a670d2026c3b473d88d78183749bf5e33532 assets/overgearedmod/blockstates/blue_orichalcum_ore.json
 5fa23022c8e57702e51d4462564fc2639ce409a0 assets/overgearedmod/blockstates/deepslate_blue_orichalcum_ore.json
 fb562f7819b44852d429376b3b4a8320a34dd0c5 assets/overgearedmod/blockstates/deepslate_jaffa_ore.json
@@ -13,7 +13,7 @@ e42d3a808545f418705a4544447312a4fe7f9a6e assets/overgearedmod/blockstates/golden
 f44750542389953f8f801dad7c198da9b89c2e6e assets/overgearedmod/models/block/deepslate_jaffa_ore.json
 7dcb3dce46c4a6d66fab353e91c785341a7e1829 assets/overgearedmod/models/block/deepslate_mithril_ore.json
 511ce0d70c342d25545587859fda50eba80fbcd9 assets/overgearedmod/models/block/golden_table.json
-767a6b01255474c81e353f212be1fc12f9fb5673 assets/overgearedmod/models/block/golden_table_book.json
+625d66eb4607df84124f42372b3ccb722e13ffc7 assets/overgearedmod/models/block/golden_table_book.json
 dbd4c229a41ed1550ed7f4476af62748a14b6200 assets/overgearedmod/models/block/jaffa_ore.json
 dcbf36788ff291c6eba3535fb68b7f4d29371687 assets/overgearedmod/models/block/mithril_ore.json
 879edc434194c8bd52733c4256095c8a8abd4661 assets/overgearedmod/models/block/smelter.json
