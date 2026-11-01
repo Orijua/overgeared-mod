@@ -18,15 +18,22 @@ import net.minecraft.network.chat.Component;
  * Satisfy level and XP above the mana bar: the numbers ("Lv 3 · 45/75 XP") right-aligned, with a thin
  * Satisfy bar under them. It is the mod's own XP, not vanilla's experience bar, which stays for enchanting.
  * The level is always shown; the numbers after it and the bar only for a while after gaining XP ({@link XpBarFade}).
+ * Each gain also shows a gold "+N XP" rising above the numbers, and the bar fills gradually with the new
+ * part glowing ({@link XpGainFeedback}).
  */
 final class XpHudLayer implements LayeredDraw.Layer {
     private static final int WIDTH = 81;
     private static final int BAR_HEIGHT = 2;
     private static final int ROW_HEIGHT = 14;
+    /** How many pixels the "+N XP" rises above the numbers. */
+    private static final int RISE = 6;
     /** Below this the faded text is skipped, since the font draws an almost transparent color as opaque. */
     private static final float MIN_TEXT_ALPHA = 0.05f;
+    private static final int GLOW = 0xFFFFFF;
+    private static final long PULSE_MILLIS = 600;
 
     private final XpBarFade fade = new XpBarFade();
+    private final XpGainFeedback gain = new XpGainFeedback(level -> ProgressionRules.xpToNextLevel(Balance.current(), level));
     private LocalPlayer seenPlayer;
 
     @Override
@@ -39,9 +46,12 @@ final class XpHudLayer implements LayeredDraw.Layer {
             // Joining a world or respawning: what the new player already has is not a gain.
             seenPlayer = minecraft.player;
             fade.reset();
+            gain.reset();
         }
         PlayerStats stats = ProgressionService.get(minecraft.player);
-        float alpha = fade.update(Util.getMillis(), stats.level(), stats.xp());
+        long now = Util.getMillis();
+        float alpha = fade.update(now, stats.level(), stats.xp());
+        gain.update(now, stats.level(), stats.xp());
         int needed = ProgressionRules.xpToNextLevel(Balance.current(), stats.level());
         Component level = Component.translatable("hud.overgearedmod.level", stats.level());
         Component xp = Component.translatable("hud.overgearedmod.xp", stats.xp(), needed);
@@ -56,10 +66,31 @@ final class XpHudLayer implements LayeredDraw.Layer {
         int xpX = right - minecraft.font.width(xp);
         graphics.drawString(minecraft.font, level, xpX - minecraft.font.width(level), textY, UiStyle.HEADING);
         if (alpha > 0) {
-            UiStyle.bar(graphics, right - WIDTH, bottom - BAR_HEIGHT, WIDTH, BAR_HEIGHT, stats.xp() / (float) needed, UiStyle.XP, alpha);
+            int barX = right - WIDTH;
+            int barY = bottom - BAR_HEIGHT;
+            UiStyle.bar(graphics, barX, barY, WIDTH, BAR_HEIGHT, gain.barFill(), UiStyle.XP, alpha);
+            renderGlow(graphics, barX, barY, now, alpha);
         }
         if (alpha >= MIN_TEXT_ALPHA) {
             graphics.drawString(minecraft.font, xp, xpX, textY, UiStyle.withAlpha(UiStyle.HEADING, alpha));
         }
+        float popupAlpha = gain.popupAlpha(now);
+        if (popupAlpha >= MIN_TEXT_ALPHA) {
+            Component popup = Component.translatable("hud.overgearedmod.xp_gain", gain.amount());
+            int popupY = textY - 10 - Math.round(RISE * gain.rise(now));
+            graphics.drawString(minecraft.font, popup, right - minecraft.font.width(popup), popupY, UiStyle.withAlpha(UiStyle.GOLD, popupAlpha));
+        }
+    }
+
+    /** The part of the bar gained in this count, lit up and pulsing, spilling over the border so it reads at 2 px. */
+    private void renderGlow(GuiGraphics graphics, int barX, int barY, long now, float alpha) {
+        float glow = gain.glow(now) * alpha;
+        int from = barX + Math.round(WIDTH * gain.glowStart());
+        int to = barX + Math.round(WIDTH * gain.barFill());
+        if (glow <= 0 || to <= from) {
+            return;
+        }
+        float pulse = 0.5f + 0.25f * (float) Math.sin(now * 2 * Math.PI / PULSE_MILLIS);
+        graphics.fill(from, barY - 1, to, barY + BAR_HEIGHT + 1, UiStyle.withAlpha(GLOW, glow * pulse));
     }
 }
