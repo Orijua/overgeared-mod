@@ -32,6 +32,8 @@ public class ProfileTab extends SatisfyTab {
     /** Where the title rows start when the class description fits in two lines; a longer one pushes them down. */
     private static final int TITLES_TOP = 64;
     private static final int TITLE_ROW = 12;
+    /** Space between a title's name and its progress column. */
+    private static final int NAME_GAP = 6;
 
     private final ScrollList titleScroll = new ScrollList(9);
 
@@ -118,14 +120,16 @@ public class ProfileTab extends SatisfyTab {
             TitleDefinition title = titles.get(i).value();
             int y = top + titlesTop + (i - titleScroll.first()) * TITLE_ROW;
             boolean earned = identity.hasTitle(titles.get(i).id());
-            UiStyle.text(graphics, font(), Component.literal(earned ? "✔ " : "· ").append(title.name()), left, y, earned ? UiStyle.GOLD : UiStyle.MUTED);
+            // A long name is cut before the progress column; the tooltip gives it whole.
+            Component name = UiStyle.ellipsize(font(), Component.literal(earned ? "✔ " : "· ").append(title.name()), width / 2 - NAME_GAP);
+            UiStyle.text(graphics, font(), name, left, y, earned ? UiStyle.GOLD : UiStyle.MUTED);
             Goal goal = title.goal();
             Component progress = earned
                     ? bonusText(title.bonusStats())
                     : Component.literal(Math.min(goal.target(), goal.progress(counters, ProgressionService.get(player()))) + "/" + goal.target());
             UiStyle.text(graphics, font(), progress, left + width / 2, y, earned ? UiStyle.GOOD : UiStyle.MUTED);
             if (mouseX >= left && mouseX < left + width && mouseY >= y - 1 && mouseY < y + TITLE_ROW - 1) {
-                graphics.renderTooltip(font(), List.of(title.description().getVisualOrderText(), goal.describe().getVisualOrderText()), mouseX, mouseY);
+                graphics.renderTooltip(font(), List.of(title.name().getVisualOrderText(), title.description().getVisualOrderText(), goal.describe().getVisualOrderText()), mouseX, mouseY);
             }
         }
         titleScroll.renderBar(graphics, left + width + 3, top + titlesTop - 1, visibleTitles * TITLE_ROW, titles.size());

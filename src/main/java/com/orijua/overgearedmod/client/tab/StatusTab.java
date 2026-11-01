@@ -3,7 +3,6 @@ package com.orijua.overgearedmod.client.tab;
 import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.client.ui.SatisfyButton;
 import com.orijua.overgearedmod.client.ui.SatisfyTab;
-import com.orijua.overgearedmod.insight.InsightRules;
 import com.orijua.overgearedmod.insight.Observation;
 import com.orijua.overgearedmod.client.ui.UiStyle;
 import com.orijua.overgearedmod.network.AllocateStatPayload;
@@ -109,7 +108,7 @@ public class StatusTab extends SatisfyTab {
             graphics.renderTooltip(font(), tooltip(hovered), mouseX, mouseY);
         } else if (overInsight) {
             graphics.renderTooltip(font(), font().split(Component.translatable("screen.overgearedmod.insight.tooltip",
-                    InsightRules.OBSERVE_TICKS / 20), 200), mouseX, mouseY);
+                    String.format("%.1f", Observation.observeTicks(player()) / 20.0)), 200), mouseX, mouseY);
         }
     }
 

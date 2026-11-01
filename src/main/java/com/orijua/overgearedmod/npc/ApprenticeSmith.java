@@ -22,7 +22,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -96,9 +98,20 @@ public class ApprenticeSmith extends PathfinderMob {
     private static final EntityDataAccessor<Integer> DATA_GRADE = SynchedEntityData.defineId(ApprenticeSmith.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_CRAFTSMAN = SynchedEntityData.defineId(ApprenticeSmith.class,
             EntityDataSerializers.BOOLEAN);
+    /** How far the piece on the anvil is, in percent. */
+    private static final EntityDataAccessor<Integer> DATA_PROGRESS = SynchedEntityData.defineId(ApprenticeSmith.class, EntityDataSerializers.INT);
+    /** What he lacks to start the next piece (with the count missing), or empty. */
+    private static final EntityDataAccessor<ItemStack> DATA_MISSING = SynchedEntityData.defineId(ApprenticeSmith.class,
+            EntityDataSerializers.ITEM_STACK);
 
     /** Why he isn't working, shown in his window. */
-    public enum Status { WORKING, NO_ORDER, NO_ANVIL, UNPAID, NO_MATERIALS, BARREL_FULL }
+    public enum Status { WORKING, NO_ORDER, NO_ANVIL, UNPAID, NO_MATERIALS, BARREL_FULL, NO_OUTPUT;
+
+        /** Stopped on his own, with an order: what the "!" over his head and the chat warning are for. */
+        public boolean stopped() {
+            return this != WORKING && this != NO_ORDER;
+        }
+    }
 
     /** The containers his master can assign him. */
     public enum Slot { MATERIALS, OUTPUT }
@@ -110,8 +123,8 @@ public class ApprenticeSmith extends PathfinderMob {
     private BlockPos anvil;
     private long paidUntil;
     private int workTicks;
-    /** What stopped the last piece (no materials, full barrel), or null if it went through. */
-    private Status blocked;
+    /** The materials of the piece on the anvil, taken when he started it; empty between pieces. */
+    private final List<ItemStack> onAnvil = new ArrayList<>();
 
     public ApprenticeSmith(EntityType<? extends ApprenticeSmith> type, Level level) {
         super(type, level);
@@ -134,6 +147,8 @@ public class ApprenticeSmith extends PathfinderMob {
         builder.define(DATA_OUTPUT, Optional.empty());
         builder.define(DATA_GRADE, NpcGrade.NORMAL.ordinal());
         builder.define(DATA_CRAFTSMAN, false);
+        builder.define(DATA_PROGRESS, 0);
+        builder.define(DATA_MISSING, ItemStack.EMPTY);
     }
 
     @Override
@@ -249,6 +264,32 @@ public class ApprenticeSmith extends PathfinderMob {
         return entityData.get(DATA_DAYS_PAID);
     }
 
+    /** How far the piece on the anvil is, 0-100 (0 with none). */
+    public int shownProgress() {
+        return entityData.get(DATA_PROGRESS);
+    }
+
+    /** What he lacks to start the next piece, with the count missing (empty when nothing). */
+    public ItemStack shownMissing() {
+        return entityData.get(DATA_MISSING);
+    }
+
+    /**
+     * His status in words, as his window and the chat warning show it: what he lacks when it is materials, and how far
+     * the piece is while he works.
+     */
+    public Component statusText() {
+        Status status = status();
+        ItemStack missing = shownMissing();
+        if (status == Status.NO_MATERIALS && !missing.isEmpty()) {
+            return Component.translatable("message.overgearedmod.apprentice_status.no_materials_item", missing.getCount(), missing.getHoverName());
+        }
+        if (status == Status.WORKING && shownProgress() > 0) {
+            return Component.translatable("message.overgearedmod.apprentice_status.working_progress", shownProgress());
+        }
+        return Component.translatable("message.overgearedmod.apprentice_status." + status.name().toLowerCase());
+    }
+
     /** The container assigned to {@code slot}, if any; without one he uses those touching the anvil. */
     public Optional<BlockPos> assigned(Slot slot) {
         return entityData.get(accessor(slot));
@@ -267,6 +308,7 @@ public class ApprenticeSmith extends PathfinderMob {
         entityData.set(DATA_LEVEL, smithingLevel());
         entityData.set(DATA_ORDER, order == null ? ItemStack.EMPTY : new ItemStack(order));
         entityData.set(DATA_DAYS_PAID, daysPaid());
+        entityData.set(DATA_PROGRESS, onAnvil.isEmpty() ? 0 : Math.min(100, workTicks * 100 / ApprenticeRules.ticksPerPiece(smithingLevel())));
     }
 
     private void setStatus(Status status) {
@@ -347,8 +389,10 @@ public class ApprenticeSmith extends PathfinderMob {
                     Component.translatable("npc.overgearedmod.stage." + needed.key())), true);
             return false;
         }
+        if (order != item) {
+            returnMaterials(master);
+        }
         order = item;
-        workTicks = 0;
         findAnvil();
         sync();
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_order", getDisplayName(), item.getDescription()), true);
@@ -360,9 +404,9 @@ public class ApprenticeSmith extends PathfinderMob {
         if (order == null) {
             return;
         }
+        returnMaterials(master);
         order = null;
-        workTicks = 0;
-        blocked = null;
+        entityData.set(DATA_MISSING, ItemStack.EMPTY);
         setStatus(Status.NO_ORDER);
         sync();
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_order_cancelled", getDisplayName()), true);
@@ -383,7 +427,6 @@ public class ApprenticeSmith extends PathfinderMob {
             return false;
         }
         entityData.set(accessor(slot), Optional.of(pos.immutable()));
-        blocked = null;
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_assigned_" + slot.name().toLowerCase(),
                 getDisplayName(), level().getBlockState(pos).getBlock().getName()), true);
         playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
@@ -394,7 +437,6 @@ public class ApprenticeSmith extends PathfinderMob {
     public void clearAssignments(ServerPlayer master) {
         entityData.set(DATA_MATERIALS, Optional.empty());
         entityData.set(DATA_OUTPUT, Optional.empty());
-        blocked = null;
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_assign_cleared", getDisplayName()), true);
     }
 
@@ -435,6 +477,7 @@ public class ApprenticeSmith extends PathfinderMob {
 
     public void dismiss(ServerPlayer master) {
         returnHammer(master);
+        returnMaterials(master);
         List<UUID> hired = new ArrayList<>(master.getData(ModAttachments.APPRENTICES));
         hired.remove(getUUID());
         master.setData(ModAttachments.APPRENTICES, List.copyOf(hired));
@@ -449,28 +492,47 @@ public class ApprenticeSmith extends PathfinderMob {
         if (tickCount % WORK_STEP != 0 || !(level() instanceof ServerLevel level)) {
             return;
         }
-        ServerPlayer master = entityData.get(DATA_OWNER).map(level::getPlayerByUUID).orElse(null) instanceof ServerPlayer online ? online : null;
+        ServerPlayer master = master();
         if (master != null) {
             masterLevel = ProgressionService.effectiveSmithingLevel(master);
         }
+        Status status = readyStatus();
+        if (status == Status.WORKING) {
+            status = work(level);
+        }
+        setStatus(status);
         sync();
-        Status ready = readyStatus();
-        setStatus(ready != Status.WORKING || blocked == null ? ready : blocked);
         if (master != null) {
             Workshop.report(master, this);
         }
-        if (ready != Status.WORKING) {
-            return;
+    }
+
+    /**
+     * One work step: with no piece on the anvil he starts one if he can (otherwise he waits, silent, and tries again next
+     * step); with one, he hammers on and finishes it when its time is up.
+     */
+    private Status work(ServerLevel level) {
+        if (onAnvil.isEmpty()) {
+            Status started = startPiece();
+            if (started != Status.WORKING) {
+                return started;
+            }
         }
-        workTicks += WORK_STEP;
-        if (workTicks % 100 == 0) {
-            swing(InteractionHand.MAIN_HAND);
-            level.playSound(null, anvil, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.4f, 1.2f);
+        int needed = ApprenticeRules.ticksPerPiece(smithingLevel());
+        if (workTicks < needed) {
+            workTicks += WORK_STEP;
+            if (workTicks % 100 == 0) {
+                swing(InteractionHand.MAIN_HAND);
+                level.playSound(null, anvil, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.4f, 1.2f);
+            }
         }
-        if (workTicks >= ApprenticeRules.ticksPerPiece(smithingLevel())) {
-            workTicks = 0;
-            forgeOne(getRandom().nextDouble());
-        }
+        return workTicks >= needed ? finishPiece(getRandom().nextDouble()) : Status.WORKING;
+    }
+
+    /** His master, if online in this world. */
+    private ServerPlayer master() {
+        return level() instanceof ServerLevel level
+                && entityData.get(DATA_OWNER).map(level::getPlayerByUUID).orElse(null) instanceof ServerPlayer online ? online : null;
     }
 
     /** Whether he can work right now, or why not. Needs his order, an anvil near him and his wage paid. */
@@ -491,29 +553,63 @@ public class ApprenticeSmith extends PathfinderMob {
     }
 
     /**
-     * One piece of his order: the materials leave their containers, and then either the piece is botched ({@code roll01}
-     * under his fail chance) or it lands in the output container, rated by his level. Either way he learns. Returns what
-     * happened.
+     * A whole piece of his order at once (for tests): starts one if none is on the anvil and finishes it, with
+     * {@code roll01} deciding whether he botches it. Returns what happened.
      */
     public Status forgeOne(double roll01) {
+        Status started = onAnvil.isEmpty() ? startPiece() : Status.WORKING;
+        return started != Status.WORKING ? started : finishPiece(roll01);
+    }
+
+    /**
+     * Starts a piece: it needs somewhere to go and all its materials, which leave their containers now. Otherwise he
+     * says what stops him (and, for materials, which item he lacks). Public for tests.
+     */
+    public Status startPiece() {
         Optional<ForgingRecipe> found = order().flatMap(this::recipeFor);
         if (found.isEmpty() || anvil == null) {
-            return blocked = Status.NO_ORDER;
+            return Status.NO_ORDER;
         }
         ForgingRecipe recipe = found.get();
-        List<Container> sources = assignedContainer(Slot.MATERIALS).map(List::of).orElseGet(() -> touching(ChestBlockEntity.class));
-        Optional<Container> output = assignedContainer(Slot.OUTPUT).or(() -> touching(BarrelBlockEntity.class).stream().findFirst());
-        if (output.isEmpty() || !hasRoom(output.get())) {
-            return blocked = Status.BARREL_FULL;
+        Status room = outputStatus();
+        if (room != Status.WORKING) {
+            return room;
         }
-        if (!has(sources, recipe.material(), recipe.materialCount()) || !recipe.handle().isEmpty() && !has(sources, recipe.handle(), 1)) {
-            return blocked = Status.NO_MATERIALS;
+        List<Container> sources = sources();
+        ItemStack missing = missing(sources, recipe.material(), recipe.materialCount());
+        if (missing.isEmpty() && !recipe.handle().isEmpty()) {
+            missing = missing(sources, recipe.handle(), 1);
         }
-        blocked = null;
-        take(sources, recipe.material(), recipe.materialCount());
+        entityData.set(DATA_MISSING, missing);
+        if (!missing.isEmpty()) {
+            return Status.NO_MATERIALS;
+        }
+        onAnvil.addAll(take(sources, recipe.material(), recipe.materialCount()));
         if (!recipe.handle().isEmpty()) {
-            take(sources, recipe.handle(), 1);
+            onAnvil.addAll(take(sources, recipe.handle(), 1));
         }
+        workTicks = 0;
+        return Status.WORKING;
+    }
+
+    /**
+     * Finishes the piece on the anvil: either it is botched ({@code roll01} under his fail chance; the materials are
+     * lost and his master hears of it) or it lands in the output container, rated by his level. Either way he learns.
+     * With the output full or gone, the piece waits on the anvil.
+     */
+    private Status finishPiece(double roll01) {
+        Optional<ForgingRecipe> found = order().flatMap(this::recipeFor);
+        if (found.isEmpty() || anvil == null) {
+            return Status.NO_ORDER;
+        }
+        ForgingRecipe recipe = found.get();
+        Status room = outputStatus();
+        if (room != Status.WORKING) {
+            return room;
+        }
+        Container output = output().orElseThrow();
+        onAnvil.clear();
+        workTicks = 0;
         ItemStack hammer = getMainHandItem();
         double hammerSkill = SmithingHammers.skillBonus(level().registryAccess(), hammer);
         int xp = HammerRules.smithingXp(recipe.smithingXp(), SmithingHammers.xpBonus(level().registryAccess(), hammer));
@@ -522,19 +618,55 @@ public class ApprenticeSmith extends PathfinderMob {
         sync();
         if (roll01 < ApprenticeRules.failChance(smithingLevel())) {
             level().playSound(null, anvil, SoundEvents.ANVIL_DESTROY, SoundSource.BLOCKS, 0.6f, 1.0f);
+            ServerPlayer master = master();
+            if (master != null) {
+                master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_botched", getDisplayName(),
+                        recipe.result().getHoverName()), true);
+            }
             return Status.WORKING;
         }
         ItemStack piece = recipe.result().copy();
         double penalty = isCraftsman() ? ApprenticeRules.CRAFTSMAN_RATING_PENALTY : ApprenticeRules.RATING_PENALTY;
         EquipmentService.stampForged(level(), piece, recipe.requirements(), recipe.extras(), 0, smithingLevel(), penalty + hammerSkill, 0,
                 getRandom());
-        put(output.get(), piece);
+        put(output, piece);
         level().playSound(null, anvil, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.8f, 1.0f);
         ItemRating rating = piece.get(ModDataComponents.ITEM_RATING);
         if (rating != null) {
             judgePiece(rating, true);
         }
         return Status.WORKING;
+    }
+
+    /** WORKING if a piece has somewhere to go; otherwise whether the output is missing or full. */
+    private Status outputStatus() {
+        Optional<Container> output = output();
+        if (output.isEmpty()) {
+            return Status.NO_OUTPUT;
+        }
+        return hasRoom(output.get()) ? Status.WORKING : Status.BARREL_FULL;
+    }
+
+    private List<Container> sources() {
+        return assignedContainer(Slot.MATERIALS).map(List::of).orElseGet(() -> touching(ChestBlockEntity.class));
+    }
+
+    private Optional<Container> output() {
+        return assignedContainer(Slot.OUTPUT).or(() -> touching(BarrelBlockEntity.class).stream().findFirst());
+    }
+
+    /**
+     * Gives the materials of the unfinished piece back to {@code master} (an order cancelled or changed, a dismissal), so
+     * they aren't lost.
+     */
+    private void returnMaterials(ServerPlayer master) {
+        for (ItemStack stack : onAnvil) {
+            if (!master.getInventory().add(stack)) {
+                master.drop(stack, false);
+            }
+        }
+        onAnvil.clear();
+        workTicks = 0;
     }
 
     /**
@@ -601,7 +733,8 @@ public class ApprenticeSmith extends PathfinderMob {
         return found;
     }
 
-    private static boolean has(List<Container> containers, Ingredient ingredient, int count) {
+    /** What is short of {@code count} of {@code ingredient} in the containers (one of its items, with the count missing), or empty. */
+    private static ItemStack missing(List<Container> containers, Ingredient ingredient, int count) {
         int found = 0;
         for (Container container : containers) {
             for (int slot = 0; slot < container.getContainerSize(); slot++) {
@@ -611,22 +744,29 @@ public class ApprenticeSmith extends PathfinderMob {
                 }
             }
         }
-        return found >= count;
+        if (found >= count) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack[] options = ingredient.getItems();
+        return options.length == 0 ? new ItemStack(Items.BARRIER, count - found) : options[0].copyWithCount(count - found);
     }
 
-    private static void take(List<Container> containers, Ingredient ingredient, int count) {
+    /** Takes {@code count} of {@code ingredient} from the containers; returns what was taken. */
+    private static List<ItemStack> take(List<Container> containers, Ingredient ingredient, int count) {
+        List<ItemStack> taken = new ArrayList<>();
         int missing = count;
         for (Container container : containers) {
             for (int slot = 0; slot < container.getContainerSize() && missing > 0; slot++) {
                 ItemStack stack = container.getItem(slot);
                 if (ingredient.test(stack)) {
-                    int taken = Math.min(missing, stack.getCount());
-                    container.removeItem(slot, taken);
-                    missing -= taken;
+                    ItemStack removed = container.removeItem(slot, Math.min(missing, stack.getCount()));
+                    missing -= removed.getCount();
+                    taken.add(removed);
                 }
             }
             container.setChanged();
         }
+        return taken;
     }
 
     private static boolean hasRoom(Container container) {
@@ -682,6 +822,9 @@ public class ApprenticeSmith extends PathfinderMob {
         assigned(Slot.OUTPUT).ifPresent(pos -> tag.put("Output", NbtUtils.writeBlockPos(pos)));
         tag.putLong("PaidUntil", paidUntil);
         tag.putInt("WorkTicks", workTicks);
+        ListTag pieceMaterials = new ListTag();
+        onAnvil.forEach(stack -> pieceMaterials.add(stack.save(registryAccess())));
+        tag.put("OnAnvil", pieceMaterials);
     }
 
     @Override
@@ -701,6 +844,8 @@ public class ApprenticeSmith extends PathfinderMob {
         entityData.set(DATA_OUTPUT, NbtUtils.readBlockPos(tag, "Output"));
         paidUntil = tag.getLong("PaidUntil");
         workTicks = tag.getInt("WorkTicks");
+        onAnvil.clear();
+        tag.getList("OnAnvil", Tag.TAG_COMPOUND).forEach(saved -> ItemStack.parse(registryAccess(), saved).ifPresent(onAnvil::add));
         if (!level().isClientSide) {
             sync();
         }

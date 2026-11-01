@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.loot;
 
 import com.orijua.overgearedmod.Balance;
+import com.orijua.overgearedmod.progression.ProgressionEvents;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.equipment.EquipmentService;
 import com.orijua.overgearedmod.equipment.ItemRating;
@@ -8,7 +9,6 @@ import com.orijua.overgearedmod.mob.MobLevelService;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
@@ -38,7 +38,7 @@ public final class LootEvents {
     }
 
     private static void onLivingDrops(LivingDropsEvent event) {
-        if (!(event.getEntity() instanceof Mob mob) || !(event.getSource().getEntity() instanceof ServerPlayer)
+        if (!(event.getEntity() instanceof Mob mob) || ProgressionEvents.creditedKiller(mob, event.getSource()) == null
                 || !MobLevelService.get(mob).elite()) {
             return;
         }

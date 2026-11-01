@@ -58,9 +58,10 @@ public final class Observation {
         return insight(player) + (player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.insightBonus() : 0);
     }
 
-    /** Ticks of steady looking for a point: shorter with a sword of observation in the main hand. */
+    /** Ticks of steady looking for a point: shorter with a sword of observation in the main hand, and with more Insight. */
     public static int observeTicks(Player player) {
-        return player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.observeTicks() : InsightRules.OBSERVE_TICKS;
+        int base = player.getMainHandItem().getItem() instanceof InsightSwordItem sword ? sword.observeTicks() : InsightRules.OBSERVE_TICKS;
+        return InsightRules.observeTicks(base, insight(player));
     }
 
     private static void onTick(PlayerTickEvent.Post event) {
@@ -111,13 +112,17 @@ public final class Observation {
         int needed = observeTicks(player);
         if (ticks < needed) {
             if (ticks % 10 == 1) {
+                double fraction = ticks / (double) needed;
                 player.displayClientMessage(Component.translatable("message.overgearedmod.observing", target.getDisplayName(),
-                        bar(ticks / (double) needed)), true);
+                        bar(fraction)), true);
+                // A soft tick that rises as the bar fills.
+                player.playNotifySound(SoundEvents.NOTE_BLOCK_HAT.value(), SoundSource.PLAYERS, 0.4f, 0.8f + (float) fraction);
             }
             return false;
         }
         learned.put(target.getUUID(), today);
-        STUDYING.remove(player.getUUID());
+        // Still studying the same target: looking on doesn't replace the "gained" message with "already observed today".
+        STUDYING.put(player.getUUID(), new Study(target.getUUID(), ticks));
         gain(player, target);
         return true;
     }
@@ -127,7 +132,8 @@ public final class Observation {
         int after = before + 1;
         player.setData(ModAttachments.INSIGHT, after);
         player.displayClientMessage(Component.translatable("message.overgearedmod.insight_gained", target.getDisplayName(), after), true);
-        player.level().playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0f, 1.2f);
+        player.playNotifySound(SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.8f, 1.4f);
+        player.playNotifySound(SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0f, 1.2f);
         InsightRules.Detail detail = InsightRules.detail(after);
         if (detail != InsightRules.detail(before)) {
             NotificationEvents.send(player, SystemNotification.Kind.INSIGHT, List.of(

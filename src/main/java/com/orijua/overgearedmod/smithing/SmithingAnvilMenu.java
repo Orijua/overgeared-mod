@@ -296,8 +296,9 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
     private ItemRating forge(ServerPlayer smith, double skillBonus, double extraOptionChance, int xpMultiplier, double precision) {
         ForgingRecipe recipe = currentRecipe.value();
         ItemStack forged = result.getItem(0).copy();
-        // A smithing hammer in the off hand adds its skill to the roll (and its options more experience), and wears.
-        ItemStack hammer = smith.getOffhandItem();
+        // A smithing hammer in either hand (the better one) adds its skill to the roll (and its options more experience), and wears.
+        Optional<EquipmentSlot> hammerHand = SmithingHammers.heldHammer(smith.registryAccess(), smith);
+        ItemStack hammer = hammerHand.map(smith::getItemBySlot).orElse(ItemStack.EMPTY);
         double hammerSkill = SmithingHammers.skillBonus(smith.registryAccess(), hammer);
         double hammerXp = SmithingHammers.xpBonus(smith.registryAccess(), hammer);
         double greatChance = ForgingRules.greatSuccessChance(ProgressionService.effectiveStats(smith).dexterity(),
@@ -312,7 +313,7 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
             inputs.removeItem(BOTTOM_SLOT, 1);
         }
         ProgressionService.addSmithingXp(smith, HammerRules.smithingXp(recipe.smithingXp() * xpMultiplier, hammerXp));
-        SmithingHammers.wear(smith, EquipmentSlot.OFFHAND);
+        hammerHand.ifPresent(hand -> SmithingHammers.wear(smith, hand));
         ItemRating rating = forged.get(ModDataComponents.ITEM_RATING);
         if (rating != null) {
             NeoForge.EVENT_BUS.post(new ItemForgedEvent(smith, forged, rating));

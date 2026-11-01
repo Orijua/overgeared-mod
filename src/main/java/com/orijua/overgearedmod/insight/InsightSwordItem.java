@@ -22,7 +22,8 @@ import java.util.List;
 /**
  * A sword that sharpens its bearer's eye (canon, cap. 157): the Commander's Sword and the Ruler's Sword both carry
  * <i>Character Observation</i>, which raises Insight; the Ruler's (only for recognised lords) also has <i>Talent
- * Search</i>. Held in the main hand, observing takes {@code observeTicks} instead of ten seconds, and NPC windows show
+ * Search</i>. Held in the main hand, observing starts from {@code observeTicks} instead of ten seconds (and Insight
+ * shortens it further, see {@link InsightRules#observeTicks}), and NPC windows show
  * as much as {@code insightBonus} more Insight would. With Talent Search, using it reveals the talents around.
  */
 public class InsightSwordItem extends SwordItem {
@@ -39,6 +40,11 @@ public class InsightSwordItem extends SwordItem {
 
     public int observeTicks() {
         return observeTicks;
+    }
+
+    /** How much faster it makes observing than bare-handed, in percent: the same at any Insight (both shrink alike) until the 2 s floor. */
+    public int observeSpeedPercent() {
+        return (int) Math.round((1 - observeTicks / (double) InsightRules.OBSERVE_TICKS) * 100);
     }
 
     public int insightBonus() {
@@ -60,7 +66,7 @@ public class InsightSwordItem extends SwordItem {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.overgearedmod.insight_sword.observation", observeTicks / 20, insightBonus)
+        tooltip.add(Component.translatable("item.overgearedmod.insight_sword.observation", observeSpeedPercent(), insightBonus)
                 .withStyle(ChatFormatting.AQUA));
         if (talentSearch) {
             tooltip.add(Component.translatable("item.overgearedmod.insight_sword.talent_search").withStyle(ChatFormatting.AQUA));

@@ -4,10 +4,13 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.command.SiteLanding;
 import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.npc.ApprenticeSmith;
+import com.orijua.overgearedmod.npc.NpcGrade;
 import com.orijua.overgearedmod.pagma.AshurBetrayal;
 import com.orijua.overgearedmod.pagma.PagmaStory;
 import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.quest.QuestService;
+import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.structure.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -20,7 +23,9 @@ import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @GameTestHolder(Overgearedmod.MODID)
 @PrefixGameTestTemplate(false)
@@ -94,6 +99,22 @@ public final class CommandTests {
 
         AshurBetrayal.talk(player);
         helper.assertTrue(QuestService.get(player).isDiscovered(PagmaStory.SECRET_REQUEST), "Ashur now tells of his request");
+        helper.succeed();
+    }
+
+    /** An apprentice of a chosen grade and level, to see his window without the 90/9/1 roll (playtest). */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void debugApprenticeHiresTheChosenGrade(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        helper.assertTrue(execute(helper, player, "satisfy debug smithing 80") > 0, "smithing raised");
+        helper.assertTrue(execute(helper, player, "satisfy debug apprentice named 30") == 1, "hired");
+        List<UUID> hired = player.getData(ModAttachments.APPRENTICES);
+        helper.assertTrue(hired.size() == 1 && helper.getLevel().getEntity(hired.getFirst()) instanceof ApprenticeSmith,
+                "one apprentice, in the world");
+        ApprenticeSmith apprentice = (ApprenticeSmith) helper.getLevel().getEntity(hired.getFirst());
+        helper.assertTrue(apprentice.grade() == NpcGrade.NAMED && apprentice.isOwnedBy(player), "named, and his");
+        helper.assertTrue(apprentice.smithingLevel() == 30, "smithing 30: " + apprentice.smithingLevel());
+        apprentice.discard();
         helper.succeed();
     }
 

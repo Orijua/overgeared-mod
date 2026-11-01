@@ -54,9 +54,11 @@ import java.util.Optional;
  */
 public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMenu> {
     private static final int SIDE_GAP = 4;
-    private static final int SIDE_WIDTH = 140;
+    private static final int SIDE_WIDTH = 170;
     private static final int PADDING = 6;
     private static final int LINE = 10;
+    /** Space before the great success row, with a line across it. */
+    private static final int GREAT_GAP = 6;
     private static final int SLOT_BACKGROUND = 0xC01B2A40;
     private static final int GAME_WIDTH = 220;
     private static final int BAR_WIDTH = 180;
@@ -146,8 +148,10 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
                 .map(RecipeHolder::value);
         // A recipe with a rating range (Fracaso: Unique or Legendary) shows the odds within it.
         ForgingExtras extras = recipe.map(ForgingRecipe::extras).orElse(ForgingExtras.NONE);
-        // The hammer in the off hand counts in both, as when the server forges.
-        double hammer = SmithingHammers.skillBonus(minecraft.level.registryAccess(), minecraft.player.getOffhandItem());
+        // The hammer in either hand (the better one) counts in both, as when the server forges. Read every frame, so
+        // taking it out or putting it on with the anvil open updates the odds at once.
+        double hammer = SmithingHammers.skillBonus(minecraft.level.registryAccess(),
+                SmithingHammers.heldHammerStack(minecraft.level.registryAccess(), minecraft.player));
         autoOdds = RatingRoller.odds(stats.dexterity(), smithing, hammer, extras.minRating(), extras.maxRating());
         manualOdds = RatingRoller.odds(stats.dexterity(), smithing, ForgingRules.manualSkillBonus(1) + hammer, extras.minRating(), extras.maxRating());
         greatAuto = ForgingRules.greatSuccessChance(stats.dexterity(), smithing, -1);
@@ -217,10 +221,10 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         List<FormattedCharSequence> classLines = requiredClassText()
                 .map(text -> font.split(text, right - left - font.width("✘") - 4))
                 .orElse(List.of());
-        int lines = 4 + autoOdds.length + classLines.size()
+        int lines = 5 + autoOdds.length + classLines.size()
                 + recipe.map(r -> 2 + r.requirements().map(req -> 1 + req.stats().size()).orElse(1)).orElse(0);
-        UiStyle.frame(graphics, x, y, SIDE_WIDTH, PADDING * 2 + lines * LINE, 1.0f);
-        int autoColumn = right - 44;
+        UiStyle.frame(graphics, x, y, SIDE_WIDTH, PADDING * 2 + lines * LINE + GREAT_GAP, 1.0f);
+        int autoColumn = right - 54;
         int row = y + PADDING;
 
         graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_odds"), left, row, UiStyle.HEADING);
@@ -234,10 +238,14 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
             rightAligned(graphics, Component.literal(percent(manualOdds[rating.ordinal()])), right, row, UiStyle.GOLD);
             row += LINE;
         }
-        // The chance of a great success: the piece comes out one rating higher.
+        // The chance of a great success (the piece comes out one rating higher), set apart so it doesn't read as a rating.
+        graphics.fill(left, row + GREAT_GAP / 2 - 1, right, row + GREAT_GAP / 2, UiStyle.LINE_SOFT);
+        row += GREAT_GAP;
         graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_great_success"), left, row, UiStyle.GOLD);
         rightAligned(graphics, Component.literal(percent(greatAuto)), autoColumn, row, UiStyle.TEXT);
         rightAligned(graphics, Component.literal(percent(greatManual)), right, row, UiStyle.GOLD);
+        row += LINE;
+        graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_great_success_note"), left + 8, row, UiStyle.MUTED);
         row += LINE;
         graphics.drawString(font, Component.translatable("screen.overgearedmod.anvil_manual_note"), left, row, UiStyle.MUTED);
         row += LINE;

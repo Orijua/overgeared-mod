@@ -47,9 +47,8 @@ public class WorkshopTab extends SatisfyTab {
         UiStyle.heading(graphics, font(), header, left, top);
 
         if (entries.isEmpty()) {
-            for (var line : font().split(Component.translatable("screen.overgearedmod.workshop.empty", ApprenticeRules.FIRST_APPRENTICE_LEVEL), width)) {
-                graphics.drawString(font(), line, left, top + LIST_TOP + 4, UiStyle.MUTED);
-            }
+            graphics.drawWordWrap(font(), Component.translatable("screen.overgearedmod.workshop.empty", ApprenticeRules.FIRST_APPRENTICE_LEVEL),
+                    left, top + LIST_TOP + 4, width, UiStyle.MUTED);
             return;
         }
         boolean showLevel = InsightRules.detail(Observation.effectiveInsight(player())) != InsightRules.Detail.LOW;

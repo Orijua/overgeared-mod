@@ -19,6 +19,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -26,6 +27,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
+import java.util.Optional;
 
 /** Smithing hammers: what they add to a forge, their own options, and apprentices carrying them. */
 @GameTestHolder(Overgearedmod.MODID)
@@ -61,6 +63,22 @@ public final class HammerTests {
                 "precision is a hammer's");
         helper.assertTrue(!option(helper, "vitality").canRollOn(hammer) && option(helper, "vitality").canRollOn(sword),
                 "a generic option never lands on a hammer");
+        helper.succeed();
+    }
+
+    /** A hammer counts in either hand; with two, only the better one (they never add up). */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aHammerCountsInEitherHandButTwoDoNotAddUp(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        var registries = helper.getLevel().registryAccess();
+        helper.assertTrue(SmithingHammers.heldHammer(registries, player).isEmpty(), "no hammer");
+        player.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.IRON_SMITHING_HAMMER.get()));
+        helper.assertTrue(SmithingHammers.heldHammer(registries, player).equals(Optional.of(EquipmentSlot.MAINHAND)), "in the main hand");
+        player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(ModItems.MITHRIL_SMITHING_HAMMER.get()));
+        helper.assertTrue(SmithingHammers.heldHammer(registries, player).equals(Optional.of(EquipmentSlot.OFFHAND)), "the better of two");
+        helper.assertTrue(SmithingHammers.heldHammerStack(registries, player).is(ModItems.MITHRIL_SMITHING_HAMMER.get()), "only that one counts");
+        player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        helper.assertTrue(SmithingHammers.heldHammer(registries, player).equals(Optional.of(EquipmentSlot.OFFHAND)), "in the off hand alone");
         helper.succeed();
     }
 

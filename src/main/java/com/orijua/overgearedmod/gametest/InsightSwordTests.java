@@ -2,6 +2,8 @@ package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.goal.GoalTracker;
+import com.orijua.overgearedmod.insight.InsightRules;
+import com.orijua.overgearedmod.insight.InsightSwordItem;
 import com.orijua.overgearedmod.insight.Observation;
 import com.orijua.overgearedmod.insight.TalentSearch;
 import com.orijua.overgearedmod.insight.Talents;
@@ -41,13 +43,17 @@ public final class InsightSwordTests {
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(1, 1, 1));
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.COMMANDERS_SWORD.get()));
         helper.assertTrue(Observation.observeTicks(player) == 140 && Observation.effectiveInsight(player) == 10, "7 s and +10 with the Commander's");
+        helper.assertTrue(((InsightSwordItem) ModItems.COMMANDERS_SWORD.get()).observeSpeedPercent() == 30
+                && ((InsightSwordItem) ModItems.RULERS_SWORD.get()).observeSpeedPercent() == 50, "what the tooltips say: 30 % and 50 % faster");
         boolean gained = false;
         for (int i = 0; i < 140; i++) {
             gained |= Observation.observe(player, villager);
         }
         helper.assertTrue(gained && Observation.insight(player) == 1, "a point in seven seconds");
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.RULERS_SWORD.get()));
-        helper.assertTrue(Observation.observeTicks(player) == 100 && Observation.effectiveInsight(player) == 26, "5 s and +25 with the Ruler's");
+        // 5 s for the sword, a little less with the point just learned (more Insight, faster).
+        helper.assertTrue(Observation.observeTicks(player) == InsightRules.observeTicks(100, 1) && Observation.observeTicks(player) < 100
+                && Observation.effectiveInsight(player) == 26, "under 5 s and +25 with the Ruler's");
         villager.discard();
         helper.succeed();
     }

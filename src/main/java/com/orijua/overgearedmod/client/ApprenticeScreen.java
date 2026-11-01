@@ -164,7 +164,11 @@ public final class ApprenticeScreen extends Screen {
             case NO_ORDER -> UiStyle.MUTED;
             default -> UiStyle.BAD;
         };
-        row(graphics, 0, "status", Component.translatable("message.overgearedmod.apprentice_status." + status.name().toLowerCase()), statusColor);
+        row(graphics, 0, "status", apprentice.statusText(), statusColor);
+        if (status == ApprenticeSmith.Status.WORKING && apprentice.shownProgress() > 0) {
+            // The piece on the anvil, filling up under the status.
+            UiStyle.bar(graphics, left + PADDING + LABEL_WIDTH, rowY(0) + font.lineHeight, valueWidth(), 1, apprentice.shownProgress() / 100f, UiStyle.GOOD);
+        }
 
         ItemStack order = apprentice.shownOrder();
         if (order.isEmpty()) {

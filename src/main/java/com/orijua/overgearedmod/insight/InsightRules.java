@@ -15,6 +15,9 @@ public final class InsightRules {
     public static final int MEDIUM = 15;
     public static final int HIGH = 40;
     public static final long DAY_TICKS = 24000;
+    /** Insight that halves the time to observe; it never drops under {@link #FASTEST_OBSERVE_TICKS}. */
+    public static final int HALVING_INSIGHT = 50;
+    public static final int FASTEST_OBSERVE_TICKS = 40;
 
     /** How much Character Observation reveals. */
     public enum Detail { LOW, MEDIUM, HIGH }
@@ -36,6 +39,16 @@ public final class InsightRules {
             case MEDIUM -> HIGH;
             case HIGH -> -1;
         };
+    }
+
+    /**
+     * Ticks of steady looking for a point, from {@code baseTicks} (ten seconds, or a sword of observation's): the more
+     * Insight, the faster the bar fills. 0 Insight: the whole base; {@link #HALVING_INSIGHT}: half; never under
+     * {@link #FASTEST_OBSERVE_TICKS}.
+     */
+    public static int observeTicks(int baseTicks, int insight) {
+        int ticks = (int) Math.round(baseTicks * HALVING_INSIGHT / (double) (HALVING_INSIGHT + Math.max(0, insight)));
+        return Math.max(Math.min(baseTicks, FASTEST_OBSERVE_TICKS), ticks);
     }
 
     public static long day(long gameTime) {

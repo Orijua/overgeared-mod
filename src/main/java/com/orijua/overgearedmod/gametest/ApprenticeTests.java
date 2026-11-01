@@ -136,6 +136,39 @@ public final class ApprenticeTests {
         helper.succeed();
     }
 
+    /**
+     * He says what he lacks (the Jaffa sword's stick, found in the playtest), takes the materials when he starts a piece,
+     * and gives an unfinished piece's materials back when the order is cancelled.
+     */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void heSaysWhatHeLacksAndReturnsAnUnfinishedPiece(GameTestHelper helper) {
+        helper.setBlock(ANVIL, ModBlocks.SMITHING_ANVIL.get());
+        helper.setBlock(CHEST, Blocks.CHEST);
+        ServerPlayer player = smithOfLevel(helper, 50);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        apprentice.takeOrder(player, ModItems.JAFFA_SWORD.get());
+        Container chest = helper.getBlockEntity(CHEST);
+        chest.setItem(0, new ItemStack(ModItems.JAFFA_INGOT.get(), 2));
+
+        helper.assertTrue(apprentice.startPiece() == ApprenticeSmith.Status.NO_OUTPUT, "no barrel: nowhere for the piece");
+        helper.setBlock(BARREL, Blocks.BARREL);
+        helper.assertTrue(apprentice.startPiece() == ApprenticeSmith.Status.NO_MATERIALS, "the ingots alone are not enough");
+        ItemStack missing = apprentice.shownMissing();
+        helper.assertTrue(missing.is(Items.STICK) && missing.getCount() == 1, "he lacks one stick: " + missing);
+        helper.assertTrue(chest.getItem(0).getCount() == 2, "nothing taken while something is missing");
+
+        chest.setItem(1, new ItemStack(Items.STICK));
+        helper.assertTrue(apprentice.startPiece() == ApprenticeSmith.Status.WORKING, "now he starts");
+        helper.assertTrue(apprentice.shownMissing().isEmpty(), "and lacks nothing");
+        helper.assertTrue(chest.getItem(0).isEmpty() && chest.getItem(1).isEmpty(), "the materials leave the chest at the start");
+
+        apprentice.cancelOrder(player);
+        helper.assertTrue(player.getInventory().countItem(ModItems.JAFFA_INGOT.get()) == 2
+                && player.getInventory().countItem(Items.STICK) == 1, "cancelling gives the unfinished piece's materials back");
+        apprentice.discard();
+        helper.succeed();
+    }
+
     /** Assigned containers (not touching the anvil) replace the anvil's; once one is broken he goes back to the anvil's. */
     @GameTest(template = TestSupport.EMPTY)
     public static void heUsesTheContainersHisMasterAssigns(GameTestHelper helper) {

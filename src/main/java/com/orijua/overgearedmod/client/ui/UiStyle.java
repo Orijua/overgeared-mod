@@ -144,6 +144,14 @@ public final class UiStyle {
         graphics.drawString(font, text, x, y, color);
     }
 
+    /** {@code text} cut to {@code maxWidth} with "…" at the end, or whole if it fits (the style is lost when cut). */
+    public static Component ellipsize(Font font, Component text, int maxWidth) {
+        if (font.width(text) <= maxWidth) {
+            return text;
+        }
+        return Component.literal(font.substrByWidth(text, maxWidth - font.width("…")).getString() + "…");
+    }
+
     public static void heading(GuiGraphics graphics, Font font, Component text, int x, int y) {
         graphics.drawString(font, text, x, y, HEADING);
     }
