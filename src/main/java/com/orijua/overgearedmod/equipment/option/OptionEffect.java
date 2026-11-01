@@ -52,6 +52,16 @@ public interface OptionEffect {
     default void tickWorn(ServerPlayer wearer, float value) {
     }
 
+    /** Skill points a smithing hammer with this option adds to the rating roll. */
+    default double forgingSkill(float value) {
+        return 0;
+    }
+
+    /** Extra smithing experience a smithing hammer with this option gives (0.1 = +10 %). */
+    default double smithingXp(float value) {
+        return 0;
+    }
+
     /** The skill this option lets the wearer cast with the weapon-skill key, if any. */
     default Optional<ResourceLocation> grantedSkill() {
         return Optional.empty();

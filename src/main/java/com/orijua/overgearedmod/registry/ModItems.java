@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.registry;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.npc.ApprenticeContractItem;
 import com.orijua.overgearedmod.npc.WorkshopLedgerItem;
+import com.orijua.overgearedmod.smithing.SmithingHammerItem;
 import com.orijua.overgearedmod.pagma.EyeOfPallalianItem;
 import com.orijua.overgearedmod.pagma.PagmaRareBookItem;
 import com.orijua.overgearedmod.pagma.UnappraisedItem;
@@ -70,6 +71,13 @@ public final class ModItems {
     // An apprentice blacksmith's contract (mass production, phase 2): Smith gives the first at smithing 50 and sells the rest.
     public static final DeferredItem<ApprenticeContractItem> APPRENTICE_CONTRACT = ITEMS.registerItem("apprentice_contract",
             ApprenticeContractItem::new, new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+    // Smithing hammers (forged at the anvil, rated): in the off hand they improve forging; an apprentice can carry one.
+    public static final DeferredItem<SmithingHammerItem> IRON_SMITHING_HAMMER = ITEMS.registerItem("iron_smithing_hammer",
+            properties -> new SmithingHammerItem(5, properties), new Item.Properties().durability(250));
+    public static final DeferredItem<SmithingHammerItem> JAFFA_SMITHING_HAMMER = ITEMS.registerItem("jaffa_smithing_hammer",
+            properties -> new SmithingHammerItem(10, properties), new Item.Properties().durability(500));
+    public static final DeferredItem<SmithingHammerItem> MITHRIL_SMITHING_HAMMER = ITEMS.registerItem("mithril_smithing_hammer",
+            properties -> new SmithingHammerItem(20, properties), new Item.Properties().durability(1000).rarity(Rarity.UNCOMMON));
     // Opens the Workshop tab: Smith gives it with the first contract; also crafted (book + iron ingot).
     public static final DeferredItem<WorkshopLedgerItem> WORKSHOP_LEDGER = ITEMS.registerItem("workshop_ledger",
             WorkshopLedgerItem::new, new Item.Properties().stacksTo(1));

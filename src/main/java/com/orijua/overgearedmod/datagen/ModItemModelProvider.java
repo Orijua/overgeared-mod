@@ -33,6 +33,10 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.PAGMA_RARE_BOOK.get(), "enchanted_book");
         vanillaTexture(ModItems.APPRENTICE_CONTRACT.get(), "paper");
         vanillaTexture(ModItems.WORKSHOP_LEDGER.get(), "writable_book");
+        // Borrowed until the hammers get their own art.
+        vanillaTexture(ModItems.IRON_SMITHING_HAMMER.get(), "mace");
+        vanillaTexture(ModItems.JAFFA_SMITHING_HAMMER.get(), "mace");
+        vanillaTexture(ModItems.MITHRIL_SMITHING_HAMMER.get(), "mace");
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
         vanillaTexture(ModItems.JAFFA_INGOT.get(), "copper_ingot");
         vanillaTexture(ModItems.RAW_BLUE_ORICHALCUM.get(), "prismarine_crystals");

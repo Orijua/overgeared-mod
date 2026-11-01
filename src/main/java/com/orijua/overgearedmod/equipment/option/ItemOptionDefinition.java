@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.equipment.option;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.orijua.overgearedmod.smithing.SmithingHammers;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
@@ -27,7 +28,8 @@ public record ItemOptionDefinition(Component name, int weight, float min, float 
             OptionEffect.CODEC.fieldOf("effect").forGetter(ItemOptionDefinition::effect)
     ).apply(instance, ItemOptionDefinition::new));
 
+    /** A smithing hammer only rolls options made for it (generic ones, without applies_to, would do nothing on it). */
     public boolean canRollOn(ItemStack stack) {
-        return appliesTo.map(stack::is).orElse(true);
+        return appliesTo.map(stack::is).orElse(!stack.is(SmithingHammers.TAG));
     }
 }

@@ -91,6 +91,10 @@ final class ModRecipeProvider extends RecipeProvider {
     private void forging(RecipeOutput output) {
         forge(output, "iron_sword", Items.IRON_INGOT, 2, Items.STICK, Items.IRON_SWORD, 10, Optional.empty());
         forge(output, "iron_chestplate", Items.IRON_INGOT, 8, null, Items.IRON_CHESTPLATE, 20, Optional.empty());
+        forge(output, "iron_smithing_hammer", Items.IRON_INGOT, 4, Items.LEATHER, ModItems.IRON_SMITHING_HAMMER.get(), 15, Optional.empty());
+        forge(output, "jaffa_smithing_hammer", ModItems.JAFFA_INGOT.get(), 4, Items.LEATHER, ModItems.JAFFA_SMITHING_HAMMER.get(), 25, Optional.empty());
+        forge(output, "mithril_smithing_hammer", ModItems.MITHRIL_INGOT.get(), 4, Items.LEATHER, ModItems.MITHRIL_SMITHING_HAMMER.get(), 45,
+                Optional.empty());
         forge(output, "jaffa_sword", ModItems.JAFFA_INGOT.get(), 2, Items.STICK, ModItems.JAFFA_SWORD.get(), 15,
                 Optional.of(new EquipRequirements(2, Map.of(StatType.STRENGTH, 2))));
         forge(output, "grid_legendary_sword", Items.DIAMOND, 4, Items.BLAZE_ROD, ModItems.GRID_LEGENDARY_SWORD.get(), 60,

@@ -14,7 +14,9 @@ public enum OptionEffectType implements StringRepresentable {
     BLOCK_CHANCE("block_chance", () -> BlockChanceOptionEffect.CODEC),
     DARK_DAMAGE("dark_damage", () -> DarkDamageOptionEffect.CODEC),
     FEAR("fear", () -> FearOptionEffect.CODEC),
-    SKILL("skill", () -> SkillOptionEffect.CODEC);
+    SKILL("skill", () -> SkillOptionEffect.CODEC),
+    FORGING_SKILL("forging_skill", () -> ForgingSkillOptionEffect.CODEC),
+    SMITHING_XP("smithing_xp", () -> SmithingXpOptionEffect.CODEC);
 
     public static final Codec<OptionEffectType> CODEC = StringRepresentable.fromEnum(OptionEffectType::values);
 

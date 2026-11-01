@@ -22,6 +22,7 @@ import com.orijua.overgearedmod.smithing.ForgingRecipe;
 import com.orijua.overgearedmod.smithing.ForgingRecipeInput;
 import com.orijua.overgearedmod.smithing.ForgingRules;
 import com.orijua.overgearedmod.smithing.SmithingAnvilMenu;
+import com.orijua.overgearedmod.smithing.SmithingHammers;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -143,8 +144,10 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
                 .map(RecipeHolder::value);
         // A recipe with a rating range (Fracaso: Unique or Legendary) shows the odds within it.
         ForgingExtras extras = recipe.map(ForgingRecipe::extras).orElse(ForgingExtras.NONE);
-        autoOdds = RatingRoller.odds(stats.dexterity(), smithing, 0, extras.minRating(), extras.maxRating());
-        manualOdds = RatingRoller.odds(stats.dexterity(), smithing, ForgingRules.manualSkillBonus(1), extras.minRating(), extras.maxRating());
+        // The hammer in the off hand counts in both, as when the server forges.
+        double hammer = SmithingHammers.skillBonus(minecraft.level.registryAccess(), minecraft.player.getOffhandItem());
+        autoOdds = RatingRoller.odds(stats.dexterity(), smithing, hammer, extras.minRating(), extras.maxRating());
+        manualOdds = RatingRoller.odds(stats.dexterity(), smithing, ForgingRules.manualSkillBonus(1) + hammer, extras.minRating(), extras.maxRating());
     }
 
     /** "×5" (or "Máx") while idle, "3/10" while a batch runs; the tooltip says what it does and the next unlock. */

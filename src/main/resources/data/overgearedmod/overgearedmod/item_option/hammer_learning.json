@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "option.overgearedmod.hammer_learning" },
+  "weight": 12,
+  "min": 0.05,
+  "max": 0.20,
+  "applies_to": "overgearedmod:smithing_hammers",
+  "effect": { "type": "smithing_xp" }
+}
