@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.datagen;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.loot.LootEvents;
+import com.orijua.overgearedmod.npc.ApprenticeMaterials;
 import com.orijua.overgearedmod.registry.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -46,5 +47,10 @@ final class ModItemTagsProvider extends ItemTagsProvider {
         tag(Tags.Items.INGOTS).add(ModItems.MITHRIL_INGOT.get(), ModItems.JAFFA_INGOT.get(), ModItems.BLUE_ORICHALCUM_INGOT.get());
         tag(Tags.Items.RAW_MATERIALS).add(ModItems.RAW_MITHRIL.get(), ModItems.RAW_JAFFA.get(), ModItems.RAW_BLUE_ORICHALCUM.get());
         tag(SMITH_IRON).add(Items.RAW_IRON, Items.IRON_ORE, Items.DEEPSLATE_IRON_ORE);
+
+        // What an apprentice needs to have mastered to work each material; anything else is a beginner's.
+        tag(ApprenticeMaterials.INTERMEDIATE).add(Items.GOLD_INGOT);
+        tag(ApprenticeMaterials.ADVANCED).add(Items.DIAMOND);
+        tag(ApprenticeMaterials.MASTER).add(Items.NETHERITE_INGOT, ModItems.MITHRIL_INGOT.get(), ModItems.BLUE_ORICHALCUM_INGOT.get());
     }
 }

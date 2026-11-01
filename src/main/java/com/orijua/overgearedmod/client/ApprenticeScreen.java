@@ -135,8 +135,10 @@ public final class ApprenticeScreen extends Screen {
         super.render(graphics, mouseX, mouseY, partialTick);
         int centerX = left + WIDTH / 2;
         graphics.drawCenteredString(font, title, centerX, top + PADDING, UiStyle.HEADING);
-        graphics.drawCenteredString(font, Component.translatable("screen.overgearedmod.apprentice.subtitle", apprentice.shownLevel()), centerX,
-                top + PADDING + UiStyle.LINE, UiStyle.MUTED);
+        Component role = Component.translatable(apprentice.isCraftsman() ? "screen.overgearedmod.apprentice.craftsman" : "entity.overgearedmod.apprentice_smith");
+        Component stage = Component.translatable("npc.overgearedmod.stage." + apprentice.shownStage().key());
+        graphics.drawCenteredString(font, Component.translatable("screen.overgearedmod.apprentice.subtitle", role, stage, apprentice.shownLevel()),
+                centerX, top + PADDING + UiStyle.LINE, apprentice.isCraftsman() ? UiStyle.GOLD : UiStyle.MUTED);
         int lineY = top + PADDING + 2 * UiStyle.LINE + 2;
         graphics.fill(left + PADDING, lineY, left + WIDTH - PADDING, lineY + 1, UiStyle.LINE_SOFT);
 

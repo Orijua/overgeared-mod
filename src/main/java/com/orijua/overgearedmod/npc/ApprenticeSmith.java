@@ -2,6 +2,12 @@ package com.orijua.overgearedmod.npc;
 
 import com.orijua.overgearedmod.client.ApprenticeScreen;
 import com.orijua.overgearedmod.equipment.EquipmentService;
+import com.orijua.overgearedmod.equipment.ItemRating;
+import com.orijua.overgearedmod.notification.NotificationEvents;
+import com.orijua.overgearedmod.notification.SystemNotification;
+import com.orijua.overgearedmod.registry.ModDataComponents;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.MutableComponent;
 import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.quest.QuestService;
@@ -84,6 +90,9 @@ public class ApprenticeSmith extends PathfinderMob {
             EntityDataSerializers.OPTIONAL_BLOCK_POS);
     private static final EntityDataAccessor<Optional<BlockPos>> DATA_OUTPUT = SynchedEntityData.defineId(ApprenticeSmith.class,
             EntityDataSerializers.OPTIONAL_BLOCK_POS);
+    private static final EntityDataAccessor<Integer> DATA_GRADE = SynchedEntityData.defineId(ApprenticeSmith.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_CRAFTSMAN = SynchedEntityData.defineId(ApprenticeSmith.class,
+            EntityDataSerializers.BOOLEAN);
 
     /** Why he isn't working, shown in his window. */
     public enum Status { WORKING, NO_ORDER, NO_ANVIL, UNPAID, NO_MATERIALS, BARREL_FULL }
@@ -91,6 +100,7 @@ public class ApprenticeSmith extends PathfinderMob {
     /** The containers his master can assign him. */
     public enum Slot { MATERIALS, OUTPUT }
 
+    private String baseName = "";
     private int smithingXp = ApprenticeRules.STARTING_XP;
     private int masterLevel = ApprenticeRules.FIRST_APPRENTICE_LEVEL;
     private Item order;
@@ -119,6 +129,8 @@ public class ApprenticeSmith extends PathfinderMob {
         builder.define(DATA_DAYS_PAID, 0);
         builder.define(DATA_MATERIALS, Optional.empty());
         builder.define(DATA_OUTPUT, Optional.empty());
+        builder.define(DATA_GRADE, NpcGrade.NORMAL.ordinal());
+        builder.define(DATA_CRAFTSMAN, false);
     }
 
     @Override
@@ -128,15 +140,23 @@ public class ApprenticeSmith extends PathfinderMob {
         goalSelector.addGoal(2, new RandomLookAroundGoal(this));
     }
 
-    /** A new apprentice for {@code master}, with a name from the village. */
+    /**
+     * A new apprentice for {@code master}, with a name from the village and a growth grade rolled now. A named one (1 %)
+     * shows it at once: his name is gold, and the system tells his master.
+     */
     public void hireBy(ServerPlayer master) {
         entityData.set(DATA_OWNER, Optional.of(master.getUUID()));
         masterLevel = ProgressionService.effectiveSmithingLevel(master);
         paidUntil = level().getGameTime() + ApprenticeRules.DAY_TICKS; // the first day is on Smith
-        setCustomName(Component.literal(NAMES.get(getRandom().nextInt(NAMES.size()))));
+        baseName = NAMES.get(getRandom().nextInt(NAMES.size()));
         setCustomNameVisible(true);
+        setGrade(NpcGrade.roll(getRandom().nextDouble()));
         findAnvil();
         sync();
+        if (grade() == NpcGrade.NAMED) {
+            NotificationEvents.send(master, SystemNotification.Kind.APPRENTICE,
+                    List.of(Component.translatable("notification.overgearedmod.apprentice.named", getDisplayName())));
+        }
     }
 
     /** Works on both sides: the owner is synced. */
@@ -144,13 +164,53 @@ public class ApprenticeSmith extends PathfinderMob {
         return entityData.get(DATA_OWNER).filter(player.getUUID()::equals).isPresent();
     }
 
-    /** Server side: his working level, from his experience and below his master's. */
+    /** Synced (the window will show it by Insight later). */
+    public NpcGrade grade() {
+        return NpcGrade.values()[entityData.get(DATA_GRADE)];
+    }
+
+    /** Set at hiring; public for tests and debugging. */
+    public void setGrade(NpcGrade grade) {
+        entityData.set(DATA_GRADE, grade.ordinal());
+        refreshName();
+        sync();
+    }
+
+    /** Synced: whether he has been recognised as a Craftsman. */
+    public boolean isCraftsman() {
+        return entityData.get(DATA_CRAFTSMAN);
+    }
+
+    /** His name: gold if named, followed by "Craftsman" once he is one. */
+    private void refreshName() {
+        MutableComponent name = Component.literal(baseName);
+        if (grade() == NpcGrade.NAMED) {
+            name.withStyle(ChatFormatting.GOLD);
+        }
+        if (isCraftsman()) {
+            name.append(Component.translatable("entity.overgearedmod.apprentice_smith.craftsman_suffix").withStyle(ChatFormatting.YELLOW));
+        }
+        setCustomName(name);
+    }
+
+    /** Server side: his working level, from his experience, below his master's and within his grade's cap. */
     public int smithingLevel() {
-        return ApprenticeRules.workingLevel(ProgressionRules.smithingLevel(smithingXp), masterLevel);
+        return ApprenticeRules.workingLevel(ProgressionRules.smithingLevel(smithingXp), masterLevel, grade());
+    }
+
+    /** Server side: how far he has mastered the trade. */
+    public MasteryStage stage() {
+        return MasteryStage.of(smithingLevel());
     }
 
     public int smithingXp() {
         return smithingXp;
+    }
+
+    /** Public for tests and debugging. */
+    public void setSmithingXp(int xp) {
+        smithingXp = Math.max(0, xp);
+        sync();
     }
 
     /** Server side: whole days of wage still paid ahead. */
@@ -162,6 +222,10 @@ public class ApprenticeSmith extends PathfinderMob {
 
     public int shownLevel() {
         return entityData.get(DATA_LEVEL);
+    }
+
+    public MasteryStage shownStage() {
+        return MasteryStage.of(shownLevel());
     }
 
     public Status status() {
@@ -260,11 +324,18 @@ public class ApprenticeSmith extends PathfinderMob {
         playSound(SoundEvents.VILLAGER_YES, 1.0f, 1.0f);
     }
 
-    /** Orders {@code item}, if a forging recipe without a class makes it. */
+    /** Orders {@code item}, if a forging recipe without a class makes it and he has mastered its material. */
     public boolean takeOrder(ServerPlayer master, Item item) {
-        if (recipeFor(item).isEmpty()) {
+        Optional<ForgingRecipe> recipe = recipeFor(item);
+        if (recipe.isEmpty()) {
             master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_cant_make", getDisplayName(),
                     item.getDescription()), true);
+            return false;
+        }
+        MasteryStage needed = ApprenticeMaterials.requiredStage(recipe.get().material());
+        if (!stage().atLeast(needed)) {
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_stage_too_low", getDisplayName(),
+                    Component.translatable("npc.overgearedmod.stage." + needed.key())), true);
             return false;
         }
         order = item;
@@ -393,18 +464,40 @@ public class ApprenticeSmith extends PathfinderMob {
         if (!recipe.handle().isEmpty()) {
             take(sources, recipe.handle(), 1);
         }
-        smithingXp += recipe.smithingXp();
+        smithingXp += ApprenticeRules.xpGained(recipe.smithingXp(), grade());
         sync();
         if (roll01 < ApprenticeRules.failChance(smithingLevel())) {
             level().playSound(null, anvil, SoundEvents.ANVIL_DESTROY, SoundSource.BLOCKS, 0.6f, 1.0f);
             return Status.WORKING;
         }
         ItemStack piece = recipe.result().copy();
-        EquipmentService.stampForged(level(), piece, recipe.requirements(), recipe.extras(), 0, smithingLevel(), ApprenticeRules.RATING_PENALTY, 0,
-                getRandom());
+        double penalty = isCraftsman() ? ApprenticeRules.CRAFTSMAN_RATING_PENALTY : ApprenticeRules.RATING_PENALTY;
+        EquipmentService.stampForged(level(), piece, recipe.requirements(), recipe.extras(), 0, smithingLevel(), penalty, 0, getRandom());
         put(output.get(), piece);
         level().playSound(null, anvil, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.8f, 1.0f);
+        ItemRating rating = piece.get(ModDataComponents.ITEM_RATING);
+        if (rating != null) {
+            judgePiece(rating, true);
+        }
         return Status.WORKING;
+    }
+
+    /**
+     * A piece he forged ({@code ownPiece}) or saw his master forge: if he is a Master and it is extraordinary enough
+     * (see {@link ApprenticeRules#earnsCraftsman}), he becomes a Craftsman. Returns whether he did.
+     */
+    public boolean judgePiece(ItemRating rating, boolean ownPiece) {
+        if (isCraftsman() || !ApprenticeRules.earnsCraftsman(stage(), rating, ownPiece)) {
+            return false;
+        }
+        entityData.set(DATA_CRAFTSMAN, true);
+        refreshName();
+        level().playSound(null, blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.NEUTRAL, 1.0f, 0.8f);
+        if (level() instanceof ServerLevel level && entityData.get(DATA_OWNER).map(level::getPlayerByUUID).orElse(null) instanceof ServerPlayer master) {
+            NotificationEvents.send(master, SystemNotification.Kind.APPRENTICE, List.of(Component.translatable(
+                    ownPiece ? "notification.overgearedmod.apprentice.craftsman" : "notification.overgearedmod.apprentice.illuminated", baseName)));
+        }
+        return true;
     }
 
     /** The assigned container, while it is still there (a broken one is forgotten). */
@@ -519,6 +612,9 @@ public class ApprenticeSmith extends PathfinderMob {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         entityData.get(DATA_OWNER).ifPresent(owner -> tag.putUUID("Owner", owner));
+        tag.putString("BaseName", baseName);
+        tag.putString("Grade", grade().name());
+        tag.putBoolean("Craftsman", isCraftsman());
         tag.putInt("SmithingXp", smithingXp);
         tag.putInt("MasterLevel", masterLevel);
         if (order != null) {
@@ -537,6 +633,11 @@ public class ApprenticeSmith extends PathfinderMob {
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         entityData.set(DATA_OWNER, tag.hasUUID("Owner") ? Optional.of(tag.getUUID("Owner")) : Optional.empty());
+        // Apprentices hired before grades existed: the name they had, normal grade.
+        baseName = tag.contains("BaseName") ? tag.getString("BaseName") : getCustomName() == null ? "" : getCustomName().getString();
+        entityData.set(DATA_GRADE, tag.contains("Grade") ? gradeNamed(tag.getString("Grade")).ordinal() : NpcGrade.NORMAL.ordinal());
+        entityData.set(DATA_CRAFTSMAN, tag.getBoolean("Craftsman"));
+        refreshName();
         smithingXp = tag.getInt("SmithingXp");
         masterLevel = tag.getInt("MasterLevel");
         order = tag.contains("Order") ? BuiltInRegistries.ITEM.getOptional(ResourceLocation.tryParse(tag.getString("Order"))).orElse(null) : null;
@@ -548,5 +649,14 @@ public class ApprenticeSmith extends PathfinderMob {
         if (!level().isClientSide) {
             sync();
         }
+    }
+
+    private static NpcGrade gradeNamed(String name) {
+        for (NpcGrade grade : NpcGrade.values()) {
+            if (grade.name().equals(name)) {
+                return grade;
+            }
+        }
+        return NpcGrade.NORMAL;
     }
 }

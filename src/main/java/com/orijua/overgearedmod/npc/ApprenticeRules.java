@@ -1,5 +1,7 @@
 package com.orijua.overgearedmod.npc;
 
+import com.orijua.overgearedmod.equipment.ItemRating;
+
 /**
  * Pure rules of the apprentice blacksmiths (own design inspired by the canon, caps. 622, 624 and 925: Grid trains a
  * hundred smiths into a production system). They forge alone, slowly and not as well as their master, can botch a piece,
@@ -45,9 +47,31 @@ public final class ApprenticeRules {
         return owned >= MAX_APPRENTICES ? -1 : FIRST_APPRENTICE_LEVEL + owned * LEVELS_PER_APPRENTICE;
     }
 
-    /** The apprentice's working level: what his experience gives, always below his master's. */
-    public static int workingLevel(int levelFromXp, int masterLevel) {
-        return Math.max(0, Math.min(levelFromXp, masterLevel - 1));
+    /** A Craftsman's pieces come out as good as his master's automatic forging. */
+    public static final double CRAFTSMAN_RATING_PENALTY = 0;
+    /** How close to his master a forged Legendary must be to enlighten him. */
+    public static final double ILLUMINATION_REACH = 8.0;
+
+    /** The apprentice's working level: what his experience gives, below his master's and within his grade's cap. */
+    public static int workingLevel(int levelFromXp, int masterLevel, NpcGrade grade) {
+        return Math.max(0, Math.min(Math.min(levelFromXp, masterLevel - 1), grade.levelCap()));
+    }
+
+    /** Experience a piece teaches him: the recipe's, scaled by his grade. */
+    public static int xpGained(int recipeXp, NpcGrade grade) {
+        return (int) Math.round(recipeXp * grade.xpMultiplier());
+    }
+
+    /**
+     * Whether a piece makes him a Craftsman (canon: the recognition comes from extraordinary work; Khan reached it through
+     * Grid, cap. 768). Only a Master can; then his own Unique or better piece is enough, or watching his master forge a
+     * Legendary (illumination).
+     */
+    public static boolean earnsCraftsman(MasteryStage stage, ItemRating piece, boolean ownPiece) {
+        if (stage != MasteryStage.MASTER) {
+            return false;
+        }
+        return piece.ordinal() >= (ownPiece ? ItemRating.UNIQUE : ItemRating.LEGENDARY).ordinal();
     }
 
     public static double failChance(int level) {
