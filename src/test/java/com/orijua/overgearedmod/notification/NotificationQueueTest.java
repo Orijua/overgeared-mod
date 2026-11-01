@@ -14,6 +14,15 @@ class NotificationQueueTest {
     private static final long F = NotificationQueue.FADE_MS;
 
     @Test
+    void grandWindowsStayLonger() {
+        NotificationQueue queue = new NotificationQueue();
+        queue.push(new SystemNotification(SystemNotification.Kind.HIDDEN_CLASS, List.of(Component.literal("Night Hunter"))));
+        queue.current(0);
+        assertTrue(queue.current(D + 100).isPresent(), "still there after a normal window's time");
+        assertTrue(queue.current(NotificationQueue.GRAND_DURATION_MS).isEmpty(), "gone after its own");
+    }
+
+    @Test
     void emptyQueueShowsNothing() {
         assertTrue(new NotificationQueue().current(0).isEmpty());
     }
