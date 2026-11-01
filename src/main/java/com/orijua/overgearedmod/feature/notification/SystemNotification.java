@@ -31,6 +31,7 @@ public record SystemNotification(Kind kind, List<Component> lines, Optional<Item
         SKILL("skill", false),
         QUEST_WARNING("quest_warning", false),
         QUEST_FAILED("quest_failed", false),
+        CONTEST_RESULT("contest_result", false),
         HIDDEN_CLASS("hidden_class", true),
         LEGENDARY_ITEM("legendary_item", true),
         RARE_TITLE("rare_title", true);

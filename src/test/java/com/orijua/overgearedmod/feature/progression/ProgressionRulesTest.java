@@ -161,4 +161,12 @@ class ProgressionRulesTest {
         assertEquals(70.0f, ProgressionRules.maxMana(B, 10));
         assertEquals(3.0f, ProgressionRules.manaRegenPerSecond(B, 10), 1e-6f);
     }
+
+    @Test
+    void aTitleBonusRaisesSmithingXp() {
+        assertEquals(110, ProgressionRules.boostedSmithingXp(100, 0.1));
+        assertEquals(17, ProgressionRules.boostedSmithingXp(15, 0.1));
+        assertEquals(15, ProgressionRules.boostedSmithingXp(15, 0));
+        assertEquals(0, ProgressionRules.boostedSmithingXp(0, 0.1));
+    }
 }

@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.feature.npc.VillageChiefNpc;
 import com.orijua.overgearedmod.feature.pagma.AshurKnight;
 import com.orijua.overgearedmod.feature.pagma.EarlAshur;
+import com.orijua.overgearedmod.feature.winston.EupheminaNpc;
 import com.orijua.overgearedmod.feature.winston.KhanNpc;
 import com.orijua.overgearedmod.feature.winston.MeroThug;
 import net.minecraft.core.registries.Registries;
@@ -74,6 +75,13 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .build("mero_thug"));
 
+    // Euphemina (canon, caps. 36-40): the smith the Mero Company hires for the production contest in Winston's square.
+    public static final DeferredHolder<EntityType<?>, EntityType<EupheminaNpc>> EUPHEMINA = ENTITIES.register("euphemina",
+            () -> EntityType.Builder.of(EupheminaNpc::new, MobCategory.MISC)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("euphemina"));
+
     private ModEntities() {
     }
 
@@ -91,5 +99,6 @@ public final class ModEntities {
         event.put(ASHUR_KNIGHT.get(), AshurKnight.createAttributes().build());
         event.put(KHAN.get(), KhanNpc.createAttributes().build());
         event.put(MERO_THUG.get(), MeroThug.createAttributes().build());
+        event.put(EUPHEMINA.get(), EupheminaNpc.createAttributes().build());
     }
 }

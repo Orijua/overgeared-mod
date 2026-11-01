@@ -1,0 +1,9 @@
+{
+  "name": { "translate": "quest.overgearedmod.khans_contest" },
+  "description": { "translate": "quest.overgearedmod.khans_contest.desc" },
+  "discover_when": { "type": "milestone", "milestone": "overgearedmod:met_khan" },
+  "giver": "overgearedmod:khan",
+  "requires_quest": "overgearedmod:khans_rage",
+  "goal": { "type": "milestone", "milestone": "overgearedmod:contest_won" },
+  "xp_reward": 3000
+}

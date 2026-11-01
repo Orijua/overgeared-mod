@@ -7,6 +7,9 @@ import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.feature.npc.NpcTradePayload;
 import com.orijua.overgearedmod.feature.pagma.PagmaBook;
 import com.orijua.overgearedmod.feature.pagma.ReadPagmaBookPayload;
+import com.orijua.overgearedmod.feature.winston.EupheminaNpc;
+import com.orijua.overgearedmod.feature.winston.KhanContest;
+import com.orijua.overgearedmod.feature.winston.StartContestPayload;
 import com.orijua.overgearedmod.feature.progression.AllocateStatPayload;
 import com.orijua.overgearedmod.feature.progression.ChooseClassPayload;
 import com.orijua.overgearedmod.feature.progression.ClassService;
@@ -116,6 +119,14 @@ final class ServerPayloadHandler {
     static void readPagmaBook(ReadPagmaBookPayload payload, IPayloadContext context) {
         if (context.player() instanceof ServerPlayer player) {
             PagmaBook.read(player);
+        }
+    }
+
+    /** Starting the contest: at Euphemina, standing near her. */
+    static void startContest(StartContestPayload payload, IPayloadContext context) {
+        if (context.player() instanceof ServerPlayer player && player.level().getEntity(payload.euphemina()) instanceof EupheminaNpc euphemina
+                && euphemina.distanceToSqr(player) <= QuestService.GIVER_REACH * QuestService.GIVER_REACH) {
+            KhanContest.start(player);
         }
     }
 

@@ -98,6 +98,15 @@ public final class Config {
             .defineInRange("eliteEquipmentChance", D.eliteEquipmentChance(), 0.0, 1.0);
 
     static {
+        BUILDER.pop().push("story");
+    }
+
+    private static final ModConfigSpec.EnumValue<Balance.ContestLoss> CONTEST_LOSS = BUILDER
+            .comment("Losing the production contest against Euphemina in Winston: FAIL closes the quest for good, REMATCH allows",
+                    "another try the next game day, AUTO fails it in a single-player world and gives a rematch in a shared one.")
+            .defineEnum("contestLoss", D.contestLoss());
+
+    static {
         BUILDER.pop();
     }
 
@@ -119,6 +128,7 @@ public final class Config {
                 ENHANCE_BASE_CHANCE.get(), ENHANCE_LOSS_PER_LEVEL.get(), ENHANCE_PER_DEXTERITY.get(), ENHANCE_MIN_CHANCE.get(),
                 DEATH_XP_LOSS.get(),
                 MOB_LEVEL_SPREAD.get(), MOB_HEALTH_PER_LEVEL.get(), MOB_DAMAGE_PER_LEVEL.get(),
-                ELITE_CHANCE.get(), ELITE_STAT_BONUS.get(), ELITE_XP_MULTIPLIER.get(), ELITE_EQUIPMENT_CHANCE.get());
+                ELITE_CHANCE.get(), ELITE_STAT_BONUS.get(), ELITE_XP_MULTIPLIER.get(), ELITE_EQUIPMENT_CHANCE.get(),
+                CONTEST_LOSS.get());
     }
 }

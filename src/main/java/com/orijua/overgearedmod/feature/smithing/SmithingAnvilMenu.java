@@ -315,7 +315,7 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         hammerHand.ifPresent(hand -> SmithingHammers.wear(smith, hand));
         ItemRating rating = forged.get(ModDataComponents.ITEM_RATING);
         if (rating != null) {
-            NeoForge.EVENT_BUS.post(new ItemForgedEvent(smith, forged, rating));
+            NeoForge.EVENT_BUS.post(new ItemForgedEvent(smith, forged, rating, precision));
             Component message = batchCount() > 1
                     ? Component.translatable("message.overgearedmod.forged_batch", forged.getHoverName(), rating.displayName(), batchDone(), batchCount())
                     : Component.translatable("message.overgearedmod.forged", forged.getHoverName(), rating.displayName());

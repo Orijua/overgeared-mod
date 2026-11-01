@@ -52,7 +52,7 @@ import java.util.UUID;
  * brings {@link #THUGS} Mero thugs into the smithy; the last one drops the transfer contract, and tearing it up
  * completes the quest. It has 7 days. If the time runs out Khan dies, as in the canon: in a single-player world for
  * good (a grave is left in his smithy), in a shared world only for the player who failed him (he no longer speaks to
- * them), so nobody else loses him.
+ * them), so nobody else loses him. The production contest that follows is {@link KhanContest}.
  */
 public final class WinstonStory {
     /** Smith told Pagma's successor about Khan and gave them the map to Winston. */
@@ -86,9 +86,12 @@ public final class WinstonStory {
                 || QuestService.get(player).isCompleted(PagmaStory.LEGACY);
     }
 
-    /** The player let Khan's time run out: Khan is dead for them. From the synced quests: both sides. */
+    /**
+     * The player let Khan's time run out (he is dead for them), or lost his contest for good (the Mero keeps his smithy
+     * and he no longer teaches them). From the synced quests: both sides.
+     */
     public static boolean hasLostKhan(Player player) {
-        return QuestService.get(player).isFailed(KHANS_RAGE);
+        return QuestService.get(player).isFailed(KHANS_RAGE) || QuestService.get(player).isFailed(KhanContest.KHANS_CONTEST);
     }
 
     /** Whether Khan opens his quest window to this player. */
@@ -115,14 +118,21 @@ public final class WinstonStory {
     /**
      * Talking to Khan: the successor is heard (the milestone, every time), and thanked once his smithy is saved; anyone
      * else is sent away, and whoever failed him gets silence. If the thugs are gone while the quest still runs (and
-     * the contract is nowhere), they come back.
+     * the contract is nowhere), they come back; so does Euphemina while the contest quest runs. Once the contest is
+     * claimed, his smithy is rebuilt if it wasn't yet (e.g. after a debug command completed the quest elsewhere).
      */
     public static void talkToKhan(ServerPlayer player, Entity khan) {
         if (hasLostKhan(player)) {
-            player.displayClientMessage(Component.translatable("message.overgearedmod.khan_lost"), true);
+            String line = QuestService.get(player).isFailed(KHANS_RAGE) ? "khan_lost" : "khan_contest_lost";
+            player.displayClientMessage(Component.translatable("message.overgearedmod." + line), true);
         } else if (isPagmasSuccessor(player)) {
             GoalTracker.milestone(player, MET_KHAN);
-            if (QuestService.get(player).isCompleted(KHANS_RAGE)) {
+            if (QuestService.get(player).isCompleted(KhanContest.KHANS_CONTEST)) {
+                KhanContest.restoreSmithy(player.serverLevel(), khan.blockPosition());
+                player.displayClientMessage(Component.translatable("message.overgearedmod.khan_master"), true);
+            } else if (QuestService.get(player).isActive(KhanContest.KHANS_CONTEST)) {
+                KhanContest.summonEuphemina(player.serverLevel(), khan);
+            } else if (QuestService.get(player).isCompleted(KHANS_RAGE)) {
                 player.displayClientMessage(Component.translatable("message.overgearedmod.khan_sober"), true);
             } else if (thugsLost(player, khan)) {
                 summonThugs(player, khan);

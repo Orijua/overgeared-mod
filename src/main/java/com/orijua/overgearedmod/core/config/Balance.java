@@ -27,14 +27,23 @@ public record Balance(
         double eliteChance,
         double eliteStatBonus,
         double eliteXpMultiplier,
-        double eliteEquipmentChance) {
+        double eliteEquipmentChance,
+        ContestLoss contestLoss) {
+
+    /**
+     * What losing the contest against Euphemina does: {@link #FAIL} closes the quest for good (the Mero keeps the
+     * smithy), {@link #REMATCH} lets the player try again the next game day, and {@link #AUTO} fails it in a
+     * single-player world and gives a rematch in a shared one.
+     */
+    public enum ContestLoss { AUTO, FAIL, REMATCH }
 
     public static final Balance DEFAULT = new Balance(
             5, 1.0, 2.0, 1.0, 0.25, 50, 25,
             20.0f, 5.0f, 1.0f, 0.2f,
             0.95, 0.09, 0.005, 0.05,
             0.10,
-            2, 0.08, 0.05, 0.05, 0.5, 3.0, 0.25);
+            2, 0.08, 0.05, 0.05, 0.5, 3.0, 0.25,
+            ContestLoss.AUTO);
 
     /** Set only inside {@link #withOverride}; read by {@link #current()} before the config. */
     private static Balance override;
@@ -66,6 +75,14 @@ public record Balance(
         return new Balance(statPointsPerLevel, killXpMultiplier, killXpPerAttackDamage, killXpPerArmor, spawnerXpMultiplier,
                 xpBase, xpPerLevel, baseMana, manaPerIntelligence, baseManaRegen, manaRegenPerIntelligence,
                 enhanceBaseChance, enhanceChanceLossPerLevel, enhanceChancePerDexterity, enhanceMinChance, deathXpLoss,
-                mobLevelSpread, mobHealthPerLevel, mobDamagePerLevel, eliteChance, eliteStatBonus, eliteXpMultiplier, chance);
+                mobLevelSpread, mobHealthPerLevel, mobDamagePerLevel, eliteChance, eliteStatBonus, eliteXpMultiplier, chance, contestLoss);
+    }
+
+    /** A copy with a different {@link #contestLoss}, so a test can try each way of losing. */
+    public Balance withContestLoss(ContestLoss loss) {
+        return new Balance(statPointsPerLevel, killXpMultiplier, killXpPerAttackDamage, killXpPerArmor, spawnerXpMultiplier,
+                xpBase, xpPerLevel, baseMana, manaPerIntelligence, baseManaRegen, manaRegenPerIntelligence,
+                enhanceBaseChance, enhanceChanceLossPerLevel, enhanceChancePerDexterity, enhanceMinChance, deathXpLoss,
+                mobLevelSpread, mobHealthPerLevel, mobDamagePerLevel, eliteChance, eliteStatBonus, eliteXpMultiplier, eliteEquipmentChance, loss);
     }
 }
