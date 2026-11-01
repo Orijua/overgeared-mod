@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.skill.PlayerSkills;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +17,8 @@ import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
+import java.util.List;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
@@ -43,6 +46,10 @@ public final class ModAttachments {
 
     public static final Supplier<AttachmentType<PlayerQuests>> PLAYER_QUESTS =
             playerData("player_quests", () -> PlayerQuests.EMPTY, PlayerQuests.CODEC, PlayerQuests.STREAM_CODEC, true);
+
+    /** The apprentice blacksmiths a player has hired (their UUIDs), to know how many more they may hire. */
+    public static final Supplier<AttachmentType<List<UUID>>> APPRENTICES =
+            playerData("apprentices", List::of, UUIDUtil.CODEC.listOf(), ByteBufCodecs.fromCodec(UUIDUtil.CODEC.listOf()), true);
 
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",

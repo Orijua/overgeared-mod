@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.boss.BoneLord;
+import com.orijua.overgearedmod.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.npc.VillageChiefNpc;
 import com.orijua.overgearedmod.pagma.AshurKnight;
@@ -37,6 +38,13 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .build("bone_lord"));
 
+    // An apprentice blacksmith hired with a contract from Smith: forges alone at a smithing anvil (chest in, barrel out).
+    public static final DeferredHolder<EntityType<?>, EntityType<ApprenticeSmith>> APPRENTICE_SMITH = ENTITIES.register("apprentice_smith",
+            () -> EntityType.Builder.of(ApprenticeSmith::new, MobCategory.MISC)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("apprentice_smith"));
+
     // Earl Ashur and his knights (canon, caps. 1-2): peaceful in his manor near Bairan, hunters once Pagma's book is appraised.
     public static final DeferredHolder<EntityType<?>, EntityType<EarlAshur>> EARL_ASHUR = ENTITIES.register("earl_ashur",
             () -> EntityType.Builder.of(EarlAshur::new, MobCategory.MISC)
@@ -62,6 +70,7 @@ public final class ModEntities {
         event.put(BLACKSMITH.get(), BlacksmithNpc.createAttributes().build());
         event.put(VILLAGE_CHIEF.get(), VillageChiefNpc.createAttributes().build());
         event.put(BONE_LORD.get(), BoneLord.createAttributes().build());
+        event.put(APPRENTICE_SMITH.get(), ApprenticeSmith.createAttributes().build());
         event.put(EARL_ASHUR.get(), EarlAshur.createAttributes().build());
         event.put(ASHUR_KNIGHT.get(), AshurKnight.createAttributes().build());
     }
