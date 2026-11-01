@@ -335,7 +335,7 @@
   "item.overgearedmod.commanders_sword.desc": "The sword of whoever leads the soldiers. It helps to notice people.",
   "item.overgearedmod.rulers_sword": "Ruler's Sword",
   "item.overgearedmod.rulers_sword.desc": "Only given to a recognised lord. Used to watch soldiers and residents closely.",
-  "item.overgearedmod.insight_sword.observation": "Character Observation: observe in %s s and see as with +%s Insight",
+  "item.overgearedmod.insight_sword.observation": "Character Observation: observe %s %% faster and see as with +%s Insight",
   "item.overgearedmod.insight_sword.talent_search": "Talent Search (right-click): reveals hidden talents and named NPCs nearby",
   "item.overgearedmod.loaned": "Lent for \"%s\": given back when it ends",
   "message.overgearedmod.quest_loaned": "You have been lent what you need for \"%s\".",

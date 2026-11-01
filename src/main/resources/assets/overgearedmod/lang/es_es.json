@@ -335,7 +335,7 @@
   "item.overgearedmod.commanders_sword.desc": "Espada de quien manda a los soldados. Ayuda a fijarse en las personas.",
   "item.overgearedmod.rulers_sword": "Espada del gobernante",
   "item.overgearedmod.rulers_sword.desc": "Solo se entrega a un señor reconocido. Sirve para vigilar de cerca a soldados y vecinos.",
-  "item.overgearedmod.insight_sword.observation": "Observación de personajes: observas en %s s y ves como con +%s de Perspicacia",
+  "item.overgearedmod.insight_sword.observation": "Observación de personajes: observas un %s %% más rápido y ves como con +%s de Perspicacia",
   "item.overgearedmod.insight_sword.talent_search": "Búsqueda de talentos (clic derecho): revela talentos ocultos y NPC con nombre cerca",
   "item.overgearedmod.loaned": "Prestada para «%s»: se devuelve al terminar",
   "message.overgearedmod.quest_loaned": "Te han prestado lo necesario para «%s».",

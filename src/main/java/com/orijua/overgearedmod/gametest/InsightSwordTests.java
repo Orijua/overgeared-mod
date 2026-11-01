@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.gametest;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.goal.GoalTracker;
 import com.orijua.overgearedmod.insight.InsightRules;
+import com.orijua.overgearedmod.insight.InsightSwordItem;
 import com.orijua.overgearedmod.insight.Observation;
 import com.orijua.overgearedmod.insight.TalentSearch;
 import com.orijua.overgearedmod.insight.Talents;
@@ -42,6 +43,8 @@ public final class InsightSwordTests {
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(1, 1, 1));
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.COMMANDERS_SWORD.get()));
         helper.assertTrue(Observation.observeTicks(player) == 140 && Observation.effectiveInsight(player) == 10, "7 s and +10 with the Commander's");
+        helper.assertTrue(((InsightSwordItem) ModItems.COMMANDERS_SWORD.get()).observeSpeedPercent() == 30
+                && ((InsightSwordItem) ModItems.RULERS_SWORD.get()).observeSpeedPercent() == 50, "what the tooltips say: 30 % and 50 % faster");
         boolean gained = false;
         for (int i = 0; i < 140; i++) {
             gained |= Observation.observe(player, villager);
