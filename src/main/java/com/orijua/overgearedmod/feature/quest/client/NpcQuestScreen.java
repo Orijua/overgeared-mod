@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.npc.NpcTradePayload;
 import com.orijua.overgearedmod.feature.quest.NpcQuestPayload;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
+import com.orijua.overgearedmod.feature.quest.QuestDeadlines;
 import com.orijua.overgearedmod.feature.quest.QuestDefinition;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.DeliverGoal;
@@ -25,6 +26,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalLong;
 
 /**
  * An NPC's quest window (right-click on Smith or the village chief): the quests it gives that the player can accept or
@@ -196,6 +198,10 @@ public final class NpcQuestScreen extends Screen {
             if (stored != null) {
                 int progress = QuestService.progress(player(), quest, stored);
                 detail = detail.copy().append("  " + progress + "/" + quest.goal().target());
+                OptionalLong deadline = shownState.deadline(entry.id());
+                if (deadline.isPresent()) {
+                    detail = detail.copy().append("  ⌛").append(QuestDeadlines.timeLeft(deadline.getAsLong(), QuestDeadlines.now(player())));
+                }
                 color = progress >= quest.goal().target() ? UiStyle.GOOD : UiStyle.MUTED;
             }
             graphics.drawString(font, font.substrByWidth(detail, textWidth).getString(), left + PADDING, y + 11, color);

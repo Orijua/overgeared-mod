@@ -22,6 +22,9 @@ import java.util.Optional;
  * {@code giver} is the NPC (entity type) that gives it: such a quest is only accepted, delivered to and claimed at an NPC
  * of that type, from its quest window; the Quests tab lists it with a hint to go and talk to them.
  * {@code loaned_items} are lent on accepting it and taken back (from the inventory) when it is claimed or abandoned.
+ * {@code time_limit_days} gives it a deadline in game days (sleeping counts) from accepting it: such a quest can't be
+ * abandoned, warns when one day is left, and when the time runs out it fails for good and can never be taken again.
+ * {@code accept_skill} is a skill learned on accepting it (canon: "Quest Acceptance Reward: the skill is created").
  */
 public record QuestDefinition(
         Component name,
@@ -35,7 +38,12 @@ public record QuestDefinition(
         Optional<ResourceLocation> classReward,
         boolean repeatable,
         Optional<EntityType<?>> giver,
-        List<ItemStack> loanedItems) {
+        List<ItemStack> loanedItems,
+        Optional<Integer> timeLimitDays,
+        Optional<ResourceLocation> acceptSkill) {
+
+    /** One Minecraft day, in ticks of day time. */
+    public static final long DAY_TICKS = 24_000L;
 
     public static final Codec<QuestDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ComponentSerialization.CODEC.fieldOf("name").forGetter(QuestDefinition::name),
@@ -49,7 +57,9 @@ public record QuestDefinition(
             ResourceLocation.CODEC.optionalFieldOf("class_reward").forGetter(QuestDefinition::classReward),
             Codec.BOOL.optionalFieldOf("repeatable", false).forGetter(QuestDefinition::repeatable),
             BuiltInRegistries.ENTITY_TYPE.byNameCodec().optionalFieldOf("giver").forGetter(QuestDefinition::giver),
-            ItemStack.CODEC.listOf().optionalFieldOf("loaned_items", List.of()).forGetter(QuestDefinition::loanedItems)
+            ItemStack.CODEC.listOf().optionalFieldOf("loaned_items", List.of()).forGetter(QuestDefinition::loanedItems),
+            Codec.intRange(1, 365).optionalFieldOf("time_limit_days").forGetter(QuestDefinition::timeLimitDays),
+            ResourceLocation.CODEC.optionalFieldOf("accept_skill").forGetter(QuestDefinition::acceptSkill)
     ).apply(instance, QuestDefinition::new));
 
     public boolean allowsClass(Optional<ResourceLocation> playerClass) {

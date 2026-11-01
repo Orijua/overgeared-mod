@@ -105,4 +105,41 @@ class PlayerQuestsTest {
         quests = quests.accept(OTHER, 0);
         assertSame(quests, quests.toggleTracked(OTHER));
     }
+
+    @Test
+    void aDeadlineWarnsOnceOnItsLastDayAndIsOverdueAfter() {
+        PlayerQuests quests = PlayerQuests.EMPTY.accept(OTHER, 0).withDeadline(OTHER, 1000);
+        assertEquals(1000L, quests.deadline(OTHER).getAsLong());
+        assertEquals(List.of(), quests.dueSoon(0, 500), "more than the window left");
+        assertEquals(List.of(OTHER), quests.dueSoon(600, 500), "inside the window");
+        assertEquals(List.of(), quests.warn(OTHER).dueSoon(600, 500), "warned once");
+        assertEquals(List.of(), quests.overdue(999));
+        assertEquals(List.of(OTHER), quests.overdue(1000));
+        assertSame(PlayerQuests.EMPTY, PlayerQuests.EMPTY.withDeadline(OTHER, 5), "only active quests get a deadline");
+    }
+
+    @Test
+    void aFailedQuestIsClosedForGood() {
+        PlayerQuests failed = PlayerQuests.EMPTY.accept(OTHER, 0).withDeadline(OTHER, 1000).warn(OTHER).fail(OTHER);
+        assertTrue(failed.isFailed(OTHER));
+        assertFalse(failed.isActive(OTHER) || failed.isTracked(OTHER) || failed.isCompleted(OTHER));
+        assertTrue(failed.deadline(OTHER).isEmpty() && failed.warned().isEmpty(), "the clock is gone");
+        assertTrue(failed.overdue(Long.MAX_VALUE).isEmpty(), "it can't fail twice");
+    }
+
+    @Test
+    void completingOrAbandoningStopsTheClock() {
+        PlayerQuests timed = PlayerQuests.EMPTY.accept(OTHER, 0).withDeadline(OTHER, 1000);
+        assertTrue(timed.complete(OTHER).deadline(OTHER).isEmpty());
+        assertTrue(timed.abandon(OTHER).deadline(OTHER).isEmpty());
+        assertFalse(timed.complete(OTHER).isFailed(OTHER));
+    }
+
+    @Test
+    void savesFromBeforeTimeLimitsStillLoad() {
+        PlayerQuests loaded = PlayerQuests.CODEC.parse(JsonOps.INSTANCE,
+                JsonParser.parseString("{\"active\": {\"test:other\": 2}, \"tracked\": [\"test:other\"]}")).getOrThrow();
+        assertTrue(loaded.deadlines().isEmpty() && loaded.failed().isEmpty() && loaded.warned().isEmpty());
+        assertTrue(loaded.isActive(OTHER));
+    }
 }

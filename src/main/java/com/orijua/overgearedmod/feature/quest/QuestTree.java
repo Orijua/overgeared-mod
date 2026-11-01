@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
  * <ul>
  *   <li><b>Story</b>: the requires_quest chains, grouped by who gives them. Of each chain only the quests already done
  *   and the current ones show; under a current quest that leads on, a single locked "???" says the chain goes on.</li>
- *   <li><b>Completed</b>: the chains with nothing left to do, to show folded.</li>
+ *   <li><b>Completed</b>: the chains with nothing left to do, to show folded. A failed quest ends its chain.</li>
  *   <li><b>Repeatable</b>: repeatable quests, apart from the chains (a quest that requires one starts its own chain).</li>
  * </ul>
  * Undiscovered hidden quests never show, not even as "???".
@@ -31,7 +31,7 @@ public final class QuestTree {
                         boolean hidden) {
     }
 
-    public enum State { DONE, CURRENT, LOCKED }
+    public enum State { DONE, FAILED, CURRENT, LOCKED }
 
     /**
      * A line of a chain. {@code id} is null for the locked "???". {@code depth} only grows where a chain branches, so a
@@ -42,9 +42,9 @@ public final class QuestTree {
 
     /** A chain from its first quest, with the nodes to show in order. */
     public record Chain(ResourceLocation root, List<Node> nodes) {
-        /** Nothing current and nothing locked: every quest it shows is done. */
+        /** Nothing current and nothing locked: every quest it shows is done (or failed for good). */
         public boolean finished() {
-            return nodes.stream().allMatch(node -> node.state() == State.DONE);
+            return nodes.stream().allMatch(node -> node.state() == State.DONE || node.state() == State.FAILED);
         }
 
         public long done() {
@@ -109,6 +109,8 @@ public final class QuestTree {
         if (state.isCompleted(quest.id())) {
             nodes.add(new Node(quest.id(), depth, State.DONE));
             after.forEach(child -> visit(child, childDepth, next, state, nodes, seen));
+        } else if (state.isFailed(quest.id())) {
+            nodes.add(new Node(quest.id(), depth, State.FAILED)); // nothing after it can ever be taken
         } else if (unlocked) {
             nodes.add(new Node(quest.id(), depth, State.CURRENT));
             // A secret next step stays a secret: only an open one is hinted at.

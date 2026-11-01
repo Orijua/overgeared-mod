@@ -55,6 +55,17 @@ class QuestTreeTest {
     }
 
     @Test
+    void aFailedQuestEndsItsChainAsFinished() {
+        PlayerQuests state = PlayerQuests.EMPTY.complete(WOOD).accept(IRON, 0).fail(IRON);
+        QuestTree.View view = QuestTree.build(QUESTS, state);
+        assertTrue(view.story().isEmpty(), "nothing left to do in it");
+        QuestTree.Chain chain = view.completed().getFirst().chains().getFirst();
+        assertEquals(List.of(new QuestTree.Node(WOOD, 0, QuestTree.State.DONE), new QuestTree.Node(IRON, 0, QuestTree.State.FAILED)),
+                chain.nodes(), "jaffa can never come");
+        assertEquals(1, chain.done());
+    }
+
+    @Test
     void repeatableQuestsStandApartAndUnlockTheirOwnChain() {
         QuestTree.View before = QuestTree.build(QUESTS, PlayerQuests.EMPTY);
         assertEquals(List.of(PLAGUE), before.repeatable());

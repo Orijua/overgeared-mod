@@ -42,6 +42,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.UNAPPRAISED_BOOK);
                         output.accept(ModItems.EYE_OF_PALLALIAN);
                         output.accept(ModItems.PAGMA_RARE_BOOK);
+                        output.accept(ModItems.TRANSFER_CONTRACT);
                         output.accept(ModItems.APPRENTICE_CONTRACT);
                         output.accept(ModItems.WORKSHOP_LEDGER);
                         output.accept(ModItems.IRON_SMITHING_HAMMER);

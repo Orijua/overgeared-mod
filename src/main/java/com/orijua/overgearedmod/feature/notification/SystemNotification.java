@@ -28,6 +28,9 @@ public record SystemNotification(Kind kind, List<Component> lines, Optional<Item
         APPRENTICE("apprentice", false),
         INSIGHT("insight", false),
         GREAT_SUCCESS("great_success", false),
+        SKILL("skill", false),
+        QUEST_WARNING("quest_warning", false),
+        QUEST_FAILED("quest_failed", false),
         HIDDEN_CLASS("hidden_class", true),
         LEGENDARY_ITEM("legendary_item", true),
         RARE_TITLE("rare_title", true);

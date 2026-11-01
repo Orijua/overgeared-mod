@@ -37,6 +37,7 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.UNAPPRAISED_BOOK.get(), "book");
         vanillaTexture(ModItems.EYE_OF_PALLALIAN.get(), "ender_eye");
         vanillaTexture(ModItems.APPRENTICE_CONTRACT.get(), "paper");
+        vanillaTexture(ModItems.TRANSFER_CONTRACT.get(), "paper");
         vanillaTexture(ModItems.WORKSHOP_LEDGER.get(), "writable_book");
         vanillaTexture(ModItems.JAFFA_SMITHING_HAMMER.get(), "mace");
         handheld(ModItems.COMMANDERS_SWORD.get(), "iron_sword");

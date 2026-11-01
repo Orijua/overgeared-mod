@@ -12,6 +12,7 @@ import com.orijua.overgearedmod.feature.progression.PlayerClassDefinition;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestActionPayload;
+import com.orijua.overgearedmod.feature.quest.QuestDeadlines;
 import com.orijua.overgearedmod.feature.quest.QuestDefinition;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.QuestTree;
@@ -40,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -284,7 +286,7 @@ public class QuestsTab extends SatisfyTab {
         }
     }
 
-    /** A quest line: ✔ done, » accepted, ○ to accept (grey when its class can't). */
+    /** A quest line: ✔ done, ✖ failed, » accepted, ○ to accept (grey when its class can't). */
     private void addQuest(ResourceLocation id, QuestDefinition quest, int depth, Component right, int rightColor) {
         String mark;
         int color;
@@ -294,6 +296,9 @@ public class QuestsTab extends SatisfyTab {
         } else if (shownState.isCompleted(id) && !quest.repeatable()) {
             mark = "✔";
             color = UiStyle.GOOD;
+        } else if (shownState.isFailed(id)) {
+            mark = "✖";
+            color = UiStyle.BAD;
         } else {
             mark = "○";
             color = classAllows(quest) ? UiStyle.TEXT : UiStyle.MUTED;
@@ -339,6 +344,9 @@ public class QuestsTab extends SatisfyTab {
                     .build(SatisfyButton::new);
             track.active = tracked || shownState.tracked().size() < PlayerQuests.MAX_TRACKED;
             addWidget.accept(track);
+            if (shownState.deadline(id).isPresent()) {
+                return; // a quest against the clock can't be dropped
+            }
             addWidget.accept(Button.builder(Component.literal("✖"),
                             b -> PacketDistributor.sendToServer(new QuestActionPayload(id, QuestActionPayload.Action.ABANDON)))
                     .bounds(left + width - 16, y, 16, 16)
@@ -517,6 +525,15 @@ public class QuestsTab extends SatisfyTab {
             int barWidth = detailWidth - font().width(count) - 6;
             UiStyle.bar(graphics, x + 1, y + 2, barWidth, 5, target == 0 ? 1 : (float) progress / target, done ? UiStyle.XP : UiStyle.COOLDOWN);
             graphics.drawString(font(), count, x + barWidth + 5, y, done ? UiStyle.GOOD : UiStyle.TEXT);
+            y += 12;
+            OptionalLong deadline = shownState.deadline(id);
+            if (deadline.isPresent()) {
+                graphics.drawString(font(), Component.translatable("screen.overgearedmod.quest_time_left",
+                        QuestDeadlines.timeLeft(deadline.getAsLong(), QuestDeadlines.now(player()))), x, y, UiStyle.BAD);
+                y += 10;
+            }
+        } else if (shownState.isFailed(id)) {
+            graphics.drawString(font(), Component.literal("✖ ").append(Component.translatable("screen.overgearedmod.quest_failed")), x, y, UiStyle.BAD);
             y += 12;
         } else if (shownState.isCompleted(id)) {
             Component completed = quest.repeatable()
