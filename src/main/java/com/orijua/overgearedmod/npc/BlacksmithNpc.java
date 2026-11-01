@@ -29,6 +29,7 @@ import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A blacksmith NPC: right-click opens his quest window (with a Trade button for the shop).
@@ -67,6 +68,21 @@ public class BlacksmithNpc extends AbstractVillager {
             offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 16),
                     SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), skill), 3, 0, 0.05f));
         }
+        offers.add(eyeOfPallalian());
+    }
+
+    /** The most expensive appraisal item (canon, cap. 1), to know what Pagma's old book is. */
+    private static MerchantOffer eyeOfPallalian() {
+        return new MerchantOffer(new ItemCost(Items.EMERALD, 32), Optional.of(new ItemCost(Items.DIAMOND, 2)),
+                new ItemStack(ModItems.EYE_OF_PALLALIAN.get()), 2, 0, 0.05f);
+    }
+
+    /** Smiths whose shop was stocked before the eye existed get it added. */
+    private void stockEyeOfPallalian() {
+        MerchantOffers offers = getOffers();
+        if (offers.stream().noneMatch(offer -> offer.getResult().is(ModItems.EYE_OF_PALLALIAN.get()))) {
+            offers.add(eyeOfPallalian());
+        }
     }
 
     /** Right-click: his quest window, whose Trade button opens the shop ({@link #startTrading}). */
@@ -85,6 +101,7 @@ public class BlacksmithNpc extends AbstractVillager {
     /** Opens the shop for {@code player}, unless someone is already trading with him. */
     public void startTrading(Player player) {
         if (isAlive() && !isTrading()) {
+            stockEyeOfPallalian();
             setTradingPlayer(player);
             openTradingScreen(player, getDisplayName(), 1);
         }

@@ -4,6 +4,8 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.boss.BoneLord;
 import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.npc.VillageChiefNpc;
+import com.orijua.overgearedmod.pagma.AshurKnight;
+import com.orijua.overgearedmod.pagma.EarlAshur;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -35,17 +37,32 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .build("bone_lord"));
 
+    // Earl Ashur and his knights (canon, caps. 1-2): peaceful in his manor near Bairan, hunters once Pagma's book is appraised.
+    public static final DeferredHolder<EntityType<?>, EntityType<EarlAshur>> EARL_ASHUR = ENTITIES.register("earl_ashur",
+            () -> EntityType.Builder.of(EarlAshur::new, MobCategory.MISC)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("earl_ashur"));
+
+    public static final DeferredHolder<EntityType<?>, EntityType<AshurKnight>> ASHUR_KNIGHT = ENTITIES.register("ashur_knight",
+            () -> EntityType.Builder.of(AshurKnight::new, MobCategory.MISC)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("ashur_knight"));
+
     private ModEntities() {
     }
 
     /** The NPCs with a quest window: a quest's "giver" must be one of them. */
     public static Set<EntityType<?>> questGivers() {
-        return Set.of(BLACKSMITH.get(), VILLAGE_CHIEF.get());
+        return Set.of(BLACKSMITH.get(), VILLAGE_CHIEF.get(), EARL_ASHUR.get());
     }
 
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(BLACKSMITH.get(), BlacksmithNpc.createAttributes().build());
         event.put(VILLAGE_CHIEF.get(), VillageChiefNpc.createAttributes().build());
         event.put(BONE_LORD.get(), BoneLord.createAttributes().build());
+        event.put(EARL_ASHUR.get(), EarlAshur.createAttributes().build());
+        event.put(ASHUR_KNIGHT.get(), AshurKnight.createAttributes().build());
     }
 }

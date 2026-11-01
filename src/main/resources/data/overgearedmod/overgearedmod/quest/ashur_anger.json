@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "quest.overgearedmod.ashur_anger" },
+  "description": { "translate": "quest.overgearedmod.ashur_anger.desc" },
+  "discover_when": { "type": "milestone", "milestone": "overgearedmod:ashur_betrayal" },
+  "goal": { "type": "kill", "entity": "overgearedmod:earl_ashur", "count": 1 },
+  "xp_reward": 5000
+}

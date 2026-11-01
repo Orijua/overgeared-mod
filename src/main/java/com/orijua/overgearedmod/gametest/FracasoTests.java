@@ -8,7 +8,6 @@ import com.orijua.overgearedmod.equipment.option.RolledOption;
 import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.progression.StatType;
-import com.orijua.overgearedmod.quest.QuestService;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import com.orijua.overgearedmod.registry.ModDataComponents;
 import com.orijua.overgearedmod.registry.ModItems;
@@ -85,20 +84,6 @@ public final class FracasoTests {
     private static void hold(ServerPlayer player, ItemStack stack) {
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         ProgressionService.refreshEffects(player);
-    }
-
-    @GameTest(template = TestSupport.EMPTY)
-    public static void pagmasLegacyGivesTheBlueprint(GameTestHelper helper) {
-        ServerPlayer player = TestSupport.fakePlayer(helper);
-        ResourceLocation legacy = Overgearedmod.id("pagma_legacy");
-        ClassService.choose(player, Overgearedmod.id("blacksmith"));
-        TestSupport.forge(player, ItemRating.EPIC);
-        helper.assertTrue(QuestService.accept(player, legacy) == QuestService.Result.SUCCESS, "the first Epic forge reveals it");
-        TestSupport.forge(player, ItemRating.UNIQUE);
-        helper.assertTrue(QuestService.claim(player, legacy) == QuestService.Result.SUCCESS, "a Unique forge completes it");
-        helper.assertTrue(player.getInventory().contains(new ItemStack(ModItems.FRACASO_BLUEPRINT.get())),
-                "becoming the successor gives Fracaso's blueprint");
-        helper.succeed();
     }
 
     @GameTest(template = TestSupport.EMPTY)

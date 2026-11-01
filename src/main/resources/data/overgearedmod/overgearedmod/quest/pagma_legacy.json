@@ -1,10 +1,8 @@
 {
   "name": { "translate": "quest.overgearedmod.pagma_legacy" },
   "description": { "translate": "quest.overgearedmod.pagma_legacy.desc" },
-  "discover_when": { "type": "forge", "min_rating": "epic", "count": 1 },
-  "goal": { "type": "forge", "min_rating": "unique", "count": 1 },
-  "required_class": "overgearedmod:blacksmith",
-  "xp_reward": 200,
+  "discover_when": { "type": "milestone", "milestone": "overgearedmod:appraised_pagma_book" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:read_pagma_book" },
   "item_rewards": [{ "id": "overgearedmod:fracaso_blueprint" }],
   "class_reward": "overgearedmod:legendary_smith_successor"
 }
