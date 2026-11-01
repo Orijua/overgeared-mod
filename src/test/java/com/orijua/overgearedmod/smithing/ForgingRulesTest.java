@@ -70,4 +70,20 @@ class ForgingRulesTest {
         assertEquals(32, ForgingRules.batchTotal(ForgingRules.BATCH_ALL, 64, 2, -1), "All, with no handle needed");
         assertEquals(0, ForgingRules.batchTotal(5, 1, 2, -1), "not even one");
     }
+
+    @Test
+    void greatSuccessGrowsWithSkillAndAPreciseHand() {
+        assertEquals(0.01, ForgingRules.greatSuccessChance(0, 0, -1), 1e-9, "1 % for a novice");
+        assertEquals(0.01 + 50 * 0.0004 + 20 * 0.0001, ForgingRules.greatSuccessChance(20, 50, -1), 1e-9);
+        assertEquals(ForgingRules.MAX_GREAT_SUCCESS, ForgingRules.greatSuccessChance(5000, 300, -1), 1e-9, "capped");
+        assertEquals(0.02, ForgingRules.greatSuccessChance(0, 0, 0.8), 1e-9, "doubled from 80 % precision");
+        assertEquals(0.01, ForgingRules.greatSuccessChance(0, 0, 0.79), 1e-9, "not below");
+    }
+
+    @Test
+    void aGreatSuccessRaisesOneStepWithinTheRange() {
+        assertEquals(ItemRating.RARE, ForgingRules.raise(ItemRating.NORMAL, ItemRating.MYTH));
+        assertEquals(ItemRating.LEGENDARY, ForgingRules.raise(ItemRating.LEGENDARY, ItemRating.LEGENDARY), "Fracaso stays within its range");
+        assertEquals(ItemRating.MYTH, ForgingRules.raise(ItemRating.MYTH, ItemRating.MYTH));
+    }
 }

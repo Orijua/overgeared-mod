@@ -241,7 +241,7 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         forging.set(DATA_BATCH_DONE, done);
         // Not forging while the inputs are spent: slotsChanged calls broadcastChanges, which would tick back in here.
         forging.set(DATA_TOTAL, 0);
-        ItemRating rating = forge(smith, 0, 0, 1);
+        ItemRating rating = forge(smith, 0, 0, 1, -1);
         if (rating != null) {
             batchRatings[rating.ordinal()]++;
         }
@@ -284,22 +284,29 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         if (!ForgingRules.plausibleManualDuration(elapsed)) {
             return false;
         }
-        forge(smith, ForgingRules.manualSkillBonus(precision), ForgingRules.extraOptionChance(precision), ForgingRules.MANUAL_XP_MULTIPLIER);
+        forge(smith, ForgingRules.manualSkillBonus(precision), ForgingRules.extraOptionChance(precision), ForgingRules.MANUAL_XP_MULTIPLIER,
+                precision);
         return true;
     }
 
     /**
      * Makes the previewed item for real: rolls it, spends the inputs, rewards the smith and gives it to them.
-     * Returns its rating (null for an unrated result).
+     * Returns its rating (null for an unrated result). {@code precision}: the manual forge's, or negative for an automatic one.
      */
-    private ItemRating forge(ServerPlayer smith, double skillBonus, double extraOptionChance, int xpMultiplier) {
+    private ItemRating forge(ServerPlayer smith, double skillBonus, double extraOptionChance, int xpMultiplier, double precision) {
         ForgingRecipe recipe = currentRecipe.value();
         ItemStack forged = result.getItem(0).copy();
         // A smithing hammer in the off hand adds its skill to the roll (and its options more experience), and wears.
         ItemStack hammer = smith.getOffhandItem();
         double hammerSkill = SmithingHammers.skillBonus(smith.registryAccess(), hammer);
         double hammerXp = SmithingHammers.xpBonus(smith.registryAccess(), hammer);
-        EquipmentService.stampForged(smith, forged, recipe.requirements(), recipe.extras(), skillBonus + hammerSkill, extraOptionChance);
+        double greatChance = ForgingRules.greatSuccessChance(ProgressionService.effectiveStats(smith).dexterity(),
+                ProgressionService.effectiveSmithingLevel(smith), precision);
+        boolean great = EquipmentService.stampForged(smith, forged, recipe.requirements(), recipe.extras(), skillBonus + hammerSkill,
+                extraOptionChance, greatChance);
+        if (great) {
+            access.execute((level, pos) -> GreatSuccess.celebrate(smith, forged, pos));
+        }
         inputs.removeItem(TOP_SLOT, recipe.materialCount());
         if (!inputs.getItem(BOTTOM_SLOT).isEmpty()) {
             inputs.removeItem(BOTTOM_SLOT, 1);
