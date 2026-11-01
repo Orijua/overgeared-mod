@@ -44,7 +44,7 @@ final class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.SMELTER.get(), state -> state.getValue(SmelterBlock.LIT) ? smelterLit : smelter);
         simpleBlockItem(ModBlocks.SMELTER.get(), smelter);
 
-        // The golden table: a gold-block table, with Pagma's book (vanilla's enchanted book) lying on it until taken.
+        // The golden table: a gold-block table, with Pagma's book lying on it until taken.
         ModelFile table = goldenTable("golden_table", false);
         ModelFile tableWithBook = goldenTable("golden_table_book", true);
         getVariantBuilder(ModBlocks.GOLDEN_TABLE.get()).forAllStates(state -> ConfiguredModel.builder()
@@ -60,7 +60,7 @@ final class ModBlockStateProvider extends BlockStateProvider {
             model.element().from(leg[0], 0, leg[1]).to(leg[0] + 2, 12, leg[1] + 2).allFaces((side, face) -> face.texture("#gold")).end();
         }
         if (book) {
-            model.texture("book", mcLoc("item/enchanted_book"));
+            model.texture("book", modLoc("item/pagma_rare_book"));
             model.element().from(2, 14, 2).to(14, 14.25f, 14).face(Direction.UP).texture("#book").end().end();
         }
         return model;
