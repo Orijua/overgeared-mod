@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:earl_ashur"],
+  "text": { "translate": "rumor.overgearedmod.watchful_eyes" },
+  "solved_by": { "quests": ["overgearedmod:smiths_gaze"] }
+}

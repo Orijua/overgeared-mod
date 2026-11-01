@@ -1,13 +1,16 @@
 package com.orijua.overgearedmod.feature.smelting;
 
+import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModBlockEntities;
 import com.orijua.overgearedmod.core.registry.ModRecipes;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -47,6 +50,8 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     public static final int INPUT = 0;
     public static final int FUEL = 1;
     public static final int OUTPUT = 2;
+    /** Milestone of every extra ingot won with the bellows. */
+    public static final ResourceLocation BELLOWS_EXTRA = Overgearedmod.id("bellows_extra");
     /** What the menu syncs to the screen. */
     public static final int DATA_TEMPERATURE = 0;
     public static final int DATA_FUEL_HEAT = 1;
@@ -367,6 +372,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         } else if (roll < SmelterRules.manualExtraChance(precision)) {
             ingots = 2;
             smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_extra"), true);
+            GoalTracker.milestone(smith, BELLOWS_EXTRA);
         } else {
             ingots = 1;
         }

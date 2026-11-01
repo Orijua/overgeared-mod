@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "quest.overgearedmod.perfect_bellows" },
+  "description": { "translate": "quest.overgearedmod.perfect_bellows.desc" },
+  "discover_when": { "type": "milestone", "milestone": "overgearedmod:bellows_extra" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:bellows_extra", "count": 5 },
+  "xp_reward": 300,
+  "item_rewards": [{ "id": "overgearedmod:mithril_ingot", "count": 2 }]
+}

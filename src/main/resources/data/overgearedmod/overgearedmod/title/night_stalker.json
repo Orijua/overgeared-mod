@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.night_stalker" },
+  "description": { "translate": "title.overgearedmod.night_stalker.desc" },
+  "goal": { "type": "kill", "count": 50, "at_night": true },
+  "bonus_stats": { "agility": 1 }
+}

@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "quest.overgearedmod.smiths_gaze" },
+  "description": { "translate": "quest.overgearedmod.smiths_gaze.desc" },
+  "discover_when": { "type": "milestone", "milestone": "overgearedmod:observed", "count": 10 },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:observed", "count": 10 },
+  "xp_reward": 300,
+  "item_rewards": [{ "id": "overgearedmod:enhancement_stone", "count": 2 }]
+}

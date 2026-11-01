@@ -10,15 +10,26 @@ import net.minecraft.world.entity.EntityType;
 
 import java.util.Optional;
 
-/** Kill {@code count} mobs, optionally of one {@code entity} type. */
-public record KillGoal(Optional<EntityType<?>> entity, int count) implements Goal {
+/** Kill {@code count} mobs, optionally of one {@code entity} type, and optionally only kills made at night. */
+public record KillGoal(Optional<EntityType<?>> entity, int count, boolean atNight) implements Goal {
     public static final MapCodec<KillGoal> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
             BuiltInRegistries.ENTITY_TYPE.byNameCodec().optionalFieldOf("entity").forGetter(KillGoal::entity),
-            Codec.intRange(1, 100_000).fieldOf("count").forGetter(KillGoal::count)
+            Codec.intRange(1, 100_000).fieldOf("count").forGetter(KillGoal::count),
+            Codec.BOOL.optionalFieldOf("at_night", false).forGetter(KillGoal::atNight)
     ).apply(instance, KillGoal::new));
 
+    public KillGoal(Optional<EntityType<?>> entity, int count) {
+        this(entity, count, false);
+    }
+
     public static String counterKey(Optional<EntityType<?>> entity) {
-        return entity.map(type -> "kill/" + BuiltInRegistries.ENTITY_TYPE.getKey(type)).orElse("kill");
+        return counterKey(entity, false);
+    }
+
+    /** Night kills count twice: once in the normal counters and once in these {@code kill_night} ones. */
+    public static String counterKey(Optional<EntityType<?>> entity, boolean atNight) {
+        String base = atNight ? "kill_night" : "kill";
+        return entity.map(type -> base + "/" + BuiltInRegistries.ENTITY_TYPE.getKey(type)).orElse(base);
     }
 
     @Override
@@ -33,12 +44,13 @@ public record KillGoal(Optional<EntityType<?>> entity, int count) implements Goa
 
     @Override
     public int progress(PlayerCounters counters, PlayerStats stats) {
-        return counters.get(counterKey(entity));
+        return counters.get(counterKey(entity, atNight));
     }
 
     @Override
     public Component describe() {
-        return entity.map(type -> Component.translatable("goal.overgearedmod.kill_entity", count, type.getDescription()))
-                .orElse(Component.translatable("goal.overgearedmod.kill", count));
+        String suffix = atNight ? "_night" : "";
+        return entity.map(type -> Component.translatable("goal.overgearedmod.kill_entity" + suffix, count, type.getDescription()))
+                .orElse(Component.translatable("goal.overgearedmod.kill" + suffix, count));
     }
 }

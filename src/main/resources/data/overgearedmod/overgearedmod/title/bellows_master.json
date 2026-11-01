@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.bellows_master" },
+  "description": { "translate": "title.overgearedmod.bellows_master.desc" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:bellows_extra", "count": 10 },
+  "bonus_stats": { "stamina": 1 }
+}

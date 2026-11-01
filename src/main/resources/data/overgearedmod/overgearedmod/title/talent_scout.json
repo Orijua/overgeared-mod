@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.talent_scout" },
+  "description": { "translate": "title.overgearedmod.talent_scout.desc" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:talent_found", "count": 3 },
+  "bonus_stats": { "intelligence": 1 }
+}

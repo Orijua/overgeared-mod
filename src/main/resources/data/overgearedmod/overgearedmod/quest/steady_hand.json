@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "quest.overgearedmod.steady_hand" },
+  "description": { "translate": "quest.overgearedmod.steady_hand.desc" },
+  "discover_when": { "type": "milestone", "milestone": "overgearedmod:great_success" },
+  "goal": { "type": "forge", "min_rating": "epic", "count": 3 },
+  "xp_reward": 500,
+  "item_rewards": [{ "id": "overgearedmod:enhancement_stone", "count": 5 }]
+}

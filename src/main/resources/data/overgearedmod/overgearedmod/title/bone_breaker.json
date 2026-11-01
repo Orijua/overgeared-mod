@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.bone_breaker" },
+  "description": { "translate": "title.overgearedmod.bone_breaker.desc" },
+  "goal": { "type": "kill", "entity": "minecraft:skeleton", "count": 50 },
+  "bonus_stats": { "strength": 1 }
+}
