@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.core.registry.ModRecipes;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.smelting.MeltingRecipe;
 import com.orijua.overgearedmod.feature.smelting.SmelterBlock;
+import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.smelting.SmelterBlockEntity;
 import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
 import com.orijua.overgearedmod.feature.smelting.SmelterRules;
@@ -175,6 +176,8 @@ public final class SmelterTests {
             helper.assertTrue(menu.finishManual(smith, 1.0), "a plausible result is accepted");
             ItemStack ingots = smelter.items().getItem(SmelterBlockEntity.OUTPUT);
             helper.assertTrue(ingots.is(Items.IRON_INGOT) && ingots.getCount() >= 1, "a perfect hand never makes slag: " + ingots);
+            int extras = GoalTracker.milestones(smith, SmelterBlockEntity.BELLOWS_EXTRA);
+            helper.assertTrue(extras == (ingots.getCount() == 2 ? 1 : 0), "an extra ingot is a bellows milestone: " + extras);
             helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == 2, "one piece melted");
             int gained = ProgressionService.get(smith).smithingXp() - xpBefore;
             int expected = melting(helper, Items.RAW_IRON).orElseThrow().smithingXp() * SmelterRules.MANUAL_XP_MULTIPLIER;

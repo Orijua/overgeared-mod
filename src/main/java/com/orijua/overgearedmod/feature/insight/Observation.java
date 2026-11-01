@@ -1,9 +1,12 @@
 package com.orijua.overgearedmod.feature.insight;
 
+import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.notification.NotificationEvents;
 import com.orijua.overgearedmod.feature.notification.SystemNotification;
+import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -31,6 +34,8 @@ import java.util.UUID;
  * The progress is kept in memory only: logging out or looking away starts it again.
  */
 public final class Observation {
+    /** Milestone of every Insight point gained by observing. */
+    public static final ResourceLocation OBSERVED = Overgearedmod.id("observed");
     private static final int BAR_SEGMENTS = 10;
 
     /** Who a player is studying, and for how long. */
@@ -134,6 +139,7 @@ public final class Observation {
         player.displayClientMessage(Component.translatable("message.overgearedmod.insight_gained", target.getDisplayName(), after), true);
         player.playNotifySound(SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.8f, 1.4f);
         player.playNotifySound(SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0f, 1.2f);
+        GoalTracker.milestone(player, OBSERVED);
         InsightRules.Detail detail = InsightRules.detail(after);
         if (detail != InsightRules.detail(before)) {
             NotificationEvents.send(player, SystemNotification.Kind.INSIGHT, List.of(

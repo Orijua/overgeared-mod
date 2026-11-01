@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.anvil_blessed" },
+  "description": { "translate": "title.overgearedmod.anvil_blessed.desc" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:great_success", "count": 3 },
+  "bonus_stats": { "dexterity": 2 }
+}

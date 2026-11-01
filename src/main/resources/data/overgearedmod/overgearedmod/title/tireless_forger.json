@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.tireless_forger" },
+  "description": { "translate": "title.overgearedmod.tireless_forger.desc" },
+  "goal": { "type": "forge", "count": 50 },
+  "bonus_stats": { "dexterity": 2 }
+}

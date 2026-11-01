@@ -1,0 +1,6 @@
+{
+  "name": { "translate": "title.overgearedmod.keen_eye" },
+  "description": { "translate": "title.overgearedmod.keen_eye.desc" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:observed", "count": 20 },
+  "bonus_stats": { "intelligence": 1 }
+}

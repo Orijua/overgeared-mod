@@ -13,8 +13,6 @@ import com.orijua.overgearedmod.feature.progression.PlayerIdentity;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.progression.StatType;
 import com.orijua.overgearedmod.feature.progression.TitleDefinition;
-import com.orijua.overgearedmod.feature.quest.goal.Goal;
-import com.orijua.overgearedmod.feature.quest.goal.PlayerCounters;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
@@ -27,12 +25,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/** Class (choose once) on top, titles with their progress below. */
+/** Class (choose once) on top, earned titles below. As in the canon, a title stays secret until it is earned. */
 public class ProfileTab extends SatisfyTab {
     /** Where the title rows start when the class description fits in two lines; a longer one pushes them down. */
     private static final int TITLES_TOP = 64;
     private static final int TITLE_ROW = 12;
-    /** Space between a title's name and its progress column. */
+    /** Space between a title's name and its bonus column. */
     private static final int NAME_GAP = 6;
 
     private final ScrollList titleScroll = new ScrollList(9);
@@ -43,6 +41,13 @@ public class ProfileTab extends SatisfyTab {
 
     private static PlayerIdentity identity() {
         return player().getData(ModAttachments.PLAYER_IDENTITY);
+    }
+
+    private static List<Definitions.Entry<TitleDefinition>> earnedTitles() {
+        PlayerIdentity identity = identity();
+        return Definitions.all(player().level(), ModDatapackRegistries.TITLE).stream()
+                .filter(entry -> identity.hasTitle(entry.id()))
+                .toList();
     }
 
     private boolean showingClassButtons;
@@ -69,7 +74,7 @@ public class ProfileTab extends SatisfyTab {
 
     @Override
     public boolean mouseScrolled(double wheel) {
-        return titleScroll.scroll(wheel, Definitions.all(player().level(), ModDatapackRegistries.TITLE).size());
+        return titleScroll.scroll(wheel, earnedTitles().size());
     }
 
     @Override
@@ -110,26 +115,23 @@ public class ProfileTab extends SatisfyTab {
         });
 
         UiStyle.heading(graphics, font(), Component.translatable("screen.overgearedmod.titles"), left, top + titlesTop - 14);
-        PlayerIdentity identity = identity();
-        PlayerCounters counters = player().getData(ModAttachments.PLAYER_COUNTERS);
-        List<Definitions.Entry<TitleDefinition>> titles = Definitions.all(player().level(), ModDatapackRegistries.TITLE);
+        List<Definitions.Entry<TitleDefinition>> titles = earnedTitles();
+        if (titles.isEmpty()) {
+            UiStyle.text(graphics, font(), Component.translatable("screen.overgearedmod.no_titles"), left, top + titlesTop, UiStyle.MUTED);
+            return;
+        }
         int visibleTitles = (height - titlesTop) / TITLE_ROW;
         titleScroll.setVisibleRows(visibleTitles);
         titleScroll.clamp(titles.size());
         for (int i = titleScroll.first(); i < titleScroll.end(titles.size()); i++) {
             TitleDefinition title = titles.get(i).value();
             int y = top + titlesTop + (i - titleScroll.first()) * TITLE_ROW;
-            boolean earned = identity.hasTitle(titles.get(i).id());
-            // A long name is cut before the progress column; the tooltip gives it whole.
-            Component name = UiStyle.ellipsize(font(), Component.literal(earned ? "✔ " : "· ").append(title.name()), width / 2 - NAME_GAP);
-            UiStyle.text(graphics, font(), name, left, y, earned ? UiStyle.GOLD : UiStyle.MUTED);
-            Goal goal = title.goal();
-            Component progress = earned
-                    ? bonusText(title.bonusStats())
-                    : Component.literal(Math.min(goal.target(), goal.progress(counters, ProgressionService.get(player()))) + "/" + goal.target());
-            UiStyle.text(graphics, font(), progress, left + width / 2, y, earned ? UiStyle.GOOD : UiStyle.MUTED);
+            // A long name is cut before the bonus column; the tooltip gives it whole.
+            Component name = UiStyle.ellipsize(font(), Component.literal("✔ ").append(title.name()), width / 2 - NAME_GAP);
+            UiStyle.text(graphics, font(), name, left, y, UiStyle.GOLD);
+            UiStyle.text(graphics, font(), bonusText(title.bonusStats()), left + width / 2, y, UiStyle.GOOD);
             if (mouseX >= left && mouseX < left + width && mouseY >= y - 1 && mouseY < y + TITLE_ROW - 1) {
-                graphics.renderTooltip(font(), List.of(title.name().getVisualOrderText(), title.description().getVisualOrderText(), goal.describe().getVisualOrderText()), mouseX, mouseY);
+                graphics.renderTooltip(font(), List.of(title.name().getVisualOrderText(), title.description().getVisualOrderText(), title.goal().describe().getVisualOrderText()), mouseX, mouseY);
             }
         }
         titleScroll.renderBar(graphics, left + width + 3, top + titlesTop - 1, visibleTitles * TITLE_ROW, titles.size());

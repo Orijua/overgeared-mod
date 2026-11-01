@@ -1,0 +1,8 @@
+{
+  "name": { "translate": "quest.overgearedmod.moonlit_hunt" },
+  "description": { "translate": "quest.overgearedmod.moonlit_hunt.desc" },
+  "discover_when": { "type": "kill", "count": 20, "at_night": true },
+  "goal": { "type": "kill", "entity": "minecraft:zombie", "count": 10, "at_night": true },
+  "xp_reward": 250,
+  "item_rewards": [{ "id": "minecraft:golden_apple", "count": 2 }]
+}

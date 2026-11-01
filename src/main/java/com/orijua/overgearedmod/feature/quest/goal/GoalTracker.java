@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.smithing.ItemForgedEvent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 
@@ -31,9 +32,15 @@ public final class GoalTracker {
     }
 
     private static void onKill(MobKilledEvent event) {
+        Optional<EntityType<?>> victim = Optional.of(event.victim().getType());
         PlayerCounters counters = counters(event.player())
                 .increment(KillGoal.counterKey(Optional.empty()))
-                .increment(KillGoal.counterKey(Optional.of(event.victim().getType())));
+                .increment(KillGoal.counterKey(victim));
+        if (event.player().level().isNight()) {
+            counters = counters
+                    .increment(KillGoal.counterKey(Optional.empty(), true))
+                    .increment(KillGoal.counterKey(victim, true));
+        }
         update(event.player(), counters);
     }
 

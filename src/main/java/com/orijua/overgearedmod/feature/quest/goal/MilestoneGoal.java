@@ -39,6 +39,6 @@ public record MilestoneGoal(ResourceLocation milestone, int count) implements Go
 
     @Override
     public Component describe() {
-        return Component.translatable("goal." + milestone.getNamespace() + ".milestone." + milestone.getPath());
+        return Component.translatable("goal." + milestone.getNamespace() + ".milestone." + milestone.getPath(), count);
     }
 }

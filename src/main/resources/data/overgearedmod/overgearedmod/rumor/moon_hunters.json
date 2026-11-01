@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:village_chief"],
+  "text": { "translate": "rumor.overgearedmod.moon_hunters" },
+  "solved_by": { "quests": ["overgearedmod:moonlit_hunt"] }
+}

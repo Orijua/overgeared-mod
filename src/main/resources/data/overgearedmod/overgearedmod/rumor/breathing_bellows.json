@@ -1,0 +1,5 @@
+{
+  "givers": ["overgearedmod:blacksmith"],
+  "text": { "translate": "rumor.overgearedmod.breathing_bellows" },
+  "solved_by": { "milestones": ["overgearedmod:bellows_extra"] }
+}
