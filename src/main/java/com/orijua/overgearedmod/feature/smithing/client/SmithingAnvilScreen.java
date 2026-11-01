@@ -23,6 +23,7 @@ import com.orijua.overgearedmod.feature.smithing.ForgingRules;
 import com.orijua.overgearedmod.feature.smithing.ManualForgePayload;
 import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
 import com.orijua.overgearedmod.feature.smithing.SmithingHammers;
+import com.orijua.overgearedmod.feature.winston.KhanContest;
 import net.minecraft.Util;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -69,6 +70,8 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
 
     private Button enhanceButton;
     private Button autoButton;
+    /** Whether the Auto tooltip now says the contest forbids it. */
+    private boolean autoBlockedByContest;
     private Button manualButton;
     private Button batchButton;
     /** Which tooltip the batch button shows now, so it is only rebuilt when that changes. */
@@ -135,7 +138,14 @@ public class SmithingAnvilScreen extends AbstractContainerScreen<SmithingAnvilMe
         manualButton.visible = forgeable;
         batchButton.visible = forgeable;
         boolean idle = !menu.autoForging() && minigame == null;
-        autoButton.active = minigame == null; // while forging it is the Stop button
+        // While forging it is the Stop button. In Khan's contest only a manual forge counts, so Auto is off.
+        boolean contest = KhanContest.forcesManual(minecraft.player);
+        autoButton.active = minigame == null && (menu.autoForging() || !contest);
+        if (contest != autoBlockedByContest) {
+            autoBlockedByContest = contest;
+            autoButton.setTooltip(Tooltip.create(Component.translatable(contest ? "screen.overgearedmod.forge_auto.contest"
+                    : "screen.overgearedmod.forge_auto.tooltip")));
+        }
         autoButton.setMessage(Component.translatable(menu.autoForging() ? "screen.overgearedmod.forge_stop" : "screen.overgearedmod.forge_auto"));
         manualButton.active = idle;
         batchButton.active = idle && ForgingRules.batchUnlocked(1, smithing);

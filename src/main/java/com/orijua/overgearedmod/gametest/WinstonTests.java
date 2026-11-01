@@ -15,6 +15,7 @@ import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.skill.SkillService;
 import com.orijua.overgearedmod.feature.smithing.ItemForgedEvent;
+import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
 import com.orijua.overgearedmod.feature.winston.ContestRules;
 import com.orijua.overgearedmod.feature.winston.ContestState;
 import com.orijua.overgearedmod.feature.winston.EupheminaNpc;
@@ -30,6 +31,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
@@ -213,6 +215,24 @@ public final class WinstonTests {
         int before = ProgressionService.get(player).smithingXp();
         ProgressionService.addSmithingXp(player, 100);
         helper.assertTrue(ProgressionService.get(player).smithingXp() - before == 110, "+10 % smithing XP");
+        helper.succeed();
+    }
+
+    /** On the stage during the contest the anvil refuses the automatic forge; the manual one still starts. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theContestAnvilOnlyForgesByHand(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        contestAccepted(helper, player);
+        SmithingAnvilMenu menu = new SmithingAnvilMenu(1, player.getInventory(),
+                ContainerLevelAccess.create(helper.getLevel(), player.blockPosition()));
+        menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(ModItems.JAFFA_INGOT.get(), 2));
+        menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.STICK));
+        helper.assertTrue(menu.canForge(), "the Jaffa sword is previewed");
+        KhanContest.start(player, 150);
+        helper.assertTrue(KhanContest.forcesManual(player), "on the stage, in the contest");
+        helper.assertFalse(menu.clickMenuButton(player, SmithingAnvilMenu.AUTO_FORGE_BUTTON), "no automatic forge in the contest");
+        helper.assertFalse(menu.autoForging(), "nothing started");
+        helper.assertTrue(menu.clickMenuButton(player, SmithingAnvilMenu.MANUAL_FORGE_BUTTON), "by hand it is");
         helper.succeed();
     }
 

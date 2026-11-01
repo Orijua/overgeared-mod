@@ -270,6 +270,7 @@
   "notification.overgearedmod.great_success.body": "%s ha salido un rango por encima: %s",
   "screen.overgearedmod.forge_auto": "Auto",
   "screen.overgearedmod.forge_auto.tooltip": "Forja automática: tarda unos segundos según tu herrería y tu DEX. Probabilidades normales.",
+  "screen.overgearedmod.forge_auto.contest": "En el concurso solo cuenta la forja a mano.",
   "screen.overgearedmod.forge_manual": "Manual",
   "screen.overgearedmod.forge_manual.tooltip": "Forja manual: calienta el metal y martillea. Bien hecho, mejor rango y quizá una opción extra; mal hecho, peor que la automática. Doble XP de herrería.",
   "screen.overgearedmod.forge_stop": "Parar",

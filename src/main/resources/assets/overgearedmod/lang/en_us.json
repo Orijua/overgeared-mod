@@ -270,6 +270,7 @@
   "notification.overgearedmod.great_success.body": "%s came out one rating higher: %s",
   "screen.overgearedmod.forge_auto": "Auto",
   "screen.overgearedmod.forge_auto.tooltip": "Automatic forging: takes a few seconds depending on your smithing and DEX. Normal odds.",
+  "screen.overgearedmod.forge_auto.contest": "In the contest only manual forging counts.",
   "screen.overgearedmod.forge_manual": "Manual",
   "screen.overgearedmod.forge_manual.tooltip": "Manual forging: heat the metal and hammer it. Done well, a better rating and maybe an extra option; done badly, worse than automatic. Double smithing XP.",
   "screen.overgearedmod.forge_stop": "Stop",

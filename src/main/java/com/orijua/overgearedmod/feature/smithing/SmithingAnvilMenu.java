@@ -10,6 +10,7 @@ import com.orijua.overgearedmod.feature.equipment.EquipmentRules;
 import com.orijua.overgearedmod.feature.equipment.EquipmentService;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.winston.KhanContest;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -173,6 +174,10 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
     /** Starts the chosen batch, capped by what the inputs can make. A single forge is a batch of one. */
     private boolean startAutoForge(ServerPlayer smith) {
         if (currentRecipe == null || autoForging()) {
+            return false;
+        }
+        if (KhanContest.forcesManual(smith)) {
+            smith.displayClientMessage(Component.translatable("message.overgearedmod.contest_by_hand"), true);
             return false;
         }
         int smithing = ProgressionService.effectiveSmithingLevel(smith);

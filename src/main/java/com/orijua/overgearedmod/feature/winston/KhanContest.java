@@ -204,8 +204,17 @@ public final class KhanContest {
         judge(player, score, you);
     }
 
-    private static boolean onStage(ServerPlayer player) {
-        return !player.serverLevel().getEntitiesOfClass(EupheminaNpc.class, player.getBoundingBox().inflate(STAGE_REACH), Entity::isAlive).isEmpty();
+    /** Euphemina is within {@link #STAGE_REACH}. Both sides: she is a tracked entity on the client too. */
+    private static boolean onStage(Player player) {
+        return !player.level().getEntitiesOfClass(EupheminaNpc.class, player.getBoundingBox().inflate(STAGE_REACH), Entity::isAlive).isEmpty();
+    }
+
+    /**
+     * Competing on the stage: only a manual forge counts, so the anvil refuses the automatic one (and the screen greys
+     * its button out). From the synced state: both sides.
+     */
+    public static boolean forcesManual(Player player) {
+        return state(player).running() && onStage(player);
     }
 
     /** Both scores side by side in a system window, then the verdict. */
