@@ -146,6 +146,16 @@ class ProgressionRulesTest {
     }
 
     @Test
+    void smithingXpForALevelIsWhereThatLevelStarts() {
+        assertEquals(0, ProgressionRules.smithingXpFor(0));
+        for (int level : new int[]{1, 7, 50, 90}) {
+            assertEquals(level, ProgressionRules.smithingLevel(ProgressionRules.smithingXpFor(level)));
+            assertEquals(level - 1, ProgressionRules.smithingLevel(ProgressionRules.smithingXpFor(level) - 1), "just below it");
+        }
+        assertEquals(25_000, ProgressionRules.smithingXpFor(50));
+    }
+
+    @Test
     void manaScalesWithIntelligence() {
         assertEquals(20.0f, ProgressionRules.maxMana(B, 0));
         assertEquals(70.0f, ProgressionRules.maxMana(B, 10));

@@ -5,9 +5,14 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.event.ItemForgedEvent;
 import com.orijua.overgearedmod.event.MobKilledEvent;
+import com.orijua.overgearedmod.progression.PlayerStats;
+import com.orijua.overgearedmod.progression.ProgressionRules;
+import com.orijua.overgearedmod.progression.ProgressionService;
+import com.orijua.overgearedmod.progression.StatType;
 import com.orijua.overgearedmod.quest.PlayerQuests;
 import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.commands.CommandSourceStack;
@@ -33,6 +38,9 @@ import java.util.Arrays;
  *   <li>{@code /satisfy simulate kill <entity> [amount]}: counts kills as if they happened.</li>
  *   <li>{@code /satisfy simulate forge <rating> [amount]}: counts forges of that rating.</li>
  *   <li>{@code /satisfy quest reset}: forgets accepted, completed and discovered quests.</li>
+ *   <li>{@code /satisfy debug smithing <level>}: sets the smithing level (its experience).</li>
+ *   <li>{@code /satisfy debug level <level>}: sets the level; levels gained bring their stat points.</li>
+ *   <li>{@code /satisfy debug stat <stat> <value>}: sets the points spent in a stat.</li>
  * </ul>
  * Simulations post the same domain events as real play, so every listener (counters, titles,
  * hidden quests, notifications) reacts the same way. No mob dies and no item is created.
@@ -64,6 +72,19 @@ public final class DebugCommands {
                                         .executes(ctx -> simulateForges(ctx, 1))
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
                                                 .executes(ctx -> simulateForges(ctx, IntegerArgumentType.getInteger(ctx, "amount")))))))
+                .then(Commands.literal("debug")
+                        .then(Commands.literal("smithing")
+                                .then(Commands.argument("level", IntegerArgumentType.integer(0, 1000))
+                                        .executes(ctx -> setSmithing(ctx, IntegerArgumentType.getInteger(ctx, "level")))))
+                        .then(Commands.literal("level")
+                                .then(Commands.argument("level", IntegerArgumentType.integer(1, 1000))
+                                        .executes(ctx -> setLevel(ctx, IntegerArgumentType.getInteger(ctx, "level")))))
+                        .then(Commands.literal("stat")
+                                .then(Commands.argument("stat", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
+                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
+                                                .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value")))))))
                 .then(Commands.literal("quest")
                         .then(Commands.literal("reset")
                                 .executes(ctx -> {
@@ -98,5 +119,34 @@ public final class DebugCommands {
         }
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.simulated_forges", amount, rating.displayName()), false);
         return amount;
+    }
+
+    private static int setSmithing(CommandContext<CommandSourceStack> ctx, int level) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        ProgressionService.set(player, ProgressionService.get(player).withSmithingXp(ProgressionRules.smithingXpFor(level)));
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_smithing", level,
+                ProgressionService.effectiveSmithingLevel(player)), false);
+        return level;
+    }
+
+    /** Raising the level also brings the stat points those levels give, as levelling up would. */
+    private static int setLevel(CommandContext<CommandSourceStack> ctx, int level) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        PlayerStats stats = ProgressionService.get(player);
+        int gained = Math.max(0, level - stats.level()) * Balance.current().statPointsPerLevel();
+        ProgressionService.set(player, stats.withProgress(level, 0, stats.freePoints() + gained));
+        player.setHealth(player.getMaxHealth());
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_level", level, gained), false);
+        return level;
+    }
+
+    private static int setStat(CommandContext<CommandSourceStack> ctx, int value) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        String name = StringArgumentType.getString(ctx, "stat");
+        StatType stat = Arrays.stream(StatType.values()).filter(s -> s.getSerializedName().equals(name)).findFirst()
+                .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_bad_stat", name)).create());
+        ProgressionService.set(player, ProgressionService.get(player).with(stat, value));
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_stat", stat.displayName(), value), false);
+        return value;
     }
 }

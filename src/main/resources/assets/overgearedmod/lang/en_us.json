@@ -349,6 +349,10 @@
   "message.overgearedmod.simulate_not_a_mob": "That entity is not a mob",
   "message.overgearedmod.simulate_bad_rating": "Unknown rating: %s",
   "message.overgearedmod.quests_reset": "Quests reset",
+  "message.overgearedmod.debug_smithing": "Smithing set to level %s (effective, with the class: %s)",
+  "message.overgearedmod.debug_level": "Level %s (+%s stat points)",
+  "message.overgearedmod.debug_stat": "%s: %s points",
+  "message.overgearedmod.debug_bad_stat": "Unknown stat: %s",
   "message.overgearedmod.content_valid": "Content OK: no broken references.",
   "message.overgearedmod.content_problems": "%s problem(s) in the content:",
 

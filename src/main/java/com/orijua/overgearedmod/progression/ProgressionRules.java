@@ -34,6 +34,11 @@ public final class ProgressionRules {
         return (int) Math.floor(Math.sqrt(Math.max(0, smithingXp) / 10.0));
     }
 
+    /** The smithing experience at which {@code level} starts (the inverse of {@link #smithingLevel}). */
+    public static int smithingXpFor(int level) {
+        return Math.max(0, level) * Math.max(0, level) * 10;
+    }
+
     public static float maxMana(Balance balance, int intelligence) {
         return balance.baseMana() + balance.manaPerIntelligence() * intelligence;
     }
