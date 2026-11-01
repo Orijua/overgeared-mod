@@ -113,8 +113,18 @@ public final class ProgressionService {
         }
     }
 
+    /** Adds smithing experience, raised by the titles that boost it (Khan's Disciple). */
     public static void addSmithingXp(ServerPlayer player, int amount) {
         PlayerStats stats = get(player);
-        set(player, stats.withSmithingXp(stats.smithingXp() + amount));
+        set(player, stats.withSmithingXp(stats.smithingXp() + ProgressionRules.boostedSmithingXp(amount, titleSmithingXpBonus(player))));
+    }
+
+    /** The sum of the {@code smithing_xp_bonus} of every title the player holds. */
+    public static double titleSmithingXpBonus(Player player) {
+        double bonus = 0;
+        for (var titleId : player.getData(ModAttachments.PLAYER_IDENTITY).titles()) {
+            bonus += Definitions.get(player.level(), ModDatapackRegistries.TITLE, titleId).map(TitleDefinition::smithingXpBonus).orElse(0.0);
+        }
+        return bonus;
     }
 }

@@ -99,6 +99,15 @@ public class ProfileTab extends SatisfyTab {
         return text;
     }
 
+    /** A title's stat bonuses, then its smithing experience bonus if it has one. */
+    private static Component titleBonusText(TitleDefinition title) {
+        MutableComponent text = bonusText(title.bonusStats()).copy();
+        if (title.smithingXpBonus() > 0) {
+            text.append(Component.translatable("screen.overgearedmod.smithing_xp_bonus", Math.round(title.smithingXpBonus() * 100)));
+        }
+        return text;
+    }
+
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
         UiStyle.heading(graphics, font(), Component.translatable("screen.overgearedmod.class"), left, top);
@@ -129,7 +138,7 @@ public class ProfileTab extends SatisfyTab {
             // A long name is cut before the bonus column; the tooltip gives it whole.
             Component name = UiStyle.ellipsize(font(), Component.literal("✔ ").append(title.name()), width / 2 - NAME_GAP);
             UiStyle.text(graphics, font(), name, left, y, UiStyle.GOLD);
-            UiStyle.text(graphics, font(), bonusText(title.bonusStats()), left + width / 2, y, UiStyle.GOOD);
+            UiStyle.text(graphics, font(), titleBonusText(title), left + width / 2, y, UiStyle.GOOD);
             if (mouseX >= left && mouseX < left + width && mouseY >= y - 1 && mouseY < y + TITLE_ROW - 1) {
                 graphics.renderTooltip(font(), List.of(title.name().getVisualOrderText(), title.description().getVisualOrderText(), title.goal().describe().getVisualOrderText()), mouseX, mouseY);
             }

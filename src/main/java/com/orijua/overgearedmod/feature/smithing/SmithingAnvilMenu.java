@@ -10,6 +10,7 @@ import com.orijua.overgearedmod.feature.equipment.EquipmentRules;
 import com.orijua.overgearedmod.feature.equipment.EquipmentService;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.winston.KhanContest;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -175,6 +176,10 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         if (currentRecipe == null || autoForging()) {
             return false;
         }
+        if (KhanContest.forcesManual(smith)) {
+            smith.displayClientMessage(Component.translatable("message.overgearedmod.contest_by_hand"), true);
+            return false;
+        }
         int smithing = ProgressionService.effectiveSmithingLevel(smith);
         int choice = ForgingRules.batchUnlocked(batchChoice(), smithing) ? batchChoice() : 0;
         ForgingRecipe recipe = currentRecipe.value();
@@ -315,7 +320,7 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
         hammerHand.ifPresent(hand -> SmithingHammers.wear(smith, hand));
         ItemRating rating = forged.get(ModDataComponents.ITEM_RATING);
         if (rating != null) {
-            NeoForge.EVENT_BUS.post(new ItemForgedEvent(smith, forged, rating));
+            NeoForge.EVENT_BUS.post(new ItemForgedEvent(smith, forged, rating, precision));
             Component message = batchCount() > 1
                     ? Component.translatable("message.overgearedmod.forged_batch", forged.getHoverName(), rating.displayName(), batchDone(), batchCount())
                     : Component.translatable("message.overgearedmod.forged", forged.getHoverName(), rating.displayName());

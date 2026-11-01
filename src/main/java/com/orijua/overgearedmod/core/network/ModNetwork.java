@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.feature.notification.SystemNotificationPayload;
 import com.orijua.overgearedmod.feature.npc.ApprenticeActionPayload;
 import com.orijua.overgearedmod.feature.npc.NpcTradePayload;
 import com.orijua.overgearedmod.feature.pagma.ReadPagmaBookPayload;
+import com.orijua.overgearedmod.feature.winston.StartContestPayload;
 import com.orijua.overgearedmod.feature.progression.AllocateStatPayload;
 import com.orijua.overgearedmod.feature.progression.ChooseClassPayload;
 import com.orijua.overgearedmod.feature.quest.NpcQuestPayload;
@@ -41,6 +42,7 @@ public final class ModNetwork {
         registrar.playToServer(ManualSmeltPayload.TYPE, ManualSmeltPayload.STREAM_CODEC, ServerPayloadHandler::manualSmelt);
         registrar.playToServer(ReadPagmaBookPayload.TYPE, ReadPagmaBookPayload.STREAM_CODEC, ServerPayloadHandler::readPagmaBook);
         registrar.playToServer(ApprenticeActionPayload.TYPE, ApprenticeActionPayload.STREAM_CODEC, ServerPayloadHandler::apprenticeAction);
+        registrar.playToServer(StartContestPayload.TYPE, StartContestPayload.STREAM_CODEC, ServerPayloadHandler::startContest);
         // The handler only touches ClientNotifications (no client classes), so this is safe on a dedicated server.
         registrar.playToClient(SystemNotificationPayload.TYPE, SystemNotificationPayload.STREAM_CODEC,
                 (payload, context) -> ClientNotifications.QUEUE.push(payload.notification()));

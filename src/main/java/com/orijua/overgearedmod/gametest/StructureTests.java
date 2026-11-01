@@ -33,6 +33,7 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSource;
 import net.minecraft.world.level.biome.MultiNoiseBiomeSourceParameterLists;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
@@ -219,6 +220,29 @@ public final class StructureTests {
         StructureSet set = helper.getLevel().registryAccess().registryOrThrow(Registries.STRUCTURE_SET).get(Winston.STRUCTURE);
         helper.assertTrue(set != null && set.placement() instanceof WorldSitePlacement site && site.site().equals(WorldSites.WINSTON),
                 "placed at Winston's site");
+        helper.succeed();
+    }
+
+    /** The square and Khan's smithy are found among the placed pieces, and Euphemina's spot lies inside the square. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void winstonPiecesAreFoundWherePlaced(GameTestHelper helper) {
+        StructureStart start = assemble(helper, Winston.STRUCTURE);
+        Optional<Winston.PlacedPiece> square = Winston.piece(start, Winston.SQUARE);
+        helper.assertTrue(square.isPresent() && Winston.piece(start, Winston.KHAN_SMITHY).isPresent(), "square and smithy found");
+        BlockPos spot = square.get().at(Winston.RIVAL_SPOT.getX(), Winston.RIVAL_SPOT.getY(), Winston.RIVAL_SPOT.getZ());
+        helper.assertTrue(start.getPieces().getFirst().getBoundingBox().isInside(spot), "Euphemina's spot " + spot + " is on the square");
+        helper.succeed();
+    }
+
+    /** Once the contest is won, the rebuilt smithy goes over the ruined one: a new anvil, no cobwebs, Khan still home. */
+    @GameTest(template = Winston.KHAN_SMITHY)
+    public static void khansSmithyIsRebuiltOverTheRuins(GameTestHelper helper) {
+        Winston.PlacedPiece smithy = new Winston.PlacedPiece(helper.absolutePos(inPiece(0, 0, 0)), Rotation.NONE);
+        helper.assertTrue(smithy.place(helper.getLevel(), Winston.KHAN_SMITHY_RESTORED), "placed");
+        helper.assertBlockPresent(ModBlocks.SMITHING_ANVIL.get(), inPiece(4, 1, 3));
+        helper.assertBlockPresent(Blocks.WATER_CAULDRON, inPiece(2, 1, 5));
+        helper.assertBlockNotPresent(Blocks.COBWEB, inPiece(1, 3, 7));
+        helper.assertTrue(helper.getEntities(ModEntities.KHAN.get()).size() == 1, "Khan is still there, alone");
         helper.succeed();
     }
 

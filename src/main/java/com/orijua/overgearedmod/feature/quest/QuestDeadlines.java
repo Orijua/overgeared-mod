@@ -82,8 +82,11 @@ public final class QuestDeadlines {
         }
     }
 
-    /** The time ran out: the quest closes for good and what was lent for it goes back. */
-    static void fail(ServerPlayer player, ResourceLocation id) {
+    /**
+     * The quest fails for good (its time ran out, or the player lost it, like Khan's contest): it closes, it can never
+     * be taken again, and what was lent for it goes back.
+     */
+    public static void fail(ServerPlayer player, ResourceLocation id) {
         player.setData(ModAttachments.PLAYER_QUESTS, QuestService.get(player).fail(id));
         QuestService.reclaimLoans(player, id);
         Definitions.get(player.level(), ModDatapackRegistries.QUEST, id).ifPresent(quest -> {

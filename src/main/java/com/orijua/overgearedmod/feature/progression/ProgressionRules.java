@@ -34,6 +34,14 @@ public final class ProgressionRules {
         return (int) Math.floor(Math.sqrt(Math.max(0, smithingXp) / 10.0));
     }
 
+    /** {@code amount} raised by a {@code bonus} fraction (0.1 = +10 %), rounded; a bonus never turns a gain into nothing. */
+    public static int boostedSmithingXp(int amount, double bonus) {
+        if (amount <= 0 || bonus <= 0) {
+            return amount;
+        }
+        return (int) Math.round(amount * (1 + bonus));
+    }
+
     /** The smithing experience at which {@code level} starts (the inverse of {@link #smithingLevel}). */
     public static int smithingXpFor(int level) {
         return Math.max(0, level) * Math.max(0, level) * 10;

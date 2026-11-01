@@ -10,14 +10,17 @@ import java.util.Map;
 
 /**
  * A title from data/<namespace>/overgearedmod/title/<id>.json: earned once its goal is met, its bonuses apply forever.
- * A {@code rare} one is announced with the grand system window.
+ * A {@code rare} one is announced with the grand system window. {@code smithing_xp_bonus} adds that fraction to all the
+ * smithing experience the player earns (0.1 = +10 %).
  */
-public record TitleDefinition(Component name, Component description, Goal goal, Map<StatType, Integer> bonusStats, boolean rare) {
+public record TitleDefinition(Component name, Component description, Goal goal, Map<StatType, Integer> bonusStats, boolean rare,
+                              double smithingXpBonus) {
     public static final Codec<TitleDefinition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ComponentSerialization.CODEC.fieldOf("name").forGetter(TitleDefinition::name),
             ComponentSerialization.CODEC.optionalFieldOf("description", Component.empty()).forGetter(TitleDefinition::description),
             Goal.CODEC.fieldOf("goal").forGetter(TitleDefinition::goal),
             Codec.unboundedMap(StatType.CODEC, Codec.INT).optionalFieldOf("bonus_stats", Map.of()).forGetter(TitleDefinition::bonusStats),
-            Codec.BOOL.optionalFieldOf("rare", false).forGetter(TitleDefinition::rare)
+            Codec.BOOL.optionalFieldOf("rare", false).forGetter(TitleDefinition::rare),
+            Codec.doubleRange(0, 10).optionalFieldOf("smithing_xp_bonus", 0.0).forGetter(TitleDefinition::smithingXpBonus)
     ).apply(instance, TitleDefinition::new));
 }

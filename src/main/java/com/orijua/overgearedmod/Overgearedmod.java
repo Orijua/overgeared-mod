@@ -33,6 +33,7 @@ import com.orijua.overgearedmod.feature.quest.QuestDeadlines;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.rumor.MaterialFinds;
 import com.orijua.overgearedmod.feature.skill.SkillEvents;
+import com.orijua.overgearedmod.feature.winston.KhanContest;
 import com.orijua.overgearedmod.feature.winston.WinstonStory;
 import com.orijua.overgearedmod.feature.world.NorthEndCaveProtection;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
@@ -97,6 +98,7 @@ public class Overgearedmod {
         Observation.register(NeoForge.EVENT_BUS);
         AshurBetrayal.register(NeoForge.EVENT_BUS);
         WinstonStory.register(NeoForge.EVENT_BUS);
+        KhanContest.register(NeoForge.EVENT_BUS);
         LegendTitle.register(NeoForge.EVENT_BUS);
         MaterialFinds.register(NeoForge.EVENT_BUS);
 

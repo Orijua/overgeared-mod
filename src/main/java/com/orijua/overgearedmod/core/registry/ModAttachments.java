@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.feature.progression.PlayerStats;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.goal.PlayerCounters;
 import com.orijua.overgearedmod.feature.skill.PlayerSkills;
+import com.orijua.overgearedmod.feature.winston.ContestState;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -64,6 +65,10 @@ public final class ModAttachments {
     /** The rumors the player has heard from NPCs, oldest first (the Journal's Rumors section; see rumor.Rumors). */
     public static final Supplier<AttachmentType<List<ResourceLocation>>> HEARD_RUMORS =
             playerData("heard_rumors", List::of, ResourceLocation.CODEC.listOf(), ByteBufCodecs.fromCodec(ResourceLocation.CODEC.listOf()), true);
+
+    /** The production contest against Euphemina in Winston (see winston.KhanContest). */
+    public static final Supplier<AttachmentType<ContestState>> KHAN_CONTEST =
+            playerData("khan_contest", () -> ContestState.NONE, ContestState.CODEC, ContestState.STREAM_CODEC, true);
 
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",

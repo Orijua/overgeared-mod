@@ -1,16 +1,25 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.core.registry.ModEntities;
 import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.pagma.PagmaStory;
+import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.quest.QuestDeadlines;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.skill.SkillService;
+import com.orijua.overgearedmod.feature.smithing.ItemForgedEvent;
+import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
+import com.orijua.overgearedmod.feature.winston.ContestRules;
+import com.orijua.overgearedmod.feature.winston.ContestState;
+import com.orijua.overgearedmod.feature.winston.EupheminaNpc;
+import com.orijua.overgearedmod.feature.winston.KhanContest;
 import com.orijua.overgearedmod.feature.winston.KhanNpc;
 import com.orijua.overgearedmod.feature.winston.MeroThug;
 import com.orijua.overgearedmod.feature.winston.WinstonStory;
@@ -22,10 +31,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Blocks;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -157,6 +168,132 @@ public final class WinstonTests {
                 Definitions.get(helper.getLevel(), ModDatapackRegistries.QUEST, WinstonStory.KHANS_RAGE).orElseThrow()), "never again");
         helper.assertTrue(khan.isAlive(), "a test server isn't a single-player world: Khan lives on for the others");
         thugs(helper, khan).forEach(MeroThug::discard);
+        helper.succeed();
+    }
+
+    /**
+     * Pagma's successor who saved Khan's smithy, with the contest accepted at Khan: Euphemina comes (next to Khan, as a
+     * test has no Winston) and the player stands by her, on the "stage".
+     */
+    private static EupheminaNpc contestAccepted(GameTestHelper helper, ServerPlayer player) {
+        KhanNpc khan = metKhan(helper, player);
+        TestSupport.completed(player, WinstonStory.KHANS_RAGE.getPath());
+        helper.assertTrue(QuestService.accept(player, KhanContest.KHANS_CONTEST, khan) == QuestService.Result.SUCCESS, "accepted at Khan");
+        List<EupheminaNpc> found = helper.getLevel().getEntitiesOfClass(EupheminaNpc.class, khan.getBoundingBox().inflate(8), EupheminaNpc::isAlive);
+        helper.assertTrue(found.size() == 1, "Euphemina comes, got " + found.size());
+        EupheminaNpc euphemina = found.getFirst();
+        player.moveTo(euphemina.getX() + 1, euphemina.getY(), euphemina.getZ());
+        return euphemina;
+    }
+
+    private static void forgeByHand(ServerPlayer player, ItemRating rating, double precision) {
+        NeoForge.EVENT_BUS.post(new ItemForgedEvent(player, new ItemStack(ModItems.JAFFA_SWORD.get()), rating, precision));
+    }
+
+    /**
+     * The whole contest: Khan gives the materials, an automatic forge doesn't count, a precise Epic beats her roll, and
+     * claiming at Khan makes the player his disciple (the title, with its smithing XP bonus).
+     */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theContestFromStartToEnd(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        EupheminaNpc euphemina = contestAccepted(helper, player);
+        KhanNpc khan = helper.getLevel().getEntitiesOfClass(KhanNpc.class, euphemina.getBoundingBox().inflate(8)).getFirst();
+        helper.assertTrue(KhanContest.canStart(player), "ready to start");
+        helper.assertTrue(KhanContest.start(player, 250), "started");
+        helper.assertFalse(KhanContest.start(player, 250), "not twice");
+        helper.assertTrue(player.getInventory().countItem(ModItems.JAFFA_INGOT.get()) == 2, "Khan's jaffa ingots");
+
+        NeoForge.EVENT_BUS.post(new ItemForgedEvent(player, new ItemStack(ModItems.JAFFA_SWORD.get()), ItemRating.UNIQUE));
+        helper.assertTrue(KhanContest.state(player).running(), "an automatic forge doesn't count");
+        forgeByHand(player, ItemRating.EPIC, 0.87);
+        helper.assertFalse(KhanContest.state(player).running(), "the piece is judged");
+        helper.assertTrue(GoalTracker.milestones(player, KhanContest.CONTEST_WON) == 1, "287 beats 250");
+
+        helper.assertTrue(QuestService.claim(player, KhanContest.KHANS_CONTEST, khan) == QuestService.Result.SUCCESS, "claimed at Khan");
+        helper.assertTrue(player.getData(ModAttachments.PLAYER_IDENTITY).hasTitle(KhanContest.KHANS_DISCIPLE), "Khan's disciple");
+        int before = ProgressionService.get(player).smithingXp();
+        ProgressionService.addSmithingXp(player, 100);
+        helper.assertTrue(ProgressionService.get(player).smithingXp() - before == 110, "+10 % smithing XP");
+        helper.succeed();
+    }
+
+    /** On the stage during the contest the anvil refuses the automatic forge; the manual one still starts. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theContestAnvilOnlyForgesByHand(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        contestAccepted(helper, player);
+        SmithingAnvilMenu menu = new SmithingAnvilMenu(1, player.getInventory(),
+                ContainerLevelAccess.create(helper.getLevel(), player.blockPosition()));
+        menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(ModItems.JAFFA_INGOT.get(), 2));
+        menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.STICK));
+        helper.assertTrue(menu.canForge(), "the Jaffa sword is previewed");
+        KhanContest.start(player, 150);
+        helper.assertTrue(KhanContest.forcesManual(player), "on the stage, in the contest");
+        helper.assertFalse(menu.clickMenuButton(player, SmithingAnvilMenu.AUTO_FORGE_BUTTON), "no automatic forge in the contest");
+        helper.assertFalse(menu.autoForging(), "nothing started");
+        helper.assertTrue(menu.clickMenuButton(player, SmithingAnvilMenu.MANUAL_FORGE_BUTTON), "by hand it is");
+        helper.succeed();
+    }
+
+    /** A piece forged away from the stage is not the contest's. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void onlyAPieceForgedOnTheStageCounts(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        EupheminaNpc euphemina = contestAccepted(helper, player);
+        KhanContest.start(player, 150);
+        player.moveTo(euphemina.getX() + 20, euphemina.getY(), euphemina.getZ());
+        forgeByHand(player, ItemRating.EPIC, 1);
+        helper.assertTrue(KhanContest.state(player).running(), "still running");
+        helper.succeed();
+    }
+
+    /** With rematches (a shared world's default), losing allows another try only the next day. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void losingGivesARematchTheNextDay(GameTestHelper helper) {
+        Balance.withOverride(Balance.current().withContestLoss(Balance.ContestLoss.REMATCH), () -> {
+            ServerPlayer player = TestSupport.fakePlayer(helper);
+            contestAccepted(helper, player);
+            KhanContest.start(player, 300);
+            forgeByHand(player, ItemRating.RARE, 0.5);
+            helper.assertTrue(QuestService.get(player).isActive(KhanContest.KHANS_CONTEST), "the quest goes on");
+            helper.assertFalse(KhanContest.canStart(player), "not again today");
+            ContestState lost = KhanContest.state(player);
+            player.setData(ModAttachments.KHAN_CONTEST, lost.lost(lost.lostDay() - 1));
+            helper.assertTrue(KhanContest.canStart(player), "tomorrow, a rematch");
+        });
+        helper.succeed();
+    }
+
+    /** Failing for good (a single-player world's default): the Mero keeps the smithy and Khan is lost. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void losingForGoodFailsTheQuest(GameTestHelper helper) {
+        Balance.withOverride(Balance.current().withContestLoss(Balance.ContestLoss.FAIL), () -> {
+            ServerPlayer player = TestSupport.fakePlayer(helper);
+            contestAccepted(helper, player);
+            KhanContest.start(player, 300);
+            forgeByHand(player, ItemRating.EPIC, 1);
+            helper.assertTrue(QuestService.get(player).isFailed(KhanContest.KHANS_CONTEST), "a tie goes to Euphemina: failed");
+            helper.assertTrue(WinstonStory.hasLostKhan(player) && !WinstonStory.heardByKhan(player), "Khan no longer teaches them");
+        });
+        helper.succeed();
+    }
+
+    /** No piece when the time is up is a loss. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void whenTheContestTimeRunsOutItIsLost(GameTestHelper helper) {
+        Balance.withOverride(Balance.current().withContestLoss(Balance.ContestLoss.REMATCH), () -> {
+            ServerPlayer player = TestSupport.fakePlayer(helper);
+            contestAccepted(helper, player);
+            KhanContest.start(player, 150);
+            KhanContest.tick(player);
+            helper.assertTrue(KhanContest.state(player).running(), "time left");
+            long late = helper.getLevel().getGameTime() - ContestRules.TIME_LIMIT_TICKS - 1;
+            player.setData(ModAttachments.KHAN_CONTEST, KhanContest.state(player).start(late, 150));
+            KhanContest.tick(player);
+            helper.assertFalse(KhanContest.state(player).running(), "time's up");
+            helper.assertTrue(KhanContest.state(player).lostDay() >= 0, "lost");
+        });
         helper.succeed();
     }
 

@@ -1,0 +1,7 @@
+{
+  "name": { "translate": "title.overgearedmod.khans_disciple" },
+  "description": { "translate": "title.overgearedmod.khans_disciple.desc" },
+  "goal": { "type": "milestone", "milestone": "overgearedmod:khans_disciple" },
+  "smithing_xp_bonus": 0.1,
+  "rare": true
+}
