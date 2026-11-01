@@ -9,18 +9,27 @@ import com.orijua.overgearedmod.Balance;
 import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.event.ItemForgedEvent;
 import com.orijua.overgearedmod.event.MobKilledEvent;
+import com.orijua.overgearedmod.event.QuestCompletedEvent;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
 import com.orijua.overgearedmod.progression.StatType;
 import com.orijua.overgearedmod.quest.PlayerQuests;
+import com.orijua.overgearedmod.quest.QuestDefinition;
+import com.orijua.overgearedmod.quest.QuestService;
+import com.orijua.overgearedmod.registry.Definitions;
 import com.orijua.overgearedmod.registry.ModAttachments;
+import com.orijua.overgearedmod.registry.ModDatapackRegistries;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.ResourceArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,7 +39,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Test helpers under /satisfy (op only), so titles and quests can be tried without grinding:
@@ -42,6 +54,8 @@ import java.util.Arrays;
  *   <li>{@code /satisfy debug level <level>}: sets the level; levels gained bring their stat points.</li>
  *   <li>{@code /satisfy debug stat <stat> <value>}: sets the points spent in a stat.</li>
  *   <li>{@code /satisfy debug insight <value>}: sets Insight.</li>
+ *   <li>{@code /satisfy debug goto <bairan|north_end_cave|ashur_manor>}: to the surface in front of that place.</li>
+ *   <li>{@code /satisfy debug quest complete <quest>}: marks it and the quests before it in its chain done, without rewards.</li>
  * </ul>
  * Simulations post the same domain events as real play, so every listener (counters, titles,
  * hidden quests, notifications) reacts the same way. No mob dies and no item is created.
@@ -94,7 +108,18 @@ public final class DebugCommands {
                                             player.setData(ModAttachments.INSIGHT, value);
                                             ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
                                             return 1;
-                                        }))))
+                                        })))
+                        .then(Commands.literal("goto")
+                                .then(Commands.argument("site", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.SITES, builder))
+                                        .executes(DebugCommands::gotoSite)))
+                        .then(Commands.literal("quest")
+                                .then(Commands.literal("complete")
+                                        .then(Commands.argument("quest", ResourceLocationArgument.id())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
+                                                        Definitions.all(ctx.getSource().getLevel(), ModDatapackRegistries.QUEST).stream()
+                                                                .map(Definitions.Entry::id), builder))
+                                                .executes(DebugCommands::completeQuest)))))
                 .then(Commands.literal("quest")
                         .then(Commands.literal("reset")
                                 .executes(ctx -> {
@@ -158,5 +183,48 @@ public final class DebugCommands {
         ProgressionService.set(player, ProgressionService.get(player).with(stat, value));
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_stat", stat.displayName(), value), false);
         return value;
+    }
+
+    /** To the surface in front of one of the world's places, in the overworld, facing it. */
+    private static int gotoSite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        String site = StringArgumentType.getString(ctx, "site");
+        ServerLevel overworld = ctx.getSource().getServer().overworld();
+        BlockPos landing = SiteLanding.find(overworld, site)
+                .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_goto_none", site)).create());
+        // Facing north, towards the place: the landing is south of it.
+        player.teleportTo(overworld, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, 180.0f, 0.0f);
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
+                landing.getX(), landing.getY(), landing.getZ()), false);
+        return 1;
+    }
+
+    /**
+     * Marks the quest done along with every quest before it in its chain ({@code requires_quest}), with no rewards, and
+     * tells the listeners as if each had been claimed. Hidden ones count as discovered.
+     */
+    private static int completeQuest(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        ResourceLocation id = ResourceLocationArgument.getId(ctx, "quest");
+        List<ResourceLocation> chain = new ArrayList<>();
+        Optional<ResourceLocation> next = Optional.of(id);
+        while (next.isPresent() && !chain.contains(next.get())) {
+            ResourceLocation current = next.get();
+            QuestDefinition quest = Definitions.get(player.level(), ModDatapackRegistries.QUEST, current)
+                    .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_bad_quest", current)).create());
+            chain.addFirst(current);
+            next = quest.requiresQuest();
+        }
+        PlayerQuests quests = QuestService.get(player);
+        List<ResourceLocation> done = chain.stream().filter(quest -> !quests.isCompleted(quest)).toList();
+        PlayerQuests updated = quests;
+        for (ResourceLocation quest : done) {
+            updated = updated.discover(quest).complete(quest);
+        }
+        player.setData(ModAttachments.PLAYER_QUESTS, updated);
+        done.forEach(quest -> NeoForge.EVENT_BUS.post(new QuestCompletedEvent(player, quest)));
+        QuestService.checkDiscoveries(player);
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_quest_complete", id.toString(), done.size()), false);
+        return done.size();
     }
 }
