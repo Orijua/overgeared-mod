@@ -36,6 +36,16 @@ public final class WinstonTests {
         helper.succeed();
     }
 
+    /** Completing "Pagma's Legacy" without the book (as /satisfy debug quest complete does) also makes the successor. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theCompletedLegacyAlsoMakesTheSuccessor(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        helper.assertFalse(WinstonStory.isPagmasSuccessor(player), "not yet");
+        TestSupport.completed(player, PagmaStory.LEGACY.getPath());
+        helper.assertTrue(WinstonStory.isPagmasSuccessor(player), "the legacy is enough");
+        helper.succeed();
+    }
+
     /** Smith gives Pagma's successor the map to Winston once, and nothing to anyone else. */
     @GameTest(template = TestSupport.EMPTY)
     public static void smithPointsTheSuccessorToWinston(GameTestHelper helper) {

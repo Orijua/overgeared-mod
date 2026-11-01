@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.feature.winston;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.pagma.PagmaStory;
+import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.quest.goal.MilestoneGoal;
 import com.orijua.overgearedmod.feature.world.WorldSites;
@@ -39,11 +40,13 @@ public final class WinstonStory {
     }
 
     /**
-     * Whether the player inherited Pagma's legacy (read the book), the condition of Khan's quests in the canon. A
-     * milestone, not the class, so a later class change doesn't undo it. Read from the synced counters: both sides.
+     * Whether the player inherited Pagma's legacy, the condition of Khan's quests in the canon: they read the book or
+     * completed "Pagma's Legacy" (which reading completes; a debug command can complete it alone). Not the class, so a
+     * later class change doesn't undo it. Read from the synced counters and quests: both sides.
      */
     public static boolean isPagmasSuccessor(Player player) {
-        return player.getData(ModAttachments.PLAYER_COUNTERS).get(MilestoneGoal.counterKey(PagmaStory.READ)) > 0;
+        return player.getData(ModAttachments.PLAYER_COUNTERS).get(MilestoneGoal.counterKey(PagmaStory.READ)) > 0
+                || QuestService.get(player).isCompleted(PagmaStory.LEGACY);
     }
 
     /** Talking to Smith: the first time as Pagma's successor, he tells of his old friend in Winston and gives the map. */
