@@ -233,6 +233,7 @@
   "screen.overgearedmod.class": "Clase:",
   "screen.overgearedmod.choose_class": "Elige una (solo una vez):",
   "screen.overgearedmod.titles": "Títulos",
+  "screen.overgearedmod.no_titles": "Aún no tienes títulos. Se ganan sin aviso.",
   "screen.overgearedmod.smithing_bonus": "+%s nivel de herrería",
   "screen.overgearedmod.level": "Nivel %s",
   "screen.overgearedmod.xp": "%s / %s XP",
