@@ -12,6 +12,12 @@ import com.orijua.overgearedmod.notification.SystemNotification;
 import com.orijua.overgearedmod.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.playerclass.ClassService;
 import com.orijua.overgearedmod.quest.QuestService;
+import com.orijua.overgearedmod.registry.Definitions;
+import com.orijua.overgearedmod.registry.ModDataComponents;
+import com.orijua.overgearedmod.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.title.TitleDefinition;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import io.netty.buffer.Unpooled;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -27,6 +33,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @GameTestHolder(Overgearedmod.MODID)
 @PrefixGameTestTemplate(false)
@@ -123,5 +130,31 @@ public final class NotificationTests {
         SystemNotification received = SystemNotificationPayload.STREAM_CODEC.decode(buffer).notification();
         helper.assertTrue(received.equals(sent), "sent " + sent + " but got " + received);
         helper.succeed();
+    }
+
+    /** A grand window carries its icon (the forged piece, a nether star...) to the client. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aGrandNotificationKeepsItsIcon(GameTestHelper helper) {
+        ItemStack sword = new ItemStack(Items.DIAMOND_SWORD);
+        sword.set(ModDataComponents.ITEM_RATING, ItemRating.LEGENDARY);
+        SystemNotification sent = new SystemNotification(SystemNotification.Kind.LEGENDARY_ITEM, List.of(Component.literal("Fracaso")), Optional.of(sword));
+        RegistryFriendlyByteBuf buffer = new RegistryFriendlyByteBuf(Unpooled.buffer(), helper.getLevel().registryAccess());
+        SystemNotificationPayload.STREAM_CODEC.encode(buffer, new SystemNotificationPayload(sent));
+        SystemNotification received = SystemNotificationPayload.STREAM_CODEC.decode(buffer).notification();
+        helper.assertTrue(received.equals(sent) && received.kind().grand(), "sent " + sent + " but got " + received);
+        helper.assertTrue(received.icon().orElseThrow().get(ModDataComponents.ITEM_RATING) == ItemRating.LEGENDARY, "with its rating");
+        helper.succeed();
+    }
+
+    /** The canon's big titles are rare (grand window); the everyday ones are not. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theBigTitlesAreRare(GameTestHelper helper) {
+        helper.assertTrue(title(helper, "became_legend").rare() && title(helper, "noble_killer").rare(), "legend and noble killer");
+        helper.assertFalse(title(helper, "epic_forger").rare(), "an epic forge is not");
+        helper.succeed();
+    }
+
+    private static TitleDefinition title(GameTestHelper helper, String id) {
+        return Definitions.get(helper.getLevel(), ModDatapackRegistries.TITLE, Overgearedmod.id(id)).orElseThrow();
     }
 }

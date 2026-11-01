@@ -10,7 +10,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 public record SystemNotificationPayload(SystemNotification notification) implements CustomPacketPayload {
     public static final Type<SystemNotificationPayload> TYPE = new Type<>(Overgearedmod.id("system_notification"));
     public static final StreamCodec<RegistryFriendlyByteBuf, SystemNotificationPayload> STREAM_CODEC =
-            SystemNotification.STREAM_CODEC.map(SystemNotificationPayload::new, SystemNotificationPayload::notification);
+            SystemNotification.streamCodec().map(SystemNotificationPayload::new, SystemNotificationPayload::notification);
 
     @Override
     public Type<SystemNotificationPayload> type() {
