@@ -17,6 +17,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.ToDoubleBiFunction;
 
 /** Reading a smithing hammer: what it adds to a forge, finding the best one, and wearing it down. */
@@ -53,6 +54,28 @@ public final class SmithingHammers {
                     .map(def -> part.applyAsDouble(def.effect(), rolled.value())).orElse(0.0);
         }
         return total;
+    }
+
+    /**
+     * The hand whose hammer counts when {@code smith} forges: the better of the two (the main hand on a tie), so a
+     * hammer works in either hand and two never add up. Empty if neither hand holds one.
+     */
+    public static Optional<EquipmentSlot> heldHammer(HolderLookup.Provider registries, LivingEntity smith) {
+        boolean main = isHammer(smith.getMainHandItem());
+        boolean off = isHammer(smith.getOffhandItem());
+        if (!main && !off) {
+            return Optional.empty();
+        }
+        if (main && off) {
+            return Optional.of(skillBonus(registries, smith.getOffhandItem()) > skillBonus(registries, smith.getMainHandItem())
+                    ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND);
+        }
+        return Optional.of(main ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+    }
+
+    /** The hammer that counts when {@code smith} forges (see {@link #heldHammer}), or empty. */
+    public static ItemStack heldHammerStack(HolderLookup.Provider registries, LivingEntity smith) {
+        return heldHammer(registries, smith).map(smith::getItemBySlot).orElse(ItemStack.EMPTY);
     }
 
     /** The inventory slot holding the best hammer (highest bonus), or -1. */

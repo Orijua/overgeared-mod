@@ -10,6 +10,9 @@ import com.orijua.overgearedmod.equipment.ItemRating;
 import com.orijua.overgearedmod.event.ItemForgedEvent;
 import com.orijua.overgearedmod.event.MobKilledEvent;
 import com.orijua.overgearedmod.event.QuestCompletedEvent;
+import com.orijua.overgearedmod.npc.ApprenticeContractItem;
+import com.orijua.overgearedmod.npc.ApprenticeSmith;
+import com.orijua.overgearedmod.npc.NpcGrade;
 import com.orijua.overgearedmod.progression.PlayerStats;
 import com.orijua.overgearedmod.progression.ProgressionRules;
 import com.orijua.overgearedmod.progression.ProgressionService;
@@ -54,6 +57,7 @@ import java.util.Optional;
  *   <li>{@code /satisfy debug level <level>}: sets the level; levels gained bring their stat points.</li>
  *   <li>{@code /satisfy debug stat <stat> <value>}: sets the points spent in a stat.</li>
  *   <li>{@code /satisfy debug insight <value>}: sets Insight.</li>
+ *   <li>{@code /satisfy debug apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
  *   <li>{@code /satisfy debug goto <bairan|north_end_cave|ashur_manor>}: to the surface in front of that place.</li>
  *   <li>{@code /satisfy debug quest complete <quest>}: marks it and the quests before it in its chain done, without rewards.</li>
  * </ul>
@@ -109,6 +113,13 @@ public final class DebugCommands {
                                             ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
                                             return 1;
                                         })))
+                        .then(Commands.literal("apprentice")
+                                .then(Commands.argument("grade", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                Arrays.stream(NpcGrade.values()).map(grade -> grade.name().toLowerCase()), builder))
+                                        .executes(ctx -> spawnApprentice(ctx, -1))
+                                        .then(Commands.argument("level", IntegerArgumentType.integer(0, 1000))
+                                                .executes(ctx -> spawnApprentice(ctx, IntegerArgumentType.getInteger(ctx, "level"))))))
                         .then(Commands.literal("goto")
                                 .then(Commands.argument("site", StringArgumentType.word())
                                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.SITES, builder))
@@ -183,6 +194,26 @@ public final class DebugCommands {
         ProgressionService.set(player, ProgressionService.get(player).with(stat, value));
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_stat", stat.displayName(), value), false);
         return value;
+    }
+
+    /**
+     * Hires an apprentice of the given grade where the player stands, as a contract would (the smithing level still
+     * limits how many), optionally with the smithing level he has learned ({@code level} &lt; 0: a new one's).
+     */
+    private static int spawnApprentice(CommandContext<CommandSourceStack> ctx, int level) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        String name = StringArgumentType.getString(ctx, "grade");
+        NpcGrade grade = Arrays.stream(NpcGrade.values()).filter(g -> g.name().equalsIgnoreCase(name)).findFirst()
+                .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_bad_grade", name)).create());
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, player.blockPosition())
+                .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_apprentice_refused")).create());
+        apprentice.setGrade(grade);
+        if (level >= 0) {
+            apprentice.setSmithingXp(ProgressionRules.smithingXpFor(level));
+        }
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_apprentice", apprentice.getDisplayName(),
+                grade.name().toLowerCase(), apprentice.smithingLevel()), false);
+        return 1;
     }
 
     /** To the surface in front of one of the world's places, in the overworld, facing it. */

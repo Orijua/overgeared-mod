@@ -40,7 +40,7 @@ public final class Workshop {
         master.setData(ModAttachments.WORKSHOP, List.copyOf(entries));
         if (previous.isPresent() && stopped(previous.get().statusValue(), entry.statusValue())) {
             master.sendSystemMessage(Component.translatable("message.overgearedmod.workshop_stopped", apprentice.getDisplayName(),
-                    Component.translatable("message.overgearedmod.apprentice_status." + entry.status().toLowerCase())).withStyle(ChatFormatting.GOLD));
+                    apprentice.statusText()).withStyle(ChatFormatting.GOLD));
         }
     }
 

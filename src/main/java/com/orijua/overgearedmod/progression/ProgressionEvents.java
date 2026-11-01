@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.registry.ModAttachments;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -17,6 +18,8 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+
+import javax.annotation.Nullable;
 
 public final class ProgressionEvents {
     private ProgressionEvents() {
@@ -43,7 +46,8 @@ public final class ProgressionEvents {
         if (victim instanceof ServerPlayer dead) {
             penalizeDeath(dead);
         }
-        if (victim instanceof Player || !(event.getSource().getEntity() instanceof ServerPlayer killer)) {
+        ServerPlayer killer = creditedKiller(victim, event.getSource());
+        if (victim instanceof Player || killer == null) {
             return;
         }
         ProgressionService.awardXp(killer, ProgressionRules.killXp(Balance.current(), new ProgressionRules.Victim(
@@ -53,6 +57,17 @@ public final class ProgressionEvents {
                 victim.getData(ModAttachments.FROM_SPAWNER),
                 victim.getData(ModAttachments.MOB_LEVEL).elite())));
         NeoForge.EVENT_BUS.post(new MobKilledEvent(killer, victim));
+    }
+
+    /**
+     * The player a death counts for: the one who dealt the killing blow, or else the one who hurt the victim last if it
+     * was recently (vanilla's kill credit, about 5 s), so a mob that burns, falls or drowns after a hit is still yours.
+     */
+    public static @Nullable ServerPlayer creditedKiller(LivingEntity victim, DamageSource source) {
+        if (source.getEntity() instanceof ServerPlayer player) {
+            return player;
+        }
+        return victim.getKillCredit() instanceof ServerPlayer player ? player : null;
     }
 
     /** Runs before the respawn copy, so the reduced stats are what the new player entity inherits. */
