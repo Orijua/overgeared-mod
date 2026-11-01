@@ -58,7 +58,7 @@ import java.util.Optional;
  *   <li>{@code /satisfy debug stat <stat> <value>}: sets the points spent in a stat.</li>
  *   <li>{@code /satisfy debug insight <value>}: sets Insight.</li>
  *   <li>{@code /satisfy debug apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
- *   <li>{@code /satisfy debug goto <bairan|north_end_cave|ashur_manor>}: to the surface in front of that place.</li>
+ *   <li>{@code /satisfy debug goto <bairan|north_end_cave|ashur_manor|winston>}: to the surface in front of that place.</li>
  *   <li>{@code /satisfy debug quest complete <quest>}: marks it and the quests before it in its chain done, without rewards.</li>
  * </ul>
  * Simulations post the same domain events as real play, so every listener (counters, titles,

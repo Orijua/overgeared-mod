@@ -4,11 +4,13 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.core.registry.ModEntities;
 import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
+import com.orijua.overgearedmod.feature.winston.KhanNpc;
 import com.orijua.overgearedmod.feature.world.AdventurerCamp;
 import com.orijua.overgearedmod.feature.world.Bairan;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
 import com.orijua.overgearedmod.feature.world.StructurePieces;
 import com.orijua.overgearedmod.feature.world.TemplateBuilder;
+import com.orijua.overgearedmod.feature.world.Winston;
 import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
@@ -200,6 +202,41 @@ public final class StructureTests {
     public static void chiefHousePieceHasTheChief(GameTestHelper helper) {
         helper.assertTrue(helper.getEntities(ModEntities.VILLAGE_CHIEF.get()).size() == 1, "the village chief is home");
         helper.assertBlockPresent(Blocks.LECTERN, inPiece(7, 1, 1));
+        helper.succeed();
+    }
+
+    /** Winston's square, and on its sides Khan's smithy, the Mero Company's office and at least one house. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void winstonAssemblesAroundItsSquare(GameTestHelper helper) {
+        StructureStart start = assemble(helper, Winston.STRUCTURE);
+        helper.assertTrue(start.isValid(), "Winston should assemble");
+        List<String> pieces = start.getPieces().stream().map(Object::toString).toList();
+        helper.assertTrue(pieces.getFirst().contains(Winston.SQUARE), "starts at the square: " + pieces.getFirst());
+        for (String building : List.of(Winston.KHAN_SMITHY, Winston.MERO_OFFICE)) {
+            helper.assertTrue(pieces.stream().filter(piece -> piece.contains(building + "]")).count() == 1, "one " + building + " in " + pieces);
+        }
+        helper.assertTrue(pieces.stream().filter(piece -> piece.contains(Winston.HOUSE + "]")).count() >= 2, "houses in " + pieces);
+        StructureSet set = helper.getLevel().registryAccess().registryOrThrow(Registries.STRUCTURE_SET).get(Winston.STRUCTURE);
+        helper.assertTrue(set != null && set.placement() instanceof WorldSitePlacement site && site.site().equals(WorldSites.WINSTON),
+                "placed at Winston's site");
+        helper.succeed();
+    }
+
+    /** The contest stage on the square has an anvil for each smith. */
+    @GameTest(template = Winston.SQUARE)
+    public static void winstonSquareHasTheContestStage(GameTestHelper helper) {
+        helper.assertBlockPresent(ModBlocks.SMITHING_ANVIL.get(), inPiece(6, 2, 13));
+        helper.assertBlockPresent(ModBlocks.SMITHING_ANVIL.get(), inPiece(10, 2, 13));
+        helper.succeed();
+    }
+
+    @GameTest(template = Winston.KHAN_SMITHY)
+    public static void khanDrinksInHisRuinedSmithy(GameTestHelper helper) {
+        helper.assertBlockPresent(Blocks.DAMAGED_ANVIL, inPiece(4, 1, 3));
+        List<KhanNpc> khans = helper.getEntities(ModEntities.KHAN.get());
+        helper.assertTrue(khans.size() == 1, "one Khan, got " + khans.size());
+        helper.assertTrue(khans.getFirst().getCustomName() != null
+                && Winston.KHAN_NAME.equals(khans.getFirst().getCustomName().getString()), "named Khan");
         helper.succeed();
     }
 

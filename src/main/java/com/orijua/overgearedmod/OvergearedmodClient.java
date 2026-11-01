@@ -88,6 +88,7 @@ public class OvergearedmodClient {
         event.registerEntityRenderer(ModEntities.APPRENTICE_SMITH.get(), context -> new NpcRenderer<>(context, NpcRenderer.BLACKSMITH));
         event.registerEntityRenderer(ModEntities.EARL_ASHUR.get(), context -> new AshurRenderer<>(context, AshurRenderer.ASHUR));
         event.registerEntityRenderer(ModEntities.ASHUR_KNIGHT.get(), context -> new AshurRenderer<>(context, AshurRenderer.KNIGHT));
+        event.registerEntityRenderer(ModEntities.KHAN.get(), context -> new NpcRenderer<>(context, NpcRenderer.KHAN));
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

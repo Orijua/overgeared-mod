@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.feature.npc.VillageChiefNpc;
 import com.orijua.overgearedmod.feature.pagma.AshurKnight;
 import com.orijua.overgearedmod.feature.pagma.EarlAshur;
+import com.orijua.overgearedmod.feature.winston.KhanNpc;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -58,12 +59,19 @@ public final class ModEntities {
                     .clientTrackingRange(10)
                     .build("ashur_knight"));
 
+    // Khan, Winston's old blacksmith (canon): drinks in his ruined smithy until Pagma's successor comes to help.
+    public static final DeferredHolder<EntityType<?>, EntityType<KhanNpc>> KHAN = ENTITIES.register("khan",
+            () -> EntityType.Builder.of(KhanNpc::new, MobCategory.MISC)
+                    .sized(0.6f, 1.95f)
+                    .clientTrackingRange(10)
+                    .build("khan"));
+
     private ModEntities() {
     }
 
     /** The NPCs with a quest window: a quest's "giver" must be one of them. */
     public static Set<EntityType<?>> questGivers() {
-        return Set.of(BLACKSMITH.get(), VILLAGE_CHIEF.get(), EARL_ASHUR.get());
+        return Set.of(BLACKSMITH.get(), VILLAGE_CHIEF.get(), EARL_ASHUR.get(), KHAN.get());
     }
 
     public static void registerAttributes(EntityAttributeCreationEvent event) {
@@ -73,5 +81,6 @@ public final class ModEntities {
         event.put(APPRENTICE_SMITH.get(), ApprenticeSmith.createAttributes().build());
         event.put(EARL_ASHUR.get(), EarlAshur.createAttributes().build());
         event.put(ASHUR_KNIGHT.get(), AshurKnight.createAttributes().build());
+        event.put(KHAN.get(), KhanNpc.createAttributes().build());
     }
 }

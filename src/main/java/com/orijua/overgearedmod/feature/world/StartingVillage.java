@@ -25,14 +25,17 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Bairan as the world's starting village. When a new world is created, it looks for the nearest place around the
  * usual spawn where the whole village fits on dry land in one of its biomes, saves it, and makes that the spawn: the
  * player starts on the square by the well, as Grid starts in Bairan. Bairan then generates there with the terrain,
  * like any village ({@link WorldSitePlacement}). The Northern End Cave's site is chosen at the same time, far to the north
- * ({@link NorthEndCave}), and Earl Ashur's manor near it ({@link AshurManor}); worlds that already had Bairan get theirs\n * the next time they load.
+ * ({@link NorthEndCave}), Earl Ashur's manor near it ({@link AshurManor}) and Winston farther off ({@link Winston}); worlds
+ * that already had Bairan get theirs the next time they load.
  * <p>
  * Worlds created before this have no site, so no Bairan. So do worlds whose generator doesn't use the structure (a
  * superflat preset, for example) and the rare world with no fitting land nearby; those keep the vanilla spawn.
@@ -71,8 +74,24 @@ public final class StartingVillage {
                 if (data.site(WorldSites.ASHUR_MANOR).isEmpty()) {
                     chooseManor(level, bairan, AshurManor.LATE_MIN_DISTANCE, AshurManor.LATE_MAX_DISTANCE);
                 }
+                if (data.site(WorldSites.WINSTON).isEmpty()) {
+                    chooseWinston(level, bairan, Winston.LATE_MIN_DISTANCE, Winston.LATE_MAX_DISTANCE);
+                }
             });
         }
+    }
+
+    /** Winston keeps away from the cave and the manor, which are chosen first. */
+    private static void chooseWinston(ServerLevel level, ChunkPos bairan, int minDistance, int maxDistance) {
+        ServerChunkCache chunks = level.getChunkSource();
+        List<ChunkPos> taken = Stream.of(WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR)
+                .flatMap(site -> WorldSites.siteFor(level.getSeed(), site).stream()).toList();
+        Winston.findSite(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(),
+                level.getSeed(), level, bairan, minDistance, maxDistance, taken).ifPresent(winston -> {
+            WorldSites.remember(level.getSeed(), WorldSites.WINSTON, winston);
+            WorldSitesData.get(level).setSite(WorldSites.WINSTON, winston);
+            Overgearedmod.LOGGER.info("Winston at chunk {}", winston);
+        });
     }
 
     private static void chooseManor(ServerLevel level, ChunkPos bairan, int minDistance, int maxDistance) {
@@ -116,6 +135,7 @@ public final class StartingVillage {
         WorldSitesData.get(level).setSite(WorldSites.BAIRAN, site.get().chunk());
         chooseCave(level, site.get().chunk());
         chooseManor(level, site.get().chunk(), AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE);
+        chooseWinston(level, site.get().chunk(), Winston.MIN_DISTANCE, Winston.MAX_DISTANCE);
         event.getSettings().setSpawn(site.get().spawn(), 0.0f);
         // Start by the well, not anywhere within 10 blocks of it (a roof, the mine).
         level.getGameRules().getRule(GameRules.RULE_SPAWN_RADIUS).set(0, level.getServer());

@@ -8,6 +8,7 @@ import com.orijua.overgearedmod.feature.world.AshurManor;
 import com.orijua.overgearedmod.feature.world.NorthEndCave;
 import com.orijua.overgearedmod.feature.world.NorthEndCaveProtection;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
+import com.orijua.overgearedmod.feature.world.Winston;
 import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
@@ -112,11 +113,12 @@ public final class NorthEndCaveTests {
     }
 
     /**
-     * On real overworld terrain, every one of 20 seeds gets its cave far to the north of Bairan, most of them in the cold.
+     * On real overworld terrain, every one of 20 seeds gets its cave far to the north of Bairan, most of them in the cold,
+     * Ashur's manor near Bairan and Winston farther off, away from the cave.
      * The search reads only the noise: nothing generates.
      */
     @GameTest(template = TestSupport.EMPTY, timeoutTicks = 4000)
-    public static void caveAndManorFindSitesInRealWorlds(GameTestHelper helper) {
+    public static void oneOfAKindPlacesFindSitesInRealWorlds(GameTestHelper helper) {
         RegistryAccess registries = helper.getLevel().registryAccess();
         Holder<NoiseGeneratorSettings> settings = registries.registryOrThrow(Registries.NOISE_SETTINGS)
                 .getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
@@ -136,8 +138,15 @@ public final class NorthEndCaveTests {
             Optional<ChunkPos> cave = NorthEndCave.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed,
                     height, bairan);
             helper.assertTrue(cave.isPresent(), "no cave for seed " + seed);
-            helper.assertTrue(AshurManor.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed, height, bairan,
-                    AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE).isPresent(), "no room for Ashur's manor near Bairan, seed " + seed);
+            Optional<ChunkPos> manor = AshurManor.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed, height,
+                    bairan, AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE);
+            helper.assertTrue(manor.isPresent(), "no room for Ashur's manor near Bairan, seed " + seed);
+            Optional<ChunkPos> winston = Winston.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed, height,
+                    bairan, Winston.MIN_DISTANCE, Winston.MAX_DISTANCE, List.of(cave.get(), manor.get()));
+            helper.assertTrue(winston.isPresent(), "no room for Winston, seed " + seed);
+            int fromBairan = bairan.getChessboardDistance(winston.get());
+            helper.assertTrue(fromBairan >= Winston.MIN_DISTANCE && fromBairan <= Winston.MAX_DISTANCE, "Winston " + fromBairan + " chunks off");
+            helper.assertTrue(winston.get().getChessboardDistance(cave.get()) >= 8, "Winston away from the cave, seed " + seed);
             int north = bairan.z - cave.get().z;
             helper.assertTrue(north >= 30, "seed " + seed + ": only " + north + " chunks north of Bairan");
             nearest = Math.min(nearest, north);

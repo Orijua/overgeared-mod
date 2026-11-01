@@ -54,6 +54,7 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.BLACKSMITH_SPAWN_EGG);
                         output.accept(ModItems.VILLAGE_CHIEF_SPAWN_EGG);
                         output.accept(ModItems.BONE_LORD_SPAWN_EGG);
+                        output.accept(ModItems.KHAN_SPAWN_EGG);
                         // One book per skill defined in the loaded datapacks.
                         parameters.holders().lookup(ModDatapackRegistries.SKILL).ifPresent(skills -> skills.listElementIds()
                                 .forEach(key -> output.accept(SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), key.location()))));
@@ -87,6 +88,7 @@ public final class ModCreativeTabs {
             event.accept(ModItems.BLACKSMITH_SPAWN_EGG);
             event.accept(ModItems.VILLAGE_CHIEF_SPAWN_EGG);
             event.accept(ModItems.BONE_LORD_SPAWN_EGG);
+            event.accept(ModItems.KHAN_SPAWN_EGG);
         }
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ModItems.SMITHING_ANVIL);

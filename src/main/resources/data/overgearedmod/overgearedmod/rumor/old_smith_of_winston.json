@@ -1,0 +1,6 @@
+{
+  "givers": ["overgearedmod:blacksmith"],
+  "text": { "translate": "rumor.overgearedmod.old_smith_of_winston" },
+  "requires_quest": "overgearedmod:pagma_legacy",
+  "solved_by": { "milestones": ["overgearedmod:met_khan"] }
+}
