@@ -88,6 +88,17 @@ class RatingRollerTest {
     }
 
     @Test
+    void aRatingRangeNeverFallsBackToMythAtTheEdgeOfTheRoll() {
+        assertEquals(ItemRating.LEGENDARY, RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, 1.0));
+        assertEquals(ItemRating.LEGENDARY,
+                RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, Math.nextDown(1.0)));
+        assertEquals(ItemRating.LEGENDARY, RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, 5.0));
+        assertEquals(ItemRating.UNIQUE, RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, Double.NaN));
+        assertEquals(ItemRating.UNIQUE, RatingRoller.roll(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY, 0.0));
+        assertEquals(ItemRating.MYTH, RatingRoller.roll(0, 0, 1.0), "without a limit the top roll is still Myth");
+    }
+
+    @Test
     void aRatingRangeKeepsTheRelativeOdds() {
         // Novice base weights: Unique 4, Legendary 0.9, so Legendary is 0.9 / 4.9 of the range.
         double[] odds = RatingRoller.odds(0, 0, 0, ItemRating.UNIQUE, ItemRating.LEGENDARY);
