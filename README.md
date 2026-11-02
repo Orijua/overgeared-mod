@@ -12,9 +12,8 @@ This project is a personal Minecraft modification created for experimentation, l
 - Open-source development workflow
 
 ## Requirements
-- Minecraft: [insert version]
-- Mod Loader: [Forge / NeoForge / Fabric]
-- Java: [insert version]
+- Minecraft: 1.21.1
+- Mod Loader: NeoForge
 
 ## Installation
 1. Download the mod jar.
@@ -42,6 +41,6 @@ Code and original content in this repository are available under the MIT License
 This project is inspired by existing fantasy and progression themes, but it is not an official or affiliated project. All original work is created by the project author unless otherwise credited.
 
 ## Credits
-- Project author: Oriol
+- Project author: Orijua
 - AI assistance: disclosed above
 - Third-party assets: reviewed separately if included
