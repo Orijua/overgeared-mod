@@ -35,8 +35,6 @@ public final class AshurManor {
     /** How far from Bairan, in chunks (the nearest that fits wins); farther in worlds that existed before the manor. */
     public static final int MIN_DISTANCE = 8;
     public static final int MAX_DISTANCE = 16;
-    static final int LATE_MIN_DISTANCE = 24;
-    static final int LATE_MAX_DISTANCE = 40;
     private static final int MAX_SLOPE = 3;
     private static final String AIR = "minecraft:air";
     private static final String WALL = "minecraft:stone_bricks";

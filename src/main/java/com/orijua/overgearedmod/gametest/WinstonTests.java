@@ -23,6 +23,7 @@ import com.orijua.overgearedmod.feature.winston.KhanContest;
 import com.orijua.overgearedmod.feature.winston.KhanNpc;
 import com.orijua.overgearedmod.feature.winston.MeroThug;
 import com.orijua.overgearedmod.feature.winston.WinstonStory;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -80,6 +81,7 @@ public final class WinstonTests {
     public static void smithPointsTheSuccessorToWinston(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         long seed = helper.getLevel().getSeed();
+        Satisfy.standIn(helper.getLevel()); // the map is of the Satisfy dimension, which the test server doesn't have
         boolean hadWinston = WorldSites.siteFor(seed, WorldSites.WINSTON).isPresent();
         if (!hadWinston) {
             WorldSites.remember(seed, WorldSites.WINSTON, new ChunkPos(40, 0));
@@ -92,6 +94,7 @@ public final class WinstonTests {
             WinstonStory.talkToSmith(player);
             helper.assertTrue(player.getInventory().countItem(Items.FILLED_MAP) == 1, "one map to Winston");
         } finally {
+            Satisfy.standIn(null);
             if (!hadWinston) {
                 WorldSites.forget(seed, WorldSites.WINSTON);
             }

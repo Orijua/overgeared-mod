@@ -70,6 +70,7 @@ public class Overgearedmod {
         ModLoot.LOOT_FUNCTIONS.register(modEventBus);
         ModLoot.LOOT_MODIFIERS.register(modEventBus);
         ModWorldgen.STRUCTURE_PLACEMENTS.register(modEventBus);
+        ModWorldgen.BIOME_SOURCES.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         // Mod bus events (JSON registries, networking, creative tabs, entity attributes, datagen).

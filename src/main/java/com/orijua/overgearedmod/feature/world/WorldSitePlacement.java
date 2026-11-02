@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.orijua.overgearedmod.core.registry.ModWorldgen;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement;
 import net.minecraft.world.level.levelgen.structure.placement.RandomSpreadType;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
@@ -41,6 +42,12 @@ public final class WorldSitePlacement extends RandomSpreadStructurePlacement {
     @Override
     public boolean applyAdditionalChunkRestrictions(int regionX, int regionZ, long levelSeed) {
         return WorldSites.siteFor(levelSeed, site).isPresent();
+    }
+
+    /** Only the Satisfy dimension places sites: the real world (the overworld) has the same seed but none of them. */
+    @Override
+    public boolean isStructureChunk(ChunkGeneratorStructureState structureState, int x, int z) {
+        return !WorldSites.isExcluded(structureState.randomState()) && super.isStructureChunk(structureState, x, z);
     }
 
     @Override

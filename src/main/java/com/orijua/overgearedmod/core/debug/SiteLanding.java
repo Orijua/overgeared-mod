@@ -37,13 +37,13 @@ public final class SiteLanding {
     }
 
     /**
-     * The block to stand on near {@code site} in the overworld {@code level}, or empty if this world has no such place
-     * (an old world, or one where no site was found). Bairan is the world spawn, on its plaza; the others land just
-     * south of their first piece, facing it.
+     * The block to stand on near {@code site} in the Satisfy {@code level}, or empty if this world has no such place
+     * (an old world, or one where no site was found). Bairan lands on its plaza; the others land just south of their
+     * first piece, facing it.
      */
     public static Optional<BlockPos> find(ServerLevel level, String site) {
         if (site.equals(WorldSites.BAIRAN)) {
-            return WorldSites.siteFor(level.getSeed(), site).map(chunk -> surface(level, level.getSharedSpawnPos().getX(), level.getSharedSpawnPos().getZ()));
+            return WorldSites.landingFor(level.getSeed()).map(landing -> surface(level, landing.getX(), landing.getZ()));
         }
         ResourceKey<Structure> key = STRUCTURES.get(site);
         if (key == null) {

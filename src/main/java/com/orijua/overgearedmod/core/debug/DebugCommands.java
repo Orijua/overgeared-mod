@@ -23,6 +23,7 @@ import com.orijua.overgearedmod.feature.quest.QuestCompletedEvent;
 import com.orijua.overgearedmod.feature.quest.QuestDefinition;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.smithing.ItemForgedEvent;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -216,15 +217,16 @@ public final class DebugCommands {
         return 1;
     }
 
-    /** To the surface in front of one of the world's places, in the overworld, facing it. */
+    /** To the surface in front of one of the world's places, in the Satisfy dimension, facing it. */
     private static int gotoSite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
         String site = StringArgumentType.getString(ctx, "site");
-        ServerLevel overworld = ctx.getSource().getServer().overworld();
-        BlockPos landing = SiteLanding.find(overworld, site)
+        ServerLevel satisfy = Satisfy.of(ctx.getSource().getServer())
+                .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_goto_none", site)).create());
+        BlockPos landing = SiteLanding.find(satisfy, site)
                 .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_goto_none", site)).create());
         // Facing north, towards the place: the landing is south of it.
-        player.teleportTo(overworld, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, 180.0f, 0.0f);
+        player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, 180.0f, 0.0f);
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
                 landing.getX(), landing.getY(), landing.getZ()), false);
         return 1;

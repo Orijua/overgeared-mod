@@ -6,6 +6,7 @@ import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -72,8 +73,9 @@ public final class AshurBetrayal {
 
     /** An explorer map centered on the world's Northern End Cave, with the cave marked; empty if the world has none. */
     static Optional<ItemStack> caveMap(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
-        if (level.dimension() != Level.OVERWORLD) {
+        // The map shows the Satisfy dimension, wherever the player is when they get it.
+        ServerLevel level = Satisfy.of(player.server).orElse(null);
+        if (level == null) {
             return Optional.empty();
         }
         return WorldSites.siteFor(level.getSeed(), WorldSites.NORTH_END_CAVE).map(chunk -> {

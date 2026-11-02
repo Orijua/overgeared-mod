@@ -1,0 +1,57 @@
+{
+  "type": "overgearedmod:satisfy",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "minecraft:overworld",
+    "biome_source": {
+      "type": "overgearedmod:satisfy_map",
+      "outside": {
+        "type": "minecraft:multi_noise",
+        "preset": "minecraft:overworld"
+      },
+      "cell": 192,
+      "origin_col": 13,
+      "origin_row": 7,
+      "legend": {
+        "P": "minecraft:plains",
+        "F": "minecraft:forest",
+        "D": "minecraft:desert",
+        "T": "minecraft:taiga",
+        "S": "minecraft:snowy_plains",
+        "K": "minecraft:snowy_taiga",
+        "M": "minecraft:windswept_hills",
+        "A": "minecraft:savanna"
+      },
+      "rows": [
+      "....................................",
+      "....................................",
+      "...SSSSSSSSSKKKKKKS.................",
+      "...SSSSSSSSSKPPPPKS.................",
+      "...KKKKKKKKKKPPPPKSSSSSSSSSSS.......",
+      "...KKKDDDDDDKPPPPKSSSSSSSSSSS.......",
+      "..FFFFDDDDDPPPPPPPSSSSSSSSSSS.......",
+      "..FFFFFMMMMPPPPPPPPPPPPPPPPPPP......",
+      "..FFFFFMMMMPPPPPPPPPPPPPPPPPPP......",
+      "..FFFFFPPPPPPPPPPPPPPPPPMMMPP.......",
+      ".PFFFFFPPPPPPPTTTTMMMMMMMMMPP.......",
+      ".PFFFFFPPPPAAAAAAAMMMMMMMMMPP.......",
+      ".PFFFFFPPPPAAAAAAAMMMMMMMMMPP.......",
+      "..PPPPPPPPPAAAAAAAMMMMMMMMMPP.......",
+      "..PPPPPFFFFFFFAAAAMMMMMMMTTTT.......",
+      ".PPPPPPFFFFFFFAAAAMMMMMMMTTTT.......",
+      "...PPPPFFFFFFFPPPPMMMMMMMTTTT.......",
+      "...PPPPPPPPPFFFFFFFMMMMMMTTTT.......",
+      "...PPPPPPPPPFFFFFFFPPPPPPTTTT.......",
+      "....PPPPPPPPFFFFFFFPPPPPPPP.........",
+      "....PPPPPPPPPPPPPPPPPPPPP...........",
+      ".....PPPPPPPPPPPPPPPPPPP............",
+      "......PPPPPPPPPPPPPPPPPP............",
+      "....................................",
+      "....................................",
+      "....................................",
+      "...................................."
+
+      ]
+    }
+  }
+}
