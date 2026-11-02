@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.feature.winston.KhanNpc;
 import com.orijua.overgearedmod.feature.world.AdventurerCamp;
 import com.orijua.overgearedmod.feature.world.Bairan;
+import com.orijua.overgearedmod.feature.world.PoolPieces;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
 import com.orijua.overgearedmod.feature.world.StructurePieces;
 import com.orijua.overgearedmod.feature.world.TemplateBuilder;
@@ -43,6 +44,8 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
+import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
+import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -55,6 +58,12 @@ import java.util.Optional;
 @GameTestHolder(Overgearedmod.MODID)
 @PrefixGameTestTemplate(false)
 public final class StructureTests {
+    /**
+     * The farthest, in chunks, Bairan's site may lie from the usual spawn on the 40 test seeds. Measured: 25 (the search
+     * itself stops at StartingVillage.SEARCH_RADIUS = 32), plus a margin of 4. Adjust it if the search or biomes change on purpose.
+     */
+    private static final int MAX_BAIRAN_DRIFT = 29;
+
     private StructureTests() {
     }
 
@@ -97,7 +106,8 @@ public final class StructureTests {
         helper.assertTrue(start.isValid(), "the camp should assemble");
         List<StructurePiece> pieces = start.getPieces();
         helper.assertTrue(pieces.size() >= 2 && pieces.size() <= 5, "center + 1 to 4 sides, got " + pieces.size());
-        helper.assertTrue(pieces.getFirst().toString().contains(AdventurerCamp.CENTER), "starts at the center: " + pieces.getFirst());
+        helper.assertTrue(PoolPieces.templateOf(pieces.getFirst()).filter(Overgearedmod.id(AdventurerCamp.CENTER)::equals).isPresent(),
+                "starts at the center: " + pieces.getFirst());
         helper.succeed();
     }
 
@@ -167,7 +177,10 @@ public final class StructureTests {
             Optional<StartingVillage.Site> site = StartingVillage.findSite(registries, generator, random,
                     helper.getLevel().getStructureManager(), seed, height, usualSpawn);
             helper.assertTrue(site.isPresent(), "no Bairan site for seed " + seed);
-            farthest = Math.max(farthest, usualSpawn.getChessboardDistance(site.get().chunk()));
+            int distance = usualSpawn.getChessboardDistance(site.get().chunk());
+            helper.assertTrue(distance <= MAX_BAIRAN_DRIFT, "Bairan for seed " + seed + " is " + distance
+                    + " chunks from the usual spawn, more than " + MAX_BAIRAN_DRIFT);
+            farthest = Math.max(farthest, distance);
         }
         Overgearedmod.LOGGER.info("Bairan: a site in all 40 seeds, at most {} chunks from the usual spawn", farthest);
         helper.succeed();
@@ -178,12 +191,12 @@ public final class StructureTests {
     public static void bairanAssemblesAroundItsSquare(GameTestHelper helper) {
         StructureStart start = assemble(helper, Bairan.STRUCTURE);
         helper.assertTrue(start.isValid(), "Bairan should assemble");
-        List<String> pieces = start.getPieces().stream().map(Object::toString).toList();
-        helper.assertTrue(pieces.getFirst().contains(Bairan.PLAZA), "starts at the square: " + pieces.getFirst());
+        List<ResourceLocation> pieces = templates(start);
+        helper.assertTrue(pieces.getFirst().equals(Overgearedmod.id(Bairan.PLAZA)), "starts at the square: " + pieces);
         for (String building : List.of(Bairan.SMITHY, Bairan.CHIEF_HOUSE, Bairan.MINE)) {
-            helper.assertTrue(pieces.stream().filter(piece -> piece.contains(building + "]")).count() == 1, "one " + building + " in " + pieces);
+            helper.assertTrue(pieces.stream().filter(Overgearedmod.id(building)::equals).count() == 1, "one " + building + " in " + pieces);
         }
-        helper.assertTrue(pieces.stream().anyMatch(piece -> piece.contains(Bairan.HOUSE + "]") || piece.contains(Bairan.GARDEN_HOUSE + "]")),
+        helper.assertTrue(pieces.contains(Overgearedmod.id(Bairan.HOUSE)) || pieces.contains(Overgearedmod.id(Bairan.GARDEN_HOUSE)),
                 "houses in " + pieces);
         helper.succeed();
     }
@@ -211,12 +224,12 @@ public final class StructureTests {
     public static void winstonAssemblesAroundItsSquare(GameTestHelper helper) {
         StructureStart start = assemble(helper, Winston.STRUCTURE);
         helper.assertTrue(start.isValid(), "Winston should assemble");
-        List<String> pieces = start.getPieces().stream().map(Object::toString).toList();
-        helper.assertTrue(pieces.getFirst().contains(Winston.SQUARE), "starts at the square: " + pieces.getFirst());
+        List<ResourceLocation> pieces = templates(start);
+        helper.assertTrue(pieces.getFirst().equals(Overgearedmod.id(Winston.SQUARE)), "starts at the square: " + pieces);
         for (String building : List.of(Winston.KHAN_SMITHY, Winston.MERO_OFFICE)) {
-            helper.assertTrue(pieces.stream().filter(piece -> piece.contains(building + "]")).count() == 1, "one " + building + " in " + pieces);
+            helper.assertTrue(pieces.stream().filter(Overgearedmod.id(building)::equals).count() == 1, "one " + building + " in " + pieces);
         }
-        helper.assertTrue(pieces.stream().filter(piece -> piece.contains(Winston.HOUSE + "]")).count() >= 2, "houses in " + pieces);
+        helper.assertTrue(pieces.stream().filter(Overgearedmod.id(Winston.HOUSE)::equals).count() >= 2, "houses in " + pieces);
         StructureSet set = helper.getLevel().registryAccess().registryOrThrow(Registries.STRUCTURE_SET).get(Winston.STRUCTURE);
         helper.assertTrue(set != null && set.placement() instanceof WorldSitePlacement site && site.site().equals(WorldSites.WINSTON),
                 "placed at Winston's site");
@@ -262,6 +275,22 @@ public final class StructureTests {
         helper.assertTrue(khans.getFirst().getCustomName() != null
                 && Winston.KHAN_NAME.equals(khans.getFirst().getCustomName().getString()), "named Khan");
         helper.succeed();
+    }
+
+    /** Pins the format PoolPieces relies on: a Minecraft update that changes SinglePoolElement.toString() fails here. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void poolPiecesReadTheTemplateOfASinglePoolElement(GameTestHelper helper) {
+        StructurePoolElement element = StructurePoolElement.single(Overgearedmod.id("winston/square").toString())
+                .apply(StructureTemplatePool.Projection.RIGID);
+        helper.assertTrue(PoolPieces.templateOf(element).filter(Overgearedmod.id("winston/square")::equals).isPresent(),
+                "could not read the template out of " + element);
+        helper.assertTrue(PoolPieces.templateOf(StructurePoolElement.empty().apply(StructureTemplatePool.Projection.RIGID)).isEmpty(), "the empty element has no template");
+        helper.succeed();
+    }
+
+    /** The template of each piece of a start, in order. */
+    private static List<ResourceLocation> templates(StructureStart start) {
+        return start.getPieces().stream().map(PoolPieces::templateOf).flatMap(Optional::stream).toList();
     }
 
     /** Runs a structure's real jigsaw assembly at a fixed seed and spot, without placing any block. */
