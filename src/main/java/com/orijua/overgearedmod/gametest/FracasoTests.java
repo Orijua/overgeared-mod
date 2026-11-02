@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModItems;
@@ -9,6 +10,8 @@ import com.orijua.overgearedmod.feature.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.feature.equipment.EquipmentService;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
+import com.orijua.overgearedmod.feature.mob.MobLevel;
+import com.orijua.overgearedmod.feature.mob.MobLevelService;
 import com.orijua.overgearedmod.feature.progression.ClassService;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.progression.StatType;
@@ -29,6 +32,8 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -140,13 +145,16 @@ public final class FracasoTests {
     public static void fracasoOptionsNeverRollOnOtherItems(GameTestHelper helper) {
         ServerPlayer smith = TestSupport.fakePlayer(helper);
         ProgressionService.set(smith, ProgressionService.get(smith).with(StatType.DEXTERITY, 200)); // high ratings, more options
-        for (int i = 0; i < 50; i++) {
+        int rolled = 0;
+        for (int i = 0; i < 200; i++) {
             ItemStack sword = new ItemStack(Items.IRON_SWORD);
             EquipmentService.stampForged(smith, sword, Optional.empty());
             for (RolledOption option : sword.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
+                rolled++;
                 helper.assertFalse(option.option().getPath().startsWith("fracaso_"), "rolled a fixed-only option: " + option.option());
             }
         }
+        helper.assertTrue(rolled > 0, "the forge rolled no option at all in 200 swords, so this test proves nothing");
         helper.succeed();
     }
 
@@ -187,16 +195,78 @@ public final class FracasoTests {
         helper.succeed();
     }
 
-    @GameTest(template = TestSupport.EMPTY)
-    public static void fracasoFrightensMuchWeakerMonsters(GameTestHelper helper) {
+    private static boolean frightened(Zombie zombie) {
+        return zombie.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) && zombie.hasEffect(MobEffects.WEAKNESS);
+    }
+
+    private static boolean untouched(Zombie zombie) {
+        return !zombie.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) && !zombie.hasEffect(MobEffects.WEAKNESS);
+    }
+
+    private static Zombie zombieOfLevel(GameTestHelper helper, int level, int x, int z) {
+        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, x, 1, z);
+        MobLevelService.assign(zombie, new MobLevel(level, false), Balance.DEFAULT);
+        return zombie;
+    }
+
+    private static ServerPlayer fracasoWielder(GameTestHelper helper, boolean meetRequirements) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         ClassService.grant(player, SUCCESSOR);
         hold(player, forgedFracaso(helper, player, ItemRating.UNIQUE));
-        meetRequirements(player);
+        if (meetRequirements) {
+            meetRequirements(player);
+        }
+        return player;
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fracasoFrightensMuchWeakerMonsters(GameTestHelper helper) {
+        ServerPlayer player = fracasoWielder(helper, true);
         Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 1, 2);
         EquipmentEvents.forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
-        helper.assertTrue(zombie.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) && zombie.hasEffect(MobEffects.WEAKNESS),
-                "a level-1 zombie fears a level-300 wielder");
+        helper.assertTrue(frightened(zombie), "a level-1 zombie fears a level-300 wielder");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fracasoFearNeedsAGapOfFiftyLevels(GameTestHelper helper) {
+        ServerPlayer player = fracasoWielder(helper, true);
+        Zombie gap50 = zombieOfLevel(helper, 250, 2, 2); // 300 - 250 = 50: exactly the threshold
+        Zombie gap49 = zombieOfLevel(helper, 251, 2, 0); // 49: not enough
+        EquipmentEvents.forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
+        helper.assertTrue(frightened(gap50), "a gap of exactly 50 levels frightens");
+        helper.assertTrue(untouched(gap49), "a gap of 49 levels doesn't");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fracasoFearDoesNotReachFarMonsters(GameTestHelper helper) {
+        ServerPlayer player = fracasoWielder(helper, true);
+        Zombie far = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 12, 1, 0); // the radius is 8 blocks
+        EquipmentEvents.forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
+        helper.assertTrue(untouched(far), "a monster outside the radius isn't frightened");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fracasoFearNeedsItsRequirements(GameTestHelper helper) {
+        ServerPlayer player = fracasoWielder(helper, false);
+        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 1, 2);
+        EquipmentEvents.forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
+        helper.assertTrue(untouched(zombie), "without meeting the requirements nothing frightens");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fracasoFearWorksThroughThePlayerTickOncePerSecond(GameTestHelper helper) {
+        ServerPlayer player = fracasoWielder(helper, true);
+        Zombie zombie = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 1, 2);
+        player.tickCount = 41;
+        NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
+        helper.assertTrue(untouched(zombie), "off the second mark nothing happens");
+        player.tickCount = 40;
+        NeoForge.EVENT_BUS.post(new PlayerTickEvent.Post(player));
+        helper.assertTrue(frightened(zombie), "the player tick event frightens on the second mark");
         helper.succeed();
     }
 }

@@ -29,6 +29,30 @@ class ForgingMinigameTest {
     }
 
     @Test
+    void theEdgesOfTheBandCountAsInside() {
+        ForgingMinigame low = new ForgingMinigame(ZONE);
+        low.startHeating(0);
+        low.stopHeating(heatTime(ZONE));
+        assertEquals(1.0, low.heatScore(), 1e-9, "bottom edge");
+
+        ForgingMinigame high = new ForgingMinigame(ZONE);
+        high.startHeating(0);
+        high.stopHeating(heatTime(ZONE + ForgingMinigame.ZONE_WIDTH));
+        assertEquals(1.0, high.heatScore(), 1e-9, "top edge");
+    }
+
+    @Test
+    void strikingBeforeTheHammerPhaseIsRejected() {
+        ForgingMinigame game = new ForgingMinigame(ZONE);
+        assertEquals(-1, game.strike(0), 1e-9, "before heating starts");
+        assertEquals(Phase.HEAT, game.phase());
+        game.startHeating(0);
+        assertEquals(-1, game.strike(500), 1e-9, "while heating");
+        assertEquals(Phase.HEAT, game.phase());
+        assertEquals(0, game.strikesDone());
+    }
+
+    @Test
     void releasingTooEarlyScoresLess() {
         ForgingMinigame game = new ForgingMinigame(ZONE);
         game.startHeating(0);

@@ -34,6 +34,19 @@ class ProgressionRulesTest {
     }
 
     @Test
+    void addXpLevelsUpExactlyAtTheThreshold() {
+        ProgressionRules.XpResult below = ProgressionRules.addXp(B, PlayerStats.DEFAULT, 74);
+        assertEquals(1, below.stats().level());
+        assertEquals(74, below.stats().xp());
+        assertEquals(0, below.levelsGained());
+
+        ProgressionRules.XpResult exact = ProgressionRules.addXp(B, PlayerStats.DEFAULT, 75);
+        assertEquals(2, exact.stats().level());
+        assertEquals(0, exact.stats().xp());
+        assertEquals(1, exact.levelsGained());
+    }
+
+    @Test
     void negativeXpIsIgnored() {
         assertEquals(PlayerStats.DEFAULT, ProgressionRules.addXp(B, PlayerStats.DEFAULT, -50).stats());
     }
@@ -135,6 +148,13 @@ class ProgressionRulesTest {
         assertEquals(45, after.xp());
         assertEquals(4, after.level());
         assertEquals(PlayerStats.DEFAULT, ProgressionRules.applyDeathPenalty(B, PlayerStats.DEFAULT));
+    }
+
+    @Test
+    void deathAtLevelOneKeepsTheLevel() {
+        PlayerStats after = ProgressionRules.applyDeathPenalty(B, PlayerStats.DEFAULT.withProgress(1, 50, 0));
+        assertEquals(1, after.level());
+        assertEquals(45, after.xp(), "same share lost as at any other level");
     }
 
     @Test

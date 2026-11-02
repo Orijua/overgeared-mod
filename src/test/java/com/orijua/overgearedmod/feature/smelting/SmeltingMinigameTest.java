@@ -21,8 +21,15 @@ class SmeltingMinigameTest {
         SmeltingMinigame game = new SmeltingMinigame(900);
         game.update(SmeltingMinigame.DURATION_MS);
         assertTrue(game.done());
-        assertTrue(game.temperature() < 900, "cooled below the zone");
-        assertTrue(game.precision() < 0.5, "only the first part counted: " + game.precision());
+        double start = 900 + SmelterRules.ZONE_WIDTH / 2.0;
+        double expectedTemperature = start - SmeltingMinigame.COOL_PER_SECOND * SmeltingMinigame.DURATION_MS / 1000.0;
+        assertTrue(expectedTemperature > SmelterRules.AMBIENT, "the ambient floor doesn't come into play");
+        assertEquals(435.0, game.temperature(), 1e-9);
+        assertEquals(expectedTemperature, game.temperature(), 1e-9);
+        // Only the degrees between the start and the bottom of the zone (75) count, at 90 degrees per second.
+        long msInZone = Math.round((start - 900) * 1000 / SmeltingMinigame.COOL_PER_SECOND);
+        assertEquals(833, msInZone);
+        assertEquals(833 / 6000.0, game.precision(), 1e-9);
     }
 
     @Test

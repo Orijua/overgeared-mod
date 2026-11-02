@@ -33,6 +33,15 @@ public final class MobLevelTests {
         MobLevelService.assign(zombie, new MobLevel(1, true), Balance.DEFAULT);
         TestSupport.assertClose(helper, 30.0, zombie.getMaxHealth(), "a level 1 elite has +50% health");
         helper.assertTrue(zombie.hasGlowingTag(), "elites glow");
+        TestSupport.assertClose(helper, baseDamage * 1.5, zombie.getAttributeValue(Attributes.ATTACK_DAMAGE),
+                "a level 1 elite has +50% damage, not stacked on the level 11 bonus");
+        TestSupport.assertClose(helper, 30.0, zombie.getHealth(), "refilled to the new max");
+
+        // A plain level 1 has no bonus at all: the modifier is removed.
+        MobLevelService.assign(zombie, new MobLevel(1, false), Balance.DEFAULT);
+        TestSupport.assertClose(helper, 20.0, zombie.getMaxHealth(), "back to the base health");
+        TestSupport.assertClose(helper, 20.0, zombie.getHealth(), "and full");
+        TestSupport.assertClose(helper, baseDamage, zombie.getAttributeValue(Attributes.ATTACK_DAMAGE), "back to the base damage");
         helper.succeed();
     }
 }
