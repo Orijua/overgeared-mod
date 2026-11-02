@@ -63,11 +63,19 @@ public final class RatingRoller {
             total += w;
         }
 
-        double target = random01 * total;
+        // Keep to the [0, 1) contract: NaN counts as 0 and anything else is clamped.
+        double clamped = Double.isNaN(random01) ? 0 : Math.max(0, Math.min(random01, Math.nextDown(1.0)));
+        double target = clamped * total;
         ItemRating[] tiers = ItemRating.values();
         for (int i = 0; i < tiers.length; i++) {
             target -= weights[i];
             if (target < 0) {
+                return tiers[i];
+            }
+        }
+        // Rounding left us past the end: the last tier that is actually allowed, not blindly Myth.
+        for (int i = tiers.length - 1; i >= 0; i--) {
+            if (weights[i] > 0) {
                 return tiers[i];
             }
         }

@@ -57,7 +57,7 @@ public final class EliteDropTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void eliteKilledByAPlayerDropsARatedPiece(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        List<ItemStack> pieces = killZombie(helper, true, zombie -> player.damageSources().playerAttack(player));
+        List<ItemStack> pieces = killZombie(helper, true, 1.0, zombie -> player.damageSources().playerAttack(player));
         helper.assertTrue(pieces.size() == 1, "exactly one elite piece, got " + pieces);
         ItemRating rating = pieces.get(0).get(ModDataComponents.ITEM_RATING);
         helper.assertTrue(rating != null && rating.ordinal() >= ItemRating.RARE.ordinal(), "Rare or better, got " + rating);
@@ -66,15 +66,23 @@ public final class EliteDropTests {
 
     @GameTest(template = TestSupport.EMPTY)
     public static void eliteKilledWithoutAPlayerDropsNoPiece(GameTestHelper helper) {
-        List<ItemStack> pieces = killZombie(helper, true, zombie -> zombie.damageSources().generic());
+        List<ItemStack> pieces = killZombie(helper, true, 1.0, zombie -> zombie.damageSources().generic());
         helper.assertTrue(pieces.isEmpty(), "only player kills earn the piece, got " + pieces);
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void eliteDropRespectsAZeroChance(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        List<ItemStack> pieces = killZombie(helper, true, 0.0, zombie -> player.damageSources().playerAttack(player));
+        helper.assertTrue(pieces.isEmpty(), "a 0% chance never drops the piece, got " + pieces);
         helper.succeed();
     }
 
     @GameTest(template = TestSupport.EMPTY)
     public static void regularMobKilledByAPlayerDropsNoPiece(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        List<ItemStack> pieces = killZombie(helper, false, zombie -> player.damageSources().playerAttack(player));
+        List<ItemStack> pieces = killZombie(helper, false, 1.0, zombie -> player.damageSources().playerAttack(player));
         helper.assertTrue(pieces.isEmpty(), "only elites drop the piece, got " + pieces);
         helper.succeed();
     }
@@ -83,13 +91,13 @@ public final class EliteDropTests {
      * Spawns a zombie (elite or not), kills it with the given damage source at a 100% drop chance, and returns
      * the elite pieces among its drops. The dropped items are removed afterwards.
      */
-    private static List<ItemStack> killZombie(GameTestHelper helper, boolean elite, Function<Zombie, DamageSource> source) {
+    private static List<ItemStack> killZombie(GameTestHelper helper, boolean elite, double chance, Function<Zombie, DamageSource> source) {
         Zombie zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 1, 1));
         MobLevelService.assign(zombie, new MobLevel(5, elite), Balance.current());
         DropRecorder recorder = new DropRecorder(zombie);
         NeoForge.EVENT_BUS.register(recorder);
         try {
-            Balance.withOverride(Balance.current().withEliteEquipmentChance(1.0),
+            Balance.withOverride(Balance.current().withEliteEquipmentChance(chance),
                     () -> zombie.hurt(source.apply(zombie), 10_000.0f));
         } finally {
             NeoForge.EVENT_BUS.unregister(recorder);

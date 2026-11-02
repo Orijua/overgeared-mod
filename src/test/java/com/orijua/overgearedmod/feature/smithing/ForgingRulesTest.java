@@ -12,7 +12,8 @@ class ForgingRulesTest {
     @Test
     void autoForgeTakesOneToFourSeconds() {
         assertEquals(80, ForgingRules.autoForgeTicks(0, 0), "a novice takes 4 s");
-        assertTrue(ForgingRules.autoForgeTicks(20, 5) < 80, "skill makes it quicker");
+        assertEquals(50, ForgingRules.autoForgeTicks(20, 5), "80 - 4*5 smithing - 20/2 dex");
+        assertEquals(79, ForgingRules.autoForgeTicks(3, 0), "odd dexterity rounds down: 3/2 = 1");
         assertEquals(20, ForgingRules.autoForgeTicks(500, 50), "never under 1 s");
     }
 

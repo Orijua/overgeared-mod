@@ -239,10 +239,9 @@ public final class Winston {
 
     /** The piece of {@code start} built from {@code template} (a path such as {@link #SQUARE}), if it has one. */
     public static Optional<PlacedPiece> piece(StructureStart start, String template) {
-        // A single pool element prints as "Single[Left[<template id>]]".
-        String name = "[" + Overgearedmod.MODID + ":" + template + "]";
+        ResourceLocation wanted = Overgearedmod.id(template);
         return start.getPieces().stream()
-                .filter(piece -> piece instanceof PoolElementStructurePiece pool && pool.getElement().toString().contains(name))
+                .filter(piece -> piece instanceof PoolElementStructurePiece && PoolPieces.templateOf(piece).filter(wanted::equals).isPresent())
                 .map(piece -> (PoolElementStructurePiece) piece)
                 .map(pool -> new PlacedPiece(pool.getPosition(), pool.getRotation()))
                 .findFirst();
