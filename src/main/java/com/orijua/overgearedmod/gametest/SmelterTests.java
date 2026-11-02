@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.core.registry.ModRecipes;
+import com.orijua.overgearedmod.feature.progression.ProgressionRules;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.smelting.MeltingRecipe;
 import com.orijua.overgearedmod.feature.smelting.SmelterBlock;
@@ -12,6 +13,8 @@ import com.orijua.overgearedmod.feature.smelting.SmelterBlockEntity;
 import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
 import com.orijua.overgearedmod.feature.smelting.SmelterRules;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -148,8 +151,104 @@ public final class SmelterTests {
         smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.BLAZE_ROD));
         SmelterMenu menu = menu(helper, smith, smelter);
         helper.assertFalse(menu.clickMenuButton(smith, SmelterMenu.AUTO_BUTTON) || smelter.melting(), "a novice can't");
-        ProgressionService.addSmithingXp(smith, 640); // smithing level 8
+        ProgressionService.addSmithingXp(smith, ProgressionRules.smithingXpFor(7));
+        helper.assertTrue(ProgressionService.effectiveSmithingLevel(smith) == 7, "level 7: " + ProgressionService.effectiveSmithingLevel(smith));
+        helper.assertFalse(menu.clickMenuButton(smith, SmelterMenu.AUTO_BUTTON) || smelter.melting(), "level 7 is not enough");
+        ProgressionService.addSmithingXp(smith, ProgressionRules.smithingXpFor(8) - ProgressionRules.smithingXpFor(7));
+        helper.assertTrue(ProgressionService.effectiveSmithingLevel(smith) == 8, "level 8: " + ProgressionService.effectiveSmithingLevel(smith));
         helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.AUTO_BUTTON) && smelter.melting(), "a smith of level 8 can");
+        helper.succeed();
+    }
+
+    /** The bellows need the melting heat exactly: 899 degrees is not enough for iron, 900 is. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theBellowsNeedTheExactMeltingHeat(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmelterBlockEntity smelter = placeSmelter(helper);
+        SmelterMenu menu = menu(helper, smith, smelter);
+        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON));
+        smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL));
+        setTemperature(helper, smelter, 899);
+        helper.assertTrue(smelter.temperature() == 899, "set to 899: " + smelter.temperature());
+        helper.assertFalse(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "899: one degree short");
+        setTemperature(helper, smelter, 900);
+        helper.assertTrue(smelter.temperature() == 900, "set to 900: " + smelter.temperature());
+        helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "900: the bellows start");
+        helper.succeed();
+    }
+
+    /** Loads a temperature (burning, so it would not go out) through the block entity's saved data. */
+    private static void setTemperature(GameTestHelper helper, SmelterBlockEntity smelter, int temperature) {
+        var registries = helper.getLevel().registryAccess();
+        CompoundTag tag = smelter.saveWithoutMetadata(registries);
+        tag.putInt("temperature", temperature);
+        tag.putBoolean("fire_on", true);
+        tag.putInt("burn_time", 1000);
+        tag.putInt("burn_total", 1000);
+        tag.putInt("fuel_heat", 1050);
+        smelter.loadWithComponents(tag, registries);
+    }
+
+    /** Bad hands lose the metal as slag: that melt gives no ingot and no XP; the rest give their ingot and double XP. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void slagGivesNoIngotAndNoXp(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmelterBlockEntity smelter = placeSmelter(helper);
+        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON, 40));
+        smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL));
+        setTemperature(helper, smelter, 1000);
+        ResourceLocation recipeId = null;
+        int expectedXp = melting(helper, Items.RAW_IRON).orElseThrow().smithingXp() * SmelterRules.MANUAL_XP_MULTIPLIER;
+        int slag = 0;
+        int melted = 0;
+        for (int i = 0; i < 40; i++) {
+            if (recipeId == null) {
+                menu(helper, smith, smelter).clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON);
+                recipeId = smelter.currentRecipeId();
+                helper.assertTrue(recipeId != null, "the iron has a recipe");
+            }
+            int outBefore = smelter.items().getItem(SmelterBlockEntity.OUTPUT).getCount();
+            int inBefore = smelter.items().getItem(SmelterBlockEntity.INPUT).getCount();
+            int xpBefore = ProgressionService.get(smith).smithingXp();
+            helper.assertTrue(smelter.finishManual(smith, 0.0, recipeId), "a botched melt still spends the metal");
+            int ingots = smelter.items().getItem(SmelterBlockEntity.OUTPUT).getCount() - outBefore;
+            int gained = ProgressionService.get(smith).smithingXp() - xpBefore;
+            helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == inBefore - 1, "one piece spent");
+            helper.assertTrue(ingots == 0 || ingots == 1, "never an extra ingot with a botched hand: " + ingots);
+            if (ingots == 0) {
+                slag++;
+                helper.assertTrue(gained == 0, "slag gives no XP: " + gained);
+            } else {
+                melted++;
+                helper.assertTrue(gained == expectedXp, "a good melt gives double XP: expected " + expectedXp + ", got " + gained);
+            }
+        }
+        helper.assertTrue(slag > 0 && melted > 0, "with 60 % slag over 40 melts both outcomes show: slag " + slag + ", melted " + melted);
+        helper.succeed();
+    }
+
+    /** Changing the metal while the automatic melt is under way restarts the progress. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void changingTheMetalRestartsTheMelt(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmelterBlockEntity smelter = placeSmelter(helper);
+        SmelterMenu menu = menu(helper, smith, smelter);
+        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON, 4));
+        smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL, 2));
+        helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.AUTO_BUTTON), "melting starts");
+        int guard = 0;
+        while (menu.meltProgress() <= 0 && guard++ < 2000) {
+            tick(helper, smelter, 1);
+        }
+        helper.assertTrue(menu.meltProgress() > 0, "the melt got going");
+        tick(helper, smelter, 20);
+        int time = melting(helper, Items.RAW_IRON).orElseThrow().time();
+        helper.assertTrue(menu.meltProgress() >= 20f / time, "well under way: " + menu.meltProgress());
+
+        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(ModItems.RAW_JAFFA.get(), 4));
+        tick(helper, smelter, 1);
+        helper.assertTrue(menu.meltProgress() <= 1f / melting(helper, ModItems.RAW_JAFFA.get()).orElseThrow().time() + 1e-6f,
+                "another metal starts from the beginning: " + menu.meltProgress());
         helper.succeed();
     }
 
@@ -182,6 +281,65 @@ public final class SmelterTests {
             int gained = ProgressionService.get(smith).smithingXp() - xpBefore;
             int expected = melting(helper, Items.RAW_IRON).orElseThrow().smithingXp() * SmelterRules.MANUAL_XP_MULTIPLIER;
             helper.assertTrue(gained == expected, "double smithing XP: expected " + expected + ", got " + gained);
+            helper.succeed();
+        });
+    }
+
+    /** Hot smelter with iron and the bellows started; the caller then changes things before the result arrives. */
+    private static SmelterMenu startedManualMelt(GameTestHelper helper, ServerPlayer smith, SmelterBlockEntity smelter) {
+        SmelterMenu menu = menu(helper, smith, smelter);
+        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON));
+        smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL, 2));
+        menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON); // cold: lights the fire
+        tick(helper, smelter, 200);
+        helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "hot now: the bellows start");
+        return menu;
+    }
+
+    /** Changing the metal during the minigame loses the melt: the result is for the metal that was there at the start. */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = SmelterRules.MIN_MANUAL_TICKS + 40)
+    public static void manualMeltRefusedIfTheMetalChanges(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmelterBlockEntity smelter = placeSmelter(helper);
+        SmelterMenu menu = startedManualMelt(helper, smith, smelter);
+        smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(ModItems.RAW_BLUE_ORICHALCUM.get()));
+        helper.runAtTickTime(SmelterRules.MIN_MANUAL_TICKS + 2, () -> {
+            helper.assertFalse(menu.finishManual(smith, 1.0), "another metal: the result is refused");
+            helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == 1, "the orichalcum is still there");
+            helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.OUTPUT).isEmpty(), "nothing came out");
+            helper.succeed();
+        });
+    }
+
+    /** A smelter that cooled below the melting temperature during the minigame gives nothing. */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = SmelterRules.MIN_MANUAL_TICKS + 40)
+    public static void manualMeltRefusedIfTheSmelterCooled(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmelterBlockEntity smelter = placeSmelter(helper);
+        SmelterMenu menu = startedManualMelt(helper, smith, smelter);
+        menu.clickMenuButton(smith, SmelterMenu.PUT_OUT_BUTTON);
+        tick(helper, smelter, 200);
+        helper.assertTrue(smelter.temperature() < 900, "cooled below the melting point of iron: " + smelter.temperature());
+        helper.runAtTickTime(SmelterRules.MIN_MANUAL_TICKS + 2, () -> {
+            helper.assertFalse(menu.finishManual(smith, 1.0), "cold: the result is refused");
+            helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == 1, "nothing consumed");
+            helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.OUTPUT).isEmpty(), "nothing came out");
+            helper.succeed();
+        });
+    }
+
+    /** The criterion is the heat, not the fire: a doused smelter that is still hot melts. */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = SmelterRules.MIN_MANUAL_TICKS + 40)
+    public static void manualMeltSurvivesThePutOutWhileHot(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmelterBlockEntity smelter = placeSmelter(helper);
+        SmelterMenu menu = startedManualMelt(helper, smith, smelter);
+        menu.clickMenuButton(smith, SmelterMenu.PUT_OUT_BUTTON);
+        tick(helper, smelter, 10);
+        helper.assertTrue(smelter.temperature() >= 900, "still hot: " + smelter.temperature());
+        helper.runAtTickTime(SmelterRules.MIN_MANUAL_TICKS + 2, () -> {
+            helper.assertTrue(menu.finishManual(smith, 1.0), "hot enough: accepted");
+            helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).isEmpty(), "the piece melted");
             helper.succeed();
         });
     }

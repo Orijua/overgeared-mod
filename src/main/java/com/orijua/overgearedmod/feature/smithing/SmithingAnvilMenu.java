@@ -13,6 +13,7 @@ import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.winston.KhanContest;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -85,6 +86,8 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
     private long autoStart = -1;
     private RecipeHolder<ForgingRecipe> autoRecipe;
     private long manualStart = -1;
+    /** Server only: the recipe the running minigame started with, so changed inputs are noticed. */
+    private ResourceLocation manualRecipe;
     /** Server only: how many items of each rating the running batch made, for the summary at the end. */
     private final int[] batchRatings = new int[ItemRating.values().length];
 
@@ -272,24 +275,31 @@ public class SmithingAnvilMenu extends AbstractContainerMenu {
             return false;
         }
         manualStart = smith.level().getGameTime();
+        manualRecipe = currentRecipe.id();
         return true;
     }
 
     /**
      * The minigame's result arrived. Its precision is clamped to 0-1, and refused if no minigame was started,
-     * the inputs no longer make anything, or it came back too fast (or too late) to be a real game.
+     * the inputs no longer make the recipe the game started with, or it came back too fast (or too late) to be a real game.
      */
     public boolean finishManual(ServerPlayer smith, double precision) {
         if (manualStart < 0 || currentRecipe == null || autoForging()) {
             return false;
         }
         long elapsed = smith.level().getGameTime() - manualStart;
+        ResourceLocation expected = manualRecipe;
         manualStart = -1;
-        if (!ForgingRules.plausibleManualDuration(elapsed)) {
+        manualRecipe = null;
+        if (!currentRecipe.id().equals(expected)) {
             return false;
         }
-        forge(smith, ForgingRules.manualSkillBonus(precision), ForgingRules.extraOptionChance(precision), ForgingRules.MANUAL_XP_MULTIPLIER,
-                precision);
+        if (!ForgingRules.plausibleManualDuration(elapsed)) {
+            smith.displayClientMessage(Component.translatable("message.overgearedmod.manual_refused"), true);
+            return false;
+        }
+        double p = ForgingRules.clampPrecision(precision);
+        forge(smith, ForgingRules.manualSkillBonus(p), ForgingRules.extraOptionChance(p), ForgingRules.MANUAL_XP_MULTIPLIER, p);
         return true;
     }
 

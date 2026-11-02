@@ -101,6 +101,66 @@ class ForgingMinigameTest {
     }
 
     @Test
+    void heatWeighsThirtyPercent() {
+        ForgingMinigame game = new ForgingMinigame(ZONE);
+        game.startHeating(0);
+        long now = heatTime(ZONE + 0.01);
+        game.stopHeating(now);
+        for (int i = 0; i < ForgingMinigame.STRIKES; i++) {
+            game.strike(now); // always at the edge: every strike scores 0
+        }
+        assertEquals(0.3, game.precision(), 1e-9, "perfect heat, worthless strikes");
+    }
+
+    @Test
+    void strikesWeighSeventyPercent() {
+        ForgingMinigame game = new ForgingMinigame(ZONE);
+        game.startHeating(0);
+        game.update(ForgingMinigame.HEAT_FULL_MS); // burnt: heat 0
+        long now = ForgingMinigame.HEAT_FULL_MS;
+        for (int i = 0; i < ForgingMinigame.STRIKES; i++) {
+            now += middle(i);
+            game.strike(now);
+        }
+        assertEquals(0.7, game.precision(), 1e-9, "burnt metal, perfect strikes");
+    }
+
+    /** Band 0.6 to 0.72; the tolerance outside it is 0.25 (private in the class). */
+    @Test
+    void heatOutsideTheBandFadesAndThenScoresNothing() {
+        ForgingMinigame over = new ForgingMinigame(ZONE);
+        over.startHeating(0);
+        over.stopHeating(2110); // 0.844: 0.124 over the band
+        assertEquals(1 - 0.124 / 0.25, over.heatScore(), 1e-9);
+
+        ForgingMinigame far = new ForgingMinigame(ZONE);
+        far.startHeating(0);
+        far.stopHeating(2450); // 0.98: 0.26 over, past the tolerance
+        assertEquals(0.0, far.heatScore(), 1e-9);
+
+        ForgingMinigame cold = new ForgingMinigame(ZONE);
+        cold.startHeating(0);
+        cold.stopHeating(750); // 0.3: 0.3 under the band
+        assertEquals(0.0, cold.heatScore(), 1e-9);
+    }
+
+    /** A game at the hammer phase with its first sweep starting at 1000 ms. */
+    private static ForgingMinigame hammerPhase() {
+        ForgingMinigame game = new ForgingMinigame(ZONE);
+        game.startHeating(0);
+        game.stopHeating(1000);
+        return game;
+    }
+
+    @Test
+    void strikesBetweenTheEdgeAndTheMiddleScoreInBetween() {
+        // First sweep: 1600 ms across and back, position = 2t/1600 on the way out.
+        assertEquals(0.5, hammerPhase().strike(1000 + 180), 1e-9, "position 0.225: distance 0.275");
+        assertEquals(1.0, hammerPhase().strike(1000 + 360), 1e-9, "position 0.45: exactly on the perfect margin");
+        assertEquals(0.9778, hammerPhase().strike(1000 + 352), 1e-4, "position 0.44: just outside it");
+    }
+
+    @Test
     void burntAndMashedGameScoresZero() {
         ForgingMinigame game = new ForgingMinigame(ZONE);
         game.startHeating(0);

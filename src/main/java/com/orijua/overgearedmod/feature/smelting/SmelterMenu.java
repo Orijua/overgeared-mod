@@ -2,6 +2,8 @@ package com.orijua.overgearedmod.feature.smelting;
 
 import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.core.registry.ModMenus;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
@@ -36,6 +38,9 @@ public class SmelterMenu extends AbstractContainerMenu {
     private final SmelterBlockEntity smelter;
     /** Server only: when the manual minigame began (game time), -1 when none is running. */
     private long manualStart = -1;
+    /** Server only: the recipe the running minigame started with, so a changed metal is noticed. */
+    @Nullable
+    private ResourceLocation manualRecipe;
 
     /** Client-side constructor, called by the MenuType when the server opens the menu. */
     public SmelterMenu(int containerId, Inventory inventory) {
@@ -126,6 +131,7 @@ public class SmelterMenu extends AbstractContainerMenu {
                     yield false;
                 }
                 manualStart = smith.level().getGameTime();
+                manualRecipe = smelter.currentRecipeId();
                 yield true;
             }
             default -> false;
@@ -134,12 +140,18 @@ public class SmelterMenu extends AbstractContainerMenu {
 
     /** The minigame's result arrived: believed only for a minigame started here, after a plausible time. */
     public boolean finishManual(ServerPlayer smith, double precision) {
-        if (smelter == null || manualStart < 0) {
+        if (smelter == null || manualStart < 0 || manualRecipe == null) {
             return false;
         }
         long elapsed = smith.level().getGameTime() - manualStart;
+        ResourceLocation expected = manualRecipe;
         manualStart = -1;
-        return SmelterRules.plausibleManualDuration(elapsed) && smelter.finishManual(smith, precision);
+        manualRecipe = null;
+        if (!SmelterRules.plausibleManualDuration(elapsed)) {
+            smith.displayClientMessage(Component.translatable("message.overgearedmod.manual_refused"), true);
+            return false;
+        }
+        return smelter.finishManual(smith, precision, expected);
     }
 
     @Override

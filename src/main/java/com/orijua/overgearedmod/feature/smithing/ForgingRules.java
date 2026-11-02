@@ -85,6 +85,7 @@ public final class ForgingRules {
     public static final double GREAT_SUCCESS_BASE = 0.01;
     public static final double GREAT_SUCCESS_PER_SMITHING_LEVEL = 0.0004;
     public static final double GREAT_SUCCESS_PER_DEXTERITY = 0.0001;
+    /** Cap of the skill part; a precise manual forge then doubles it (up to 0.16). */
     public static final double MAX_GREAT_SUCCESS = 0.08;
     /** A manual forge this precise or better doubles it. */
     public static final double GREAT_SUCCESS_MANUAL_FROM = 0.8;
