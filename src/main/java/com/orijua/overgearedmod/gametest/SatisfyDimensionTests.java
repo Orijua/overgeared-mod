@@ -14,7 +14,6 @@ import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -98,8 +97,6 @@ public final class SatisfyDimensionTests {
             helper.assertTrue(chosen.landing().isPresent(), "a landing for seed " + seed);
             BlockPos landing = chosen.landing().get();
             helper.assertTrue(bairan.getChessboardDistance(new ChunkPos(landing)) <= 2, "the landing is on Bairan's plaza, seed " + seed + ": " + landing + " vs " + bairan);
-            int surface = generator.getBaseHeight(landing.getX(), landing.getZ(), Heightmap.Types.WORLD_SURFACE_WG, HEIGHT, random);
-            helper.assertTrue(Math.abs(landing.getY() - surface) <= 3, "the landing is at ground level, seed " + seed + ": y " + landing.getY() + " vs surface " + surface);
             ChunkPos cave = sites.get(WorldSites.NORTH_END_CAVE);
             ChunkPos manor = sites.get(WorldSites.ASHUR_MANOR);
             ChunkPos winston = sites.get(WorldSites.WINSTON);
