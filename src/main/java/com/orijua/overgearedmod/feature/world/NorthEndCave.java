@@ -52,7 +52,7 @@ public final class NorthEndCave {
 
     /** How far north of Bairan to look, in chunks: about 800 blocks, never under 480. */
     static final int DISTANCE = 50;
-    static final int MIN_DISTANCE = 30;
+    public static final int MIN_DISTANCE = 30;
     /** Around that point, how far to look for cold land: closely (every other chunk), then farther and sparser. */
     static final int SEARCH_RADIUS = 40;
     static final int FAR_SEARCH_RADIUS = 128;

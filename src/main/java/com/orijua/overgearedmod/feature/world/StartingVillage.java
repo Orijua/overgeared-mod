@@ -2,16 +2,12 @@ package com.orijua.overgearedmod.feature.world;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.worldgen.features.MiscOverworldFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -25,127 +21,96 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * Bairan as the world's starting village. When a new world is created, it looks for the nearest place around the
- * usual spawn where the whole village fits on dry land in one of its biomes, saves it, and makes that the spawn: the
- * player starts on the square by the well, as Grid starts in Bairan. Bairan then generates there with the terrain,
- * like any village ({@link WorldSitePlacement}). The Northern End Cave's site is chosen at the same time, far to the north
- * ({@link NorthEndCave}), Earl Ashur's manor near it ({@link AshurManor}) and Winston farther off ({@link Winston}); worlds
- * that already had Bairan get theirs the next time they load.
+ * Bairan, the starting village of the Satisfy dimension. When the dimension first loads in a new world, it looks for
+ * the nearest place around the middle of the lore map ({@link SatisfyMap}: the dimension's (0, 0) is Bairan's cell)
+ * where the whole village fits on dry land in one of its biomes, and saves it with the landing spot on its square, by
+ * the well, where a player entering Satisfy starts, as Grid starts in Bairan. Bairan then generates there with the
+ * terrain, like any village ({@link WorldSitePlacement}). The Northern End Cave's site is chosen at the same time, far
+ * to the north ({@link NorthEndCave}), Earl Ashur's manor near Bairan ({@link AshurManor}) and Winston farther off
+ * ({@link Winston}).
  * <p>
- * Worlds created before this have no site, so no Bairan. So do worlds whose generator doesn't use the structure (a
- * superflat preset, for example) and the rare world with no fitting land nearby; those keep the vanilla spawn.
+ * The search runs only once per world (it is remembered even if it finds nothing). Worlds created before the dimension
+ * have no site, so no Bairan. So do worlds whose generator doesn't use the structure and the rare world with no fitting
+ * land near the middle of the map.
  */
 public final class StartingVillage {
-    /** How far around the usual spawn to look: 32 chunks is 512 blocks each way. */
+    /** How far around the middle of the map to look: 32 chunks is 512 blocks each way. */
     static final int SEARCH_RADIUS = 32;
     private static final ResourceKey<Structure> VILLAGE = ResourceKey.create(Registries.STRUCTURE, Bairan.STRUCTURE);
 
     private StartingVillage() {
     }
 
-    /** Where the village is and where the player starts. */
+    /** Where the village is and where the player lands. */
     public record Site(ChunkPos chunk, BlockPos spawn) {
     }
 
     public static void register(IEventBus gameBus) {
         gameBus.addListener(StartingVillage::onLevelLoad);
-        gameBus.addListener(StartingVillage::onCreateSpawn);
         gameBus.addListener(StartingVillage::onServerStopped);
     }
 
     /**
-     * An existing world: its saved sites have to be known before its chunks generate. A world with Bairan but from
-     * before the cave or the manor gets their sites now: the cave far to the north, where nothing has generated yet,
-     * and the manor farther from Bairan than usual, past the land players have most likely explored.
+     * The real world's dimensions place no site. The Satisfy dimension: its saved sites have to be known before its
+     * chunks generate, and a new world gets them now.
      */
     private static void onLevelLoad(LevelEvent.Load event) {
-        if (event.getLevel() instanceof ServerLevel level && level.dimension() == Level.OVERWORLD) {
-            WorldSitesData data = WorldSitesData.get(level);
-            data.sites().forEach((name, site) -> WorldSites.remember(level.getSeed(), name, site));
-            data.site(WorldSites.BAIRAN).ifPresent(bairan -> {
-                if (data.site(WorldSites.NORTH_END_CAVE).isEmpty()) {
-                    chooseCave(level, bairan);
-                }
-                if (data.site(WorldSites.ASHUR_MANOR).isEmpty()) {
-                    chooseManor(level, bairan, AshurManor.LATE_MIN_DISTANCE, AshurManor.LATE_MAX_DISTANCE);
-                }
-                if (data.site(WorldSites.WINSTON).isEmpty()) {
-                    chooseWinston(level, bairan, Winston.LATE_MIN_DISTANCE, Winston.LATE_MAX_DISTANCE);
-                }
-            });
-        }
-    }
-
-    /** Winston keeps away from the cave and the manor, which are chosen first. */
-    private static void chooseWinston(ServerLevel level, ChunkPos bairan, int minDistance, int maxDistance) {
-        ServerChunkCache chunks = level.getChunkSource();
-        List<ChunkPos> taken = Stream.of(WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR)
-                .flatMap(site -> WorldSites.siteFor(level.getSeed(), site).stream()).toList();
-        Winston.findSite(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(),
-                level.getSeed(), level, bairan, minDistance, maxDistance, taken).ifPresent(winston -> {
-            WorldSites.remember(level.getSeed(), WorldSites.WINSTON, winston);
-            WorldSitesData.get(level).setSite(WorldSites.WINSTON, winston);
-            Overgearedmod.LOGGER.info("Winston at chunk {}", winston);
-        });
-    }
-
-    private static void chooseManor(ServerLevel level, ChunkPos bairan, int minDistance, int maxDistance) {
-        ServerChunkCache chunks = level.getChunkSource();
-        AshurManor.findSite(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(),
-                level.getSeed(), level, bairan, minDistance, maxDistance).ifPresent(manor -> {
-            WorldSites.remember(level.getSeed(), WorldSites.ASHUR_MANOR, manor);
-            WorldSitesData.get(level).setSite(WorldSites.ASHUR_MANOR, manor);
-            Overgearedmod.LOGGER.info("Earl Ashur's manor at chunk {}", manor);
-        });
-    }
-
-    private static void chooseCave(ServerLevel level, ChunkPos bairan) {
-        ServerChunkCache chunks = level.getChunkSource();
-        NorthEndCave.findSite(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(),
-                level.getSeed(), level, bairan).ifPresent(cave -> {
-            WorldSites.remember(level.getSeed(), WorldSites.NORTH_END_CAVE, cave);
-            WorldSitesData.get(level).setSite(WorldSites.NORTH_END_CAVE, cave);
-            Overgearedmod.LOGGER.info("Northern End Cave at chunk {} ({} blocks north of Bairan)", cave, (bairan.z - cave.z) * 16);
-        });
-    }
-
-    /** A new world: choose the site and spawn there instead of the vanilla spawn. */
-    private static void onCreateSpawn(LevelEvent.CreateSpawnPosition event) {
-        if (!(event.getLevel() instanceof ServerLevel level) || level.dimension() != Level.OVERWORLD) {
+        if (!(event.getLevel() instanceof ServerLevel level)) {
             return;
         }
-        ServerChunkCache chunks = level.getChunkSource();
-        Optional<Holder.Reference<Structure>> village = level.registryAccess().registryOrThrow(Registries.STRUCTURE).getHolder(VILLAGE);
-        if (village.isEmpty() || chunks.getGeneratorState().getPlacementsForStructure(village.get()).isEmpty()) {
-            return; // this world's generator never places it
-        }
-        ChunkPos usualSpawn = new ChunkPos(chunks.randomState().sampler().findSpawnPosition());
-        Optional<Site> site = findSite(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(),
-                level.getSeed(), level, usualSpawn);
-        if (site.isEmpty()) {
-            Overgearedmod.LOGGER.warn("No room for Bairan within {} chunks of spawn; this world has no starting village", SEARCH_RADIUS);
+        if (!Satisfy.is(level)) {
+            WorldSites.exclude(level.getChunkSource().randomState());
             return;
         }
-        WorldSites.remember(level.getSeed(), WorldSites.BAIRAN, site.get().chunk());
-        WorldSitesData.get(level).setSite(WorldSites.BAIRAN, site.get().chunk());
-        chooseCave(level, site.get().chunk());
-        chooseManor(level, site.get().chunk(), AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE);
-        chooseWinston(level, site.get().chunk(), Winston.MIN_DISTANCE, Winston.MAX_DISTANCE);
-        event.getSettings().setSpawn(site.get().spawn(), 0.0f);
-        // Start by the well, not anywhere within 10 blocks of it (a roof, the mine).
-        level.getGameRules().getRule(GameRules.RULE_SPAWN_RADIUS).set(0, level.getServer());
-        // Cancelling skips the vanilla spawn search, and with it the bonus chest: place it the same way.
-        if (level.getServer().getWorldData().worldGenOptions().generateBonusChest()) {
-            level.registryAccess().registry(Registries.CONFIGURED_FEATURE)
-                    .flatMap(features -> features.getHolder(MiscOverworldFeatures.BONUS_CHEST))
-                    .ifPresent(chest -> chest.value().place(level, chunks.getGenerator(), level.random, site.get().spawn()));
+        WorldSitesData data = WorldSitesData.get(level.getServer().overworld());
+        long seed = level.getSeed();
+        if (!data.chosen()) {
+            ServerChunkCache chunks = level.getChunkSource();
+            Chosen chosen = choose(level.registryAccess(), chunks.getGenerator(), chunks.randomState(), level.getStructureManager(), seed, level);
+            chosen.sites().forEach(data::setSite);
+            chosen.landing().ifPresent(data::setLanding);
+            chosen.sites().forEach((name, site) -> Overgearedmod.LOGGER.info("Satisfy site {} at chunk {}", name, site));
+            data.markChosen();
         }
-        event.setCanceled(true);
+        data.sites().forEach((name, site) -> WorldSites.remember(seed, name, site));
+        data.landing().ifPresent(landing -> WorldSites.rememberLanding(seed, landing));
+    }
+
+    /** The sites a new Satisfy world gets (none if Bairan has no room), and where a player lands in Bairan. */
+    public record Chosen(Map<String, ChunkPos> sites, Optional<BlockPos> landing) {
+    }
+
+    /**
+     * Chooses every site of a new world, Bairan first and the rest relative to it: the cave far to the north, the manor
+     * near it and Winston 30-50 chunks off, away from the other two. Only reads the terrain noise: nothing is placed.
+     */
+    public static Chosen choose(RegistryAccess registries, ChunkGenerator generator, RandomState random, StructureTemplateManager templates,
+                                long seed, LevelHeightAccessor height) {
+        Optional<Site> bairan = findSite(registries, generator, random, templates, seed, height, new ChunkPos(0, 0));
+        if (bairan.isEmpty()) {
+            Overgearedmod.LOGGER.warn("No room for Bairan within {} chunks of the middle of the map; this world has no starting village", SEARCH_RADIUS);
+            return new Chosen(Map.of(), Optional.empty());
+        }
+        ChunkPos village = bairan.get().chunk();
+        Map<String, ChunkPos> sites = new LinkedHashMap<>();
+        sites.put(WorldSites.BAIRAN, village);
+        NorthEndCave.findSite(registries, generator, random, templates, seed, height, village)
+                .ifPresent(cave -> sites.put(WorldSites.NORTH_END_CAVE, cave));
+        AshurManor.findSite(registries, generator, random, templates, seed, height, village, AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE)
+                .ifPresent(manor -> sites.put(WorldSites.ASHUR_MANOR, manor));
+        // Winston keeps away from the cave and the manor.
+        List<ChunkPos> taken = Stream.of(WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR).map(sites::get).filter(Objects::nonNull).toList();
+        Winston.findSite(registries, generator, random, templates, seed, height, village, Winston.MIN_DISTANCE, Winston.MAX_DISTANCE, taken)
+                .ifPresent(winston -> sites.put(WorldSites.WINSTON, winston));
+        return new Chosen(sites, Optional.of(bairan.get().spawn()));
     }
 
     private static void onServerStopped(ServerStoppedEvent event) {

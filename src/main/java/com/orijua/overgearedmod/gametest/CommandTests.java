@@ -11,6 +11,7 @@ import com.orijua.overgearedmod.feature.pagma.PagmaStory;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -126,14 +127,17 @@ public final class CommandTests {
         Optional<ChunkPos> bairan = WorldSites.siteFor(seed, WorldSites.BAIRAN);
         Optional<ChunkPos> cave = WorldSites.siteFor(seed, WorldSites.NORTH_END_CAVE);
         WorldSites.forget(seed, WorldSites.NORTH_END_CAVE);
+        Optional<BlockPos> landingBefore = WorldSites.landingFor(seed);
+        Satisfy.standIn(level); // the test server has no Satisfy dimension
         WorldSites.remember(seed, WorldSites.BAIRAN, new ChunkPos(level.getSharedSpawnPos()));
+        WorldSites.rememberLanding(seed, level.getSharedSpawnPos());
         try {
             helper.assertTrue(SiteLanding.find(level, WorldSites.NORTH_END_CAVE).isEmpty(), "no cave in this world: nowhere to go");
             helper.assertTrue(SiteLanding.find(level, "nowhere").isEmpty(), "an unknown place");
 
             BlockPos landing = SiteLanding.find(level, WorldSites.BAIRAN).orElseThrow();
             BlockPos spawn = level.getSharedSpawnPos();
-            helper.assertTrue(landing.getX() == spawn.getX() && landing.getZ() == spawn.getZ(), "Bairan: its plaza, the world spawn");
+            helper.assertTrue(landing.getX() == spawn.getX() && landing.getZ() == spawn.getZ(), "Bairan: its plaza, where the landing was saved");
             helper.assertTrue(level.getBlockState(landing).getCollisionShape(level, landing).isEmpty()
                     && level.getBlockState(landing.above()).getCollisionShape(level, landing.above()).isEmpty(), "room to stand");
             helper.assertFalse(level.getBlockState(landing.below()).isAir(), "on the ground");
@@ -143,6 +147,8 @@ public final class CommandTests {
         } finally {
             bairan.ifPresentOrElse(chunk -> WorldSites.remember(seed, WorldSites.BAIRAN, chunk), () -> WorldSites.forget(seed, WorldSites.BAIRAN));
             cave.ifPresent(chunk -> WorldSites.remember(seed, WorldSites.NORTH_END_CAVE, chunk));
+            Satisfy.standIn(null);
+            landingBefore.ifPresentOrElse(pos -> WorldSites.rememberLanding(seed, pos), () -> WorldSites.forgetLanding(seed));
         }
         helper.succeed();
     }

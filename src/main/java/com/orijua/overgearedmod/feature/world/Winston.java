@@ -56,8 +56,6 @@ public final class Winston {
     /** How far from Bairan, in chunks (the nearest that fits wins); farther in worlds that existed before Winston. */
     public static final int MIN_DISTANCE = 30;
     public static final int MAX_DISTANCE = 50;
-    static final int LATE_MIN_DISTANCE = 45;
-    static final int LATE_MAX_DISTANCE = 65;
     /** Never this close, in chunks, to another one-per-world place (the cave can lie in the same ring). */
     private static final int KEEP_AWAY = 8;
 

@@ -1,14 +1,20 @@
 package com.orijua.overgearedmod.feature.world;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.levelgen.RandomState;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The one-per-world structures' sites of each running world, by seed and site name: {@link WorldSitePlacement} only knows
  * the seed. They are chosen when the world is created ({@link StartingVillage}) and saved with it ({@link WorldSitesData}).
+ * All of them are in the Satisfy dimension; the other dimensions are {@linkplain #exclude excluded}.
  */
 public final class WorldSites {
     /** Bairan, the starting village. */
@@ -21,6 +27,10 @@ public final class WorldSites {
     public static final String WINSTON = "winston";
 
     private static final Map<Long, Map<String, ChunkPos>> SITES = new ConcurrentHashMap<>();
+    /** Where a player lands in Bairan (on its plaza), by seed. */
+    private static final Map<Long, BlockPos> LANDINGS = new ConcurrentHashMap<>();
+    /** The generators of the dimensions that are not Satisfy; they never place a site. Weak: a generator may go away. */
+    private static final Set<RandomState> EXCLUDED = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
     private WorldSites() {
     }
@@ -41,7 +51,30 @@ public final class WorldSites {
         }
     }
 
+    public static Optional<BlockPos> landingFor(long seed) {
+        return Optional.ofNullable(LANDINGS.get(seed));
+    }
+
+    public static void rememberLanding(long seed, BlockPos landing) {
+        LANDINGS.put(seed, landing);
+    }
+
+    public static void forgetLanding(long seed) {
+        LANDINGS.remove(seed);
+    }
+
+    /** The overworld, Nether and End are the real world: their generators (by random state) place no site. */
+    public static void exclude(RandomState generator) {
+        EXCLUDED.add(generator);
+    }
+
+    static boolean isExcluded(RandomState generator) {
+        return EXCLUDED.contains(generator);
+    }
+
     static void clear() {
         SITES.clear();
+        LANDINGS.clear();
+        EXCLUDED.clear();
     }
 }

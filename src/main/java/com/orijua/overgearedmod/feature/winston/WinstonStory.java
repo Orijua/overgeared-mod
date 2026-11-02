@@ -12,6 +12,7 @@ import com.orijua.overgearedmod.feature.quest.QuestFailedEvent;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.quest.goal.MilestoneGoal;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -247,8 +248,9 @@ public final class WinstonStory {
 
     /** An explorer map centered on the world's Winston, with the city marked; empty if the world has none. */
     static Optional<ItemStack> winstonMap(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
-        if (level.dimension() != Level.OVERWORLD) {
+        // The map shows the Satisfy dimension, wherever the player is when they get it.
+        ServerLevel level = Satisfy.of(player.server).orElse(null);
+        if (level == null) {
             return Optional.empty();
         }
         return WorldSites.siteFor(level.getSeed(), WorldSites.WINSTON).map(chunk -> {

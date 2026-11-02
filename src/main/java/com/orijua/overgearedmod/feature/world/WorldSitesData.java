@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.feature.world;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -12,25 +13,47 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The world's structure sites, saved with the overworld so they survive restarts. The file keeps its first name
- * (data/overgearedmod_starting_village.dat), and Bairan its old "site" key, so worlds from before the cave keep their Bairan.
+ * The Satisfy dimension's structure sites and Bairan's landing spot, saved with the overworld (the server's main level)
+ * so they survive restarts. Worlds from before the dimension have no such file, so no Satisfy sites: new worlds only.
  */
 final class WorldSitesData extends SavedData {
-    private static final String NAME = Overgearedmod.MODID + "_starting_village";
-    private static final String LEGACY_BAIRAN = "site";
+    private static final String NAME = Overgearedmod.MODID + "_satisfy_sites";
+    private static final String SITES = "sites";
+    private static final String LANDING = "landing";
+    private static final String CHOSEN = "chosen";
 
     private final Map<String, ChunkPos> sites = new LinkedHashMap<>();
+    private BlockPos landing;
+    private boolean chosen;
 
+    /** {@code overworld} is where the file lives, whatever dimension the sites are in. */
     static WorldSitesData get(ServerLevel overworld) {
         return overworld.getDataStorage().computeIfAbsent(new SavedData.Factory<>(WorldSitesData::new, WorldSitesData::load), NAME);
     }
 
-    private static WorldSitesData load(CompoundTag tag, HolderLookup.Provider registries) {
+    static WorldSitesData load(CompoundTag tag, HolderLookup.Provider registries) {
         WorldSitesData data = new WorldSitesData();
-        for (String key : tag.getAllKeys()) {
-            data.sites.put(key.equals(LEGACY_BAIRAN) ? WorldSites.BAIRAN : key, new ChunkPos(tag.getLong(key)));
+        data.chosen = tag.getBoolean(CHOSEN);
+        CompoundTag saved = tag.getCompound(SITES);
+        for (String key : saved.getAllKeys()) {
+            data.sites.put(key, new ChunkPos(saved.getLong(key)));
         }
+        if (tag.contains(LANDING)) {
+            data.landing = BlockPos.of(tag.getLong(LANDING));
+        }
+        // Worlds saved before the flag existed that already have sites count as chosen.
+        data.chosen |= !data.sites.isEmpty();
         return data;
+    }
+
+    /** Whether the site search already ran for this world (even if it found nothing). */
+    boolean chosen() {
+        return chosen;
+    }
+
+    void markChosen() {
+        chosen = true;
+        setDirty();
     }
 
     Map<String, ChunkPos> sites() {
@@ -46,9 +69,24 @@ final class WorldSitesData extends SavedData {
         setDirty();
     }
 
+    Optional<BlockPos> landing() {
+        return Optional.ofNullable(landing);
+    }
+
+    void setLanding(BlockPos landing) {
+        this.landing = landing;
+        setDirty();
+    }
+
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider registries) {
-        sites.forEach((name, site) -> tag.putLong(name.equals(WorldSites.BAIRAN) ? LEGACY_BAIRAN : name, site.toLong()));
+        CompoundTag saved = new CompoundTag();
+        sites.forEach((name, site) -> saved.putLong(name, site.toLong()));
+        tag.put(SITES, saved);
+        tag.putBoolean(CHOSEN, chosen);
+        if (landing != null) {
+            tag.putLong(LANDING, landing.asLong());
+        }
         return tag;
     }
 }
