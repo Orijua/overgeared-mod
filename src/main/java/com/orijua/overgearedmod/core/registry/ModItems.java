@@ -47,13 +47,14 @@ public final class ModItems {
             () -> new SwordItem(Tiers.IRON, new Item.Properties()
                     .attributes(SwordItem.createAttributes(Tiers.IRON, 3, -2.4f))));
 
-    // Grid's legendary sword (Extras). Forged from diamonds; stronger than a diamond sword but needs level 10 and 8 STR.
+    // Canon name "Sword of Self-transcendence" (ch. 63; the id keeps its old name); the stats and the recipe are own
+    // design. Forged from diamonds; stronger than a diamond sword but needs level 10 and 8 STR.
     public static final DeferredItem<SwordItem> GRID_LEGENDARY_SWORD = ITEMS.register("grid_legendary_sword",
             () -> new SwordItem(Tiers.DIAMOND, new Item.Properties()
                     .attributes(SwordItem.createAttributes(Tiers.DIAMOND, 5, -2.4f))));
 
     // Fracaso (canon cap. 11): Grid's first legendary work, a blue orichalcum greatsword whose requirements nobody meets.
-    // Forged only from its blueprint, which the Legendary Smith Successor quest gives and the forge uses up.
+    // Forged only from its blueprint, which the Pagma's Successor quest gives and the forge uses up.
     public static final DeferredItem<SwordItem> FRACASO_SWORD = ITEMS.register("fracaso_sword",
             () -> new SwordItem(Tiers.NETHERITE, new Item.Properties()
                     .attributes(SwordItem.createAttributes(Tiers.NETHERITE, 7, -2.8f))));

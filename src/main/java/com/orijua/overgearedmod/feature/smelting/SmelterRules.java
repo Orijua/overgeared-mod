@@ -26,8 +26,11 @@ public final class SmelterRules {
     public static final double SLAG_BELOW = 0.4;
     public static final double MAX_SLAG_CHANCE = 0.6;
     public static final int MANUAL_XP_MULTIPLIER = 2;
-    /** A manual melt result is only believed between these many ticks after it began (the minigame lasts 6 s). */
-    public static final int MIN_MANUAL_TICKS = 100;
+    /**
+     * A manual melt result is only believed between these many ticks after it began. The minigame lasts 6 s (120 ticks
+     * at 20 TPS); the minimum is half of that, so a server down to about 10 TPS still accepts a real game.
+     */
+    public static final int MIN_MANUAL_TICKS = 60;
     public static final int MAX_MANUAL_TICKS = 20 * 120;
 
     private SmelterRules() {
@@ -61,6 +64,17 @@ public final class SmelterRules {
     public static double slagChance(double precision) {
         double p = clampPrecision(precision);
         return p >= SLAG_BELOW ? 0 : (SLAG_BELOW - p) / SLAG_BELOW * MAX_SLAG_CHANCE;
+    }
+
+    /**
+     * Ingots a manual melt gives for a precision and a roll in [0, 1): 0 (slag) under the slag chance, 2 under the
+     * extra chance, 1 otherwise. The slag chance is checked first.
+     */
+    public static int manualIngots(double precision, double roll) {
+        if (roll < slagChance(precision)) {
+            return 0;
+        }
+        return roll < manualExtraChance(precision) ? 2 : 1;
     }
 
     /** Whatever the client sent, as a number from 0 to 1 (NaN counts as 0). */

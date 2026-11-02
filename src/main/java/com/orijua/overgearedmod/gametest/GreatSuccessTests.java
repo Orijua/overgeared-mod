@@ -51,6 +51,19 @@ public final class GreatSuccessTests {
         helper.succeed();
     }
 
+    /** A roll already at the recipe's top has nowhere to go up: a sure great success still doesn't happen. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void noGreatSuccessWhenTheRollIsAlreadyTheTop(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ForgingExtras onlyNormal = new ForgingExtras(Optional.empty(), ItemRating.NORMAL, ItemRating.NORMAL, List.of());
+        for (int i = 0; i < 30; i++) {
+            ItemStack sword = new ItemStack(Items.IRON_SWORD);
+            helper.assertFalse(EquipmentService.stampForged(player, sword, Optional.empty(), onlyNormal, 0, 0, 1.0), "nothing above Normal to raise to");
+            helper.assertTrue(sword.get(ModDataComponents.ITEM_RATING) == ItemRating.NORMAL, "still Normal");
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = TestSupport.EMPTY)
     public static void aGreatSuccessIsCounted(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);

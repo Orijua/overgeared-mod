@@ -32,6 +32,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
@@ -88,6 +89,12 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     private int melterLevel;
     @Nullable
     private RecipeHolder<MeltingRecipe> currentRecipe;
+    /** The metal the tick last looked a recipe up for, so the lookup repeats only when the input changes. */
+    private ItemStack lastLookup = ItemStack.EMPTY;
+    private boolean lookedUp;
+    /** The recipe the automatic melt is working on; a different one restarts the progress. Not saved. */
+    @Nullable
+    private ResourceLocation meltingRecipeId;
 
     private final ContainerData data = new ContainerData() {
         @Override
@@ -167,7 +174,13 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
      * nothing burns, the heat drops.
      */
     private void tick(ServerLevel level, BlockPos pos, BlockState state) {
-        currentRecipe = findRecipe(level);
+        ItemStack input = items.getItem(INPUT);
+        if (!lookedUp || !ItemStack.isSameItemSameComponents(input, lastLookup)) {
+            currentRecipe = findRecipe(level);
+            lastLookup = input.copy();
+            lookedUp = true;
+        }
+        int before = Objects.hash(temperature, fuelHeat, burnTime, burnTotal, progress, melting, fireOn);
         if (burnTime > 0) {
             burnTime = Math.max(0, burnTime - SmelterRules.fuelTicksPerTick(temperature, fuelHeat));
         }
@@ -183,7 +196,9 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         if (state.getValue(SmelterBlock.LIT) != burning) {
             level.setBlock(pos, state.setValue(SmelterBlock.LIT, burning), 3);
         }
-        setChanged();
+        if (before != Objects.hash(temperature, fuelHeat, burnTime, burnTotal, progress, melting, fireOn)) {
+            setChanged(); // the slots mark themselves through the container
+        }
     }
 
     @Nullable
@@ -217,6 +232,10 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
             stopMelting();
             return;
         }
+        if (!currentRecipe.id().equals(meltingRecipeId)) {
+            progress = 0; // another metal: the half-melted piece doesn't carry over
+            meltingRecipeId = currentRecipe.id();
+        }
         MeltingRecipe recipe = currentRecipe.value();
         if (temperature < recipe.minTemperature() || !hasRoomFor(recipe, 2)) {
             return;
@@ -232,6 +251,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     private void stopMelting() {
         melting = false;
         progress = 0;
+        meltingRecipeId = null;
         melter = null;
     }
 
@@ -241,7 +261,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
                 && output.getCount() + ingots <= output.getMaxStackSize();
     }
 
-    /** Spends one piece of metal and puts {@code ingots} (0 for slag) in the output; {@code smith}, if any, gets the XP. */
+    /** Spends one piece of metal and puts {@code ingots} (0 for slag) in the output; {@code smith}, if any, gets the XP (none for slag). */
     private void meltOne(ServerLevel level, MeltingRecipe recipe, int ingots, int xpMultiplier, @Nullable ServerPlayer smith) {
         items.getItem(INPUT).shrink(1);
         if (ingots > 0) {
@@ -252,7 +272,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
                 output.grow(ingots);
             }
         }
-        if (smith != null) {
+        if (smith != null && ingots > 0) { // slag gives no ingot and so no XP
             ProgressionService.addSmithingXp(smith, recipe.smithingXp() * xpMultiplier);
         }
         level.playSound(null, worldPosition, ingots > 0 ? SoundEvents.LAVA_POP : SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.8f, 1.0f);
@@ -354,27 +374,35 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         return true;
     }
 
+    /** The checks of a manual melt without messages: skill, heat (not the fire: a doused smelter still hot melts) and room. */
+    private boolean canMeltQuietly(ServerPlayer smith, MeltingRecipe recipe) {
+        return ProgressionService.effectiveSmithingLevel(smith) >= recipe.smithingLevel()
+                && temperature >= recipe.minTemperature() && hasRoomFor(recipe, 2);
+    }
+
+    /** The id of the recipe the input currently matches, null when none. */
+    @Nullable
+    public ResourceLocation currentRecipeId() {
+        return currentRecipe == null ? null : currentRecipe.id();
+    }
+
     /**
      * The bellows minigame's result: one piece of metal melts, with a chance of an extra ingot for a good hand or of
      * slag for a bad one, and double smithing XP. The precision is clamped; the menu already checked the timing.
      */
-    public boolean finishManual(ServerPlayer smith, double precision) {
+    public boolean finishManual(ServerPlayer smith, double precision, @Nullable ResourceLocation expectedRecipe) {
         currentRecipe = findRecipe(smith.level());
-        if (currentRecipe == null || melting || !hasRoomFor(currentRecipe.value(), 2)) {
+        if (currentRecipe == null || melting || !currentRecipe.id().equals(expectedRecipe) || !canMeltQuietly(smith, currentRecipe.value())) {
+            smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_manual_lost"), true);
             return false;
         }
         ServerLevel level = smith.serverLevel();
-        double roll = level.random.nextDouble();
-        int ingots;
-        if (roll < SmelterRules.slagChance(precision)) {
-            ingots = 0;
+        int ingots = SmelterRules.manualIngots(precision, level.random.nextDouble());
+        if (ingots == 0) {
             smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_slag"), true);
-        } else if (roll < SmelterRules.manualExtraChance(precision)) {
-            ingots = 2;
+        } else if (ingots == 2) {
             smith.displayClientMessage(Component.translatable("message.overgearedmod.smelter_extra"), true);
             GoalTracker.milestone(smith, BELLOWS_EXTRA);
-        } else {
-            ingots = 1;
         }
         meltOne(level, currentRecipe.value(), ingots, SmelterRules.MANUAL_XP_MULTIPLIER, smith);
         return true;

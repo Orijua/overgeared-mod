@@ -123,10 +123,19 @@ public final class FracasoTests {
         ServerPlayer smith = TestSupport.fakePlayer(helper);
         ClassService.grant(smith, SUCCESSOR);
         ForgingRecipe recipe = fracasoRecipe(helper);
+        // Even a sure extra option changes nothing: Fracaso only carries its fixed options.
+        double surelyAnExtraOption = 1.0;
+        int uniques = 0;
+        int legendaries = 0;
         for (int i = 0; i < 100; i++) {
             ItemStack sword = recipe.result().copy();
-            EquipmentService.stampForged(smith, sword, recipe.requirements(), recipe.extras(), 0, 1);
+            EquipmentService.stampForged(smith, sword, recipe.requirements(), recipe.extras(), 0, surelyAnExtraOption);
             ItemRating rating = sword.get(ModDataComponents.ITEM_RATING);
+            if (rating == ItemRating.UNIQUE) {
+                uniques++;
+            } else if (rating == ItemRating.LEGENDARY) {
+                legendaries++;
+            }
             helper.assertTrue(rating == ItemRating.UNIQUE || rating == ItemRating.LEGENDARY, "got " + rating);
             List<ResourceLocation> options = sword.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())
                     .stream().map(RolledOption::option).toList();
@@ -136,6 +145,7 @@ public final class FracasoTests {
             helper.assertTrue(options.size() == CANON_EFFECTS.size() + (rating == ItemRating.LEGENDARY ? 1 : 0),
                     "fixed options only, no random extra: " + options);
         }
+        helper.assertTrue(uniques > 0 && legendaries > 0, "both ratings showed up in 100 swords: " + uniques + " Unique, " + legendaries + " Legendary");
         helper.assertTrue(fracasoRecipe(helper).requirements().filter(r -> r.level() == 300
                 && r.stats().get(StatType.STRENGTH) == 5000).isPresent(), "canon requirements: level 300, 5000 STR");
         helper.succeed();

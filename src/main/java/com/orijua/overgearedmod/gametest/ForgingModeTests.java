@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.core.registry.ModRecipes;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.progression.StatType;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.smithing.ForgingRecipeInput;
@@ -78,6 +79,11 @@ public final class ForgingModeTests {
             helper.assertTrue(menu.autoForging() && menu.autoProgress() > 0 && menu.autoProgress() < 1, "half way: " + menu.autoProgress());
             helper.assertTrue(inputsUntouched(menu) && !hasForgedJaffaSword(smith), "nothing is spent before it finishes");
         });
+        helper.runAtTickTime(NOVICE_TICKS - 2, () -> {
+            menu.broadcastChanges();
+            helper.assertTrue(menu.autoForging(), "just before its time it is still forging");
+            helper.assertTrue(!hasForgedJaffaSword(smith) && inputsUntouched(menu), "and has given nothing yet");
+        });
         helper.runAtTickTime(NOVICE_TICKS + 5, () -> {
             menu.broadcastChanges();
             helper.assertFalse(menu.autoForging(), "finished");
@@ -116,9 +122,29 @@ public final class ForgingModeTests {
         helper.succeed();
     }
 
+    /** Changing the inputs to another recipe during the minigame loses its result: it was played for other materials. */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = ForgingRules.MIN_MANUAL_TICKS + 40)
+    public static void manualForgeRefusedIfTheRecipeChanged(GameTestHelper helper) {
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
+        helper.assertTrue(menu.clickMenuButton(smith, SmithingAnvilMenu.MANUAL_FORGE_BUTTON), "the minigame starts");
+        menu.getSlot(SmithingAnvilMenu.TOP_SLOT).set(new ItemStack(Items.DIAMOND, 4));
+        menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).set(new ItemStack(Items.BLAZE_ROD));
+        menu.broadcastChanges();
+        helper.assertTrue(menu.canForge(), "diamonds + blaze rod make Grid's sword, another recipe");
+        helper.runAtTickTime(ForgingRules.MIN_MANUAL_TICKS + 10, () -> {
+            helper.assertFalse(menu.finishManual(smith, 1.0), "the result is for the Jaffa sword, not for this");
+            helper.assertTrue(menu.getSlot(SmithingAnvilMenu.TOP_SLOT).getItem().getCount() == 4
+                    && menu.getSlot(SmithingAnvilMenu.BOTTOM_SLOT).getItem().is(Items.BLAZE_ROD), "nothing was spent");
+            helper.assertTrue(smith.getInventory().items.stream().noneMatch(stack -> stack.has(ModDataComponents.ITEM_RATING)),
+                    "and nothing was given");
+            helper.succeed();
+        });
+    }
+
     /**
      * Smith's quality test (2 forges of Rare or better) counts automatic and manual forges alike: after one of each, its
-     * progress is exactly the number of Rare-or-better swords they made, whatever the dice said.
+     * progress is 2. The smith has so much dexterity that both swords are Rare or better, so the count can't be 0 = 0.
      */
     @GameTest(template = TestSupport.EMPTY, timeoutTicks = NOVICE_TICKS + ForgingRules.MIN_MANUAL_TICKS + 60)
     public static void bothForgingModesCountForTheQualityTest(GameTestHelper helper) {
@@ -128,6 +154,8 @@ public final class ForgingModeTests {
         TestSupport.completed(smith, "smith_jaffa_sword", "first_commission");
         helper.assertTrue(QuestService.accept(smith, qualityTest, npc) == QuestService.Result.SUCCESS, "quality test accepted at Smith");
         int forgesBefore = GoalTracker.counters(smith).get("forge");
+        // So much dexterity that Normal is negligible: both swords are Rare or better, and the check can't pass vacuously.
+        ProgressionService.set(smith, ProgressionService.get(smith).with(StatType.DEXTERITY, 2000));
 
         SmithingAnvilMenu menu = anvilWithJaffaInputs(helper, smith);
         menu.clickMenuButton(smith, SmithingAnvilMenu.AUTO_FORGE_BUTTON);
@@ -149,7 +177,8 @@ public final class ForgingModeTests {
                     .count();
             int progress = QuestService.progress(smith, Definitions.get(helper.getLevel(), ModDatapackRegistries.QUEST, qualityTest)
                     .orElseThrow(), QuestService.get(smith).active().get(qualityTest));
-            helper.assertTrue(progress == rareOrBetter, "quality test progress " + progress + " = Rare-or-better swords " + rareOrBetter);
+            helper.assertTrue(rareOrBetter == 2, "with that much dexterity both swords are Rare or better: " + rareOrBetter);
+            helper.assertTrue(progress == 2, "quality test progress " + progress + " counts both forges");
             helper.succeed();
         });
     }
