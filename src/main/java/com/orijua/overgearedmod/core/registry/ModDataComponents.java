@@ -53,7 +53,7 @@ public final class ModDataComponents {
                     .persistent(ResourceLocation.CODEC)
                     .networkSynchronized(ResourceLocation.STREAM_CODEC));
 
-    /** On the Ruler's Sword: the villagers whose talent it has already revealed. */
+    /** Legacy, no longer written: the found talents live on the player now (ModAttachments.TALENTS_FOUND). Kept so old stacks still load. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<List<UUID>>> TALENTS_FOUND =
             DATA_COMPONENTS.registerComponentType("talents_found", builder -> builder
                     .persistent(UUIDUtil.CODEC.listOf())

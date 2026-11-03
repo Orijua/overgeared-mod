@@ -31,7 +31,8 @@ import java.util.UUID;
  * {@link InsightRules#OBSERVE_TICKS} of steady looking he gains a point. Each target teaches once per Minecraft day.
  * Crossing a detail threshold opens a system window saying what can be seen now.
  * <p>
- * The progress is kept in memory only: logging out or looking away starts it again.
+ * Only the progress of the bar is kept in memory (logging out or looking away starts it again); what was already learned
+ * today is saved with the player ({@link ModAttachments#INSIGHT_LEARNED}), so logging out doesn't reset the day.
  */
 public final class Observation {
     /** Milestone of every Insight point gained by observing. */
@@ -43,8 +44,6 @@ public final class Observation {
     }
 
     private static final Map<UUID, Study> STUDYING = new HashMap<>();
-    /** Targets each player already learned from, and on which day. */
-    private static final Map<UUID, Map<UUID, Long>> LEARNED = new HashMap<>();
 
     private Observation() {
     }
@@ -71,17 +70,24 @@ public final class Observation {
 
     private static void onTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player) {
-            observe(player, player.isShiftKeyDown() ? lookedAt(player) : null);
+            observe(player, target(player));
         }
     }
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         STUDYING.remove(event.getEntity().getUUID());
-        LEARNED.remove(event.getEntity().getUUID());
     }
 
-    /** The living creature (not a player) the player looks at, within reach and in sight, or null. */
-    static LivingEntity lookedAt(ServerPlayer player) {
+    /** Who the player is observing now: the creature in sight while sneaking; null when spectating or not sneaking. */
+    public static Entity target(ServerPlayer player) {
+        return !player.isSpectator() && player.isShiftKeyDown() ? lookedAt(player) : null;
+    }
+
+    /**
+     * The living creature (not a player) the player looks at, within reach and in sight, or null. The last argument of
+     * {@code getEntityHitResult} is a squared distance, hence {@code REACH * REACH}.
+     */
+    public static LivingEntity lookedAt(ServerPlayer player) {
         Vec3 eye = player.getEyePosition();
         Vec3 reach = player.getViewVector(1.0f).scale(InsightRules.REACH);
         AABB area = player.getBoundingBox().expandTowards(reach).inflate(1.0);
@@ -98,17 +104,20 @@ public final class Observation {
      * can drive it without a real client.
      */
     public static boolean observe(ServerPlayer player, Entity target) {
+        return observe(player, target, player.level().getGameTime());
+    }
+
+    /** As {@link #observe(ServerPlayer, Entity)} at a given game time (tests use it to cross days without touching the world's clock). */
+    public static boolean observe(ServerPlayer player, Entity target, long gameTime) {
         if (target == null) {
             STUDYING.remove(player.getUUID());
             return false;
         }
-        long today = InsightRules.day(player.level().getGameTime());
-        Map<UUID, Long> learned = LEARNED.computeIfAbsent(player.getUUID(), uuid -> new HashMap<>());
-        learned.values().removeIf(day -> day != today);
+        long today = InsightRules.day(gameTime);
         Study study = STUDYING.get(player.getUUID());
         int ticks = study != null && study.target().equals(target.getUUID()) ? study.ticks() + 1 : 1;
         STUDYING.put(player.getUUID(), new Study(target.getUUID(), ticks));
-        if (learned.containsKey(target.getUUID())) {
+        if (player.getData(ModAttachments.INSIGHT_LEARNED).has(target.getUUID(), today)) {
             if (ticks == 1) {
                 player.displayClientMessage(Component.translatable("message.overgearedmod.observed_today", target.getDisplayName()), true);
             }
@@ -125,7 +134,7 @@ public final class Observation {
             }
             return false;
         }
-        learned.put(target.getUUID(), today);
+        player.setData(ModAttachments.INSIGHT_LEARNED, player.getData(ModAttachments.INSIGHT_LEARNED).with(target.getUUID(), today));
         // Still studying the same target: looking on doesn't replace the "gained" message with "already observed today".
         STUDYING.put(player.getUUID(), new Study(target.getUUID(), ticks));
         gain(player, target);
@@ -156,6 +165,6 @@ public final class Observation {
     /** For tests: forget what the player learned today. */
     public static void forget(Player player) {
         STUDYING.remove(player.getUUID());
-        LEARNED.remove(player.getUUID());
+        player.removeData(ModAttachments.INSIGHT_LEARNED);
     }
 }
