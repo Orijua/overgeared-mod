@@ -115,14 +115,17 @@ public final class InsightTests {
                 + " los=" + player.hasLineOfSight(villager) + " lookedAt=" + Observation.lookedAt(player) + "]";
     }
 
-    /** The fake player stands at (0.5, 1, 0.5) looking towards +Z. */
+    /**
+     * The fake player stands at (0.5, 1, 0.5) looking towards +Z. Everything that must be seen stays inside the 3x3x3 template:
+     * outside it the game test ring of barriers blocks the line of sight (that is what failed in CI).
+     */
     @GameTest(template = TestSupport.EMPTY)
     public static void targetNeedsSneakingReachAndSight(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        Villager near = still(helper, new BlockPos(0, 1, 3));
+        Villager near = still(helper, new BlockPos(0, 1, 2));
         helper.assertTrue(Observation.target(player) == null, "not sneaking: nobody");
         sneakAhead(player);
-        helper.assertTrue(Observation.target(player) == near, "sneaking at a villager 3 blocks away" + why(player, near));
+        helper.assertTrue(Observation.target(player) == near, "sneaking at a villager 2 blocks away" + why(player, near));
 
         near.kill();
         helper.assertTrue(Observation.target(player) == null, "a dead one isn't observed");
@@ -132,16 +135,16 @@ public final class InsightTests {
         helper.assertTrue(Observation.target(player) == null, "beyond the reach");
         far.discard();
 
-        Villager hidden = still(helper, new BlockPos(0, 1, 4));
-        helper.setBlock(new BlockPos(0, 1, 2), Blocks.STONE);
-        helper.setBlock(new BlockPos(0, 2, 2), Blocks.STONE);
+        Villager hidden = still(helper, new BlockPos(0, 1, 2));
+        helper.setBlock(new BlockPos(0, 1, 1), Blocks.STONE);
+        helper.setBlock(new BlockPos(0, 2, 1), Blocks.STONE);
         helper.assertTrue(Observation.target(player) == null, "a wall in between");
         hidden.discard();
-        helper.setBlock(new BlockPos(0, 1, 2), Blocks.AIR);
-        helper.setBlock(new BlockPos(0, 2, 2), Blocks.AIR);
+        helper.setBlock(new BlockPos(0, 1, 1), Blocks.AIR);
+        helper.setBlock(new BlockPos(0, 2, 1), Blocks.AIR);
 
         ServerPlayer other = FakePlayerFactory.get(helper.getLevel(), new GameProfile(UUID.randomUUID(), "satisfy-other"));
-        other.moveTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(0.5, 1, 3.5)));
+        other.moveTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(0.5, 1, 2.5)));
         helper.assertTrue(Observation.target(player) == null, "players aren't observed");
         helper.succeed();
     }
@@ -149,7 +152,7 @@ public final class InsightTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void spectatorsDoNotObserve(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        Villager villager = still(helper, new BlockPos(0, 1, 3));
+        Villager villager = still(helper, new BlockPos(0, 1, 2));
         sneakAhead(player);
         helper.assertTrue(Observation.target(player) == villager, "a survival player would observe" + why(player, villager));
         player.setGameMode(GameType.SPECTATOR);
