@@ -9,6 +9,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
@@ -98,14 +99,30 @@ public final class InsightTests {
         return villager;
     }
 
+    /** Sneaks the fake player and aims it level towards +Z (setShiftKeyDown alone may not stick on a FakePlayer). */
+    private static void sneakAhead(ServerPlayer player) {
+        player.setShiftKeyDown(true);
+        player.setPose(Pose.CROUCHING);
+        player.setXRot(0.0f);
+        player.setYRot(0.0f);
+        player.setYHeadRot(0.0f);
+    }
+
+    /** Debug text for a failed targeting assertion: sneaking state, eye and villager positions. */
+    private static String why(ServerPlayer player, Villager villager) {
+        return " [shift=" + player.isShiftKeyDown() + " spectator=" + player.isSpectator() + " eye=" + player.getEyePosition()
+                + " view=" + player.getViewVector(1.0f) + " villager=" + villager.position() + " alive=" + villager.isAlive()
+                + " los=" + player.hasLineOfSight(villager) + " lookedAt=" + Observation.lookedAt(player) + "]";
+    }
+
     /** The fake player stands at (0.5, 1, 0.5) looking towards +Z. */
     @GameTest(template = TestSupport.EMPTY)
     public static void targetNeedsSneakingReachAndSight(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         Villager near = still(helper, new BlockPos(0, 1, 3));
         helper.assertTrue(Observation.target(player) == null, "not sneaking: nobody");
-        player.setShiftKeyDown(true);
-        helper.assertTrue(Observation.target(player) == near, "sneaking at a villager 3 blocks away");
+        sneakAhead(player);
+        helper.assertTrue(Observation.target(player) == near, "sneaking at a villager 3 blocks away" + why(player, near));
 
         near.kill();
         helper.assertTrue(Observation.target(player) == null, "a dead one isn't observed");
@@ -133,8 +150,8 @@ public final class InsightTests {
     public static void spectatorsDoNotObserve(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         Villager villager = still(helper, new BlockPos(0, 1, 3));
-        player.setShiftKeyDown(true);
-        helper.assertTrue(Observation.target(player) == villager, "a survival player would observe");
+        sneakAhead(player);
+        helper.assertTrue(Observation.target(player) == villager, "a survival player would observe" + why(player, villager));
         player.setGameMode(GameType.SPECTATOR);
         helper.assertTrue(Observation.target(player) == null, "a spectator doesn't");
         player.setGameMode(GameType.SURVIVAL);
