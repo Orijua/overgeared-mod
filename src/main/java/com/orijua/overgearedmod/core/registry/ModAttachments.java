@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.core.registry;
 
 import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.feature.insight.LearnedToday;
 import com.orijua.overgearedmod.feature.mob.MobLevel;
 import com.orijua.overgearedmod.feature.npc.WorkshopEntry;
 import com.orijua.overgearedmod.feature.progression.PlayerIdentity;
@@ -62,6 +63,14 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Integer>> INSIGHT =
             playerData("insight", () -> 0, Codec.INT, ByteBufCodecs.VAR_INT, true);
 
+    /** Targets the player already learned from today (see insight.Observation). Server-only: the client never reads it. */
+    public static final Supplier<AttachmentType<LearnedToday>> INSIGHT_LEARNED =
+            serverData("insight_learned", () -> LearnedToday.EMPTY, LearnedToday.CODEC);
+
+    /** The villagers whose talent the player has found with Talent Search, for life (see insight.TalentSearch). Server-only. */
+    public static final Supplier<AttachmentType<List<UUID>>> TALENTS_FOUND =
+            serverData("talents_found", List::of, UUIDUtil.CODEC.listOf());
+
     /** The rumors the player has heard from NPCs, oldest first (the Journal's Rumors section; see rumor.Rumors). */
     public static final Supplier<AttachmentType<List<ResourceLocation>>> HEARD_RUMORS =
             playerData("heard_rumors", List::of, ResourceLocation.CODEC.listOf(), ByteBufCodecs.fromCodec(ResourceLocation.CODEC.listOf()), true);
@@ -84,6 +93,14 @@ public final class ModAttachments {
     /** Back to defaults for every system (used by /satisfy reset). */
     public static void resetAll(Player player) {
         ATTACHMENT_TYPES.getEntries().forEach(type -> player.removeData(type.get()));
+    }
+
+    /** Saved with the player and kept on death, but never synced: state only the server needs. */
+    private static <T> Supplier<AttachmentType<T>> serverData(String name, Supplier<T> defaultValue, Codec<T> codec) {
+        return ATTACHMENT_TYPES.register(name, () -> AttachmentType.builder(defaultValue)
+                .serialize(codec)
+                .copyOnDeath()
+                .build());
     }
 
     private static <T> Supplier<AttachmentType<T>> playerData(String name, Supplier<T> defaultValue, Codec<T> codec,

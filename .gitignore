@@ -21,7 +21,8 @@ hs_err_pid*
 run
 
 # Documentation (guide, roadmap, notes): kept local, never published
-docs/
+/docs
+
 
 # Local Claude Code instructions (point at the personal docs above)
 CLAUDE.MD
