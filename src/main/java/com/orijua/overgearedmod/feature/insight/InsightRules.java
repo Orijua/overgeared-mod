@@ -1,10 +1,11 @@
 package com.orijua.overgearedmod.feature.insight;
 
 /**
- * Pure rules of Insight (canon: a stat that can't be allocated and grows by observing; with it, Character Observation
- * shows a target's abilities, maximum stats and skills). Here it grows by observing: sneaking (the concentration) while
- * looking at an NPC or a monster for {@link #OBSERVE_TICKS} gives one point, once per target and Minecraft day. The
- * more Insight, the more an NPC's window shows ({@link Detail}).
+ * Pure rules of Insight (canon, medium certainty, see docs/canon/Ficha_Perspicacia.md: a stat that can't be allocated
+ * and grows by observing; with it, Character Observation shows a target's abilities, maximum stats and skills). Here it
+ * grows by observing: sneaking (the concentration) while looking at an NPC or a monster for {@link #OBSERVE_TICKS}
+ * gives one point, once per target and Minecraft day. The more Insight, the more an NPC's window shows
+ * ({@link Detail}). Own design, not canon: the ten seconds, the point per target and day, and the 15/40 thresholds.
  */
 public final class InsightRules {
     /** Ten seconds of steady observation. */

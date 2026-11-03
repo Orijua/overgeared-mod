@@ -53,8 +53,11 @@ public final class MaterialTests {
 
     @GameTest(template = TestSupport.EMPTY)
     public static void mithrilOreGenerates(GameTestHelper helper) {
-        helper.assertTrue(helper.getLevel().registryAccess().registryOrThrow(Registries.PLACED_FEATURE)
-                .containsKey(Overgearedmod.id("ore_mithril")), "the placed feature should load from the datapack");
+        var registries = helper.getLevel().registryAccess();
+        helper.assertTrue(registries.registryOrThrow(Registries.PLACED_FEATURE).containsKey(Overgearedmod.id("ore_mithril")),
+                "the placed feature should load from the datapack");
+        helper.assertTrue(registries.registryOrThrow(NeoForgeRegistries.Keys.BIOME_MODIFIERS).containsKey(Overgearedmod.id("add_ore_mithril")),
+                "and be added to the overworld's biomes");
         helper.succeed();
     }
 

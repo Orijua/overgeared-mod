@@ -63,7 +63,8 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     public static final int DATA_MIN_TEMPERATURE = 6;
     public static final int DATA_MELTING = 7;
     public static final int DATA_FIRE_ON = 8;
-    public static final int DATA_COUNT = 9;
+    public static final int DATA_MAX_TEMPERATURE = 9;
+    public static final int DATA_COUNT = 10;
     private static final Component TITLE = Component.translatable("container.overgearedmod.smelter");
 
     private final SimpleContainer items = new SimpleContainer(3) {
@@ -107,6 +108,7 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
                 case DATA_PROGRESS -> progress;
                 case DATA_TIME -> currentRecipe == null ? 0 : currentRecipe.value().time();
                 case DATA_MIN_TEMPERATURE -> currentRecipe == null ? 0 : currentRecipe.value().minTemperature();
+                case DATA_MAX_TEMPERATURE -> currentRecipe == null ? 0 : currentRecipe.value().maxTemperature();
                 case DATA_MELTING -> melting ? 1 : 0;
                 case DATA_FIRE_ON -> fireOn ? 1 : 0;
                 default -> 0;
@@ -127,7 +129,10 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
         super(ModBlockEntities.SMELTER.get(), pos, state);
     }
 
-    /** How hot a fuel can get the smelter: lava 1600, blaze rods 1500, coal 1050, wood and the rest 700. */
+    /**
+     * How hot a fuel can get the smelter: lava 1600, blaze rods 1500, coal blocks 1300, coal 1180, wood and the rest 700.
+     * Coal reaches the iron's melting temperature (1150, canon) but not the mithril's (1200), which needs a coal block.
+     */
     public static int fuelHeat(ItemStack fuel) {
         if (fuel.is(Items.LAVA_BUCKET)) {
             return 1600;
@@ -136,10 +141,10 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
             return 1500;
         }
         if (fuel.is(Items.COAL_BLOCK)) {
-            return 1150;
+            return 1300;
         }
         if (fuel.is(Items.COAL) || fuel.is(Items.CHARCOAL)) {
-            return 1050;
+            return 1180;
         }
         return 700;
     }

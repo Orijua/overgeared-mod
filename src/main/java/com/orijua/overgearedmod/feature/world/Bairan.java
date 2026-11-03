@@ -169,7 +169,7 @@ public final class Bairan {
         return front(piece, 3, 7);
     }
 
-    /** A resident of Bairan: stays in the village and hides a talent (canon, cap. 157; see insight.Talents). */
+    /** A resident of Bairan: stays in the village and hides a talent (the scene is canon, cap. 157; that all hide one is own design; see insight.Talents). */
     private static CompoundTag resident() {
         CompoundTag villager = new CompoundTag();
         villager.putBoolean("PersistenceRequired", true);

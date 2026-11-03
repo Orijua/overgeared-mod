@@ -20,9 +20,9 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 
 /**
- * A sword that sharpens its bearer's eye (canon, cap. 157): the Commander's Sword and the Ruler's Sword both carry
- * <i>Character Observation</i>, which raises Insight; the Ruler's (only for recognised lords) also has <i>Talent
- * Search</i>. Held in the main hand, observing starts from {@code observeTicks} instead of ten seconds (and Insight
+ * A sword that sharpens its bearer's eye (canon, cap. 157, medium certainty: the Commander's Sword and the Ruler's
+ * Sword both carry <i>Character Observation</i>, which raises Insight; the Ruler's also has <i>Talent Search</i>). The
+ * speeds, the Insight bonuses and "only for recognised lords" are own design. Held in the main hand, observing starts from {@code observeTicks} instead of ten seconds (and Insight
  * shortens it further, see {@link InsightRules#observeTicks}), and NPC windows show
  * as much as {@code insightBonus} more Insight would. With Talent Search, using it reveals the talents around.
  */

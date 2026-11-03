@@ -9,11 +9,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SatisfyMapTest {
-    // Bairan's cell is (2, 1): the middle of the P block; snow to the north, the sea ('.') two cells west (col 0) and two east (col 4).
+    // Bairan's cell is (2, 1): the middle of the P block; snow to the north, W two cells west (col 0) and E two cells east (col 4).
     private static final SatisfyMap MAP = new SatisfyMap(List.of(
-            ".SSS.",
-            ".PPP.",
-            ".PPP."), 192, 2, 1);
+            "WSSSE",
+            "WPPPE",
+            "WPPPE"), 192, 2, 1);
 
     @Test
     void theOriginIsInItsCell() {
@@ -24,7 +24,9 @@ class SatisfyMapTest {
     void northIsUpAndEastIsRight() {
         assertEquals('S', MAP.at(0, -192), "one cell north: the snow");
         assertEquals('P', MAP.at(0, 192), "one cell south");
-        assertEquals('.', MAP.at(192 * 2, 0), "two cells east: off the map");
+        assertEquals('E', MAP.at(192 * 2, 0), "two cells east");
+        assertEquals('W', MAP.at(-192 * 2, 0), "two cells west");
+        assertEquals(SatisfyMap.NONE, MAP.at(192 * 3, 0), "three cells east: off the map");
     }
 
     @Test

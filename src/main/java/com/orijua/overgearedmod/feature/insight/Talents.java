@@ -8,9 +8,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Hidden talents of villagers, for Talent Search (canon, cap. 157: Grid searches Bairan's residents and finds, among
- * others, a miner). Bairan's residents always hide one; elsewhere one villager in {@link #ONE_IN} does. Which talent is
- * fixed by the villager's UUID, so it never changes.
+ * Hidden talents of villagers, for Talent Search (canon, cap. 157, medium certainty: Grid searches Bairan's residents
+ * and finds a miner). Own design, not canon: the six kinds, that Bairan's residents always hide one, and that elsewhere
+ * one villager in {@link #ONE_IN} does. Which talent is fixed by the villager's UUID, so it never changes.
  */
 public final class Talents {
     /** Tag carried by the villagers Bairan places. */

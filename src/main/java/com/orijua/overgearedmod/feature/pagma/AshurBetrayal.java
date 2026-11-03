@@ -59,16 +59,20 @@ public final class AshurBetrayal {
             player.displayClientMessage(Component.translatable("message.overgearedmod.ashur_nobody"), true);
             return;
         }
-        if (GoalTracker.milestones(player, PagmaStory.ASHUR_SECRET) > 0) {
-            return;
+        if (GoalTracker.milestones(player, PagmaStory.ASHUR_SECRET) == 0) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.ashur_secret"), false);
+            GoalTracker.milestone(player, PagmaStory.ASHUR_SECRET);
         }
-        player.displayClientMessage(Component.translatable("message.overgearedmod.ashur_secret"), false);
-        GoalTracker.milestone(player, PagmaStory.ASHUR_SECRET);
-        caveMap(player).ifPresent(map -> {
-            if (!player.getInventory().add(map)) {
-                player.drop(map, false);
-            }
-        });
+        // The map has its own milestone: if the world has no cave yet he tells the secret and the map comes in a later talk.
+        // Players who got the map before this milestone existed receive it once more (a duplicate map, harmless).
+        if (GoalTracker.milestones(player, PagmaStory.ASHUR_MAP_GIVEN) == 0 && !QuestService.get(player).isCompleted(PagmaStory.SECRET_REQUEST)) {
+            caveMap(player).ifPresent(map -> {
+                GoalTracker.milestone(player, PagmaStory.ASHUR_MAP_GIVEN);
+                if (!player.getInventory().add(map)) {
+                    player.drop(map, false);
+                }
+            });
+        }
     }
 
     /** An explorer map centered on the world's Northern End Cave, with the cave marked; empty if the world has none. */

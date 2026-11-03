@@ -98,6 +98,11 @@ public class SmelterMenu extends AbstractContainerMenu {
         return data.get(SmelterBlockEntity.DATA_MIN_TEMPERATURE);
     }
 
+    /** The top of the metal's bellows zone, 0 when it melts nothing. */
+    public int maxTemperature() {
+        return data.get(SmelterBlockEntity.DATA_MAX_TEMPERATURE);
+    }
+
     public boolean fireOn() {
         return data.get(SmelterBlockEntity.DATA_FIRE_ON) == 1;
     }

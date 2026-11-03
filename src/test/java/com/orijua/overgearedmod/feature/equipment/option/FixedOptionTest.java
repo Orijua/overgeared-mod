@@ -14,6 +14,9 @@ class FixedOptionTest {
     private static final List<FixedOption> FRACASO = List.of(
             new FixedOption(AGILITY, 30),
             new FixedOption(BISECTION, 1, ItemRating.LEGENDARY));
+    private static final List<FixedOption> GRADED_AGILITY = List.of(
+            new FixedOption(AGILITY, 30, ItemRating.NORMAL, ItemRating.UNIQUE),
+            new FixedOption(AGILITY, 50, ItemRating.LEGENDARY));
 
     @Test
     void optionsWithoutMinimumAlwaysCome() {
@@ -25,5 +28,18 @@ class FixedOptionTest {
         List<RolledOption> expected = List.of(new RolledOption(AGILITY, 30), new RolledOption(BISECTION, 1));
         assertEquals(expected, FixedOption.forRating(FRACASO, ItemRating.LEGENDARY));
         assertEquals(expected, FixedOption.forRating(FRACASO, ItemRating.MYTH));
+    }
+
+    @Test
+    void withoutAMaximumAnOptionComesAtEveryRatingFromItsMinimum() {
+        assertEquals(List.of(new RolledOption(AGILITY, 30)), FixedOption.forRating(FRACASO, ItemRating.NORMAL));
+        assertEquals(List.of(new RolledOption(AGILITY, 30)), FixedOption.forRating(FRACASO, ItemRating.MYTH).subList(0, 1));
+    }
+
+    @Test
+    void anOptionWithAMaximumStopsAfterThatRating() {
+        assertEquals(List.of(new RolledOption(AGILITY, 30)), FixedOption.forRating(GRADED_AGILITY, ItemRating.UNIQUE));
+        assertEquals(List.of(new RolledOption(AGILITY, 50)), FixedOption.forRating(GRADED_AGILITY, ItemRating.LEGENDARY));
+        assertEquals(List.of(new RolledOption(AGILITY, 50)), FixedOption.forRating(GRADED_AGILITY, ItemRating.MYTH));
     }
 }

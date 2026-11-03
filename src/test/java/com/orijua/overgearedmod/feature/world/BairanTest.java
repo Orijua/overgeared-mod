@@ -68,8 +68,8 @@ class BairanTest {
 
     @Test
     void piecesAreListedByTemplatePath() {
-        assertEquals(List.of(Bairan.PLAZA, Bairan.SMITHY, Bairan.CHIEF_HOUSE, Bairan.HOUSE, Bairan.GARDEN_HOUSE, Bairan.MINE),
-                List.copyOf(PIECES.keySet()));
+        assertEquals(Set.of(Bairan.PLAZA, Bairan.SMITHY, Bairan.CHIEF_HOUSE, Bairan.HOUSE, Bairan.GARDEN_HOUSE, Bairan.MINE),
+                Set.copyOf(PIECES.keySet()));
         assertTrue(StructurePieces.all().keySet().containsAll(PIECES.keySet()), "datagen writes them");
     }
 }

@@ -32,6 +32,11 @@ public final class LegendTitle {
         gameBus.addListener(LegendTitle::onEffect);
     }
 
+    /** For tests: the player's next save from death is available now, as if the cooldown had run out. */
+    public static void readyNow(Player player) {
+        player.getPersistentData().putLong(READY_AT, player.level().getGameTime());
+    }
+
     public static boolean has(Player player) {
         return player.getData(ModAttachments.PLAYER_IDENTITY).hasTitle(PagmaStory.BECAME_LEGEND);
     }

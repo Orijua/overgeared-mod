@@ -131,7 +131,11 @@ public final class ApprenticeTests {
 
         apprentice.forgeOne(0.0);
         helper.assertTrue(chest.getItem(0).isEmpty() && chest.getItem(1).isEmpty(), "a botch spends the materials");
-        helper.assertTrue(barrel.getItem(1).isEmpty(), "and makes nothing");
+        int pieces = 0;
+        for (int i = 0; i < barrel.getContainerSize(); i++) {
+            pieces += barrel.getItem(i).isEmpty() ? 0 : 1;
+        }
+        helper.assertTrue(pieces == 1, "and makes nothing: only the first sword is in the barrel, found " + pieces + " pieces");
         apprentice.discard();
         helper.succeed();
     }

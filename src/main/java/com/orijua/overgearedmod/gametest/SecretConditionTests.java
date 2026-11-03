@@ -96,10 +96,16 @@ public final class SecretConditionTests {
         helper.assertTrue(QuestService.get(player).isDiscovered(hunt), "the 20th reveals it");
 
         helper.assertTrue(QuestService.accept(player, hunt) == QuestService.Result.SUCCESS, "it is accepted from the Quests tab");
+        ServerLevel level = helper.getLevel();
+        long time = level.getDayTime();
+        level.setDayTime(6_000); // noon, so these kills are certainly by day
+        level.updateSkyBrightness();
         for (int i = 0; i < 10; i++) {
             TestSupport.killZombie(helper, player);
         }
-        helper.assertFalse(QuestService.claim(player, hunt) == QuestService.Result.SUCCESS, "zombies by day don't count");
+        level.setDayTime(time);
+        level.updateSkyBrightness();
+        helper.assertTrue(QuestService.claim(player, hunt) == QuestService.Result.NOT_DONE, "zombies by day don't count");
         killAtNight(helper, player, EntityType.ZOMBIE, 10);
         helper.assertTrue(QuestService.claim(player, hunt) == QuestService.Result.SUCCESS, "10 at night complete it");
         helper.assertTrue(Rumors.solved(player, rumor(helper, "moon_hunters")), "the chief's rumor is put to rest");
@@ -136,9 +142,11 @@ public final class SecretConditionTests {
         GoalTracker.milestone(player, SmelterBlockEntity.BELLOWS_EXTRA);
         helper.assertTrue(QuestService.get(player).isDiscovered(Overgearedmod.id("perfect_bellows")), "the first extra reveals it");
         helper.assertTrue(Rumors.solved(player, rumor(helper, "breathing_bellows")), "Smith's rumor is put to rest");
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 8; i++) {
             GoalTracker.milestone(player, SmelterBlockEntity.BELLOWS_EXTRA);
         }
+        helper.assertFalse(hasTitle(player, "bellows_master"), "9 extras are not enough");
+        GoalTracker.milestone(player, SmelterBlockEntity.BELLOWS_EXTRA);
         helper.assertTrue(hasTitle(player, "bellows_master"), "10 extras earn Master of the Bellows");
         helper.succeed();
     }

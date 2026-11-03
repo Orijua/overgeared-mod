@@ -95,7 +95,7 @@ public final class EquipmentService {
      * Leaves anything that isn't equipment, or already has a rating, untouched.
      */
     public static void rateLoot(Level level, ItemStack stack, int luck, ItemRating minimum, RandomSource random) {
-        if (!canEnhance(stack) || stack.has(ModDataComponents.ITEM_RATING)) {
+        if (!isEquipment(stack) || stack.has(ModDataComponents.ITEM_RATING)) {
             return;
         }
         applyRating(level, stack, RatingRoller.rollLoot(luck, minimum, random.nextDouble()), 0, random);
@@ -138,11 +138,22 @@ public final class EquipmentService {
         stack.set(DataComponents.ITEM_NAME, rating != null ? name.withStyle(rating.color()) : name);
     }
 
+    /** Anything that can come rated: a single damageable item (weapons and armor). */
+    public static boolean isEquipment(ItemStack stack) {
+        return stack.getCount() == 1 && stack.isDamageableItem();
+    }
+
+    /** Only weapons can be enhanced: the bonus per level is attack damage, which armor would not get. */
     public static boolean canEnhance(ItemStack stack) {
-        return stack.isDamageableItem() && stack.getCount() == 1;
+        return isEquipment(stack) && EquipmentBonuses.isWeapon(stack);
     }
 
     public static EnhanceResult enhance(ServerPlayer smith, ItemStack equipment) {
+        return enhance(smith, equipment, smith.getRandom().nextDouble());
+    }
+
+    /** For tests, like {@code ApprenticeSmith.forgeOne(double)}: the roll is given, and it succeeds when {@code roll < chance}. */
+    public static EnhanceResult enhance(ServerPlayer smith, ItemStack equipment, double roll) {
         if (!canEnhance(equipment)) {
             return EnhanceResult.NOT_EQUIPMENT;
         }
@@ -151,7 +162,7 @@ public final class EquipmentService {
             return EnhanceResult.MAXED;
         }
         double chance = EquipmentRules.enhancementChance(Balance.current(), level, ProgressionService.effectiveStats(smith).dexterity());
-        boolean success = smith.getRandom().nextDouble() < chance;
+        boolean success = roll < chance;
         if (success) {
             equipment.set(ModDataComponents.ENHANCEMENT, level + 1);
             refreshName(equipment);

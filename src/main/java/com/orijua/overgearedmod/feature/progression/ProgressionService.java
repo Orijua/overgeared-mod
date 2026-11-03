@@ -52,13 +52,26 @@ public final class ProgressionService {
      * A new source (equipment, talents, sets, buffs, guild...) only needs to add its modifiers here.
      */
     public static List<StatModifier> modifiers(Player player) {
+        List<StatModifier> modifiers = baseModifiers(player);
+        modifiers.addAll(equipmentModifiers(player, ProgressionRules.effective(get(player), modifiers)));
+        return modifiers;
+    }
+
+    /**
+     * Stats without what the worn equipment gives (allocation, class, titles). This is the one rule for item
+     * requirements: an item never meets its requirements with stats that equipment grants.
+     */
+    public static PlayerStats statsWithoutEquipment(Player player) {
+        return ProgressionRules.effective(get(player), baseModifiers(player));
+    }
+
+    private static List<StatModifier> baseModifiers(Player player) {
         List<StatModifier> modifiers = new ArrayList<>(StatModifier.allocated(get(player)));
         playerClass(player).ifPresent(c -> modifiers.addAll(StatModifier.fromBonuses(new StatSource(c.name()), c.bonusStats())));
         for (var titleId : player.getData(ModAttachments.PLAYER_IDENTITY).titles()) {
             Definitions.get(player.level(), ModDatapackRegistries.TITLE, titleId)
                     .ifPresent(t -> modifiers.addAll(StatModifier.fromBonuses(new StatSource(t.name()), t.bonusStats())));
         }
-        modifiers.addAll(equipmentModifiers(player, ProgressionRules.effective(get(player), modifiers)));
         return modifiers;
     }
 

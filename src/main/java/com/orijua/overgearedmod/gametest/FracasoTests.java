@@ -4,12 +4,14 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.core.registry.ModEntities;
 import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.core.registry.ModRecipes;
 import com.orijua.overgearedmod.feature.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.feature.equipment.EquipmentService;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
+import com.orijua.overgearedmod.feature.mob.BoneLord;
 import com.orijua.overgearedmod.feature.mob.MobLevel;
 import com.orijua.overgearedmod.feature.mob.MobLevelService;
 import com.orijua.overgearedmod.feature.progression.ClassService;
@@ -28,6 +30,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
@@ -180,6 +184,10 @@ public final class FracasoTests {
         meetRequirements(player);
         int agility = ProgressionService.effectiveStats(player).agility();
         helper.assertTrue(agility == baseAgility + 30, "expected +30 AGI, got " + (agility - baseAgility));
+
+        hold(player, forgedFracaso(helper, player, ItemRating.LEGENDARY));
+        agility = ProgressionService.effectiveStats(player).agility();
+        helper.assertTrue(agility == baseAgility + 50, "a Legendary Fracaso gives +50 AGI, got " + (agility - baseAgility));
         helper.succeed();
     }
 
@@ -205,11 +213,11 @@ public final class FracasoTests {
         helper.succeed();
     }
 
-    private static boolean frightened(Zombie zombie) {
+    private static boolean frightened(LivingEntity zombie) {
         return zombie.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) && zombie.hasEffect(MobEffects.WEAKNESS);
     }
 
-    private static boolean untouched(Zombie zombie) {
+    private static boolean untouched(LivingEntity zombie) {
         return !zombie.hasEffect(MobEffects.MOVEMENT_SLOWDOWN) && !zombie.hasEffect(MobEffects.WEAKNESS);
     }
 
@@ -239,13 +247,49 @@ public final class FracasoTests {
     }
 
     @GameTest(template = TestSupport.EMPTY)
-    public static void fracasoFearNeedsAGapOfFiftyLevels(GameTestHelper helper) {
+    public static void fracasoFearNeedsAGapOfTwentyLevels(GameTestHelper helper) {
         ServerPlayer player = fracasoWielder(helper, true);
-        Zombie gap50 = zombieOfLevel(helper, 250, 2, 2); // 300 - 250 = 50: exactly the threshold
-        Zombie gap49 = zombieOfLevel(helper, 251, 2, 0); // 49: not enough
+        int gap = Math.round(fearGap(helper));
+        int wielderLevel = ProgressionService.effectiveStats(player).level();
+        Zombie exact = zombieOfLevel(helper, wielderLevel - gap, 2, 2); // exactly the threshold
+        Zombie short1 = zombieOfLevel(helper, wielderLevel - gap + 1, 2, 0); // one level short
         EquipmentEvents.forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
-        helper.assertTrue(frightened(gap50), "a gap of exactly 50 levels frightens");
-        helper.assertTrue(untouched(gap49), "a gap of 49 levels doesn't");
+        helper.assertTrue(gap == 20, "canon: Fracaso's fear needs a gap of 20 levels, recipe says " + gap);
+        helper.assertTrue(frightened(exact), "a gap of exactly " + gap + " levels frightens");
+        helper.assertTrue(untouched(short1), "a gap of " + (gap - 1) + " levels doesn't");
+        helper.succeed();
+    }
+
+    /** The fear level gap the Fracaso recipe gives, read from the recipe so the test doesn't repeat the literal. */
+    private static float fearGap(GameTestHelper helper) {
+        return fracasoRecipe(helper).extras().fixedOptions().stream()
+                .filter(option -> option.option().equals(Overgearedmod.id("fracaso_fear")))
+                .findFirst().orElseThrow().value();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fracasoFearSparesBosses(GameTestHelper helper) {
+        ServerPlayer player = fracasoWielder(helper, true);
+        BoneLord boss = ModEntities.BONE_LORD.get().spawn(helper.getLevel(), helper.absolutePos(new BlockPos(2, 1, 2)), MobSpawnType.SPAWN_EGG);
+        helper.assertTrue(boss != null, "the boss should spawn");
+        Zombie control = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 1, 0);
+        EquipmentEvents.forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
+        helper.assertTrue(frightened(control), "control: a level-1 zombie fears the wielder");
+        helper.assertTrue(untouched(boss), "a boss never feels fear");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fracasoFearReachesItsRadius(GameTestHelper helper) {
+        ServerPlayer player = fracasoWielder(helper, true);
+        // The player stands at (0.5, 0.5) and the search box is the player's box inflated by the radius (8): a zombie in
+        // block x=8 overlaps it, one in block x=10 doesn't.
+        Zombie inside = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 8, 1, 0);
+        Zombie outside = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 10, 1, 0);
+        player.moveTo(helper.absoluteVec(new net.minecraft.world.phys.Vec3(0.5, 1, 0.5)));
+        EquipmentEvents.forEachActiveOption(player, (effect, value) -> effect.tickWorn(player, value));
+        helper.assertTrue(frightened(inside), "a monster at the edge of the radius is frightened");
+        helper.assertTrue(untouched(outside), "a monster past the radius isn't");
         helper.succeed();
     }
 

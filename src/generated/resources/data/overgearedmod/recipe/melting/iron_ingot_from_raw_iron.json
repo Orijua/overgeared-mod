@@ -3,7 +3,8 @@
   "ingredient": {
     "item": "minecraft:raw_iron"
   },
-  "min_temperature": 900,
+  "max_temperature": 1250,
+  "min_temperature": 1150,
   "result": {
     "count": 1,
     "id": "minecraft:iron_ingot"

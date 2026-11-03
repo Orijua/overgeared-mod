@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.feature.pagma.GoldenTableBlock;
 import com.orijua.overgearedmod.feature.world.AshurManor;
 import com.orijua.overgearedmod.feature.world.NorthEndCave;
 import com.orijua.overgearedmod.feature.world.NorthEndCaveProtection;
+import com.orijua.overgearedmod.feature.world.PoolPieces;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
 import com.orijua.overgearedmod.feature.world.Winston;
 import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
@@ -20,6 +21,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.decoration.ArmorStand;
@@ -98,11 +100,11 @@ public final class NorthEndCaveTests {
                 12345L, new ChunkPos(400, 400), 0, LevelHeightAccessor.create(-64, 384), biome -> true);
         helper.assertTrue(start.isValid(), "the cave should assemble");
         List<StructurePiece> pieces = start.getPieces();
-        List<String> names = pieces.stream().map(Object::toString).toList();
-        helper.assertTrue(pieces.size() == 4, "four pieces, got " + names);
+        List<Optional<ResourceLocation>> templates = pieces.stream().map(PoolPieces::templateOf).toList();
+        helper.assertTrue(pieces.size() == 4, "four pieces, got " + templates);
         List<String> order = List.of(NorthEndCave.ENTRANCE, NorthEndCave.DESCENT, NorthEndCave.HALL, NorthEndCave.SANCTUM);
         for (int i = 0; i < order.size(); i++) {
-            helper.assertTrue(names.get(i).contains(order.get(i) + "]"), "piece " + i + " is " + order.get(i) + ": " + names);
+            helper.assertTrue(templates.get(i).filter(Overgearedmod.id(order.get(i))::equals).isPresent(), "piece " + i + " is " + order.get(i) + ": " + templates);
         }
         int entranceFloor = pieces.get(0).getBoundingBox().minY() + 2;
         int hallFloor = pieces.get(2).getBoundingBox().minY() + 1;

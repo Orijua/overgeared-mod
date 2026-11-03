@@ -2,6 +2,6 @@
   "name": { "translate": "option.overgearedmod.fracaso_agility" },
   "weight": 0,
   "min": 30,
-  "max": 30,
+  "max": 50,
   "effect": { "type": "stat", "stat": "agility" }
 }

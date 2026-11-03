@@ -136,7 +136,7 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
         graphics.fill(x, y, x + width, y + THERMO_HEIGHT, SLOT_BACKGROUND);
         int melting = menu.meltingTemperature();
         if (melting > 0) {
-            int zoneTop = y + THERMO_HEIGHT - heightOf(melting + SmelterRules.ZONE_WIDTH);
+            int zoneTop = y + THERMO_HEIGHT - heightOf(menu.maxTemperature());
             int zoneBottom = y + THERMO_HEIGHT - heightOf(melting);
             graphics.fill(x, zoneTop, x + width, zoneBottom, ZONE);
         }
@@ -220,7 +220,7 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
         if (menu.temperature() < recipe.get().minTemperature()) {
             return;
         }
-        minigame = new SmeltingMinigame(recipe.get().minTemperature());
+        minigame = new SmeltingMinigame(recipe.get().minTemperature(), recipe.get().maxTemperature());
         lastUpdate = Util.getMillis();
         resultShownUntil = -1;
     }
@@ -286,11 +286,12 @@ public class SmelterScreen extends AbstractContainerScreen<SmelterMenu> {
     private void heatBar(GuiGraphics graphics, int x, int y) {
         int height = 8;
         int low = minigame.zoneMin() - BAR_BELOW;
-        int range = BAR_BELOW + SmelterRules.ZONE_WIDTH + BAR_ABOVE;
+        int zoneWidth = minigame.zoneMax() - minigame.zoneMin();
+        int range = BAR_BELOW + zoneWidth + BAR_ABOVE;
         graphics.fill(x - 1, y - 1, x + BAR_WIDTH + 1, y + height + 1, UiStyle.LINE_SOFT);
         graphics.fill(x, y, x + BAR_WIDTH, y + height, SLOT_BACKGROUND);
         int zoneLeft = x + BAR_BELOW * BAR_WIDTH / range;
-        graphics.fill(zoneLeft, y, zoneLeft + SmelterRules.ZONE_WIDTH * BAR_WIDTH / range, y + height, ZONE);
+        graphics.fill(zoneLeft, y, zoneLeft + zoneWidth * BAR_WIDTH / range, y + height, ZONE);
         int filled = (int) Math.clamp((minigame.temperature() - low) * BAR_WIDTH / range, 0, BAR_WIDTH);
         graphics.fillGradient(x, y + 2, x + filled, y + height - 2, HEAT_COLD, HEAT_HOT);
         graphics.fill(x + filled - 1, y - 2, x + filled + 1, y + height + 2, UiStyle.LINE_BRIGHT);

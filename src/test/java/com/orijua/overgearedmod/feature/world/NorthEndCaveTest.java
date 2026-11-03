@@ -55,7 +55,7 @@ class NorthEndCaveTest {
         for (int i = 0; i < entities.size(); i++) {
             CompoundTag stand = entities.getCompound(i).getCompound("nbt");
             assertTrue(stand.getBoolean("Invulnerable"), "unbreakable");
-            assertEquals(4144959, stand.getInt("DisabledSlots"), "nothing can be taken or swapped");
+            assertEquals(NorthEndCave.ALL_SLOTS_DISABLED, stand.getInt("DisabledSlots"), "nothing can be taken or swapped");
             assertEquals(NorthEndCave.RELIC_TAG, stand.getList("Tags", Tag.TAG_STRING).getString(0));
             assertEquals(4, stand.getList("ArmorItems", Tag.TAG_COMPOUND).size());
             assertTrue(stand.getList("HandItems", Tag.TAG_COMPOUND).getCompound(0).getString("id").endsWith("_sword"));

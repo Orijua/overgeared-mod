@@ -3,6 +3,7 @@
   "ingredient": {
     "item": "overgearedmod:raw_jaffa"
   },
+  "max_temperature": 1000,
   "min_temperature": 950,
   "result": {
     "count": 1,

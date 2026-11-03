@@ -19,10 +19,18 @@ public record PlayerSkills(List<ResourceLocation> learned, List<Optional<Resourc
     public static final PlayerSkills EMPTY = new PlayerSkills(List.of(),
             List.of(Optional.empty(), Optional.empty(), Optional.empty()), Map.of());
 
-    // An empty slot is stored as "", so the list always has SLOT_COUNT entries.
+    // An empty slot is stored as "". Saved data of another length (older or hand-edited) is cut or padded to SLOT_COUNT.
     private static final Codec<List<Optional<ResourceLocation>>> SLOTS_CODEC = Codec.STRING.listOf().xmap(
-            list -> list.stream().map(s -> s.isEmpty() ? Optional.<ResourceLocation>empty() : Optional.ofNullable(ResourceLocation.tryParse(s))).toList(),
+            list -> normalize(list.stream().map(s -> s.isEmpty() ? Optional.<ResourceLocation>empty() : Optional.ofNullable(ResourceLocation.tryParse(s))).toList()),
             list -> list.stream().map(slot -> slot.map(ResourceLocation::toString).orElse("")).toList());
+
+    private static List<Optional<ResourceLocation>> normalize(List<Optional<ResourceLocation>> slots) {
+        List<Optional<ResourceLocation>> result = new ArrayList<>(slots.subList(0, Math.min(slots.size(), SLOT_COUNT)));
+        while (result.size() < SLOT_COUNT) {
+            result.add(Optional.empty());
+        }
+        return List.copyOf(result);
+    }
 
     public static final Codec<PlayerSkills> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.listOf().fieldOf("learned").forGetter(PlayerSkills::learned),

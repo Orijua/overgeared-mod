@@ -3,7 +3,7 @@ package com.orijua.overgearedmod.feature.smelting;
 /**
  * The bellows minigame of a manual melt, played on the client (pure, so it is unit tested). For 6 seconds the metal
  * cools by itself and every pump of the bellows heats it; the precision is the share of that time spent inside the
- * metal's zone (its melting temperature to {@link SmelterRules#ZONE_WIDTH} above). It starts in the middle of the zone.
+ * metal's zone (its melting temperature up to the recipe's maximum, by default {@link SmelterRules#ZONE_WIDTH} above). It starts in the middle of the zone.
  */
 public final class SmeltingMinigame {
     public static final long DURATION_MS = 6000;
@@ -17,10 +17,16 @@ public final class SmeltingMinigame {
     private long elapsed;
     private long inZone;
 
+    /** A game with the default zone width. */
     public SmeltingMinigame(int meltingTemperature) {
+        this(meltingTemperature, meltingTemperature + SmelterRules.ZONE_WIDTH);
+    }
+
+    /** A game whose zone goes from the melting temperature to the recipe's maximum. */
+    public SmeltingMinigame(int meltingTemperature, int maxTemperature) {
         this.zoneMin = meltingTemperature;
-        this.zoneMax = meltingTemperature + SmelterRules.ZONE_WIDTH;
-        this.temperature = meltingTemperature + SmelterRules.ZONE_WIDTH / 2.0;
+        this.zoneMax = Math.max(meltingTemperature + 1, maxTemperature);
+        this.temperature = (zoneMin + zoneMax) / 2.0;
     }
 
     public void pump() {

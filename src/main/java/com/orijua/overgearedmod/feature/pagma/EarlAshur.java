@@ -120,9 +120,11 @@ public class EarlAshur extends AshurRetinue {
         super.customServerAiStep();
         if (tickCount % 20 == 0) {
             updateBarViewers();
-            if (!isSummoned() && level() instanceof ServerLevel level
-                    && !level.getPlayers(player -> distanceToSqr(player) < 32 * 32 && PagmaStory.killedAshur(player)).isEmpty()) {
-                discard(); // the player near killed him elsewhere: he is dead
+            if (!isSummoned() && level() instanceof ServerLevel level) {
+                List<ServerPlayer> near = level.getPlayers(player -> distanceToSqr(player) < 32 * 32);
+                if (!near.isEmpty() && near.stream().allMatch(PagmaStory::killedAshur)) {
+                    discard(); // everyone near killed him elsewhere: he is dead; one with the story pending keeps him alive
+                }
             }
         }
         bossEvent.setProgress(getHealth() / getMaxHealth());

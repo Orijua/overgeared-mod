@@ -135,7 +135,7 @@ public final class BossTests {
         for (int i = 0; i < 20; i++) {
             int rewards = 0;
             for (ItemStack stack : table.getRandomItems(params, i)) {
-                if (EquipmentService.canEnhance(stack)) {
+                if (EquipmentService.isEquipment(stack)) {
                     rewards++;
                     ItemRating rating = stack.get(ModDataComponents.ITEM_RATING);
                     helper.assertTrue(rating != null && rating.ordinal() >= ItemRating.EPIC.ordinal(), "expected Epic or better, got " + rating);
@@ -143,6 +143,24 @@ public final class BossTests {
             }
             helper.assertTrue(rewards == 1, "exactly one rated piece per kill, got " + rewards);
         }
+        boss.discard();
+        helper.succeed();
+    }
+
+    /** The second phase starts when health reaches half (a hit that leaves it above half changes nothing). */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void boneLordChangesPhaseAtExactlyHalfHealth(GameTestHelper helper) {
+        BoneLord boss = spawnBoss(helper);
+        ServerLevel level = helper.getLevel();
+        boss.setHealth(boss.getMaxHealth() / 2 + 20);
+        boss.hurt(level.damageSources().generic(), 0.5f);
+        helper.assertFalse(boss.isPhaseTwo(), "above half health there is no phase two: " + boss.getHealth() + "/" + boss.getMaxHealth());
+
+        boss.invulnerableTime = 0;
+        boss.setHealth(boss.getMaxHealth() / 2);
+        boss.hurt(level.damageSources().generic(), 0.0f);
+        helper.assertTrue(boss.isPhaseTwo(), "at exactly half health it enrages: " + boss.getHealth() + "/" + boss.getMaxHealth());
+        boss.summonedMinions().forEach(Skeleton::discard);
         boss.discard();
         helper.succeed();
     }

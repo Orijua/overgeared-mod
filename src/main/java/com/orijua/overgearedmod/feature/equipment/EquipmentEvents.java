@@ -43,7 +43,13 @@ public final class EquipmentEvents {
 
     public static boolean meetsRequirements(Player player, ItemStack stack) {
         EquipRequirements requirements = stack.get(ModDataComponents.REQUIREMENTS);
-        return requirements == null || requirements.metBy(ProgressionService.effectiveStats(player));
+        return requirements == null || requirements.metBy(ProgressionService.statsWithoutEquipment(player));
+    }
+
+    /** Same rule with stats already computed, to reuse one calculation across several items. */
+    public static boolean meetsRequirements(PlayerStats stats, ItemStack stack) {
+        EquipRequirements requirements = stack.get(ModDataComponents.REQUIREMENTS);
+        return requirements == null || requirements.metBy(stats);
     }
 
     /** Equipment can give stats too (stat options), so both the stat effects and the bonuses are re-applied. */
@@ -55,8 +61,9 @@ public final class EquipmentEvents {
 
     /** Every option of the equipment the player wears where it counts and whose requirements they meet. */
     public static void forEachActiveOption(Player player, BiConsumer<OptionEffect, Float> action) {
+        PlayerStats stats = ProgressionService.statsWithoutEquipment(player);
         for (ItemStack stack : EquipmentBonuses.wornEquipment(player)) {
-            if (!meetsRequirements(player, stack)) {
+            if (!meetsRequirements(stats, stack)) {
                 continue;
             }
             for (RolledOption rolled : stack.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
@@ -137,7 +144,7 @@ public final class EquipmentEvents {
         }
         EquipRequirements requirements = stack.get(ModDataComponents.REQUIREMENTS);
         if (requirements != null && event.getEntity() != null) {
-            PlayerStats stats = ProgressionService.effectiveStats(event.getEntity());
+            PlayerStats stats = ProgressionService.statsWithoutEquipment(event.getEntity());
             lines.addAll(requirementLines(requirements, stats));
             if (!requirements.metBy(stats)) {
                 lines.add(Component.translatable("tooltip.overgearedmod.bonuses_inactive").withStyle(ChatFormatting.RED));

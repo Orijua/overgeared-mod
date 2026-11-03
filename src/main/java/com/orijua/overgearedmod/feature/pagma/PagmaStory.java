@@ -19,6 +19,8 @@ import java.util.Optional;
 public final class PagmaStory {
     /** Ashur, once the player is somebody (Smith's chain done), tells them of his secret request. */
     public static final ResourceLocation ASHUR_SECRET = Overgearedmod.id("ashur_secret");
+    /** Ashur gave the cave map: separate from the secret, because the map only exists once the world has a cave to point to. */
+    public static final ResourceLocation ASHUR_MAP_GIVEN = Overgearedmod.id("ashur_map_given");
     /** The book was appraised: Pagma's legacy is revealed, and Ashur comes for it. */
     public static final ResourceLocation APPRAISED = Overgearedmod.id("appraised_pagma_book");
     public static final ResourceLocation BETRAYAL = Overgearedmod.id("ashur_betrayal");

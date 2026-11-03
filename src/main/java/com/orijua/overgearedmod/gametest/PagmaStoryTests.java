@@ -18,10 +18,13 @@ import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.skill.SkillService;
 import com.orijua.overgearedmod.feature.world.AshurManor;
+import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
@@ -161,6 +164,69 @@ public final class PagmaStoryTests {
         helper.assertTrue(first.isCanceled() && player.getHealth() == 1.0f, "saved at 1 health");
         LivingDeathEvent second = NeoForge.EVENT_BUS.post(new LivingDeathEvent(player, player.damageSources().generic()));
         helper.assertFalse(second.isCanceled(), "not twice in a row");
+        LegendTitle.readyNow(player);
+        player.setHealth(player.getMaxHealth());
+        LivingDeathEvent third = NeoForge.EVENT_BUS.post(new LivingDeathEvent(player, player.damageSources().generic()));
+        helper.assertTrue(third.isCanceled() && player.getHealth() == 1.0f, "saved again once the cooldown is over");
+        helper.succeed();
+    }
+
+    /** Only Ashur takes the book, and only from someone he hunts: dying with an unappraised-by-the-eye book keeps it. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void dyingWithoutAshurKeepsTheBook(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().add(new ItemStack(ModItems.PAGMA_RARE_BOOK.get()));
+        helper.assertFalse(PagmaStory.isAshursEnemy(player), "Ashur is not after this player");
+        NeoForge.EVENT_BUS.post(new LivingDeathEvent(player, player.damageSources().generic()));
+        helper.assertTrue(player.getInventory().countItem(ModItems.PAGMA_RARE_BOOK.get()) == 1, "nobody took the book");
+        helper.succeed();
+    }
+
+    /** A second book changes nothing once the legacy is done: it isn't spent, and stats and skills stay. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aSecondBookIsRefusedOnceTheLegacyIsDone(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().add(new ItemStack(ModItems.PAGMA_RARE_BOOK.get()));
+        helper.assertTrue(PagmaBook.read(player), "the first book is read");
+        PlayerStats grown = ProgressionService.get(player).withProgress(12, 40, 3);
+        ProgressionService.set(player, grown);
+        SkillService.learn(player, Overgearedmod.id("iron_guard"));
+        var skills = SkillService.get(player);
+
+        player.getInventory().add(new ItemStack(ModItems.PAGMA_RARE_BOOK.get()));
+        helper.assertFalse(PagmaBook.read(player), "the second book is refused");
+        helper.assertTrue(player.getInventory().countItem(ModItems.PAGMA_RARE_BOOK.get()) == 1, "and kept");
+        helper.assertTrue(ProgressionService.get(player).equals(grown), "stats are untouched");
+        helper.assertTrue(SkillService.get(player).equals(skills), "skills are untouched");
+        helper.succeed();
+    }
+
+    /** Ashur's map comes in the first talk where the world has a cave to show; the secret is told the first time anyway. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void ashurGivesTheMapOnceThereIsACave(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        TestSupport.completed(player, "quality_test");
+        long seed = helper.getLevel().getSeed();
+        AshurBetrayal.talk(player);
+        helper.assertTrue(QuestService.get(player).isDiscovered(PagmaStory.SECRET_REQUEST), "the secret is told");
+        helper.assertTrue(player.getInventory().countItem(Items.FILLED_MAP) == 0, "no map without the cave dimension");
+
+        Satisfy.standIn(helper.getLevel());
+        boolean hadCave = WorldSites.siteFor(seed, WorldSites.NORTH_END_CAVE).isPresent();
+        if (!hadCave) {
+            WorldSites.remember(seed, WorldSites.NORTH_END_CAVE, new ChunkPos(40, 0));
+        }
+        try {
+            AshurBetrayal.talk(player);
+            helper.assertTrue(player.getInventory().countItem(Items.FILLED_MAP) == 1, "the map comes once there is a cave");
+            AshurBetrayal.talk(player);
+            helper.assertTrue(player.getInventory().countItem(Items.FILLED_MAP) == 1, "and only once");
+        } finally {
+            Satisfy.standIn(null);
+            if (!hadCave) {
+                WorldSites.forget(seed, WorldSites.NORTH_END_CAVE);
+            }
+        }
         helper.succeed();
     }
 
