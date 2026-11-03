@@ -484,6 +484,7 @@
   "message.overgearedmod.ashur_arrives": "Conde Ashur: «Sabía que alguien tan corriente como tú lo encontraría… y que la codicia lo abriría. Dámelo.»",
   "message.overgearedmod.ashur_took_book": "El conde Ashur se ha llevado el Libro raro de Pagma.",
   "message.overgearedmod.read_pagma_book": "Has leído el Libro raro de Pagma. Ahora eres el Sucesor de Pagma… y has vuelto al nivel 1.",
+  "message.overgearedmod.pagma_book_already_read": "Ya conoces todo lo que este libro puede enseñarte.",
   "message.overgearedmod.legend_saved": "«El que se convirtió en leyenda»: has resistido a la muerte.",
   "message.overgearedmod.smelter_ready": "La fundidora está lista para el fuelle",
   "message.overgearedmod.smelter_slag": "El metal se ha echado a perder: escoria",

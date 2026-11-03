@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.equipment.option.FixedOption;
 import com.orijua.overgearedmod.feature.progression.StatType;
 import com.orijua.overgearedmod.feature.smelting.MeltingRecipe;
+import com.orijua.overgearedmod.feature.smelting.SmelterRules;
 import com.orijua.overgearedmod.feature.smithing.ForgingExtras;
 import com.orijua.overgearedmod.feature.smithing.ForgingRecipe;
 import net.minecraft.core.HolderLookup;
@@ -104,20 +105,22 @@ final class ModRecipeProvider extends RecipeProvider {
         forge(output, "fracaso_sword", ModItems.BLUE_ORICHALCUM_INGOT.get(), 15, ModItems.FRACASO_BLUEPRINT.get(),
                 ModItems.FRACASO_SWORD.get(), 500, Optional.of(new EquipRequirements(300, Map.of(StatType.STRENGTH, 5000))),
                 new ForgingExtras(Optional.of(Overgearedmod.id("legendary_smith_successor")), ItemRating.UNIQUE, ItemRating.LEGENDARY,
-                        List.of(new FixedOption(Overgearedmod.id("fracaso_agility"), 30),
+                        List.of(new FixedOption(Overgearedmod.id("fracaso_agility"), 30, ItemRating.NORMAL, ItemRating.UNIQUE),
+                                new FixedOption(Overgearedmod.id("fracaso_agility"), 50, ItemRating.LEGENDARY),
                                 new FixedOption(Overgearedmod.id("fracaso_block"), 0.15f),
                                 new FixedOption(Overgearedmod.id("fracaso_darkness"), 0.2f),
-                                new FixedOption(Overgearedmod.id("fracaso_fear"), 50),
+                                new FixedOption(Overgearedmod.id("fracaso_fear"), 20),
                                 new FixedOption(Overgearedmod.id("fracaso_bisection"), 1, ItemRating.LEGENDARY))));
     }
 
     /**
      * Smelter recipes. Iron and jaffa also melt in the furnace (the smelter is better: a chance of an extra ingot);
-     * mithril and blue orichalcum only here. Coal reaches about 1050 degrees, blaze rods 1500 and lava 1600.
+     * mithril and blue orichalcum only here. Coal reaches about 1180 degrees, coal blocks 1300, blaze rods 1500 and lava 1600.
+     * Iron (1150-1250) and jaffa (950-1000) follow the canon's temperatures; the rest keep the default zone width.
      */
     private void melting(RecipeOutput output) {
-        melt(output, "iron_ingot", Items.IRON_INGOT, 900, 0, 160, 3, Items.RAW_IRON, Items.IRON_ORE, Items.DEEPSLATE_IRON_ORE);
-        melt(output, "jaffa_ingot", ModItems.JAFFA_INGOT.get(), 950, 0, 160, 4,
+        melt(output, "iron_ingot", Items.IRON_INGOT, 1150, 1250, 0, 160, 3, Items.RAW_IRON, Items.IRON_ORE, Items.DEEPSLATE_IRON_ORE);
+        melt(output, "jaffa_ingot", ModItems.JAFFA_INGOT.get(), 950, 1000, 0, 160, 4,
                 ModItems.RAW_JAFFA.get(), ModItems.JAFFA_ORE.get(), ModItems.DEEPSLATE_JAFFA_ORE.get());
         melt(output, "mithril_ingot", ModItems.MITHRIL_INGOT.get(), 1200, 3, 240, 8,
                 ModItems.RAW_MITHRIL.get(), ModItems.MITHRIL_ORE.get(), ModItems.DEEPSLATE_MITHRIL_ORE.get());
@@ -128,8 +131,14 @@ final class ModRecipeProvider extends RecipeProvider {
     /** A smelter recipe per source at data/overgearedmod/recipe/melting/&lt;result&gt;_from_&lt;source&gt;.json. */
     private static void melt(RecipeOutput output, String result, ItemLike ingot, int minTemperature, int smithingLevel, int time,
                              int smithingXp, ItemLike... sources) {
+        melt(output, result, ingot, minTemperature, minTemperature + SmelterRules.ZONE_WIDTH, smithingLevel, time, smithingXp, sources);
+    }
+
+    private static void melt(RecipeOutput output, String result, ItemLike ingot, int minTemperature, int maxTemperature,
+                             int smithingLevel, int time, int smithingXp, ItemLike... sources) {
         for (ItemLike source : sources) {
-            MeltingRecipe recipe = new MeltingRecipe(Ingredient.of(source), new ItemStack(ingot), minTemperature, smithingLevel, time, smithingXp);
+            MeltingRecipe recipe = new MeltingRecipe(Ingredient.of(source), new ItemStack(ingot), minTemperature, maxTemperature,
+                    smithingLevel, time, smithingXp);
             output.accept(Overgearedmod.id("melting/" + result + "_from_" + getItemName(source)), recipe, null);
         }
     }

@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.skill.SkillService;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -61,5 +62,37 @@ public final class SkillTests {
         helper.assertTrue(SkillService.definition(player, PAGMA_LINK).flatMap(def -> def.icon()).filter(Items.IRON_SWORD::equals).isPresent(),
                 "pagma_link should use the iron sword as icon");
         helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void skillNeedsMana(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        SkillService.learn(player, PAGMA_LINK);
+        float cost = SkillService.definition(player, PAGMA_LINK).orElseThrow().manaCost();
+
+        player.setData(ModAttachments.MANA, cost - 1);
+        helper.assertTrue(SkillService.use(player, 0) == SkillService.Result.NO_MANA, "one point short of the cost");
+        helper.assertTrue(player.getData(ModAttachments.MANA) == cost - 1, "a refused cast spends nothing");
+
+        player.setData(ModAttachments.MANA, cost + 5);
+        helper.assertTrue(SkillService.use(player, 0) == SkillService.Result.SUCCESS, "with enough mana it casts");
+        helper.assertTrue(player.getData(ModAttachments.MANA) == 5f, "and spends exactly the cost, left " + player.getData(ModAttachments.MANA));
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 200)
+    public static void cooldownRunsOut(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        SkillService.learn(player, PAGMA_LINK);
+        player.setData(ModAttachments.MANA, 1000f);
+        int cooldown = SkillService.definition(player, PAGMA_LINK).orElseThrow().cooldownTicks();
+        helper.assertTrue(SkillService.use(player, 0) == SkillService.Result.SUCCESS, "the first cast");
+        helper.assertTrue(SkillService.use(player, 0) == SkillService.Result.ON_COOLDOWN, "then it rests");
+        helper.runAtTickTime(cooldown + 2, () -> {
+            helper.assertTrue(SkillService.use(player, 0) == SkillService.Result.SUCCESS, "it casts again once the cooldown is over");
+            helper.succeed();
+        });
     }
 }

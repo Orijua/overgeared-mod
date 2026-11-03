@@ -18,6 +18,23 @@ class SmeltingMinigameTest {
     }
 
     @Test
+    void anExplicitMaximumEndsTheZoneThere() {
+        SmeltingMinigame jaffa = new SmeltingMinigame(950, 1000);
+        assertEquals(950, jaffa.zoneMin());
+        assertEquals(1000, jaffa.zoneMax());
+        assertEquals(975.0, jaffa.temperature(), 1e-9, "starts in the middle of 950-1000");
+        assertTrue(jaffa.inZone());
+
+        SmeltingMinigame iron = new SmeltingMinigame(1150, 1250);
+        assertEquals(1250, iron.zoneMax());
+        assertEquals(1200.0, iron.temperature(), 1e-9);
+        iron.pump(); // 1260: just over the top of the zone
+        assertFalse(iron.inZone(), "1260 is above the iron's 1250");
+        assertEquals(new SmeltingMinigame(900).zoneMax(), new SmeltingMinigame(900, 900 + SmelterRules.ZONE_WIDTH).zoneMax(),
+                "the one-argument game is the default width");
+    }
+
+    @Test
     void leavingTheBellowsAloneLetsItCoolOutOfTheZone() {
         SmeltingMinigame game = new SmeltingMinigame(900);
         game.update(SmeltingMinigame.DURATION_MS);

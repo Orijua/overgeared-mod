@@ -41,7 +41,7 @@ public final class LootTests {
         int equipmentSeen = 0;
         for (int i = 0; i < 40; i++) {
             for (ItemStack stack : weaponsmith.getRandomItems(chestParams(helper), i)) {
-                if (EquipmentService.canEnhance(stack)) {
+                if (EquipmentService.isEquipment(stack)) {
                     equipmentSeen++;
                     helper.assertTrue(stack.has(ModDataComponents.ITEM_RATING), "chest equipment should be rated: " + stack);
                 } else {

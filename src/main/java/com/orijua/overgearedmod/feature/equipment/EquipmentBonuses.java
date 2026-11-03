@@ -5,6 +5,8 @@ import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
+import com.orijua.overgearedmod.feature.progression.PlayerStats;
+import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -36,9 +38,10 @@ public final class EquipmentBonuses {
 
     public static void apply(Player player) {
         removeAll(player);
+        PlayerStats stats = ProgressionService.statsWithoutEquipment(player);
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             ItemStack stack = player.getItemBySlot(slot);
-            if (!stack.isEmpty() && slot == bonusSlot(stack) && EquipmentEvents.meetsRequirements(player, stack)) {
+            if (!stack.isEmpty() && slot == bonusSlot(stack) && EquipmentEvents.meetsRequirements(stats, stack)) {
                 forEachBonus(stack, slot, (attribute, modifier) -> {
                     AttributeInstance instance = player.getAttribute(attribute);
                     if (instance != null) {
@@ -69,7 +72,8 @@ public final class EquipmentBonuses {
         return stack.getItem() instanceof ArmorItem armor ? armor.getEquipmentSlot() : EquipmentSlot.MAINHAND;
     }
 
-    private static boolean isWeapon(ItemStack stack) {
+    /** Whether the item is a melee weapon: the only equipment that gets rating, enhancement and option bonuses. */
+    public static boolean isWeapon(ItemStack stack) {
         return stack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().stream()
                 .anyMatch(entry -> entry.attribute().equals(Attributes.ATTACK_DAMAGE));
     }

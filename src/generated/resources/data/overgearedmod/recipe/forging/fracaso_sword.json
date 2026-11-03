@@ -2,8 +2,14 @@
   "type": "overgearedmod:forging",
   "fixed_options": [
     {
+      "max_rating": "unique",
       "option": "overgearedmod:fracaso_agility",
       "value": 30.0
+    },
+    {
+      "min_rating": "legendary",
+      "option": "overgearedmod:fracaso_agility",
+      "value": 50.0
     },
     {
       "option": "overgearedmod:fracaso_block",
@@ -15,7 +21,7 @@
     },
     {
       "option": "overgearedmod:fracaso_fear",
-      "value": 50.0
+      "value": 20.0
     },
     {
       "min_rating": "legendary",

@@ -48,6 +48,11 @@ public final class ClassAndTitleTests {
         helper.succeed();
     }
 
+    /** The value of the modifier of {@code source}, or -1 if there is none. */
+    private static double valueFrom(List<StatModifier> modifiers, StatSource source) {
+        return modifiers.stream().filter(m -> m.source().equals(source)).mapToDouble(StatModifier::value).findFirst().orElse(-1);
+    }
+
     @GameTest(template = TestSupport.EMPTY)
     public static void statModifiersNameEachSource(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
@@ -59,11 +64,13 @@ public final class ClassAndTitleTests {
         List<StatModifier> strength = ProgressionService.modifiers(player).stream()
                 .filter(m -> m.stat() == StatType.STRENGTH && m.value() != 0).toList();
         helper.assertTrue(strength.size() == 3, "allocated, warrior and zombie_hunter: " + strength);
-        helper.assertTrue(strength.get(0).source() == StatSource.ALLOCATED && strength.get(0).value() == 2, "2 allocated points first");
-        helper.assertTrue(strength.get(1).source().name().getString().equals(ClassService.current(player)
-                .flatMap(id -> Definitions.get(player.level(), ModDatapackRegistries.PLAYER_CLASS, id))
-                .orElseThrow().name().getString()), "the class bonus is named after the class");
-        helper.assertTrue(strength.get(1).value() == 3 && strength.get(2).value() == 1, "warrior +3, zombie_hunter +1");
+        StatSource classSource = new StatSource(Definitions.get(player.level(), ModDatapackRegistries.PLAYER_CLASS, Overgearedmod.id("warrior"))
+                .orElseThrow().name());
+        StatSource titleSource = new StatSource(Definitions.get(player.level(), ModDatapackRegistries.TITLE, Overgearedmod.id("zombie_hunter"))
+                .orElseThrow().name());
+        helper.assertTrue(valueFrom(strength, StatSource.ALLOCATED) == 2, "2 allocated points: " + strength);
+        helper.assertTrue(valueFrom(strength, classSource) == 3, "the class bonus is named after the class, warrior +3: " + strength);
+        helper.assertTrue(valueFrom(strength, titleSource) == 1, "the title bonus is named after the title, zombie_hunter +1: " + strength);
         helper.assertTrue(ProgressionService.effectiveStats(player).strength() == 6, "2 + 3 + 1 STR");
         helper.succeed();
     }

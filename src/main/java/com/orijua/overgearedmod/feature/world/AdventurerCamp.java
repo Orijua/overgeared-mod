@@ -24,7 +24,7 @@ public final class AdventurerCamp {
     private static final String SIDES_POOL = Overgearedmod.MODID + ":adventurer_camp/sides";
     private static final String NO_POOL = "minecraft:empty";
     /** Weapons and armor, so the chest also shows rated loot (the chest loot modifier rates them). */
-    private static final String TENT_LOOT = "minecraft:chests/village/village_weaponsmith";
+    static final String TENT_LOOT = "minecraft:chests/village/village_weaponsmith";
 
     private AdventurerCamp() {
     }

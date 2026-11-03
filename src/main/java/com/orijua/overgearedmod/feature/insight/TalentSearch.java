@@ -23,7 +23,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Talent Search, the Ruler's Sword's skill (canon, cap. 157): it reveals hidden potential. Around the bearer, villagers
+ * Talent Search, the Ruler's Sword's skill (canon, cap. 157, medium certainty: it reveals hidden potential; the reach,
+ * the cooldown and the named/semi-named apprentice grades are own design). Around the bearer, villagers
  * with a talent ({@link Talents}) and named apprentices (semi-named ones too with high Insight) glow for a while and are
  * listed in the chat. Each villager counts once per player (kept on the player, not on the sword) for the {@link #MILESTONE}
  * (the chief's quest asks for three).

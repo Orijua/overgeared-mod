@@ -43,6 +43,8 @@ import java.util.function.Predicate;
 public final class NorthEndCave {
     public static final ResourceLocation STRUCTURE = Overgearedmod.id("north_end_cave");
     public static final ResourceKey<Structure> KEY = ResourceKey.create(Registries.STRUCTURE, STRUCTURE);
+    /** Armor stand {@code DisabledSlots} with every slot locked, to take, swap and put. */
+    static final int ALL_SLOTS_DISABLED = 4144959;
     public static final String ENTRANCE = "north_end_cave/entrance";
     public static final String DESCENT = "north_end_cave/descent";
     public static final String HALL = "north_end_cave/hall";
@@ -293,7 +295,7 @@ public final class NorthEndCave {
         stand.put("Tags", tags);
         stand.putBoolean("ShowArms", true);
         stand.putBoolean("Invulnerable", true);
-        stand.putInt("DisabledSlots", 4144959); // every slot locked, to take, swap and put
+        stand.putInt("DisabledSlots", ALL_SLOTS_DISABLED);
         piece.entity(x, y, z, "minecraft:armor_stand", stand);
     }
 

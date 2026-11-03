@@ -45,7 +45,7 @@ public final class NpcQuestTests {
         helper.assertTrue(QuestService.accept(player, FIREWOOD, smith) == QuestService.Result.SUCCESS, "at Smith");
         player.getInventory().add(new ItemStack(Items.OAK_LOG, 10));
         helper.assertTrue(QuestService.deliver(player, FIREWOOD, null) == QuestService.Result.TALK_TO_GIVER, "delivering needs Smith too");
-        helper.assertTrue(QuestService.claim(player, FIREWOOD, null) == QuestService.Result.NOT_DONE, "and it isn't done anyway");
+        helper.assertTrue(QuestService.claim(player, FIREWOOD, null) == QuestService.Result.NOT_DONE, "it isn't done yet, checked before the giver");
         smith.discard();
         helper.assertTrue(QuestService.deliver(player, FIREWOOD, smith) == QuestService.Result.TALK_TO_GIVER, "not to a Smith who is gone");
         helper.assertTrue(player.getInventory().countItem(Items.OAK_LOG) == 10, "refused deliveries take nothing");
@@ -73,6 +73,21 @@ public final class NpcQuestTests {
         helper.assertTrue(player.getInventory().countItem(Items.BIRCH_LOG) == 6, "only the 24 missing were taken");
         helper.assertTrue(QuestService.claim(player, FIREWOOD, smith) == QuestService.Result.SUCCESS, "done");
         helper.assertTrue(player.getInventory().countItem(Items.BREAD) == 4, "Smith's reward");
+        helper.succeed();
+    }
+
+    /** A finished quest is only claimed at its giver: nowhere else and from nobody else. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aDoneQuestIsOnlyClaimedAtItsGiver(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        BlacksmithNpc smith = TestSupport.smith(helper);
+        VillageChiefNpc chief = TestSupport.chief(helper);
+        QuestService.accept(player, FIREWOOD, smith);
+        player.getInventory().add(new ItemStack(Items.OAK_LOG, 64));
+        helper.assertTrue(QuestService.deliver(player, FIREWOOD, smith) == QuestService.Result.SUCCESS, "all the logs are delivered");
+        helper.assertTrue(QuestService.claim(player, FIREWOOD, null) == QuestService.Result.TALK_TO_GIVER, "not from the Quests tab");
+        helper.assertTrue(QuestService.claim(player, FIREWOOD, chief) == QuestService.Result.TALK_TO_GIVER, "not at another NPC");
+        helper.assertTrue(QuestService.claim(player, FIREWOOD, smith) == QuestService.Result.SUCCESS, "at Smith it is");
         helper.succeed();
     }
 

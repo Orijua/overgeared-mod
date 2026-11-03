@@ -58,6 +58,20 @@ public final class SmithingTests {
         EquipRequirements requirements = recipe.get().value().requirements().orElseThrow();
         helper.assertTrue(requirements.level() == 10 && requirements.stats().get(StatType.STRENGTH) == 8, "needs level 10 and 8 STR");
         helper.assertTrue(ModItems.GRID_LEGENDARY_SWORD.toStack().is(ItemTags.SWORDS), "it is a sword, so weapon options can roll on it");
+        ServerPlayer smith = TestSupport.fakePlayer(helper);
+        ProgressionService.set(smith, ProgressionService.get(smith).with(StatType.DEXTERITY, 200)); // high ratings, more options
+        Set<ResourceLocation> weaponOptions = Set.of(Overgearedmod.id("sharpness"), Overgearedmod.id("swiftness"), Overgearedmod.id("life_steal"));
+        int rolled = 0;
+        for (int i = 0; i < 200; i++) {
+            ItemStack sword = recipe.get().value().result().copy();
+            EquipmentService.stampForged(smith, sword, recipe.get().value().requirements());
+            for (RolledOption option : sword.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
+                if (weaponOptions.contains(option.option())) {
+                    rolled++;
+                }
+            }
+        }
+        helper.assertTrue(rolled > 0, "the forge rolled weapon options on Grid's sword in 200 forges");
         helper.succeed();
     }
 
@@ -66,13 +80,16 @@ public final class SmithingTests {
         ServerPlayer smith = TestSupport.fakePlayer(helper);
         ProgressionService.set(smith, ProgressionService.get(smith).with(StatType.DEXTERITY, 200)); // high ratings, more options
         Set<ResourceLocation> weaponOnly = Set.of(Overgearedmod.id("sharpness"), Overgearedmod.id("swiftness"), Overgearedmod.id("life_steal"));
+        int rolled = 0;
         for (int i = 0; i < 50; i++) {
             ItemStack chestplate = new ItemStack(Items.IRON_CHESTPLATE);
             EquipmentService.stampForged(smith, chestplate, Optional.empty());
             for (RolledOption option : chestplate.getOrDefault(ModDataComponents.ITEM_OPTIONS, List.<RolledOption>of())) {
+                rolled++;
                 helper.assertFalse(weaponOnly.contains(option.option()), "armor rolled a weapon option: " + option.option());
             }
         }
+        helper.assertTrue(rolled > 0, "some armor options rolled, so this test proves something");
         helper.succeed();
     }
 

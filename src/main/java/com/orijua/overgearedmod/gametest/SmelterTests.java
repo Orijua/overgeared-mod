@@ -70,7 +70,7 @@ public final class SmelterTests {
         helper.assertTrue(furnaceTakes(helper, Items.RAW_IRON) && furnaceTakes(helper, ModItems.RAW_JAFFA.get()), "iron and jaffa: furnace too");
         helper.assertFalse(furnaceTakes(helper, ModItems.RAW_MITHRIL.get()), "mithril: not in the furnace");
         helper.assertFalse(furnaceTakes(helper, ModItems.RAW_BLUE_ORICHALCUM.get()), "blue orichalcum: not in the furnace");
-        int[] heats = {900, 950, 1200, 1450};
+        int[] heats = {1150, 950, 1200, 1450};
         int[] levels = {0, 0, 3, 8};
         Item[] metals = {Items.RAW_IRON, ModItems.RAW_JAFFA.get(), ModItems.RAW_MITHRIL.get(), ModItems.RAW_BLUE_ORICHALCUM.get()};
         for (int i = 0; i < metals.length; i++) {
@@ -80,6 +80,34 @@ public final class SmelterTests {
                     metals[i] + " at " + recipe.minTemperature() + "° and smithing " + recipe.smithingLevel());
         }
         helper.assertTrue(melting(helper, ModItems.BLUE_ORICHALCUM_ORE.get()).isPresent(), "and the ore block itself");
+        helper.succeed();
+    }
+
+    /** BUG-034: iron melts at 1150-1250 and jaffa at 950-1000 (canon); the other metals keep the default zone width. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void ironAndJaffaMeltInTheirCanonRanges(GameTestHelper helper) {
+        MeltingRecipe iron = melting(helper, Items.RAW_IRON).orElseThrow();
+        MeltingRecipe jaffa = melting(helper, ModItems.RAW_JAFFA.get()).orElseThrow();
+        helper.assertTrue(iron.minTemperature() == 1150 && iron.maxTemperature() == 1250,
+                "iron " + iron.minTemperature() + "-" + iron.maxTemperature());
+        helper.assertTrue(jaffa.minTemperature() == 950 && jaffa.maxTemperature() == 1000,
+                "jaffa " + jaffa.minTemperature() + "-" + jaffa.maxTemperature());
+        for (Item item : new Item[]{ModItems.RAW_MITHRIL.get(), ModItems.RAW_BLUE_ORICHALCUM.get()}) {
+            MeltingRecipe other = melting(helper, item).orElseThrow();
+            helper.assertTrue(other.maxTemperature() == other.minTemperature() + SmelterRules.ZONE_WIDTH, item + " keeps the default zone");
+        }
+        helper.succeed();
+    }
+
+    /** BUG-034: coal reaches the iron's melting heat (progression intact), but mithril needs a coal block or better. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void coalMeltsIronButMithrilNeedsCoalBlocks(GameTestHelper helper) {
+        int coal = SmelterBlockEntity.fuelHeat(new ItemStack(Items.COAL));
+        int block = SmelterBlockEntity.fuelHeat(new ItemStack(Items.COAL_BLOCK));
+        int iron = melting(helper, Items.RAW_IRON).orElseThrow().minTemperature();
+        int mithril = melting(helper, ModItems.RAW_MITHRIL.get()).orElseThrow().minTemperature();
+        helper.assertTrue(coal >= iron, "coal " + coal + " melts iron " + iron);
+        helper.assertTrue(coal < mithril && block >= mithril, "coal " + coal + " < mithril " + mithril + " <= coal block " + block);
         helper.succeed();
     }
 
@@ -138,7 +166,7 @@ public final class SmelterTests {
         helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.OUTPUT).isEmpty(), "still heating up: " + smelter.temperature() + "°");
         tick(helper, smelter, 600);
         ItemStack ingots = smelter.items().getItem(SmelterBlockEntity.OUTPUT);
-        helper.assertTrue(ingots.is(Items.IRON_INGOT) && ingots.getCount() >= 2, "both pieces melted: " + ingots);
+        helper.assertTrue(ingots.is(Items.IRON_INGOT) && ingots.getCount() == 2, "both pieces melted, no extra for a novice: " + ingots);
         helper.assertFalse(smelter.melting(), "it stops when the metal runs out");
         helper.succeed();
     }
@@ -160,7 +188,7 @@ public final class SmelterTests {
         helper.succeed();
     }
 
-    /** The bellows need the melting heat exactly: 899 degrees is not enough for iron, 900 is. */
+    /** The bellows need the melting heat exactly: 1149 degrees is not enough for iron, 1150 is. */
     @GameTest(template = TestSupport.EMPTY)
     public static void theBellowsNeedTheExactMeltingHeat(GameTestHelper helper) {
         ServerPlayer smith = TestSupport.fakePlayer(helper);
@@ -168,12 +196,12 @@ public final class SmelterTests {
         SmelterMenu menu = menu(helper, smith, smelter);
         smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON));
         smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL));
-        setTemperature(helper, smelter, 899);
-        helper.assertTrue(smelter.temperature() == 899, "set to 899: " + smelter.temperature());
-        helper.assertFalse(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "899: one degree short");
-        setTemperature(helper, smelter, 900);
-        helper.assertTrue(smelter.temperature() == 900, "set to 900: " + smelter.temperature());
-        helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "900: the bellows start");
+        setTemperature(helper, smelter, 1149);
+        helper.assertTrue(smelter.temperature() == 1149, "set to 1149: " + smelter.temperature());
+        helper.assertFalse(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "1149: one degree short");
+        setTemperature(helper, smelter, 1150);
+        helper.assertTrue(smelter.temperature() == 1150, "set to 1150: " + smelter.temperature());
+        helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "1150: the bellows start");
         helper.succeed();
     }
 
@@ -185,7 +213,7 @@ public final class SmelterTests {
         tag.putBoolean("fire_on", true);
         tag.putInt("burn_time", 1000);
         tag.putInt("burn_total", 1000);
-        tag.putInt("fuel_heat", 1050);
+        tag.putInt("fuel_heat", SmelterBlockEntity.fuelHeat(new ItemStack(Items.COAL)));
         smelter.loadWithComponents(tag, registries);
     }
 
@@ -196,7 +224,7 @@ public final class SmelterTests {
         SmelterBlockEntity smelter = placeSmelter(helper);
         smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON, 40));
         smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL));
-        setTemperature(helper, smelter, 1000);
+        setTemperature(helper, smelter, 1200);
         ResourceLocation recipeId = null;
         int expectedXp = melting(helper, Items.RAW_IRON).orElseThrow().smithingXp() * SmelterRules.MANUAL_XP_MULTIPLIER;
         int slag = 0;
@@ -269,6 +297,7 @@ public final class SmelterTests {
         helper.assertFalse(menu.finishManual(smith, 1.0), "a result in the same tick is too fast to be a real game");
         helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == 3, "refused results spend nothing");
 
+        // A refused result clears the running game (finishManual resets its start), so the bellows must be started again.
         menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON);
         int xpBefore = ProgressionService.get(smith).smithingXp();
         helper.runAtTickTime(SmelterRules.MIN_MANUAL_TICKS + 2, () -> {
@@ -287,11 +316,16 @@ public final class SmelterTests {
 
     /** Hot smelter with iron and the bellows started; the caller then changes things before the result arrives. */
     private static SmelterMenu startedManualMelt(GameTestHelper helper, ServerPlayer smith, SmelterBlockEntity smelter) {
+        return startedManualMelt(helper, smith, smelter, Items.COAL, 200);
+    }
+
+    private static SmelterMenu startedManualMelt(GameTestHelper helper, ServerPlayer smith, SmelterBlockEntity smelter, Item fuel,
+                                                 int heatingTicks) {
         SmelterMenu menu = menu(helper, smith, smelter);
         smelter.items().setItem(SmelterBlockEntity.INPUT, new ItemStack(Items.RAW_IRON));
-        smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(Items.COAL, 2));
+        smelter.items().setItem(SmelterBlockEntity.FUEL, new ItemStack(fuel, 2));
         menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON); // cold: lights the fire
-        tick(helper, smelter, 200);
+        tick(helper, smelter, heatingTicks);
         helper.assertTrue(menu.clickMenuButton(smith, SmelterMenu.MANUAL_BUTTON), "hot now: the bellows start");
         return menu;
     }
@@ -319,7 +353,7 @@ public final class SmelterTests {
         SmelterMenu menu = startedManualMelt(helper, smith, smelter);
         menu.clickMenuButton(smith, SmelterMenu.PUT_OUT_BUTTON);
         tick(helper, smelter, 200);
-        helper.assertTrue(smelter.temperature() < 900, "cooled below the melting point of iron: " + smelter.temperature());
+        helper.assertTrue(smelter.temperature() < 1150, "cooled below the melting point of iron: " + smelter.temperature());
         helper.runAtTickTime(SmelterRules.MIN_MANUAL_TICKS + 2, () -> {
             helper.assertFalse(menu.finishManual(smith, 1.0), "cold: the result is refused");
             helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).getCount() == 1, "nothing consumed");
@@ -333,10 +367,11 @@ public final class SmelterTests {
     public static void manualMeltSurvivesThePutOutWhileHot(GameTestHelper helper) {
         ServerPlayer smith = TestSupport.fakePlayer(helper);
         SmelterBlockEntity smelter = placeSmelter(helper);
-        SmelterMenu menu = startedManualMelt(helper, smith, smelter);
+        // Coal block (1300°): coal alone tops out 30° over iron's melting heat, too little to survive the 60-tick game cooling.
+        SmelterMenu menu = startedManualMelt(helper, smith, smelter, Items.COAL_BLOCK, 250);
         menu.clickMenuButton(smith, SmelterMenu.PUT_OUT_BUTTON);
         tick(helper, smelter, 10);
-        helper.assertTrue(smelter.temperature() >= 900, "still hot: " + smelter.temperature());
+        helper.assertTrue(smelter.temperature() >= 1150, "still hot: " + smelter.temperature());
         helper.runAtTickTime(SmelterRules.MIN_MANUAL_TICKS + 2, () -> {
             helper.assertTrue(menu.finishManual(smith, 1.0), "hot enough: accepted");
             helper.assertTrue(smelter.items().getItem(SmelterBlockEntity.INPUT).isEmpty(), "the piece melted");

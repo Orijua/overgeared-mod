@@ -152,12 +152,17 @@ class ForgingMinigameTest {
         return game;
     }
 
+    /** The time into the first sweep, on the way out, at which the hammer is at {@code position}. */
+    private static long outwardTime(double position) {
+        return Math.round(position * ForgingMinigame.FIRST_SWEEP_MS / 2);
+    }
+
     @Test
     void strikesBetweenTheEdgeAndTheMiddleScoreInBetween() {
-        // First sweep: 1600 ms across and back, position = 2t/1600 on the way out.
-        assertEquals(0.5, hammerPhase().strike(1000 + 180), 1e-9, "position 0.225: distance 0.275");
-        assertEquals(1.0, hammerPhase().strike(1000 + 360), 1e-9, "position 0.45: exactly on the perfect margin");
-        assertEquals(0.9778, hammerPhase().strike(1000 + 352), 1e-4, "position 0.44: just outside it");
+        // First sweep: FIRST_SWEEP_MS across and back, position = 2t/FIRST_SWEEP_MS on the way out.
+        assertEquals(0.5, hammerPhase().strike(1000 + outwardTime(0.225)), 1e-9, "position 0.225: distance 0.275");
+        assertEquals(1.0, hammerPhase().strike(1000 + outwardTime(0.45)), 1e-9, "position 0.45: exactly on the perfect margin");
+        assertEquals(0.9778, hammerPhase().strike(1000 + outwardTime(0.44)), 1e-4, "position 0.44: just outside it");
     }
 
     @Test

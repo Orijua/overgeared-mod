@@ -484,6 +484,7 @@
   "message.overgearedmod.ashur_arrives": "Earl Ashur: \"I knew someone as ordinary as you would find it... and that greed would open it. Give it to me.\"",
   "message.overgearedmod.ashur_took_book": "Earl Ashur took Pagma's Rare Book.",
   "message.overgearedmod.read_pagma_book": "You read Pagma's Rare Book. You are now Pagma's Successor... and back at level 1.",
+  "message.overgearedmod.pagma_book_already_read": "You already know everything this book can teach you.",
   "message.overgearedmod.legend_saved": "\"One Who Became a Legend\": you held on against death.",
   "message.overgearedmod.smelter_ready": "The smelter is ready for the bellows",
   "message.overgearedmod.smelter_slag": "The metal is ruined: slag",

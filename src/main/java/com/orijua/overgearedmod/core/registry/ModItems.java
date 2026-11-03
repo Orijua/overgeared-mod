@@ -81,7 +81,7 @@ public final class ModItems {
             properties -> new SmithingHammerItem(10, properties), new Item.Properties().durability(500));
     public static final DeferredItem<SmithingHammerItem> MITHRIL_SMITHING_HAMMER = ITEMS.registerItem("mithril_smithing_hammer",
             properties -> new SmithingHammerItem(20, properties), new Item.Properties().durability(1000).rarity(Rarity.UNCOMMON));
-    // Swords of observation (canon, cap. 157): the Commander's (the chief's watch quest) and the Ruler's (lent by the chief).
+    // Swords of observation (canon, cap. 157; the speeds and Insight bonuses are own design): the Commander's (the chief's watch quest) and the Ruler's (lent by the chief).
     public static final DeferredItem<InsightSwordItem> COMMANDERS_SWORD = ITEMS.registerItem("commanders_sword",
             properties -> new InsightSwordItem(Tiers.IRON, 140, 10, false, properties.attributes(SwordItem.createAttributes(Tiers.IRON, 3, -2.4f))),
             new Item.Properties().rarity(Rarity.UNCOMMON));

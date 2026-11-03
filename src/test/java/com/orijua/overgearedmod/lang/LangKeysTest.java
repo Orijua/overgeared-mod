@@ -5,16 +5,20 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -95,5 +99,31 @@ class LangKeysTest {
         } catch (Exception e) {
             throw new AssertionError("could not read " + file, e);
         }
+    }
+
+    private static final Pattern LITERAL_KEY = Pattern.compile("translatable\\(\\s*\"([^\"]+)\"\\s*[,)]");
+
+    /**
+     * Every key written literally in {@code Component.translatable("...")} exists in the language file. Keys built by
+     * concatenation or chosen with a ternary (e.g. {@code getDescriptionId() + ".desc"}) are not covered. The gametest
+     * package is skipped: it isn't shown to players.
+     */
+    @Test
+    void everyLiteralKeyInCodeExists() throws Exception {
+        JsonObject en = load("en_us.json");
+        Path root = Path.of("src", "main", "java");
+        TreeSet<String> missing = new TreeSet<>();
+        try (Stream<Path> files = Files.walk(root)) {
+            for (Path file : files.filter(path -> path.toString().endsWith(".java"))
+                    .filter(path -> !path.toString().replace(File.separatorChar, '/').contains("/gametest/")).toList()) {
+                Matcher matcher = LITERAL_KEY.matcher(Files.readString(file, StandardCharsets.UTF_8));
+                while (matcher.find()) {
+                    if (!en.has(matcher.group(1))) {
+                        missing.add(matcher.group(1) + " (" + file.getFileName() + ")");
+                    }
+                }
+            }
+        }
+        assertTrue(missing.isEmpty(), "Keys used in code but missing in en_us.json: " + missing);
     }
 }

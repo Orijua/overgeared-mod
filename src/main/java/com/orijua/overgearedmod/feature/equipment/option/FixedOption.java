@@ -13,29 +13,38 @@ import java.util.List;
 /**
  * An option a recipe always gives, with a set value, instead of a random roll, e.g.
  * {"option": "overgearedmod:fracaso_bisection", "value": 1, "min_rating": "legendary"}.
- * {@code min_rating} keeps it for forges that come out at least that good.
+ * {@code min_rating} keeps it for forges that come out at least that good, and {@code max_rating} for forges that come
+ * out at most that good (e.g. agility 30 with {@code "max_rating": "unique"} next to an agility 50 line from legendary up).
  */
-public record FixedOption(ResourceLocation option, float value, ItemRating minRating) {
+public record FixedOption(ResourceLocation option, float value, ItemRating minRating, ItemRating maxRating) {
+    private static final ItemRating HIGHEST = ItemRating.values()[ItemRating.values().length - 1];
+
     public static final Codec<FixedOption> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ResourceLocation.CODEC.fieldOf("option").forGetter(FixedOption::option),
             Codec.FLOAT.fieldOf("value").forGetter(FixedOption::value),
-            ItemRating.CODEC.optionalFieldOf("min_rating", ItemRating.NORMAL).forGetter(FixedOption::minRating)
+            ItemRating.CODEC.optionalFieldOf("min_rating", ItemRating.NORMAL).forGetter(FixedOption::minRating),
+            ItemRating.CODEC.optionalFieldOf("max_rating", HIGHEST).forGetter(FixedOption::maxRating)
     ).apply(instance, FixedOption::new));
 
     public static final StreamCodec<ByteBuf, List<FixedOption>> LIST_STREAM_CODEC = StreamCodec.composite(
             ResourceLocation.STREAM_CODEC, FixedOption::option,
             ByteBufCodecs.FLOAT, FixedOption::value,
             ItemRating.STREAM_CODEC, FixedOption::minRating,
+            ItemRating.STREAM_CODEC, FixedOption::maxRating,
             FixedOption::new).apply(ByteBufCodecs.list());
 
+    public FixedOption(ResourceLocation option, float value, ItemRating minRating) {
+        this(option, value, minRating, HIGHEST);
+    }
+
     public FixedOption(ResourceLocation option, float value) {
-        this(option, value, ItemRating.NORMAL);
+        this(option, value, ItemRating.NORMAL, HIGHEST);
     }
 
     /** The options of {@code fixed} a forge rated {@code rating} gets, ready to stamp on the item. */
     public static List<RolledOption> forRating(List<FixedOption> fixed, ItemRating rating) {
         return fixed.stream()
-                .filter(option -> rating.compareTo(option.minRating()) >= 0)
+                .filter(option -> rating.compareTo(option.minRating()) >= 0 && rating.compareTo(option.maxRating()) <= 0)
                 .map(option -> new RolledOption(option.option(), option.value()))
                 .toList();
     }

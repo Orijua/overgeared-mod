@@ -42,4 +42,23 @@ public final class EffectTests {
         helper.assertTrue(effect != null && effect.getDuration() == 100, "the hit should make the zombie bleed for 100 ticks");
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void effectOptionNeverAppliesWithoutChanceOrOnADeadTarget(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ApplyEffectOptionEffect bleed = new ApplyEffectOptionEffect(ModEffects.BLEEDING, 100, 0);
+
+        Zombie lucky = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 1, 1, 1);
+        bleed.onHit(player, lucky, 5.0f, 0.0f);
+        helper.assertFalse(lucky.hasEffect(ModEffects.BLEEDING), "a 0% chance never applies");
+        bleed.onHit(player, lucky, 5.0f, 1.0f);
+        helper.assertTrue(lucky.hasEffect(ModEffects.BLEEDING), "control: a 100% chance does");
+
+        Zombie dead = helper.spawnWithNoFreeWill(EntityType.ZOMBIE, 2, 1, 1);
+        dead.kill();
+        helper.assertFalse(dead.isAlive(), "the target is dead");
+        bleed.onHit(player, dead, 5.0f, 1.0f);
+        helper.assertFalse(dead.hasEffect(ModEffects.BLEEDING), "a dead target gets nothing");
+        helper.succeed();
+    }
 }
