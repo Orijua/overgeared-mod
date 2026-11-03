@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
@@ -22,8 +23,10 @@ class TalentsTest {
     void elsewhereAboutOneInFourAndAlwaysTheSame() {
         int talented = 0;
         Set<String> seen = new HashSet<>();
+        // The high bits (i) decide who has a talent; the low bits come from a seeded generator so every kind shows up.
+        Random random = new Random(42);
         for (int i = 0; i < 4000; i++) {
-            Optional<String> talent = Talents.of(new UUID(i, i * 7L), false);
+            Optional<String> talent = Talents.of(new UUID(i, random.nextLong()), false);
             if (talent.isPresent()) {
                 talented++;
                 seen.add(talent.get());
