@@ -34,3 +34,4 @@ repo/
 # Gradle/IDE extras
 *.log
 .vscode/
+logs/
