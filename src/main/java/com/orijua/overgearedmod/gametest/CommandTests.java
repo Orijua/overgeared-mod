@@ -12,10 +12,14 @@ import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyMapData;
+import com.orijua.overgearedmod.feature.world.SatisfyPlaces;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +28,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import com.mojang.brigadier.suggestion.Suggestion;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -149,6 +154,58 @@ public final class CommandTests {
             cave.ifPresent(chunk -> WorldSites.remember(seed, WorldSites.NORTH_END_CAVE, chunk));
             Satisfy.standIn(null);
             landingBefore.ifPresentOrElse(pos -> WorldSites.rememberLanding(seed, pos), () -> WorldSites.forgetLanding(seed));
+        }
+        helper.succeed();
+    }
+
+    /** The key of the message a command fails with, or {@code null} if it does not fail. */
+    private static String refusal(GameTestHelper helper, ServerPlayer player, String command) {
+        try {
+            helper.getLevel().getServer().getCommands().getDispatcher().execute(command, player.createCommandSourceStack().withPermission(4));
+            return null;
+        } catch (CommandSyntaxException e) {
+            return e.getRawMessage() instanceof Component component && component.getContents() instanceof TranslatableContents contents
+                    ? contents.getKey() : e.getMessage();
+        }
+    }
+
+    /** The map's canon places (C4): goto lands on dry ground near them, refuses the sea and unknown names, and completes them. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void gotoReachesTheMapPlacesOrRefusesTheSea(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ServerLevel level = helper.getLevel();
+        Satisfy.standIn(level); // the test server has no Satisfy dimension: its flat overworld plays it
+        try {
+            helper.assertTrue(SiteLanding.SITES.containsAll(List.of(WorldSites.BAIRAN, WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR,
+                    WorldSites.WINSTON, "reidan", "titan", "behen_archipelago")), "structures and map places: " + SiteLanding.SITES);
+            helper.assertTrue(SiteLanding.SITES.size() == SiteLanding.SITES.stream().distinct().count(), "each name once");
+
+            SatisfyMapData map = SatisfyMapData.west();
+            SatisfyPlaces.Place reidan = SatisfyPlaces.west().get("reidan").orElseThrow();
+            BlockPos landing = SiteLanding.findPlace(level, "reidan").orElseThrow(() -> new AssertionError("Reidan has a landing"));
+            int[] expected = SatisfyPlaces.landing(map, reidan).orElseThrow();
+            helper.assertTrue(Math.abs(landing.getX() - expected[0]) <= 12 && Math.abs(landing.getZ() - expected[1]) <= 12,
+                    "Reidan: near its cell on the map, " + landing);
+            helper.assertTrue(map.isLandCell(map.colAtBlock(landing.getX()), map.rowAtBlock(landing.getZ())), "on a land cell of the map");
+            helper.assertTrue(level.getBlockState(landing).getCollisionShape(level, landing).isEmpty()
+                    && level.getBlockState(landing.above()).getCollisionShape(level, landing.above()).isEmpty(), "room to stand");
+            helper.assertFalse(level.getBlockState(landing.below()).isAir(), "on the ground");
+            helper.assertTrue(level.getFluidState(landing.below()).isEmpty(), "not on water");
+
+            helper.assertTrue(execute(helper, player, "satisfy debug goto reidan") == 1, "goto reidan");
+            helper.assertTrue(execute(helper, player, "satisfy debug goto behen_archipelago") == 1, "goto an island of Behen");
+            helper.assertTrue("message.overgearedmod.debug_goto_sea".equals(refusal(helper, player, "satisfy debug goto red_sea")),
+                    "the Red Sea is refused as sea");
+            helper.assertTrue("message.overgearedmod.debug_goto_unknown".equals(refusal(helper, player, "satisfy debug goto atlantis")),
+                    "an unknown name is refused");
+
+            List<String> suggested = level.getServer().getCommands().getDispatcher()
+                    .getCompletionSuggestions(level.getServer().getCommands().getDispatcher()
+                            .parse("satisfy debug goto ti", player.createCommandSourceStack().withPermission(4)))
+                    .join().getList().stream().map(Suggestion::getText).toList();
+            helper.assertTrue(suggested.contains("titan"), "titan is suggested: " + suggested);
+        } finally {
+            Satisfy.standIn(null);
         }
         helper.succeed();
     }

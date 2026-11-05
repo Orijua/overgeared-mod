@@ -517,6 +517,8 @@
   "message.overgearedmod.debug_insight": "Perspicacia: %s",
   "message.overgearedmod.debug_goto": "Teletransportado a %s en %s %s %s",
   "message.overgearedmod.debug_goto_none": "Este mundo no tiene %s (solo los mundos nuevos lo tienen)",
+  "message.overgearedmod.debug_goto_unknown": "No hay ningún lugar llamado %s",
+  "message.overgearedmod.debug_goto_sea": "%s está en el mar: no hay tierra firme donde aparecer",
   "message.overgearedmod.debug_quest_complete": "Misión %s completada (%s misiones marcadas como hechas, sin recompensas)",
   "message.overgearedmod.debug_bad_quest": "Misión desconocida: %s",
   "message.overgearedmod.debug_bad_grade": "Grado desconocido: %s",

@@ -516,6 +516,8 @@
   "message.overgearedmod.debug_insight": "Insight: %s",
   "message.overgearedmod.debug_goto": "Teleported to %s at %s %s %s",
   "message.overgearedmod.debug_goto_none": "This world has no %s (only new worlds have one)",
+  "message.overgearedmod.debug_goto_unknown": "There is no place called %s",
+  "message.overgearedmod.debug_goto_sea": "%s is in the sea: there is no dry ground there to land on",
   "message.overgearedmod.debug_quest_complete": "Quest %s completed (%s quests marked done, no rewards)",
   "message.overgearedmod.debug_bad_quest": "Unknown quest: %s",
   "message.overgearedmod.debug_bad_grade": "Unknown grade: %s",

@@ -59,7 +59,8 @@ import java.util.Optional;
  *   <li>{@code /satisfy debug stat <stat> <value>}: sets the points spent in a stat.</li>
  *   <li>{@code /satisfy debug insight <value>}: sets Insight.</li>
  *   <li>{@code /satisfy debug apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
- *   <li>{@code /satisfy debug goto <bairan|north_end_cave|ashur_manor|winston>}: to the surface in front of that place.</li>
+ *   <li>{@code /satisfy debug goto <place>}: to the surface in front of a structure (bairan, north_end_cave, ashur_manor,
+ *   winston) or on dry ground at a canon place of the map (reidan, titan, behen_archipelago...); refused in the sea.</li>
  *   <li>{@code /satisfy debug quest complete <quest>}: marks it and the quests before it in its chain done, without rewards.</li>
  * </ul>
  * Simulations post the same domain events as real play, so every listener (counters, titles,
@@ -223,8 +224,10 @@ public final class DebugCommands {
         String site = StringArgumentType.getString(ctx, "site");
         ServerLevel satisfy = Satisfy.of(ctx.getSource().getServer())
                 .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_goto_none", site)).create());
-        BlockPos landing = SiteLanding.find(satisfy, site)
-                .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_goto_none", site)).create());
+        BlockPos landing = SiteLanding.find(satisfy, site).orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable(
+                !SiteLanding.SITES.contains(site) ? "message.overgearedmod.debug_goto_unknown"
+                        : SiteLanding.isMapPlace(site) ? "message.overgearedmod.debug_goto_sea"
+                        : "message.overgearedmod.debug_goto_none", site)).create());
         // Facing north, towards the place: the landing is south of it.
         player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, 180.0f, 0.0f);
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
