@@ -55,6 +55,15 @@ import java.util.Map;
 @PrefixGameTestTemplate(false)
 public final class SatisfyDimensionTests {
     private static final LevelHeightAccessor HEIGHT = LevelHeightAccessor.create(-64, 384);
+    /** The farthest, in chunks, Bairan may land from (0, 0), its place on the map: the terrain follows the map. */
+    private static final int BAIRAN_DRIFT = 2;
+    /** The farthest, in chunks, the cave may be from the Arctic Glacier on the map (it looks for cold dry land near it). */
+    private static final int CAVE_DRIFT = 24;
+    /**
+     * How wide, in blocks, the fringe of a shore may be: the beach climbs gently (about 3 blocks in half a cell), so the 3D
+     * noise leaves puddles and sand bars on it. Half a cell.
+     */
+    private static final int SHORE_FRINGE = 16;
 
     private SatisfyDimensionTests() {
     }
@@ -128,7 +137,9 @@ public final class SatisfyDimensionTests {
         ChunkGenerator generator = generator(helper);
         SatisfyMap map = ((SatisfyBiomeSource) generator.getBiomeSource()).map();
         ChunkPos winstonOnTheMap = Winston.mapOffset(map.data());
+        ChunkPos caveOnTheMap = NorthEndCave.mapOffset(map.data());
         var cold = TagKey.create(Registries.BIOME, Overgearedmod.id("has_structure/north_end_cave"));
+        int[] farthest = new int[4]; // Bairan from (0, 0), Winston and the cave from their places, the manor from Bairan
         for (long seed = 1; seed <= 12; seed++) {
             RandomState random = random(registries, seed);
             StartingVillage.Chosen chosen = StartingVillage.choose(registries, generator, random,
@@ -140,7 +151,8 @@ public final class SatisfyDimensionTests {
             ChunkPos bairan = sites.get(WorldSites.BAIRAN);
             helper.assertTrue(map.regionAt(bairan.getMiddleBlockX(), bairan.getMiddleBlockZ()) == SatisfyMapData.PLAINS,
                     "Bairan is in the plains region of the lore map, seed " + seed + ": " + bairan);
-            helper.assertTrue(bairan.getChessboardDistance(new ChunkPos(0, 0)) <= StartingVillage.SEARCH_RADIUS, "Bairan is at its place on the map");
+            helper.assertTrue(bairan.getChessboardDistance(new ChunkPos(0, 0)) <= BAIRAN_DRIFT,
+                    "Bairan is at its place on the map, (0, 0), seed " + seed + ": " + bairan);
             Ground village = Ground.at(generator, random, bairan.getMiddleBlockX(), bairan.getMiddleBlockZ());
             helper.assertTrue(village.dry() && village.height() > generator.getSeaLevel(), "Bairan is on dry land above the sea, seed " + seed + ": " + village);
             helper.assertTrue(chosen.landing().isPresent(), "a landing for seed " + seed);
@@ -162,7 +174,22 @@ public final class SatisfyDimensionTests {
             helper.assertTrue(bairan.getChessboardDistance(winston) >= Winston.KEEP_AWAY, "Winston away from Bairan, seed " + seed);
             helper.assertTrue(winston.getChessboardDistance(cave) >= Winston.KEEP_AWAY, "Winston away from the cave, seed " + seed);
             helper.assertTrue(winston.getChessboardDistance(manor) >= Winston.KEEP_AWAY, "Winston away from the manor, seed " + seed);
+            // Every place stands on dry land above the sea (the terrain follows the map), the cave near the glacier.
+            for (String site : List.of(WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR, WorldSites.WINSTON)) {
+                ChunkPos chunk = sites.get(site);
+                Ground ground = Ground.at(generator, random, chunk.getMiddleBlockX(), chunk.getMiddleBlockZ());
+                helper.assertTrue(ground.dry() && ground.top() > generator.getSeaLevel(), site + " is on dry land, seed " + seed + ": " + ground);
+            }
+            ChunkPos caveTarget = new ChunkPos(bairan.x + caveOnTheMap.x, bairan.z + caveOnTheMap.z);
+            helper.assertTrue(cave.getChessboardDistance(caveTarget) <= CAVE_DRIFT, "the cave near the Arctic Glacier, seed " + seed + ": "
+                    + cave + " vs " + caveTarget);
+            farthest[0] = Math.max(farthest[0], bairan.getChessboardDistance(new ChunkPos(0, 0)));
+            farthest[1] = Math.max(farthest[1], winston.getChessboardDistance(winstonTarget));
+            farthest[2] = Math.max(farthest[2], cave.getChessboardDistance(caveTarget));
+            farthest[3] = Math.max(farthest[3], toManor);
         }
+        Overgearedmod.LOGGER.info("Satisfy sites in 12 seeds, farthest (chunks): Bairan {} from (0, 0), Winston {} and the cave {} from their"
+                + " places on the map, the manor {} from Bairan", farthest[0], farthest[1], farthest[2], farthest[3]);
         helper.succeed();
     }
 
@@ -302,6 +329,74 @@ public final class SatisfyDimensionTests {
                     "the sea starts where the map's land ends, seed " + seed + ": z " + shore + " vs " + mapShore);
             helper.assertTrue(last != null && last.top() <= sea + 8, "a low coast, seed " + seed + ": " + last);
         }
+        helper.succeed();
+    }
+
+    /**
+     * Cuts from Bairan's latitude north to the open sea, block by block, on three meridians (Bairan's, 128 blocks east and
+     * 300 west). The terrain's own level (no caves) crosses the sea level once, within {@code margin} blocks of the map's
+     * coast, and never jumps between neighbouring blocks (3 blocks on land, the steepest hillside below the mountains;
+     * under water, vanilla's drop-off from the coast to the ocean floor, 6). The actual ground: more than {@code margin} blocks inland it has no water but in the mouth
+     * of a vanilla cave (floor well under the terrain's level; caves under the sea level flood, as in vanilla); more than
+     * {@code margin} blocks out to sea it is all water, with no stray islands; and the shore is one line, with a fringe of
+     * a few blocks at most.
+     */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 2400)
+    public static void cutsFromBairanToTheCoastHaveNoHoles(GameTestHelper helper) {
+        var registries = helper.getLevel().registryAccess();
+        ChunkGenerator generator = generator(helper);
+        SatisfyMap map = ((SatisfyBiomeSource) generator.getBiomeSource()).map();
+        int sea = generator.getSeaLevel();
+        int margin = 24;
+        int caveMouths = 0;
+        for (long seed : new long[]{1L, 5L, 99L}) {
+            RandomState random = random(registries, seed);
+            for (int x : new int[]{-8, 120, -300}) {
+                int mapShore = Integer.MIN_VALUE;
+                for (int z = 0; z >= -700 && mapShore == Integer.MIN_VALUE; z--) {
+                    if (!map.isLand(x, z)) {
+                        mapShore = z;
+                    }
+                }
+                helper.assertTrue(mapShore != Integer.MIN_VALUE, "the map has a north coast on x=" + x);
+                List<String> wrong = new ArrayList<>();
+                List<Integer> shapeShores = new ArrayList<>();
+                int lastDry = Integer.MIN_VALUE;
+                int firstWet = Integer.MIN_VALUE;
+                Ground previous = Ground.at(generator, random, x, 0);
+                for (int z = 0; z >= mapShore - 200; z--) {
+                    Ground ground = Ground.at(generator, random, x, z);
+                    if ((ground.top() > sea) != (previous.top() > sea)) {
+                        shapeShores.add(z);
+                    }
+                    if (Math.abs(ground.top() - previous.top()) > (Math.min(ground.top(), previous.top()) >= sea ? 3 : 6)) {
+                        wrong.add("a jump at z=" + z + ": " + previous.top() + " -> " + ground.top());
+                    }
+                    boolean caveMouth = !ground.dry() && ground.height() < ground.top() - 4 && ground.top() > sea;
+                    if (caveMouth) {
+                        caveMouths++;
+                    } else if (ground.dry()) {
+                        lastDry = z;
+                    } else if (firstWet == Integer.MIN_VALUE) {
+                        firstWet = z;
+                    }
+                    if (z > mapShore + margin && !ground.dry() && !caveMouth) {
+                        wrong.add("water on land at z=" + z + " " + ground);
+                    }
+                    if (z < mapShore - margin && (ground.dry() || ground.height() >= sea)) {
+                        wrong.add("land in the sea at z=" + z + " " + ground);
+                    }
+                    previous = ground;
+                }
+                String where = "seed " + seed + ", x=" + x + " (map shore z=" + mapShore + ")";
+                helper.assertTrue(wrong.isEmpty(), where + ": " + wrong);
+                helper.assertTrue(shapeShores.size() == 1 && Math.abs(shapeShores.getFirst() - mapShore) <= margin,
+                        "the terrain meets the sea once, at the map's coast, " + where + ": " + shapeShores);
+                helper.assertTrue(firstWet != Integer.MIN_VALUE && firstWet - lastDry <= SHORE_FRINGE,
+                        "one clean shore, " + where + ": first water at z=" + firstWet + ", last dry ground at z=" + lastDry);
+            }
+        }
+        Overgearedmod.LOGGER.info("Cuts from Bairan to the coast: {} columns of flooded cave mouths on land", caveMouths);
         helper.succeed();
     }
 }

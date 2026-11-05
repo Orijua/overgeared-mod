@@ -60,7 +60,7 @@ import java.util.Optional;
 public final class StructureTests {
     /**
      * The farthest, in chunks, Bairan's site may lie from the usual spawn on the 40 test seeds. Measured: 25 (the search
-     * itself stops at StartingVillage.SEARCH_RADIUS = 32), plus a margin of 4. Adjust it if the search or biomes change on purpose.
+     * itself stops at TestSupport.VANILLA_TERRAIN_SEARCH_RADIUS = 32), plus a margin of 4. Adjust it if the search or biomes change on purpose.
      */
     private static final int MAX_BAIRAN_DRIFT = 29;
 
@@ -175,7 +175,7 @@ public final class StructureTests {
             RandomState random = RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), seed);
             ChunkPos usualSpawn = new ChunkPos(random.sampler().findSpawnPosition());
             Optional<StartingVillage.Site> site = StartingVillage.findSite(registries, generator, random,
-                    helper.getLevel().getStructureManager(), seed, height, usualSpawn);
+                    helper.getLevel().getStructureManager(), seed, height, usualSpawn, TestSupport.VANILLA_TERRAIN_SEARCH_RADIUS);
             helper.assertTrue(site.isPresent(), "no Bairan site for seed " + seed);
             int distance = usualSpawn.getChessboardDistance(site.get().chunk());
             helper.assertTrue(distance <= MAX_BAIRAN_DRIFT, "Bairan for seed " + seed + " is " + distance

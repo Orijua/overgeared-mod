@@ -43,8 +43,11 @@ import java.util.stream.Stream;
  * land near Bairan's place on the map.
  */
 public final class StartingVillage {
-    /** How far around Bairan's place on the map, (0, 0), to look: 32 chunks is 512 blocks each way. */
-    public static final int SEARCH_RADIUS = 32;
+    /**
+     * How far around Bairan's place on the map, (0, 0), to look, in chunks: the terrain follows the map, so Bairan's
+     * plains are there and the village lands at (0, 0) or a chunk or two away.
+     */
+    public static final int SEARCH_RADIUS = 4;
     private static final ResourceKey<Structure> VILLAGE = ResourceKey.create(Registries.STRUCTURE, Bairan.STRUCTURE);
 
     private StartingVillage() {
@@ -120,16 +123,27 @@ public final class StartingVillage {
     }
 
     /**
-     * The chunk nearest {@code near} where the village assembles (its biome check included) in the map's plains (in
-     * Satisfy, as on the canon map) with every piece on dry land, and the spawn on its square. Only reads the terrain noise: nothing is generated or placed.
+     * The chunk nearest {@code near}, up to {@link #SEARCH_RADIUS} chunks away, where the village assembles (its biome
+     * check included) in the map's plains (in Satisfy, as on the canon map) with every piece on dry land, and the spawn
+     * on its square. Only reads the terrain noise: nothing is generated or placed.
      */
     public static Optional<Site> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
                                           StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos near) {
+        return findSite(registries, generator, random, templates, seed, height, near, SEARCH_RADIUS);
+    }
+
+    /**
+     * The same search up to {@code radius} chunks away: wider on terrain that doesn't follow the map, such as the
+     * vanilla overworld of the tests.
+     */
+    public static Optional<Site> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                          StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos near,
+                                          int radius) {
         Structure village = registries.registryOrThrow(Registries.STRUCTURE).get(VILLAGE);
         if (village == null) {
             return Optional.empty();
         }
-        for (ChunkPos chunk : ChunkSpiral.around(near, SEARCH_RADIUS)) {
+        for (ChunkPos chunk : ChunkSpiral.around(near, radius)) {
             if (!SatisfyBiomeSource.inMapRegion(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ(), SatisfyMapData.PLAINS)) {
                 continue;
             }

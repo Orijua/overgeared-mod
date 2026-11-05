@@ -82,10 +82,11 @@ class SatisfyTerrainHeightTest {
         assertBetween(0, 30, 40);                       // deep sea
         assertBetween(2, 40, SEA_LEVEL - 5);             // shallow sea and lakes
         assertBetween(3, SEA_LEVEL, 70);                 // a low coast, always dry
-        assertBetween(4, SEA_LEVEL + 1, 72);             // lowland
+        assertBetween(4, SEA_LEVEL + 2, 76);             // lowland
         assertBetween(5, SEA_LEVEL + 2, 80);             // high lowland (Bairan)
-        assertBetween(6.5, 75, 125);                     // hills
-        assertBetween(8, 115, 180);                      // mountains
+        assertTrue(height(4, 0, 0, 0) >= SEA_LEVEL + 5, "the lowland is a few blocks above the sea: " + height(4, 0, 0, 0));
+        assertBetween(6.5, 65, 110);                     // hills
+        assertBetween(8, 100, 180);                      // mountains
         assertBetween(9, 140, 250);                      // peaks
         assertTrue(height(9, 0, 0, 0) > 200, "the peaks are high: " + height(9, 0, 0, 0));
     }
@@ -96,6 +97,16 @@ class SatisfyTerrainHeightTest {
         assertTrue(height(2.3, 0, 0, 0) < SEA_LEVEL && height(2.75, 0, 0, 0) > SEA_LEVEL,
                 height(2.3, 0, 0, 0) + " / " + height(2.75, 0, 0, 0));
         assertTrue(Math.abs(height(2.5, 0, 0, 0) - SEA_LEVEL) <= 3, "at the border: " + height(2.5, 0, 0, 0));
+    }
+
+    @Test
+    void noCliffsBelowTheMountains() {
+        // A cell is 32 blocks: where the relief changes by one per cell, 1/16 of relief is 2 blocks. Up to relief 8 the
+        // ground climbs at most 3 blocks per block there (vanilla's own mountain-foot cliff is crossed slowly).
+        for (double relief = 2.75; relief < 8; relief += 1.0 / 16) {
+            double step = Math.abs(height(relief + 1.0 / 16, 0, 0, 0) - height(relief, 0, 0, 0));
+            assertTrue(step <= 6, "relief " + relief + ": " + step + " blocks in 2");
+        }
     }
 
     @Test

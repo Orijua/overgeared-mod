@@ -58,10 +58,10 @@ public final class Winston {
     public static final int MAP_PIXEL_X = 1669;
     public static final int MAP_PIXEL_Z = 410;
     /**
-     * How far from its place on the map to look, in chunks (the nearest that fits wins). Wide because the terrain doesn't
-     * follow the map yet: vanilla's seas and rivers can cover Winston's place.
+     * How far from its place on the map to look, in chunks (the nearest that fits wins). The terrain follows the map, so
+     * its place is dry land; the room is for keeping away from Bairan, the cave and the manor.
      */
-    public static final int SEARCH_RADIUS = 32;
+    public static final int SEARCH_RADIUS = 8;
     /** Never this close, in chunks, to Bairan or another one-per-world place. */
     public static final int KEEP_AWAY = 8;
 
@@ -333,13 +333,23 @@ public final class Winston {
     public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
                                               StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan,
                                               List<ChunkPos> avoid) {
+        return findSite(registries, generator, random, templates, seed, height, bairan, avoid, SEARCH_RADIUS);
+    }
+
+    /**
+     * The same search up to {@code radius} chunks from Winston's place: wider on terrain that doesn't follow the map,
+     * such as the vanilla overworld of the tests.
+     */
+    public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                              StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan,
+                                              List<ChunkPos> avoid, int radius) {
         Structure winston = registries.registryOrThrow(Registries.STRUCTURE).get(KEY);
         if (winston == null) {
             return Optional.empty();
         }
         ChunkPos offset = mapOffset(SatisfyMapData.west());
         ChunkPos target = new ChunkPos(bairan.x + offset.x, bairan.z + offset.z);
-        for (ChunkPos chunk : ChunkSpiral.around(target, SEARCH_RADIUS)) {
+        for (ChunkPos chunk : ChunkSpiral.around(target, radius)) {
             if (bairan.getChessboardDistance(chunk) < KEEP_AWAY
                     || avoid.stream().anyMatch(other -> other.getChessboardDistance(chunk) < KEEP_AWAY)
                     || !SatisfyBiomeSource.onMapLand(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ())) {

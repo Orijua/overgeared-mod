@@ -136,7 +136,7 @@ public final class NorthEndCaveTests {
             RandomState random = RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), seed);
             ChunkPos usualSpawn = new ChunkPos(random.sampler().findSpawnPosition());
             ChunkPos bairan = StartingVillage.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed, height,
-                    usualSpawn).orElseThrow().chunk();
+                    usualSpawn, TestSupport.VANILLA_TERRAIN_SEARCH_RADIUS).orElseThrow().chunk();
             Optional<ChunkPos> cave = NorthEndCave.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed,
                     height, bairan);
             helper.assertTrue(cave.isPresent(), "no cave for seed " + seed);
@@ -144,7 +144,7 @@ public final class NorthEndCaveTests {
                     bairan, AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE);
             helper.assertTrue(manor.isPresent(), "no room for Ashur's manor near Bairan, seed " + seed);
             Optional<ChunkPos> winston = Winston.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed, height,
-                    bairan, List.of(cave.get(), manor.get()));
+                    bairan, List.of(cave.get(), manor.get()), TestSupport.VANILLA_TERRAIN_SEARCH_RADIUS);
             helper.assertTrue(winston.isPresent(), "no room for Winston, seed " + seed);
             int fromBairan = bairan.getChessboardDistance(winston.get());
             helper.assertTrue(fromBairan >= Winston.KEEP_AWAY, "Winston only " + fromBairan + " chunks off");

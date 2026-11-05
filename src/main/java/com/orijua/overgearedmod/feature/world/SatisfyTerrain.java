@@ -73,16 +73,20 @@ public record SatisfyTerrain(List<String> rows, int cell, int originCol, int ori
      * The climate parameter a density function feeds the vanilla terrain splines, as a function of the relief, plus a
      * small share of vanilla's own noise for that parameter so coasts and ranges are not smooth. Tuned on the vanilla
      * 1.21.1 splines (sea level 63): relief {@code 0} is a deep sea (floor ~35), {@code 1-2} a shallower sea (~37-48),
-     * the shore falls just past {@code 2.5} (the border of a coast cell), {@code 3} is a low coast (~64-67), {@code 4-5}
-     * lowland (~67-80), {@code 6-7} hills (~90-130) and {@code 8-9} mountains (~150-230). The ridges stay well away from
-     * 0, so the vanilla terrain doesn't carve random rivers.
+     * the shore falls at {@code 2.5} (the border of a coast cell), {@code 3} is a low coast (~67), {@code 4-5} lowland
+     * (~69-70, high enough that the 3D noise seldom leaves puddles under the sea level), {@code 6-7} hills (~80-90) and
+     * {@code 8-9} mountains (~140-235). Vanilla's erosion spline has a cliff at the foot of its mountains (erosion -0.35
+     * to -0.4), steeper the higher the continentalness: the erosion crosses it slowly, between reliefs 7 and 8, with a low
+     * continentalness, which only rises after, so up to relief 8 the ground climbs at most ~3 blocks per block where the
+     * relief changes by one per cell. The ridges stay well away from 0, so the vanilla terrain doesn't carve random rivers.
      */
     public enum Channel implements net.minecraft.util.StringRepresentable {
         CONTINENTS("continents",
-                new double[][]{{0, -1.0}, {1, -0.5}, {2, -0.2}, {3, -0.11}, {4, -0.02}, {5, 0.08}, {6, 0.2}, {7, 0.35}, {8, 0.55}, {9, 0.8}},
+                new double[][]{{0, -1.0}, {1, -0.5}, {2, -0.2}, {3, -0.1}, {4, 0.03}, {5, 0.06}, {7, 0.05}, {8, 0.2}, {9, 0.7}},
                 new double[][]{{0, 0.03}, {9, 0.03}}),
         EROSION("erosion",
-                new double[][]{{0, 0.3}, {3, 0.3}, {4, 0.27}, {5, 0.22}, {6, 0.0}, {7, -0.3}, {8, -0.6}, {9, -0.85}},
+                new double[][]{{0, 0.3}, {2, 0.3}, {3, 0.05}, {4, 0.1}, {5, 0.08}, {5.5, 0.06}, {6, 0.03}, {6.5, -0.12}, {7, -0.33}, {8, -0.42},
+                        {9, -0.85}},
                 new double[][]{{0, 0.03}, {5, 0.03}, {7, 0.08}, {9, 0.1}}),
         RIDGES("ridges",
                 new double[][]{{0, 0.42}, {5, 0.42}, {6, 0.5}, {7, 0.58}, {9, 0.62}},
