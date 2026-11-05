@@ -22,6 +22,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.biome.FixedBiomeSource;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
@@ -159,6 +161,30 @@ public final class SatisfyDimensionTests {
                 previous.ifPresentOrElse(chunk -> WorldSites.remember(seed, name, chunk), () -> WorldSites.forget(seed, name));
             }
         }
+        helper.succeed();
+    }
+
+    /**
+     * Technical test of the map-driven terrain: the noise settings {@code overgearedmod:satisfy} (vanilla's, with the
+     * terrain splines fed by the hand-drawn test island) give a sea floor far out, and land and a mountain inside.
+     */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 600)
+    public static void mapDrivenTerrainHasSeaLandAndMountain(GameTestHelper helper) {
+        var registries = helper.getLevel().registryAccess();
+        var settings = registries.registryOrThrow(Registries.NOISE_SETTINGS)
+                .getHolderOrThrow(net.minecraft.resources.ResourceKey.create(Registries.NOISE_SETTINGS, Overgearedmod.id("satisfy")));
+        var plains = registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS);
+        NoiseBasedChunkGenerator generator = new NoiseBasedChunkGenerator(new FixedBiomeSource(plains), settings);
+        RandomState random = RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), 7L);
+        int sea = generator.getSeaLevel();
+        int farSea = generator.getBaseHeight(6 * 96 + 960, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
+        int shore = generator.getBaseHeight(5 * 96, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
+        int lowland = generator.getBaseHeight(4 * 96, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
+        int peak = generator.getBaseHeight(0, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
+        helper.assertTrue(farSea < sea - 15, "far out is a deep sea: floor " + farSea + " vs sea level " + sea);
+        helper.assertTrue(lowland > sea, "the lowland is dry land: " + lowland + " vs " + sea);
+        helper.assertTrue(peak > lowland + 20, "the middle is a mountain: " + peak + " vs lowland " + lowland);
+        helper.assertTrue(shore <= lowland, "the coast is not higher than the lowland: " + shore + " vs " + lowland);
         helper.succeed();
     }
 }

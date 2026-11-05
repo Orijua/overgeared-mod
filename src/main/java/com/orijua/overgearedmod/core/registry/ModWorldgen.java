@@ -3,9 +3,11 @@ package com.orijua.overgearedmod.core.registry;
 import com.mojang.serialization.MapCodec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.world.SatisfyBiomeSource;
+import com.orijua.overgearedmod.feature.world.SatisfyTerrainFunction;
 import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.biome.BiomeSource;
+import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -25,6 +27,13 @@ public final class ModWorldgen {
     /** "type": "overgearedmod:satisfy_map": the lore regions of the Satisfy dimension over vanilla terrain. */
     public static final DeferredHolder<MapCodec<? extends BiomeSource>, MapCodec<SatisfyBiomeSource>> SATISFY_MAP =
             BIOME_SOURCES.register("satisfy_map", () -> SatisfyBiomeSource.CODEC);
+
+    public static final DeferredRegister<MapCodec<? extends DensityFunction>> DENSITY_FUNCTIONS =
+            DeferredRegister.create(Registries.DENSITY_FUNCTION_TYPE, Overgearedmod.MODID);
+
+    /** "type": "overgearedmod:satisfy_terrain": a climate parameter of the terrain, read from a relief map. */
+    public static final DeferredHolder<MapCodec<? extends DensityFunction>, MapCodec<SatisfyTerrainFunction>> SATISFY_TERRAIN =
+            DENSITY_FUNCTIONS.register("satisfy_terrain", () -> SatisfyTerrainFunction.CODEC);
 
     private ModWorldgen() {
     }

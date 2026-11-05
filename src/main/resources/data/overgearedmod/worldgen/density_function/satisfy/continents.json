@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:flat_cache",
+  "argument": {
+    "type": "overgearedmod:satisfy_terrain",
+    "channel": "continents",
+    "map": "overgearedmod:test_island"
+  }
+}
