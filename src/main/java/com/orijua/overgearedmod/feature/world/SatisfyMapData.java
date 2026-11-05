@@ -9,9 +9,11 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The terrain data of a canon map, converted from the PNG by {@code tools/satisfy_map} and stored as classpath resources:
@@ -21,8 +23,8 @@ import java.util.TreeMap;
  * <p>
  * The grid is north up and east right, like the source map. The origin is a source pixel (Bairan), not a cell centre:
  * block (0, 0) lies on that pixel, so every block maps to the same place of the canon map whatever the cell size.
- * Beyond the grid it is sea. This class only reads and queries the data (pure, so it is unit-tested); nothing generates
- * terrain from it yet.
+ * Beyond the grid it is sea. This class only reads and queries the data (pure, so it is unit-tested): the biomes of the
+ * Satisfy dimension come from it ({@link SatisfyMap}, {@link SatisfyBiomeSource}); the terrain does not follow it yet.
  */
 public final class SatisfyMapData {
     /** The data of the West Continent, as a classpath folder. */
@@ -30,6 +32,8 @@ public final class SatisfyMapData {
     public static final int FORMAT_VERSION = 1;
     /** Region index of the sea (and of lakes: they are told apart by their relief, which is 2). */
     public static final int SEA = 0;
+    /** Region index of the plains (llanura), where Bairan is. */
+    public static final int PLAINS = 1;
     public static final int MAX_RELIEF = 9;
     /** The relief of a land cell next to the water; everything below is water. */
     public static final int COAST_RELIEF = 3;
@@ -43,6 +47,9 @@ public final class SatisfyMapData {
     private final byte[] relief;
     private final byte[] region;
     private final Map<Integer, String> legend;
+
+    /** Maps already loaded, by folder: the data never changes while the game runs. */
+    private static final Map<String, SatisfyMapData> LOADED = new ConcurrentHashMap<>();
 
     /** Builds the data from already-parsed arrays (row-major, north row first). */
     public SatisfyMapData(int width, int height, int blocksPerPixel, int cellPx, int originPixelX, int originPixelZ,
@@ -88,6 +95,22 @@ public final class SatisfyMapData {
              InputStream relief = open(base + "relief.png")) {
             return read(meta, region, relief);
         }
+    }
+
+    /** Like {@link #load}, but each folder is read only once; a missing or broken map is an error of the mod's jar. */
+    public static SatisfyMapData cached(String folder) {
+        return LOADED.computeIfAbsent(folder, key -> {
+            try {
+                return load(key);
+            } catch (IOException e) {
+                throw new UncheckedIOException("cannot read the satisfy_map " + key, e);
+            }
+        });
+    }
+
+    /** The West Continent's data, read once. */
+    public static SatisfyMapData west() {
+        return cached(WEST);
     }
 
     private static InputStream open(String path) throws IOException {
@@ -230,6 +253,16 @@ public final class SatisfyMapData {
     /** The row of the cell that holds block z. */
     public int rowAtBlock(int blockZ) {
         return Math.floorDiv(originPixelZ * blocksPerPixel + blockZ, cellBlocks());
+    }
+
+    /** The block x of the west edge of a source pixel's column (block 0 is the origin pixel). */
+    public int blockXOfPixel(int pixelX) {
+        return (pixelX - originPixelX) * blocksPerPixel;
+    }
+
+    /** The block z of the north edge of a source pixel's row. */
+    public int blockZOfPixel(int pixelZ) {
+        return (pixelZ - originPixelZ) * blocksPerPixel;
     }
 
     /** The region index at a block (no interpolation: the cell it falls in). */

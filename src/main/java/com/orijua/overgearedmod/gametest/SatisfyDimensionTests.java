@@ -8,20 +8,27 @@ import com.orijua.overgearedmod.feature.world.AshurManor;
 import com.orijua.overgearedmod.feature.world.NorthEndCave;
 import com.orijua.overgearedmod.feature.world.SatisfyBiomeSource;
 import com.orijua.overgearedmod.feature.world.SatisfyMap;
+import com.orijua.overgearedmod.feature.world.SatisfyMapData;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
 import com.orijua.overgearedmod.feature.world.Winston;
 import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.QuartPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.biome.FixedBiomeSource;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -67,25 +74,55 @@ public final class SatisfyDimensionTests {
         return RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), seed);
     }
 
+    /** The biome at the middle of a source pixel of the canon map (block (0, 0) is Bairan's pixel). */
+    private static Holder<Biome> biomeAtPixel(BiomeSource biomes, SatisfyMapData map, int pixelX, int pixelZ, Climate.Sampler sampler) {
+        int x = map.blockXOfPixel(pixelX);
+        int z = map.blockZOfPixel(pixelZ);
+        return biomes.getNoiseBiome(QuartPos.fromBlock(x), 16, QuartPos.fromBlock(z), sampler);
+    }
+
     @GameTest(template = TestSupport.EMPTY)
     public static void dimensionUsesTheLoreMap(GameTestHelper helper) {
         ChunkGenerator generator = generator(helper);
         helper.assertTrue(generator.getBiomeSource() instanceof SatisfyBiomeSource, "the lore biome source");
+        SatisfyBiomeSource biomes = (SatisfyBiomeSource) generator.getBiomeSource();
+        SatisfyMapData map = biomes.map().data();
         var sampler = random(helper.getLevel().registryAccess(), 1L).sampler();
-        var biomes = generator.getBiomeSource();
-        // The middle of a cell is out of the warp's reach: (0, 0) is Bairan's plains, five cells north is snowy taiga.
+        // Places in the middle of a 3x3 block of cells of one region, out of the warp's reach.
         helper.assertTrue(biomes.getNoiseBiome(0, 16, 0, sampler).is(Biomes.PLAINS), "Bairan stands on plains");
-        helper.assertTrue(biomes.getNoiseBiome(0, 16, -960 >> 2, sampler).is(Biomes.SNOWY_TAIGA), "the far north is snowy");
-        helper.assertTrue(biomes.getNoiseBiome(-2112 >> 2, 16, 0, sampler).is(Biomes.FOREST), "the Elf Forest is to the west");
+        helper.assertTrue(biomeAtPixel(biomes, map, 911, 754, sampler).is(Biomes.DESERT), "the Lilton Desert");
+        helper.assertTrue(biomeAtPixel(biomes, map, 1752, 344, sampler).is(Biomes.SNOWY_TAIGA), "the snowy north of Bairan");
+        helper.assertTrue(biomeAtPixel(biomes, map, 1880, 456, sampler).is(Biomes.SNOWY_PLAINS), "the snowy plains east of Bairan");
+        helper.assertTrue(biomeAtPixel(biomes, map, 1688, 904, sampler).is(Biomes.BADLANDS), "the orange mesas are badlands");
+        helper.assertTrue(biomeAtPixel(biomes, map, 408, 744, sampler).is(Biomes.STONY_PEAKS), "the volcano in the west");
+        // The sea (here the Arctic Glacier's and far off the map) is vanilla's, from the outside source.
+        for (int[] pixel : new int[][]{{1382, 178}, {-5000, 400}, {9000, 9000}}) {
+            int qx = QuartPos.fromBlock(map.blockXOfPixel(pixel[0]));
+            int qz = QuartPos.fromBlock(map.blockZOfPixel(pixel[1]));
+            helper.assertTrue(biomes.getNoiseBiome(qx, 16, qz, sampler).equals(biomes.outside().getNoiseBiome(qx, 16, qz, sampler)),
+                    "the sea at pixel " + pixel[0] + "," + pixel[1] + " comes from the outside source");
+        }
+        // Everywhere: the region the map gives, or the outside source in its water.
+        for (int x = -3000; x <= 3000; x += 97) {
+            for (int z = -1000; z <= 3000; z += 89) {
+                int region = biomes.map().regionAt((QuartPos.fromBlock(x) << 2) + 2, (QuartPos.fromBlock(z) << 2) + 2);
+                Holder<Biome> biome = biomes.getNoiseBiome(QuartPos.fromBlock(x), 16, QuartPos.fromBlock(z), sampler);
+                String expected = region == SatisfyMapData.SEA ? null : map.legend(region);
+                helper.assertTrue(expected == null ? biome.equals(biomes.outside().getNoiseBiome(QuartPos.fromBlock(x), 16, QuartPos.fromBlock(z), sampler))
+                        : biome.is(ResourceLocation.parse(expected)), "the biome at " + x + "," + z + " follows region " + region);
+            }
+        }
         helper.succeed();
     }
 
-    /** Every world gets all four sites, in the right places relative to each other, and a landing on Bairan's plaza. */
+    /** Every world gets all four sites, in the right places of the map, and a landing on Bairan's plaza. */
     @GameTest(template = TestSupport.EMPTY, timeoutTicks = 1200)
     public static void everyWorldChoosesItsSitesInSatisfy(GameTestHelper helper) {
         var registries = helper.getLevel().registryAccess();
         ChunkGenerator generator = generator(helper);
         SatisfyMap map = ((SatisfyBiomeSource) generator.getBiomeSource()).map();
+        ChunkPos winstonOnTheMap = Winston.mapOffset(map.data());
+        var cold = TagKey.create(Registries.BIOME, Overgearedmod.id("has_structure/north_end_cave"));
         for (long seed = 1; seed <= 12; seed++) {
             RandomState random = random(registries, seed);
             StartingVillage.Chosen chosen = StartingVillage.choose(registries, generator, random,
@@ -95,20 +132,28 @@ public final class SatisfyDimensionTests {
                 helper.assertTrue(sites.containsKey(site), "seed " + seed + " has no " + site + ": " + sites.keySet());
             }
             ChunkPos bairan = sites.get(WorldSites.BAIRAN);
-            helper.assertTrue(map.at(bairan.getMiddleBlockX(), bairan.getMiddleBlockZ()) == 'P', "Bairan is in the plains region of the lore map, seed " + seed + ": " + bairan);
+            helper.assertTrue(map.regionAt(bairan.getMiddleBlockX(), bairan.getMiddleBlockZ()) == SatisfyMapData.PLAINS,
+                    "Bairan is in the plains region of the lore map, seed " + seed + ": " + bairan);
+            helper.assertTrue(bairan.getChessboardDistance(new ChunkPos(0, 0)) <= StartingVillage.SEARCH_RADIUS, "Bairan is at its place on the map");
             helper.assertTrue(chosen.landing().isPresent(), "a landing for seed " + seed);
             BlockPos landing = chosen.landing().get();
             helper.assertTrue(bairan.getChessboardDistance(new ChunkPos(landing)) <= 2, "the landing is on Bairan's plaza, seed " + seed + ": " + landing + " vs " + bairan);
             ChunkPos cave = sites.get(WorldSites.NORTH_END_CAVE);
             ChunkPos manor = sites.get(WorldSites.ASHUR_MANOR);
             ChunkPos winston = sites.get(WorldSites.WINSTON);
-            helper.assertTrue(cave.z <= bairan.z - NorthEndCave.MIN_DISTANCE, "the cave is far north of Bairan");
+            helper.assertTrue(cave.z <= bairan.z - NorthEndCave.MIN_DISTANCE, "the cave is far north of Bairan, seed " + seed + ": " + cave);
+            helper.assertTrue(map.isLand(cave.getMiddleBlockX(), cave.getMiddleBlockZ()), "the cave is on the map's land, seed " + seed + ": " + cave);
+            helper.assertTrue(generator.getBiomeSource().getNoiseBiome(QuartPos.fromBlock(cave.getMiddleBlockX()), 16,
+                    QuartPos.fromBlock(cave.getMiddleBlockZ()), random.sampler()).is(cold), "the cave is in the snowy north, seed " + seed + ": " + cave);
             int toManor = bairan.getChessboardDistance(manor);
             helper.assertTrue(toManor >= AshurManor.MIN_DISTANCE && toManor <= AshurManor.MAX_DISTANCE, "the manor is " + toManor + " chunks from Bairan, seed " + seed);
-            int toWinston = bairan.getChessboardDistance(winston);
-            helper.assertTrue(toWinston >= Winston.MIN_DISTANCE && toWinston <= Winston.MAX_DISTANCE, "Winston is " + toWinston + " chunks from Bairan, seed " + seed);
-            helper.assertTrue(winston.getChessboardDistance(cave) >= 8, "Winston away from the cave, seed " + seed);
-            helper.assertTrue(winston.getChessboardDistance(manor) >= 8, "Winston away from the manor, seed " + seed);
+            helper.assertTrue(map.isLand(manor.getMiddleBlockX(), manor.getMiddleBlockZ()), "the manor is on the map's land, seed " + seed);
+            ChunkPos winstonTarget = new ChunkPos(bairan.x + winstonOnTheMap.x, bairan.z + winstonOnTheMap.z);
+            helper.assertTrue(winston.getChessboardDistance(winstonTarget) <= Winston.SEARCH_RADIUS,
+                    "Winston near its place on the map, seed " + seed + ": " + winston + " vs " + winstonTarget);
+            helper.assertTrue(bairan.getChessboardDistance(winston) >= Winston.KEEP_AWAY, "Winston away from Bairan, seed " + seed);
+            helper.assertTrue(winston.getChessboardDistance(cave) >= Winston.KEEP_AWAY, "Winston away from the cave, seed " + seed);
+            helper.assertTrue(winston.getChessboardDistance(manor) >= Winston.KEEP_AWAY, "Winston away from the manor, seed " + seed);
         }
         helper.succeed();
     }

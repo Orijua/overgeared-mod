@@ -93,7 +93,7 @@ public final class AshurManor {
 
     /**
      * The site for this world's manor: the nearest chunk {@code minDistance}-{@code maxDistance} chunks from Bairan
-     * where it stands on dry, fairly flat land. Empty if the generator doesn't have it or nothing fits.
+     * where it stands on dry, fairly flat land (and on the lore map's land, in Satisfy). Empty if the generator doesn't have it or nothing fits.
      */
     public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
                                               StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan,
@@ -103,7 +103,8 @@ public final class AshurManor {
             return Optional.empty();
         }
         for (ChunkPos chunk : ChunkSpiral.around(bairan, maxDistance)) {
-            if (bairan.getChessboardDistance(chunk) < minDistance) {
+            if (bairan.getChessboardDistance(chunk) < minDistance
+                    || !SatisfyBiomeSource.onMapLand(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ())) {
                 continue;
             }
             StructureStart start = manor.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,

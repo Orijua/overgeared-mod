@@ -115,8 +115,8 @@ public final class NorthEndCaveTests {
     }
 
     /**
-     * On real overworld terrain, every one of 20 seeds gets its cave far to the north of Bairan, most of them in the cold,
-     * Ashur's manor near Bairan and Winston farther off, away from the cave.
+     * On real overworld terrain (no lore map), every one of 20 seeds gets its cave far to the north of Bairan, most of them
+     * in the cold, Ashur's manor near Bairan and Winston off, away from both, at the map's offsets from Bairan.
      * The search reads only the noise: nothing generates.
      */
     @GameTest(template = TestSupport.EMPTY, timeoutTicks = 4000)
@@ -144,13 +144,13 @@ public final class NorthEndCaveTests {
                     bairan, AshurManor.MIN_DISTANCE, AshurManor.MAX_DISTANCE);
             helper.assertTrue(manor.isPresent(), "no room for Ashur's manor near Bairan, seed " + seed);
             Optional<ChunkPos> winston = Winston.findSite(registries, generator, random, helper.getLevel().getStructureManager(), seed, height,
-                    bairan, Winston.MIN_DISTANCE, Winston.MAX_DISTANCE, List.of(cave.get(), manor.get()));
+                    bairan, List.of(cave.get(), manor.get()));
             helper.assertTrue(winston.isPresent(), "no room for Winston, seed " + seed);
             int fromBairan = bairan.getChessboardDistance(winston.get());
-            helper.assertTrue(fromBairan >= Winston.MIN_DISTANCE && fromBairan <= Winston.MAX_DISTANCE, "Winston " + fromBairan + " chunks off");
-            helper.assertTrue(winston.get().getChessboardDistance(cave.get()) >= 8, "Winston away from the cave, seed " + seed);
+            helper.assertTrue(fromBairan >= Winston.KEEP_AWAY, "Winston only " + fromBairan + " chunks off");
+            helper.assertTrue(winston.get().getChessboardDistance(cave.get()) >= Winston.KEEP_AWAY, "Winston away from the cave, seed " + seed);
             int north = bairan.z - cave.get().z;
-            helper.assertTrue(north >= 30, "seed " + seed + ": only " + north + " chunks north of Bairan");
+            helper.assertTrue(north >= NorthEndCave.MIN_DISTANCE, "seed " + seed + ": only " + north + " chunks north of Bairan");
             nearest = Math.min(nearest, north);
             farthest = Math.max(farthest, north);
             int y = generator.getBaseHeight(cave.get().getMiddleBlockX(), cave.get().getMiddleBlockZ(),

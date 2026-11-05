@@ -9,49 +9,20 @@
         "type": "minecraft:multi_noise",
         "preset": "minecraft:overworld"
       },
-      "cell": 192,
-      "origin_col": 13,
-      "origin_row": 7,
+      "map": "overgearedmod:west",
       "legend": {
-        "P": "minecraft:plains",
-        "F": "minecraft:forest",
-        "D": "minecraft:desert",
-        "T": "minecraft:taiga",
-        "S": "minecraft:snowy_plains",
-        "K": "minecraft:snowy_taiga",
-        "M": "minecraft:windswept_hills",
-        "A": "minecraft:savanna"
-      },
-      "rows": [
-      "....................................",
-      "....................................",
-      "...SSSSSSSSSKKKKKKS.................",
-      "...SSSSSSSSSKPPPPKS.................",
-      "...KKKKKKKKKKPPPPKSSSSSSSSSSS.......",
-      "...KKKDDDDDDKPPPPKSSSSSSSSSSS.......",
-      "..FFFFDDDDDPPPPPPPSSSSSSSSSSS.......",
-      "..FFFFFMMMMPPPPPPPPPPPPPPPPPPP......",
-      "..FFFFFMMMMPPPPPPPPPPPPPPPPPPP......",
-      "..FFFFFPPPPPPPPPPPPPPPPPMMMPP.......",
-      ".PFFFFFPPPPPPPTTTTMMMMMMMMMPP.......",
-      ".PFFFFFPPPPAAAAAAAMMMMMMMMMPP.......",
-      ".PFFFFFPPPPAAAAAAAMMMMMMMMMPP.......",
-      "..PPPPPPPPPAAAAAAAMMMMMMMMMPP.......",
-      "..PPPPPFFFFFFFAAAAMMMMMMMTTTT.......",
-      ".PPPPPPFFFFFFFAAAAMMMMMMMTTTT.......",
-      "...PPPPFFFFFFFPPPPMMMMMMMTTTT.......",
-      "...PPPPPPPPPFFFFFFFMMMMMMTTTT.......",
-      "...PPPPPPPPPFFFFFFFPPPPPPTTTT.......",
-      "....PPPPPPPPFFFFFFFPPPPPPPP.........",
-      "....PPPPPPPPPPPPPPPPPPPPP...........",
-      ".....PPPPPPPPPPPPPPPPPPP............",
-      "......PPPPPPPPPPPPPPPPPP............",
-      "....................................",
-      "....................................",
-      "....................................",
-      "...................................."
-
-      ]
+        "1": "minecraft:plains",
+        "2": "minecraft:forest",
+        "3": "minecraft:desert",
+        "4": "minecraft:taiga",
+        "5": "minecraft:snowy_plains",
+        "6": "minecraft:snowy_taiga",
+        "7": "minecraft:windswept_hills",
+        "8": "minecraft:savanna",
+        "9": "minecraft:badlands",
+        "10": "minecraft:stony_peaks",
+        "11": "minecraft:frozen_peaks"
+      }
     }
   }
 }
