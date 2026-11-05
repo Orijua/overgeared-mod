@@ -24,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * The grid is north up and east right, like the source map. The origin is a source pixel (Bairan), not a cell centre:
  * block (0, 0) lies on that pixel, so every block maps to the same place of the canon map whatever the cell size.
  * Beyond the grid it is sea. This class only reads and queries the data (pure, so it is unit-tested): the biomes of the
- * Satisfy dimension come from it ({@link SatisfyMap}, {@link SatisfyBiomeSource}); the terrain does not follow it yet.
+ * Satisfy dimension ({@link SatisfyMap}, {@link SatisfyBiomeSource}) and its terrain ({@link SatisfyTerrainFunction}) come
+ * from it.
  */
 public final class SatisfyMapData {
     /** The data of the West Continent, as a classpath folder. */

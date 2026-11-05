@@ -1,14 +1,16 @@
 package com.orijua.overgearedmod.feature.world;
 
 /**
- * The lore regions of the Satisfy dimension, block by block: the cells of a canon map ({@link SatisfyMapData}, north up,
- * block (0, 0) on Bairan's pixel) with their borders warped by smooth noise, so the regions and the coast don't come out
- * as squares and staircases. Beyond the map, and in its sea and lakes, the region is {@link SatisfyMapData#SEA}.
+ * The lore regions and the relief of the Satisfy dimension, block by block: the cells of a canon map
+ * ({@link SatisfyMapData}, north up, block (0, 0) on Bairan's pixel) with their borders warped by smooth noise, so the
+ * regions and the coast don't come out as squares and staircases. Beyond the map, and in its sea and lakes, the region is
+ * {@link SatisfyMapData#SEA}.
  * <p>
  * The warp moves the point that is looked up by less than half a cell, so a block always gets the region of its own cell
- * or of a neighbour, and the middle of every cell keeps its own. Pure, so it is unit-tested.
+ * or of a neighbour, and the middle of every cell keeps its own. The relief ({@link #reliefAt}) is read at the same
+ * warped point, so the coast of the terrain follows the coast of the regions. Pure, so it is unit-tested.
  */
-public final class SatisfyMap {
+public final class SatisfyMap implements SatisfyRelief {
     /** The broad wobble: lattice spacing and reach, in cells. */
     private static final double BROAD_STEP = 2.0;
     private static final double BROAD_REACH = 0.32;
@@ -17,6 +19,8 @@ public final class SatisfyMap {
     private static final double FINE_REACH = 0.13;
     /** The farthest the warp moves a point, in cells (each axis): under half a cell. */
     static final double MAX_WARP = BROAD_REACH + FINE_REACH;
+    private static final long SALT_X = 0x9E3779B9L;
+    private static final long SALT_Z = 0x85EBCA6BL;
 
     private final SatisfyMapData data;
     private final int broadStep;
@@ -39,9 +43,18 @@ public final class SatisfyMap {
 
     /** The region index of block (x, z) after the warp; {@link SatisfyMapData#SEA} off the map. */
     public int regionAt(int blockX, int blockZ) {
-        double x = blockX + warp(blockX, blockZ, 0x9E3779B9L);
-        double z = blockZ + warp(blockX, blockZ, 0x85EBCA6BL);
+        double x = blockX + warp(blockX, blockZ, SALT_X);
+        double z = blockZ + warp(blockX, blockZ, SALT_Z);
         return data.regionAtCell(data.colAtBlock((int) Math.floor(x)), data.rowAtBlock((int) Math.floor(z)));
+    }
+
+    /**
+     * The relief of block (x, z), 0-9, at the same warped point as {@link #regionAt}: bilinear between the cell centres
+     * ({@link SatisfyMapData#relief}), so the ground has no steps; {@code 0} (deep sea) beyond the map.
+     */
+    @Override
+    public double reliefAt(int blockX, int blockZ) {
+        return data.relief(blockX + warp(blockX, blockZ, SALT_X), blockZ + warp(blockX, blockZ, SALT_Z));
     }
 
     /** Whether block (x, z) is on the map's land (not its sea or a lake), after the warp. */

@@ -2,7 +2,7 @@
   "type": "overgearedmod:satisfy",
   "generator": {
     "type": "minecraft:noise",
-    "settings": "minecraft:overworld",
+    "settings": "overgearedmod:satisfy",
     "biome_source": {
       "type": "overgearedmod:satisfy_map",
       "outside": {

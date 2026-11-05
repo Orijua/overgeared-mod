@@ -3,6 +3,7 @@
   "argument": {
     "type": "overgearedmod:satisfy_terrain",
     "channel": "ridges",
-    "map": "overgearedmod:test_island"
+    "map": "overgearedmod:west",
+    "noise": "minecraft:overworld/ridges"
   }
 }

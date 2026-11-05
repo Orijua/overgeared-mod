@@ -18,11 +18,32 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /** Checks the real {@code satisfy.json} (as a classpath resource, no registries) against the map it names. */
 class SatisfyDimensionJsonTest {
+    private static JsonObject json(String path) throws IOException {
+        try (InputStream in = SatisfyDimensionJsonTest.class.getResourceAsStream(path)) {
+            assertNotNull(in, path + " must be on the classpath");
+            return JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
+        }
+    }
+
+    private static JsonObject generator() throws IOException {
+        return json("/data/overgearedmod/dimension/satisfy.json").getAsJsonObject("generator");
+    }
+
     private static JsonObject source() throws IOException {
-        try (InputStream in = SatisfyDimensionJsonTest.class.getResourceAsStream("/data/overgearedmod/dimension/satisfy.json")) {
-            assertNotNull(in, "satisfy.json must be on the classpath");
-            JsonObject root = JsonParser.parseReader(new InputStreamReader(in, StandardCharsets.UTF_8)).getAsJsonObject();
-            return root.getAsJsonObject("generator").getAsJsonObject("biome_source");
+        return generator().getAsJsonObject("biome_source");
+    }
+
+    @Test
+    void theTerrainFollowsTheSameMap() throws IOException {
+        assertEquals("overgearedmod:satisfy", generator().get("settings").getAsString(), "the map-driven noise settings");
+        for (String channel : new String[]{"continents", "erosion", "ridges"}) {
+            JsonObject function = json("/data/overgearedmod/worldgen/density_function/satisfy/" + channel + ".json");
+            assertEquals("minecraft:flat_cache", function.get("type").getAsString());
+            JsonObject terrain = function.getAsJsonObject("argument");
+            assertEquals("overgearedmod:satisfy_terrain", terrain.get("type").getAsString());
+            assertEquals(channel, terrain.get("channel").getAsString());
+            assertEquals(source().get("map").getAsString(), terrain.get("map").getAsString(), channel + " reads the biomes' map");
+            assertEquals("minecraft:overworld/" + channel, terrain.get("noise").getAsString(), channel + " mixes in vanilla's noise");
         }
     }
 

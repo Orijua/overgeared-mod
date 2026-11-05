@@ -117,6 +117,43 @@ class SatisfyMapTest {
         }
     }
 
+    @Test
+    void theReliefIsReadAtTheWarpedPointAndIsSmooth() {
+        SatisfyMapData data = MAP.data();
+        int reach = (int) Math.ceil(CELL * SatisfyMap.MAX_WARP) + 1;
+        for (int x = -4 * CELL; x <= 4 * CELL; x += 3) {
+            for (int z = -4 * CELL; z <= 4 * CELL; z += 3) {
+                double relief = MAP.reliefAt(x, z);
+                assertTrue(relief >= 0 && relief <= SatisfyMapData.MAX_RELIEF, "relief " + relief + " at " + x + "," + z);
+                // Bilinear at a point less than a warp away: never far from the unwarped value.
+                double flat = data.relief(x, z);
+                assertTrue(Math.abs(relief - flat) <= 8.0 * reach / CELL + 1e-9, "the warp is small at " + x + "," + z);
+                // No steps: neighbours differ by little.
+                assertTrue(Math.abs(MAP.reliefAt(x + 1, z) - relief) < 0.5, "smooth at " + x + "," + z);
+            }
+        }
+        assertEquals(4.0, MAP.reliefAt(centreX(2), centreZ(1) + CELL / 2), 0.6, "inland between two land cells");
+        assertEquals(0.0, MAP.reliefAt(100_000, 0), 1e-9, "the open sea beyond the map");
+    }
+
+    @Test
+    void theCoastOfTheReliefFollowsTheCoastOfTheRegions() {
+        // Relief halfway between sea (0) and land (4) is 2: it falls on the border of the regions, warp included. Rows 0-2
+        // have the sea in column 0 and land in column 1; stay a warp away from row 3, all sea.
+        for (int z = centreZ(0) + 16; z <= centreZ(2) - 16; z++) {
+            int edge = Integer.MIN_VALUE;
+            for (int x = centreX(0); x <= centreX(2); x++) {
+                if (MAP.isLand(x, z)) {
+                    edge = x;
+                    break;
+                }
+            }
+            assertTrue(edge != Integer.MIN_VALUE, "land on row z=" + z);
+            assertTrue(MAP.reliefAt(edge - 2, z) < 2.0 + 0.5 && MAP.reliefAt(edge + 2, z) > 2.0 - 0.5,
+                    "the relief crosses the coast where the region does, z=" + z + ": " + MAP.reliefAt(edge - 2, z) + " / " + MAP.reliefAt(edge + 2, z));
+        }
+    }
+
     // --- The real map and the places chosen from it ------------------------------------------------------------------
 
     private static final Set<String> COLD = Set.of("minecraft:snowy_plains", "minecraft:snowy_taiga", "minecraft:frozen_peaks");

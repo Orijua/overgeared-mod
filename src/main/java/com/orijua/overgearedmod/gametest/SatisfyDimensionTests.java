@@ -21,6 +21,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.ChunkPos;
@@ -29,7 +30,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.biome.Climate;
-import net.minecraft.world.level.biome.FixedBiomeSource;
+import net.minecraft.world.level.levelgen.DensityFunction;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -42,6 +43,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -69,8 +71,12 @@ public final class SatisfyDimensionTests {
         }
     }
 
+    /** The map-driven noise settings of the dimension (vanilla's, with the terrain splines fed by the canon map). */
+    private static final ResourceKey<NoiseGeneratorSettings> SATISFY_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, Overgearedmod.id("satisfy"));
+
+    /** The noise of a world with this seed, with the dimension's own noise settings ({@link #SATISFY_SETTINGS}). */
     private static RandomState random(RegistryAccess registries, long seed) {
-        var settings = registries.registryOrThrow(Registries.NOISE_SETTINGS).getHolderOrThrow(NoiseGeneratorSettings.OVERWORLD);
+        var settings = registries.registryOrThrow(Registries.NOISE_SETTINGS).getHolderOrThrow(SATISFY_SETTINGS);
         return RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), seed);
     }
 
@@ -135,6 +141,8 @@ public final class SatisfyDimensionTests {
             helper.assertTrue(map.regionAt(bairan.getMiddleBlockX(), bairan.getMiddleBlockZ()) == SatisfyMapData.PLAINS,
                     "Bairan is in the plains region of the lore map, seed " + seed + ": " + bairan);
             helper.assertTrue(bairan.getChessboardDistance(new ChunkPos(0, 0)) <= StartingVillage.SEARCH_RADIUS, "Bairan is at its place on the map");
+            Ground village = Ground.at(generator, random, bairan.getMiddleBlockX(), bairan.getMiddleBlockZ());
+            helper.assertTrue(village.dry() && village.height() > generator.getSeaLevel(), "Bairan is on dry land above the sea, seed " + seed + ": " + village);
             helper.assertTrue(chosen.landing().isPresent(), "a landing for seed " + seed);
             BlockPos landing = chosen.landing().get();
             helper.assertTrue(bairan.getChessboardDistance(new ChunkPos(landing)) <= 2, "the landing is on Bairan's plaza, seed " + seed + ": " + landing + " vs " + bairan);
@@ -210,26 +218,90 @@ public final class SatisfyDimensionTests {
     }
 
     /**
-     * Technical test of the map-driven terrain: the noise settings {@code overgearedmod:satisfy} (vanilla's, with the
-     * terrain splines fed by the hand-drawn test island) give a sea floor far out, and land and a mountain inside.
+     * The ground at a block: the first solid block from the top ({@code height}, the sea floor at sea), whether it is dry
+     * (no water over it), and {@code top}, the terrain's own level, where its depth is 0, without the 3D noise, the
+     * jaggedness of peaks and the caves (a cave opening at the surface is not a hole in the terrain).
      */
-    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 600)
-    public static void mapDrivenTerrainHasSeaLandAndMountain(GameTestHelper helper) {
+    private record Ground(int height, boolean dry, int top) {
+        static Ground at(ChunkGenerator generator, RandomState random, int x, int z) {
+            int surface = generator.getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, HEIGHT, random);
+            int floor = generator.getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
+            // depth = offset + a gradient that falls by 1 every 128 blocks up, so it is 0 at 128 * depth(y = 0).
+            double depth = random.router().depth().compute(new DensityFunction.SinglePointContext(x, 0, z));
+            return new Ground(floor, surface == floor, (int) Math.round(128 * depth));
+        }
+    }
+
+    /**
+     * The terrain follows the canon map ({@code overgearedmod:satisfy} noise settings, relief from {@code relief.png}):
+     * a deep sea north of Bairan and beyond the map, a low coast where the map's land ends, dry lowland, high mountains
+     * in the west, and Bairan's place, (0, 0), on dry plains above the sea. Points from the map's cells (block (0, 0) is
+     * Bairan's pixel; a cell is 32 blocks).
+     */
+    @GameTest(template = TestSupport.EMPTY, timeoutTicks = 1200)
+    public static void satisfyTerrainFollowsTheMap(GameTestHelper helper) {
         var registries = helper.getLevel().registryAccess();
-        var settings = registries.registryOrThrow(Registries.NOISE_SETTINGS)
-                .getHolderOrThrow(net.minecraft.resources.ResourceKey.create(Registries.NOISE_SETTINGS, Overgearedmod.id("satisfy")));
-        var plains = registries.registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS);
-        NoiseBasedChunkGenerator generator = new NoiseBasedChunkGenerator(new FixedBiomeSource(plains), settings);
-        RandomState random = RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), 7L);
+        ChunkGenerator generator = generator(helper);
+        helper.assertTrue(generator instanceof NoiseBasedChunkGenerator noise && noise.generatorSettings().is(SATISFY_SETTINGS),
+                "the dimension uses the map-driven noise settings");
+        SatisfyMap map = ((SatisfyBiomeSource) generator.getBiomeSource()).map();
         int sea = generator.getSeaLevel();
-        int farSea = generator.getBaseHeight(6 * 96 + 960, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
-        int shore = generator.getBaseHeight(5 * 96, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
-        int lowland = generator.getBaseHeight(4 * 96, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
-        int peak = generator.getBaseHeight(0, 0, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
-        helper.assertTrue(farSea < sea - 15, "far out is a deep sea: floor " + farSea + " vs sea level " + sea);
-        helper.assertTrue(lowland > sea, "the lowland is dry land: " + lowland + " vs " + sea);
-        helper.assertTrue(peak > lowland + 20, "the middle is a mountain: " + peak + " vs lowland " + lowland);
-        helper.assertTrue(shore <= lowland, "the coast is not higher than the lowland: " + shore + " vs " + lowland);
+        for (long seed : new long[]{1L, 42L, -7_000_123L}) {
+            RandomState random = random(registries, seed);
+            // The open sea: 7x7 cells of relief 0 north of Bairan (cell 110, 10), and far beyond the map.
+            for (int[] at : new int[][]{{-8, -580}, {-6000, 400}, {0, -3000}, {9000, 9000}}) {
+                Ground ground = Ground.at(generator, random, at[0], at[1]);
+                helper.assertTrue(!ground.dry() && ground.height() < sea - 15, "a deep sea at " + at[0] + "," + at[1] + ", seed " + seed + ": " + ground);
+            }
+            // Dry lowland (5x5 cells of relief 4 in the plains north of Bairan) and the mountains of the west (5x5 of relief 9).
+            Ground lowland = Ground.at(generator, random, 88, -132);
+            helper.assertTrue(lowland.dry() && lowland.top() > sea && lowland.top() <= sea + 15, "dry lowland, seed " + seed + ": " + lowland);
+            Ground peak = Ground.at(generator, random, -1864, -4);
+            helper.assertTrue(peak.dry() && peak.top() > sea + 100, "a high mountain, seed " + seed + ": " + peak);
+            Ground eastPeak = Ground.at(generator, random, 88, 284);
+            helper.assertTrue(eastPeak.top() > sea + 60, "the mountains south-east of Bairan, seed " + seed + ": " + eastPeak);
+            // Bairan's place, the origin: dry plains a little above the sea, with no big drops. Vanilla's caves open at the
+            // surface here and there, so only most of the actual ground has to be dry and above the sea.
+            List<Integer> tops = new ArrayList<>();
+            List<String> rejected = new ArrayList<>();
+            for (int x = -24; x <= 24; x += 8) {
+                for (int z = -24; z <= 24; z += 8) {
+                    Ground ground = Ground.at(generator, random, x, z);
+                    tops.add(ground.top());
+                    if (!ground.dry() || ground.height() <= sea) {
+                        rejected.add(x + "," + z + ": " + ground);
+                    }
+                }
+            }
+            tops.sort(null);
+            helper.assertTrue(tops.getFirst() > sea && tops.getLast() <= sea + 20 && tops.getLast() - tops.getFirst() <= 8,
+                    "Bairan's place is low, gentle plains above the sea, seed " + seed + ": " + tops);
+            helper.assertTrue(rejected.size() <= 49 / 3, "Bairan's place is mostly dry ground, seed " + seed + "; not: " + rejected);
+            // The north coast on the meridian of Bairan: the first water going north is where the map's land ends, and the
+            // last dry ground before it is a low coast.
+            int shore = Integer.MIN_VALUE;
+            Ground last = null;
+            int wet = 0;
+            for (int z = -132; z >= -580 && shore == Integer.MIN_VALUE; z--) {
+                Ground ground = Ground.at(generator, random, -8, z);
+                if (ground.dry()) {
+                    wet = 0;
+                    last = ground;
+                } else if (++wet == 4) {
+                    shore = z + 3; // four wet columns in a row: the sea, not a puddle
+                }
+            }
+            int mapShore = Integer.MIN_VALUE;
+            for (int z = -132; z >= -580; z--) {
+                if (!map.isLand(-8, z)) {
+                    mapShore = z;
+                    break;
+                }
+            }
+            helper.assertTrue(shore != Integer.MIN_VALUE && Math.abs(shore - mapShore) <= 24,
+                    "the sea starts where the map's land ends, seed " + seed + ": z " + shore + " vs " + mapShore);
+            helper.assertTrue(last != null && last.top() <= sea + 8, "a low coast, seed " + seed + ": " + last);
+        }
         helper.succeed();
     }
 }
