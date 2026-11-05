@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "source": "canon/Mapa_continente_oeste.png",
+  "blocks_per_pixel": 2,
+  "cell_px": 16,
+  "cell_blocks": 32,
+  "width": 256,
+  "height": 192,
+  "pixel_width": 4096,
+  "pixel_height": 3072,
+  "origin": {
+    "px": [
+      1772,
+      458
+    ],
+    "col": 110,
+    "row": 28,
+    "name": "Bairan"
+  },
+  "region_legend": {
+    "0": "sea",
+    "1": "minecraft:plains",
+    "2": "minecraft:forest",
+    "3": "minecraft:desert",
+    "4": "minecraft:taiga",
+    "5": "minecraft:snowy_plains",
+    "6": "minecraft:snowy_taiga",
+    "7": "minecraft:windswept_hills",
+    "8": "minecraft:savanna",
+    "9": "minecraft:badlands",
+    "10": "minecraft:stony_peaks",
+    "11": "minecraft:frozen_peaks"
+  },
+  "region_names": {
+    "0": "mar",
+    "1": "llanura",
+    "2": "bosque",
+    "3": "desierto",
+    "4": "taiga",
+    "5": "llanura nevada",
+    "6": "taiga nevada",
+    "7": "colinas ventosas",
+    "8": "sabana",
+    "9": "mesas / tierras baldias (naranja)",
+    "10": "volcan (Veldon)",
+    "11": "picos nevados"
+  },
+  "relief_legend": {
+    "0": "mar profundo",
+    "1": "mar somero (lejos de la costa)",
+    "2": "mar somero (junto a la costa) y lagos",
+    "3": "costa",
+    "4": "llanura",
+    "5": "llanura alta / pie de monte",
+    "6": "colinas",
+    "7": "montana baja",
+    "8": "montana",
+    "9": "pico"
+  }
+}
