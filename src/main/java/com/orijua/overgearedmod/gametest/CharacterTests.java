@@ -6,6 +6,9 @@ import com.orijua.overgearedmod.feature.capsule.CapsuleState;
 import com.orijua.overgearedmod.feature.character.CharacterSnapshot;
 import com.orijua.overgearedmod.feature.character.CharacterVault;
 import com.orijua.overgearedmod.feature.character.WorldSide;
+import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
@@ -21,6 +24,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The two characters, step 1: the data model. The vault is saved with the player and survives death, a snapshot reads
@@ -160,6 +164,185 @@ public final class CharacterTests {
 
         helper.assertTrue(player.getData(ModAttachments.CHARACTER_VAULT.get()).equals(vault), "reset all does not touch the other world's belongings");
         helper.assertTrue(player.getData(ModAttachments.CAPSULE.get()).equals(CapsuleState.EMPTY), "but it does reset the rest");
+        helper.succeed();
+    }
+
+    // ---- Step 2: settle and the hooks ----
+
+    /** Runs {@code body} with the test level playing the given world, then puts the test default back. */
+    private static void in(GameTestHelper helper, WorldSide side, Runnable body) {
+        try {
+            Satisfy.standIn(side == WorldSide.SATISFY ? helper.getLevel() : null);
+            body.run();
+        } finally {
+            Satisfy.restoreStandIn();
+        }
+    }
+
+    private static int count(ServerPlayer player, net.minecraft.world.item.Item item) {
+        return player.getInventory().countItem(item);
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theFirstSettleAdoptsWhereThePlayerStands(GameTestHelper helper) {
+        for (WorldSide side : WorldSide.values()) {
+            ServerPlayer player = TestSupport.fakePlayer(helper);
+            player.getInventory().setItem(0, new ItemStack(Items.IRON_INGOT, 9));
+            in(helper, side, () -> {
+                helper.assertTrue(Characters.settle(player) == Characters.Result.ADOPTED, "the first time nothing moves (" + side + ")");
+                helper.assertTrue(count(player, Items.IRON_INGOT) == 9, "the player keeps what they carried (" + side + ")");
+                helper.assertTrue(Characters.vault(player).live().equals(Optional.of(side)), "they now carry this world's character (" + side + ")");
+                helper.assertTrue(Characters.vault(player).stored().isEmpty(), "and the other world has nothing stored yet (" + side + ")");
+            });
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void goingToSatisfyAndBackSwapsThemAndConservesEverything(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().setItem(0, fancySword(helper));
+        player.getInventory().setItem(1, new ItemStack(Items.DIAMOND, 5));
+        player.getEnderChestInventory().setItem(0, new ItemStack(Items.EMERALD, 7));
+        ItemStack sword = fancySword(helper);
+
+        in(helper, WorldSide.REAL, () -> Characters.settle(player));
+
+        in(helper, WorldSide.SATISFY, () -> {
+            helper.assertTrue(Characters.settle(player) == Characters.Result.SWAPPED, "entering Satisfy swaps");
+            helper.assertTrue(player.getInventory().isEmpty(), "Satisfy starts with nothing: the real things stay behind");
+            helper.assertTrue(player.getEnderChestInventory().isEmpty(), "and so does its Ender chest");
+            player.getInventory().setItem(0, new ItemStack(Items.IRON_SWORD));
+            player.getInventory().setItem(2, new ItemStack(Items.COAL, 30));
+            player.getEnderChestInventory().setItem(0, new ItemStack(Items.GOLD_INGOT, 2));
+            helper.assertTrue(Characters.settle(player) == Characters.Result.UNCHANGED, "a second settle in the same world does nothing");
+            helper.assertTrue(count(player, Items.COAL) == 30, "and loses nothing");
+        });
+
+        in(helper, WorldSide.REAL, () -> {
+            helper.assertTrue(Characters.settle(player) == Characters.Result.SWAPPED, "coming back swaps");
+            helper.assertTrue(ItemStack.matches(player.getInventory().getItem(0), sword), "the real sword is back, enchanted, named and damaged");
+            helper.assertTrue(count(player, Items.DIAMOND) == 5 && count(player, Items.COAL) == 0 && count(player, Items.IRON_SWORD) == 0,
+                    "the real inventory is back and none of Satisfy's leaked");
+            helper.assertTrue(player.getEnderChestInventory().getItem(0).is(Items.EMERALD) && player.getEnderChestInventory().countItem(Items.GOLD_INGOT) == 0,
+                    "the Ender chests stay separate");
+            helper.assertTrue(Characters.settle(player) == Characters.Result.UNCHANGED, "idempotent here too");
+        });
+
+        in(helper, WorldSide.SATISFY, () -> {
+            Characters.settle(player);
+            helper.assertTrue(count(player, Items.COAL) == 30 && count(player, Items.IRON_SWORD) == 1 && count(player, Items.DIAMOND) == 0,
+                    "Satisfy's character came back untouched the second time");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theCursorAndTheCraftingGridGoWithTheWorldTheyAreIn(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(player);
+            player.containerMenu.setCarried(new ItemStack(Items.DIAMOND, 2));
+            player.inventoryMenu.getCraftSlots().setItem(0, new ItemStack(Items.OAK_PLANKS, 4));
+            Characters.prepareCrossing(player);
+            helper.assertTrue(player.containerMenu.getCarried().isEmpty(), "the cursor is emptied before crossing");
+            helper.assertTrue(player.inventoryMenu.getCraftSlots().isEmpty(), "and so is the 2x2 grid");
+            helper.assertTrue(count(player, Items.DIAMOND) == 2 && count(player, Items.OAK_PLANKS) == 4, "both went back to the real inventory");
+        });
+        in(helper, WorldSide.SATISFY, () -> {
+            // Picked up while still carrying the real character: it leaves with it.
+            player.containerMenu.setCarried(new ItemStack(Items.STONE, 3));
+            Characters.settle(player);
+            helper.assertTrue(player.containerMenu.getCarried().isEmpty(), "a settle closes the menu too");
+            helper.assertTrue(count(player, Items.DIAMOND) == 0, "the real things did not follow");
+        });
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(player);
+            helper.assertTrue(count(player, Items.DIAMOND) == 2 && count(player, Items.OAK_PLANKS) == 4, "the real things are back");
+            helper.assertTrue(count(player, Items.STONE) == 3, "and what was on the cursor when the world changed went with the character that carried it");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void dyingInSatisfyBringsTheRealCharacterBack(GameTestHelper helper) {
+        ServerPlayer old = TestSupport.fakePlayer(helper);
+        old.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 5));
+        in(helper, WorldSide.REAL, () -> Characters.settle(old));
+        in(helper, WorldSide.SATISFY, () -> {
+            Characters.settle(old);
+            old.getInventory().setItem(0, new ItemStack(Items.COAL, 30));
+        });
+
+        // The death: the new player has an empty inventory (Satisfy's things drop there) and the old one's vault.
+        ServerPlayer fresh = TestSupport.fakePlayer(helper);
+        fresh.restoreFrom(old, false);
+        helper.assertTrue(fresh.getInventory().isEmpty(), "the new player carries nothing");
+        in(helper, WorldSide.REAL, () -> {
+            helper.assertTrue(Characters.settle(fresh) == Characters.Result.SWAPPED, "respawning in the real world swaps");
+            helper.assertTrue(count(fresh, Items.DIAMOND) == 5 && count(fresh, Items.COAL) == 0, "the real inventory is back, with none of Satisfy's");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void dyingInTheRealWorldChangesNothing(GameTestHelper helper) {
+        ServerPlayer old = TestSupport.fakePlayer(helper);
+        old.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 5));
+        in(helper, WorldSide.REAL, () -> Characters.settle(old));
+        in(helper, WorldSide.SATISFY, () -> {
+            Characters.settle(old);
+            old.getInventory().setItem(0, new ItemStack(Items.COAL, 30));
+        });
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(old);
+            ServerPlayer fresh = TestSupport.fakePlayer(helper);
+            fresh.restoreFrom(old, false);
+            helper.assertTrue(Characters.settle(fresh) == Characters.Result.UNCHANGED, "no swap: they already carried the real character");
+            CharacterVault vault = Characters.vault(fresh);
+            helper.assertTrue(vault.live().equals(Optional.of(WorldSide.REAL)) && vault.stored().isPresent(), "Satisfy's character stays stored");
+        });
+        in(helper, WorldSide.SATISFY, () -> {
+            ServerPlayer again = TestSupport.fakePlayer(helper);
+            again.restoreFrom(old, false);
+            Characters.settle(again);
+            helper.assertTrue(count(again, Items.COAL) == 30, "and it was not lost");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void anUnreadableStoredCharacterMovesNothing(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 5));
+        CharacterVault broken = CharacterVault.of(WorldSide.REAL, new CompoundTag());
+        player.setData(ModAttachments.CHARACTER_VAULT.get(), broken);
+        in(helper, WorldSide.SATISFY, () -> {
+            helper.assertTrue(Characters.settle(player) == Characters.Result.FAILED, "a damaged tag is not applied");
+            helper.assertTrue(count(player, Items.DIAMOND) == 5, "the player keeps what they carry");
+            helper.assertTrue(Characters.vault(player).equals(broken), "and the vault is exactly as it was");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void connectingAndDisconnectingThroughTheCapsuleSwapsThem(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        net.minecraft.core.BlockPos bairan = helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1));
+        net.minecraft.core.GlobalPos capsule = net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(new net.minecraft.core.BlockPos(0, 1, 0)));
+        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 5));
+        in(helper, WorldSide.REAL, () -> Characters.settle(player));
+
+        CapsuleTests.inSatisfy(helper, bairan, () -> {
+            helper.assertTrue(CapsuleService.connect(player, capsule), "it connects");
+            helper.assertTrue(player.getInventory().isEmpty(), "connecting leaves the real things behind");
+            helper.assertTrue(Characters.vault(player).live().equals(Optional.of(WorldSide.SATISFY)), "and the player now carries Satisfy's character");
+            player.getInventory().setItem(0, new ItemStack(Items.COAL, 30));
+        });
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(player);
+            helper.assertTrue(count(player, Items.DIAMOND) == 5 && count(player, Items.COAL) == 0, "back in the real world each has their own");
+        });
         helper.succeed();
     }
 }

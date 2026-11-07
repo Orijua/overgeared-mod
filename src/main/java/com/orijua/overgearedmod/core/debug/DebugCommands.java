@@ -271,7 +271,7 @@ public final class DebugCommands {
                 }, site)).create());
         // Facing the place: the landing is in front of it.
         // A debug crossing between the real world and Satisfy is allowed (operators only).
-        WorldSeparation.crossing(() ->
+        WorldSeparation.cross(player, () ->
                 player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, found.yaw(), 0.0f));
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
                 landing.getX(), landing.getY(), landing.getZ()), false);
