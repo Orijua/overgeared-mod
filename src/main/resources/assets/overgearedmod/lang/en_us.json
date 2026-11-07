@@ -347,7 +347,7 @@
   "item.overgearedmod.rulers_sword": "Ruler's Sword",
   "item.overgearedmod.rulers_sword.desc": "Only given to a recognised lord. Used to watch soldiers and residents closely.",
   "item.overgearedmod.insight_sword.observation": "Character Observation: observe %s %% faster and see as with +%s Insight",
-  "item.overgearedmod.insight_sword.talent_search": "Talent Search (right-click): reveals hidden talents and named NPCs nearby",
+  "item.overgearedmod.insight_sword.talent_search": "Talent Search (right-click): reveals hidden talents and named NPCs nearby; each new talent found raises Insight by 2",
   "item.overgearedmod.loaned": "Lent for \"%s\": given back when it ends",
   "message.overgearedmod.quest_loaned": "You have been lent what you need for \"%s\".",
   "message.overgearedmod.quest_loan_returned": "You give back what was lent to you for \"%s\".",

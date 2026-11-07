@@ -32,6 +32,8 @@ import java.util.UUID;
 public final class TalentSearch {
     public static final ResourceLocation MILESTONE = Overgearedmod.id("talent_found");
     public static final int COOLDOWN_TICKS = 400;
+    /** Insight for each new talent found (own design; canon, medium certainty: it raises Insight faster than observing). */
+    public static final int INSIGHT_PER_TALENT = 2;
     /** Search radius around the bearer, in blocks (a sphere). */
     static final double RANGE = 24.0;
     private static final int GLOW_TICKS = 200;
@@ -68,6 +70,9 @@ public final class TalentSearch {
             }
         }
         player.setData(ModAttachments.TALENTS_FOUND, List.copyOf(known));
+        if (found > 0) {
+            Observation.raise(player, found * INSIGHT_PER_TALENT);
+        }
         player.level().playSound(null, player.blockPosition(), SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0f, 1.0f);
         if (lines.isEmpty()) {
             player.displayClientMessage(Component.translatable("message.overgearedmod.talent_none"), true);

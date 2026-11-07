@@ -47,16 +47,18 @@ public final class InsightSwordTests {
         Observation.forget(player);
         Villager villager = helper.spawn(EntityType.VILLAGER, new BlockPos(1, 1, 1));
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.COMMANDERS_SWORD.get()));
-        helper.assertTrue(Observation.observeTicks(player) == 140 && Observation.effectiveInsight(player) == 10, "7 s and +10 with the Commander's");
-        helper.assertTrue(((InsightSwordItem) ModItems.COMMANDERS_SWORD.get()).observeSpeedPercent() == 30
-                && ((InsightSwordItem) ModItems.RULERS_SWORD.get()).observeSpeedPercent() == 50, "what the tooltips say: 30 % and 50 % faster");
-        for (int i = 0; i < 139; i++) {
-            helper.assertTrue(!Observation.observe(player, villager), "no point before seven seconds (tick " + (i + 1) + ")");
+        helper.assertTrue(Observation.observeTicks(player) == 100 && Observation.effectiveInsight(player) == 25, "5 s and +25 with the Commander's");
+        helper.assertTrue(((InsightSwordItem) ModItems.COMMANDERS_SWORD.get()).observeSpeedPercent() == 50
+                && ((InsightSwordItem) ModItems.RULERS_SWORD.get()).observeSpeedPercent() == 30, "what the tooltips say: 50 % and 30 % faster");
+        helper.assertTrue(((InsightSwordItem) ModItems.COMMANDERS_SWORD.get()).observeTicks() < ((InsightSwordItem) ModItems.RULERS_SWORD.get()).observeTicks(),
+                "the Commander observes faster than the Ruler (canon)");
+        for (int i = 0; i < 99; i++) {
+            helper.assertTrue(!Observation.observe(player, villager), "no point before five seconds (tick " + (i + 1) + ")");
         }
-        helper.assertTrue(Observation.observe(player, villager) && Observation.insight(player) == 1, "the point comes on tick 140");
+        helper.assertTrue(Observation.observe(player, villager) && Observation.insight(player) == 1, "the point comes on tick 100");
         player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.RULERS_SWORD.get()));
-        // 5 s for the sword, a little less with the point just learned (more Insight, faster).
-        helper.assertTrue(Observation.observeTicks(player) == 98 && Observation.effectiveInsight(player) == 26, "98 ticks and +25 with the Ruler's");
+        // 7 s for the sword, a little less with the point just learned (more Insight, faster).
+        helper.assertTrue(Observation.observeTicks(player) == 137 && Observation.effectiveInsight(player) == 11, "137 ticks and +10 with the Ruler's");
         villager.discard();
         helper.succeed();
     }
@@ -86,6 +88,26 @@ public final class InsightSwordTests {
         helper.succeed();
     }
 
+    /** Each new talent found raises Insight by {@link TalentSearch#INSIGHT_PER_TALENT}; searching again gives nothing. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void talentSearchRaisesInsight(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.INSIGHT, 0);
+        player.setData(ModAttachments.TALENTS_FOUND, java.util.List.of());
+        Villager first = helper.spawn(EntityType.VILLAGER, new BlockPos(1, 1, 2));
+        Villager second = helper.spawn(EntityType.VILLAGER, new BlockPos(2, 1, 2));
+        first.addTag(Talents.BAIRAN_RESIDENT);
+        second.addTag(Talents.BAIRAN_RESIDENT);
+        ItemStack sword = new ItemStack(ModItems.RULERS_SWORD.get());
+        helper.assertTrue(TalentSearch.search(player, sword) == 2, "two new talents");
+        helper.assertTrue(Observation.insight(player) == 2 * TalentSearch.INSIGHT_PER_TALENT, "Insight rises by 2 per talent");
+        helper.assertTrue(TalentSearch.search(player, sword) == 0 && Observation.insight(player) == 2 * TalentSearch.INSIGHT_PER_TALENT,
+                "searching again changes nothing");
+        first.discard();
+        second.discard();
+        helper.succeed();
+    }
+
     private static ApprenticeSmith apprentice(GameTestHelper helper, BlockPos at, NpcGrade grade) {
         ApprenticeSmith apprentice = helper.spawn(ModEntities.APPRENTICE_SMITH.get(), at);
         apprentice.setGrade(grade);
@@ -106,12 +128,12 @@ public final class InsightSwordTests {
         ApprenticeSmith normal = apprentice(helper, new BlockPos(2, 1, 2), NpcGrade.NORMAL);
         int before = GoalTracker.milestones(player, TalentSearch.MILESTONE);
 
-        rulersSwordWithInsight(player, 14); // 14 + 25 = 39: medium
+        rulersSwordWithInsight(player, 29); // 29 + 10 = 39: medium
         TalentSearch.search(player, player.getMainHandItem());
         helper.assertTrue(named.hasEffect(MobEffects.GLOWING), "the named glows at 39");
         helper.assertTrue(!semi.hasEffect(MobEffects.GLOWING) && !normal.hasEffect(MobEffects.GLOWING), "the others don't at 39");
 
-        rulersSwordWithInsight(player, 15); // 40: high
+        rulersSwordWithInsight(player, 30); // 40: high
         TalentSearch.search(player, player.getMainHandItem());
         helper.assertTrue(semi.hasEffect(MobEffects.GLOWING), "the semi-named glows at 40");
         helper.assertTrue(!normal.hasEffect(MobEffects.GLOWING), "a normal one never does");

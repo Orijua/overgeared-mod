@@ -142,19 +142,25 @@ public final class Observation {
     }
 
     private static void gain(ServerPlayer player, Entity target) {
-        int before = insight(player);
-        int after = before + 1;
-        player.setData(ModAttachments.INSIGHT, after);
+        int after = raise(player, 1);
         player.displayClientMessage(Component.translatable("message.overgearedmod.insight_gained", target.getDisplayName(), after), true);
         player.playNotifySound(SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.8f, 1.4f);
         player.playNotifySound(SoundEvents.AMETHYST_BLOCK_RESONATE, SoundSource.PLAYERS, 1.0f, 1.2f);
         GoalTracker.milestone(player, OBSERVED);
+    }
+
+    /** Adds {@code amount} Insight points (notifying a change of detail level); returns the new total. */
+    public static int raise(ServerPlayer player, int amount) {
+        int before = insight(player);
+        int after = before + amount;
+        player.setData(ModAttachments.INSIGHT, after);
         InsightRules.Detail detail = InsightRules.detail(after);
         if (detail != InsightRules.detail(before)) {
             NotificationEvents.send(player, SystemNotification.Kind.INSIGHT, List.of(
                     Component.translatable("notification.overgearedmod.insight.body", after),
                     Component.translatable("notification.overgearedmod.insight." + detail.name().toLowerCase())));
         }
+        return after;
     }
 
     private static String bar(double fraction) {
