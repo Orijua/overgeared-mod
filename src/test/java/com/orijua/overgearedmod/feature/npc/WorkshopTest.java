@@ -34,9 +34,9 @@ class WorkshopTest {
     void theHeaderCountsWhoForgesAndWhoStopped() {
         List<WorkshopEntry> entries = List.of(entry(ApprenticeSmith.Status.WORKING), entry(ApprenticeSmith.Status.WORKING),
                 entry(ApprenticeSmith.Status.NO_MATERIALS), entry(ApprenticeSmith.Status.NO_ORDER), entry(ApprenticeSmith.Status.UNPAID));
-        assertEquals(2, Workshop.working(entries));
-        assertEquals(2, Workshop.stoppedCount(entries), "an apprentice without an order is idle, not stopped");
-        assertEquals(0, Workshop.working(List.of()));
+        assertEquals(2, Workshop.working(entries, 0));
+        assertEquals(2, Workshop.stoppedCount(entries, 0), "an apprentice without an order is idle, not stopped");
+        assertEquals(0, Workshop.working(List.of(), 0));
     }
 
     @Test
@@ -46,7 +46,23 @@ class WorkshopTest {
         assertFalse(Workshop.showsProgress(ApprenticeSmith.Status.NO_MATERIALS, 40), "old progress of a stopped apprentice stays hidden");
     }
 
+    @Test
+    void newsGoesStaleWhenTheApprenticeIsOutOfReach() {
+        WorkshopEntry entry = entry(ApprenticeSmith.Status.WORKING);
+        assertFalse(entry.isStale(WorkshopEntry.STALE_TICKS), "still fresh at the limit");
+        assertTrue(entry.isStale(WorkshopEntry.STALE_TICKS + 1));
+        assertTrue(entry.sameNewsAs(entry), "the stamp alone is no news");
+        assertEquals(0, Workshop.working(List.of(entry), WorkshopEntry.STALE_TICKS + 1), "stale entries count as neither forging...");
+        assertEquals(0, Workshop.stoppedCount(List.of(entry(ApprenticeSmith.Status.UNPAID)), WorkshopEntry.STALE_TICKS + 1), "...nor stopped");
+    }
+
+    @Test
+    void failAndSpeedAreShownTheSameEverywhere() {
+        assertEquals((int) Math.round(ApprenticeRules.failChance(50) * 100), ApprenticeRules.failPercent(50));
+        assertEquals(ApprenticeRules.ticksPerPiece(50) / 20, ApprenticeRules.secondsPerPiece(50));
+    }
+
     private static WorkshopEntry entry(ApprenticeSmith.Status status) {
-        return new WorkshopEntry(UUID.randomUUID(), "Tom", false, false, 50, status.name(), Optional.empty(), 1, 0, Optional.empty(), 0);
+        return new WorkshopEntry(UUID.randomUUID(), "Tom", false, false, 50, status.name(), Optional.empty(), 1, 0, Optional.empty(), 0, 0L);
     }
 }

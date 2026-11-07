@@ -14,11 +14,10 @@ final class ApprenticeUi {
 
     /** Green while he forges, grey with no order, red when he is stopped. */
     static int statusColor(ApprenticeSmith.Status status) {
-        return switch (status) {
-            case WORKING -> UiStyle.GOOD;
-            case NO_ORDER -> UiStyle.MUTED;
-            default -> UiStyle.BAD;
-        };
+        if (status.stopped()) {
+            return UiStyle.BAD;
+        }
+        return status == ApprenticeSmith.Status.WORKING ? UiStyle.GOOD : UiStyle.MUTED;
     }
 
     /** His level as the player may know it: "??" until their Insight reveals it (in his window and in the Workshop). */

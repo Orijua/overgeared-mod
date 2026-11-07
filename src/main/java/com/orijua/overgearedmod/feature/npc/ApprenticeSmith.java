@@ -212,7 +212,7 @@ public class ApprenticeSmith extends PathfinderMob {
             name.withStyle(ChatFormatting.GOLD);
         }
         if (isCraftsman()) {
-            name.append(Component.translatable("entity.overgearedmod.apprentice_smith.craftsman_suffix").withStyle(ChatFormatting.YELLOW));
+            name.append(Component.translatable("entity.overgearedmod.apprentice_smith.craftsman_suffix").withStyle(ChatFormatting.GOLD));
         }
         setCustomName(name);
     }

@@ -36,6 +36,7 @@ public class WorkshopTab extends SatisfyTab {
     private static final int STRIPE = 2;
     private static final int CARD_FILL = 0x30FFFFFF;
     private static final int CARD_HOVER = 0x50FFFFFF;
+    private static final int CARD_STALE = 0x18FFFFFF;
 
     private final ScrollList scroll = new ScrollList(4);
 
@@ -47,6 +48,10 @@ public class WorkshopTab extends SatisfyTab {
         return Workshop.entries(player()).stream()
                 .filter(entry -> player().getData(ModAttachments.APPRENTICES).contains(entry.apprentice()))
                 .toList();
+    }
+
+    private static long now() {
+        return Minecraft.getInstance().level.getGameTime();
     }
 
     private int visibleRows() {
@@ -116,8 +121,8 @@ public class WorkshopTab extends SatisfyTab {
                     left, top + LIST_TOP + 4, width, UiStyle.MUTED);
             return;
         }
-        int stopped = Workshop.stoppedCount(entries);
-        graphics.drawString(font(), Component.translatable("screen.overgearedmod.workshop.totals", Workshop.working(entries), stopped),
+        int stopped = Workshop.stoppedCount(entries, now());
+        graphics.drawString(font(), Component.translatable("screen.overgearedmod.workshop.totals", Workshop.working(entries, now()), stopped),
                 left, top + UiStyle.LINE, stopped > 0 ? UiStyle.BAD : UiStyle.MUTED);
 
         scroll.setVisibleRows(visibleRows());
@@ -140,16 +145,18 @@ public class WorkshopTab extends SatisfyTab {
 
     private void renderCard(GuiGraphics graphics, WorkshopEntry entry, int y, boolean hover, int insight) {
         int cardWidth = cardWidth();
-        ApprenticeSmith.Status status = entry.statusValue();
+        // Out of reach, his last report may be old: the card dims and shows a line of colour instead of news.
+        boolean stale = entry.isStale(now());
+        ApprenticeSmith.Status status = stale ? ApprenticeSmith.Status.NO_ORDER : entry.statusValue();
         int statusColor = ApprenticeUi.statusColor(status);
-        graphics.fill(left, y, left + cardWidth, y + CARD, hover ? CARD_HOVER : CARD_FILL);
+        graphics.fill(left, y, left + cardWidth, y + CARD, hover ? CARD_HOVER : stale ? CARD_STALE : CARD_FILL);
         graphics.fill(left, y, left + STRIPE, y + CARD, 0xFF000000 | statusColor);
 
         Optional<Item> order = Workshop.orderItem(entry);
         order.ifPresent(item -> graphics.renderItem(new ItemStack(item), left + 6, y + 8));
 
         int textX = left + 26;
-        Component statusText = Workshop.statusText(entry);
+        Component statusText = Workshop.displayStatus(entry, now());
         int statusWidth = font().width(statusText) + (status.stopped() ? font().width("! ") : 0);
         if (status.stopped()) {
             graphics.drawString(font(), "!", left + cardWidth - statusWidth - 3, y + 3, UiStyle.BAD);
@@ -169,7 +176,7 @@ public class WorkshopTab extends SatisfyTab {
         Component detail = Component.translatable("screen.overgearedmod.workshop.detail",
                 order.map(Item::getDescription).orElse(Component.translatable("message.overgearedmod.apprentice_no_order_name")), entry.daysPaid());
         graphics.drawString(font(), UiStyle.ellipsize(font(), detail, cardWidth - 26 - 4), textX, y + 14,
-                ApprenticeUi.wageColor(entry.daysPaid(), UiStyle.MUTED));
+                stale ? UiStyle.MUTED : ApprenticeUi.wageColor(entry.daysPaid(), UiStyle.MUTED));
 
         if (Workshop.showsProgress(status, entry.progress())) {
             // The piece on the anvil, filling up along the bottom of the card.
@@ -181,14 +188,19 @@ public class WorkshopTab extends SatisfyTab {
     private List<Component> tooltip(WorkshopEntry entry) {
         List<Component> lines = new ArrayList<>();
         lines.add(Component.literal(entry.name()).withColor(entry.named() ? UiStyle.GOLD : UiStyle.TEXT));
-        lines.add(Workshop.statusText(entry));
+        boolean stale = entry.isStale(now());
+        lines.add(Workshop.displayStatus(entry, now()));
         Component order = Workshop.orderItem(entry).map(Item::getDescription)
                 .orElse(Component.translatable("message.overgearedmod.apprentice_no_order_name"));
         lines.add(Component.translatable("screen.overgearedmod.workshop.tip.order", order).withColor(UiStyle.MUTED));
         lines.add(Component.translatable("screen.overgearedmod.workshop.tip.wage", entry.daysPaid())
-                .withColor(ApprenticeUi.wageColor(entry.daysPaid(), UiStyle.MUTED)));
-        Workshop.missingItem(entry).ifPresent(item -> lines.add(Component.translatable("screen.overgearedmod.workshop.tip.missing",
-                entry.missingCount(), item.getDescription()).withColor(UiStyle.BAD)));
+                .withColor(stale ? UiStyle.MUTED : ApprenticeUi.wageColor(entry.daysPaid(), UiStyle.MUTED)));
+        if (stale) {
+            lines.add(Component.translatable("screen.overgearedmod.workshop.tip.stale").withColor(UiStyle.MUTED));
+        } else {
+            Workshop.missingItem(entry).ifPresent(item -> lines.add(Component.translatable("screen.overgearedmod.workshop.tip.missing",
+                    entry.missingCount(), item.getDescription()).withColor(UiStyle.BAD)));
+        }
         lines.add(Component.translatable("screen.overgearedmod.workshop.tip.open").withColor(UiStyle.MUTED));
         return lines;
     }

@@ -19,6 +19,9 @@ import java.util.UUID;
  * materials, no room, no anvil), his master is told in the chat.
  */
 public final class Workshop {
+    /** How many "out of reach" lines exist in the language files (message.overgearedmod.workshop_idle.N). */
+    public static final int IDLE_LINES = 3;
+
     private Workshop() {
     }
 
@@ -28,15 +31,16 @@ public final class Workshop {
 
     /** Refreshes {@code apprentice}'s entry (only written when something changed) and warns if he just stopped. */
     public static void report(ServerPlayer master, ApprenticeSmith apprentice) {
+        long now = apprentice.level().getGameTime();
         WorkshopEntry entry = new WorkshopEntry(apprentice.getUUID(), apprentice.baseName(), apprentice.grade() == NpcGrade.NAMED,
                 apprentice.isCraftsman(), apprentice.smithingLevel(), apprentice.status().name(),
                 apprentice.order().map(BuiltInRegistries.ITEM::getKey), apprentice.daysPaid(),
                 apprentice.shownProgress(),
                 apprentice.shownMissing().isEmpty() ? Optional.empty() : Optional.of(BuiltInRegistries.ITEM.getKey(apprentice.shownMissing().getItem())),
-                apprentice.shownMissing().getCount());
+                apprentice.shownMissing().getCount(), now);
         List<WorkshopEntry> entries = new ArrayList<>(entries(master));
         Optional<WorkshopEntry> previous = entries.stream().filter(e -> e.apprentice().equals(entry.apprentice())).findFirst();
-        if (previous.isPresent() && previous.get().equals(entry)) {
+        if (previous.isPresent() && previous.get().sameNewsAs(entry) && now - previous.get().reportedAt() < WorkshopEntry.REFRESH_TICKS) {
             return;
         }
         previous.ifPresentOrElse(old -> entries.set(entries.indexOf(old), entry), () -> entries.add(entry));
@@ -83,14 +87,24 @@ public final class Workshop {
         return status == ApprenticeSmith.Status.WORKING && progress > 0;
     }
 
-    /** How many of {@code entries} are forging right now. */
-    public static int working(List<WorkshopEntry> entries) {
-        return (int) entries.stream().filter(e -> e.statusValue() == ApprenticeSmith.Status.WORKING).count();
+    /** How many of {@code entries} are forging right now (those out of reach, whose news is old, are not counted). */
+    public static int working(List<WorkshopEntry> entries, long now) {
+        return (int) entries.stream().filter(e -> !e.isStale(now) && e.statusValue() == ApprenticeSmith.Status.WORKING).count();
     }
 
     /** How many of {@code entries} stopped on their own with an order (the ones that need their master). */
-    public static int stoppedCount(List<WorkshopEntry> entries) {
-        return (int) entries.stream().filter(e -> e.statusValue().stopped()).count();
+    public static int stoppedCount(List<WorkshopEntry> entries, long now) {
+        return (int) entries.stream().filter(e -> !e.isStale(now) && e.statusValue().stopped()).count();
+    }
+
+    /** What the Workshop says of an apprentice out of reach: a line of colour instead of news that may be old. */
+    public static Component staleText(WorkshopEntry entry) {
+        return Component.translatable("message.overgearedmod.workshop_idle." + Math.floorMod(entry.apprentice().hashCode(), IDLE_LINES));
+    }
+
+    /** His status as the Workshop shows it at game time {@code now}. */
+    public static Component displayStatus(WorkshopEntry entry, long now) {
+        return entry.isStale(now) ? staleText(entry) : statusText(entry);
     }
 
     /** The ordered item's name, for the tab. */

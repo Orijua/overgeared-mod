@@ -174,7 +174,7 @@ public final class ApprenticeScreen extends Screen {
             int x = left + PADDING + LABEL_WIDTH;
             graphics.renderItem(order, x, rowY(1) - 4);
             label(graphics, 1, "order");
-            graphics.drawString(font, clip(order.getHoverName(), valueWidth() - 18), x + 18, rowY(1), UiStyle.TEXT);
+            graphics.drawString(font, clip(order.getItem().getDescription(), valueWidth() - 18), x + 18, rowY(1), UiStyle.TEXT);
         }
         row(graphics, 2, "wage", Component.translatable("screen.overgearedmod.apprentice.wage_days", apprentice.shownDaysPaid()),
                 ApprenticeUi.wageColor(apprentice.shownDaysPaid(), UiStyle.TEXT));
@@ -196,9 +196,8 @@ public final class ApprenticeScreen extends Screen {
         if (detail == InsightRules.Detail.LOW) {
             wideRow(graphics, 6, "work", hidden(insight, InsightRules.MEDIUM), UiStyle.MUTED);
         } else {
-            int failPercent = (int) Math.round(ApprenticeRules.failChance(apprentice.shownLevel()) * 100);
-            wideRow(graphics, 6, "work", Component.translatable("screen.overgearedmod.apprentice.work_value", failPercent,
-                    ApprenticeRules.ticksPerPiece(apprentice.shownLevel()) / 20), UiStyle.TEXT);
+            wideRow(graphics, 6, "work", Component.translatable("screen.overgearedmod.apprentice.work_value",
+                    ApprenticeRules.failPercent(apprentice.shownLevel()), ApprenticeRules.secondsPerPiece(apprentice.shownLevel())), UiStyle.TEXT);
         }
         if (detail == InsightRules.Detail.HIGH) {
             NpcGrade grade = apprentice.grade();
