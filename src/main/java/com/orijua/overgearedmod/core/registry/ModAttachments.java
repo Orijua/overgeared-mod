@@ -90,7 +90,7 @@ public final class ModAttachments {
     private ModAttachments() {
     }
 
-    /** Back to defaults for every system (used by /satisfy reset). */
+    /** Back to defaults for every system (used by /satisfy debug reset all). */
     public static void resetAll(Player player) {
         ATTACHMENT_TYPES.getEntries().forEach(type -> player.removeData(type.get()));
     }

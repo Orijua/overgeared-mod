@@ -64,6 +64,23 @@ class XpBarFadeTest {
     }
 
     @Test
+    void losingXpAlsoShowsTheBar() {
+        XpBarFade fade = new XpBarFade();
+        fade.update(0, 1, 50);
+        assertTrue(fade.update(50, 1, 20) > 0);
+    }
+
+    @Test
+    void respawningDataArrivingIsNotAChange() {
+        XpBarFade fade = new XpBarFade();
+        fade.settle(0);
+        fade.update(0, 1, 0);
+        assertEquals(0, fade.update(150, 12, 40), EPSILON);
+        assertEquals(0, run(fade, 200, XpGainFeedback.SETTLE_MILLIS, 12, 40), EPSILON);
+        assertTrue(fade.update(XpGainFeedback.SETTLE_MILLIS + 50, 12, 50) > 0);
+    }
+
+    @Test
     void resetForgetsTheLastValues() {
         XpBarFade fade = new XpBarFade();
         fade.update(0, 1, 0);

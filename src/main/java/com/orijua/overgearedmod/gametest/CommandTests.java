@@ -57,12 +57,12 @@ public final class CommandTests {
     public static void simulatedKillsCountAndRevealHiddenQuests(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         ResourceLocation call = Overgearedmod.id("call_of_the_night");
-        run(helper, player, "satisfy simulate kill minecraft:skeleton 30");
+        run(helper, player, "satisfy debug simulate kill minecraft:skeleton 30");
         helper.assertTrue(GoalTracker.counters(player).get("kill/minecraft:skeleton") == 30,
                 "30 skeleton kills counted: " + GoalTracker.counters(player));
         helper.assertTrue(QuestService.get(player).isDiscovered(call), "30 simulated kills reveal the hidden quest");
 
-        run(helper, player, "satisfy quest reset");
+        run(helper, player, "satisfy debug reset quests");
         helper.assertFalse(QuestService.get(player).isDiscovered(call), "quest reset forgets discoveries");
         helper.succeed();
     }
@@ -71,7 +71,7 @@ public final class CommandTests {
     public static void discoveredQuestIsNewUntilTheTabIsOpened(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         ResourceLocation call = Overgearedmod.id("call_of_the_night");
-        run(helper, player, "satisfy simulate kill minecraft:skeleton 30");
+        run(helper, player, "satisfy debug simulate kill minecraft:skeleton 30");
         helper.assertTrue(QuestService.get(player).isNew(call), "a fresh discovery is new");
         QuestService.markDiscoveriesSeen(player); // what opening the Quests tab asks the server to do
         helper.assertFalse(QuestService.get(player).isNew(call), "seen once the tab was opened");
@@ -82,7 +82,7 @@ public final class CommandTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void simulatedForgesCountForTheirTier(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        run(helper, player, "satisfy simulate forge epic 2");
+        run(helper, player, "satisfy debug simulate forge epic 2");
         helper.assertTrue(GoalTracker.counters(player).get("forge/epic") == 2, "2 epic forges: " + GoalTracker.counters(player));
         helper.assertTrue(GoalTracker.counters(player).get("forge/rare") == 2, "which also count as rare");
         helper.succeed();
@@ -112,8 +112,8 @@ public final class CommandTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void debugApprenticeHiresTheChosenGrade(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        helper.assertTrue(execute(helper, player, "satisfy debug smithing 80") > 0, "smithing raised");
-        helper.assertTrue(execute(helper, player, "satisfy debug apprentice named 30") == 1, "hired");
+        helper.assertTrue(execute(helper, player, "satisfy debug set smithing 80") > 0, "smithing raised");
+        helper.assertTrue(execute(helper, player, "satisfy debug spawn apprentice named 30") == 1, "hired");
         List<UUID> hired = player.getData(ModAttachments.APPRENTICES);
         helper.assertTrue(hired.size() == 1 && helper.getLevel().getEntity(hired.getFirst()) instanceof ApprenticeSmith,
                 "one apprentice, in the world");

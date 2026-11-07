@@ -51,14 +51,15 @@ import java.util.Optional;
 /**
  * Test helpers under /satisfy (op only), so titles and quests can be tried without grinding:
  * <ul>
- *   <li>{@code /satisfy simulate kill <entity> [amount]}: counts kills as if they happened.</li>
- *   <li>{@code /satisfy simulate forge <rating> [amount]}: counts forges of that rating.</li>
- *   <li>{@code /satisfy quest reset}: forgets accepted, completed and discovered quests.</li>
- *   <li>{@code /satisfy debug smithing <level>}: sets the smithing level (its experience).</li>
- *   <li>{@code /satisfy debug level <level>}: sets the level; levels gained bring their stat points.</li>
- *   <li>{@code /satisfy debug stat <stat> <value>}: sets the points spent in a stat.</li>
- *   <li>{@code /satisfy debug insight <value>}: sets Insight.</li>
- *   <li>{@code /satisfy debug apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
+ *   <li>{@code /satisfy debug simulate kill <entity> [amount]}: counts kills as if they happened.</li>
+ *   <li>{@code /satisfy debug simulate forge <rating> [amount]}: counts forges of that rating.</li>
+ *   <li>{@code /satisfy debug reset quests}: forgets accepted, completed and discovered quests.</li>
+ *   <li>{@code /satisfy debug give xp <amount>}: awards XP; {@code /satisfy debug reset all} resets every system.</li>
+ *   <li>{@code /satisfy debug set smithing <level>}: sets the smithing level (its experience).</li>
+ *   <li>{@code /satisfy debug set level <level>}: sets the level; levels gained bring their stat points.</li>
+ *   <li>{@code /satisfy debug set stat <stat> <value>}: sets the points spent in a stat.</li>
+ *   <li>{@code /satisfy debug set insight <value>}: sets Insight.</li>
+ *   <li>{@code /satisfy debug spawn apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
  *   <li>{@code /satisfy debug goto <place>}: to the surface in front of a structure (bairan, north_end_cave, ashur_manor,
  *   winston) or on dry ground at a canon place of the map (reidan, titan, behen_archipelago...); refused in the sea.</li>
  *   <li>{@code /satisfy debug quest complete <quest>}: marks it and the quests before it in its chain done, without rewards.</li>
@@ -80,67 +81,85 @@ public final class DebugCommands {
     private static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("satisfy")
                 .requires(source -> source.hasPermission(2))
-                .then(Commands.literal("simulate")
-                        .then(Commands.literal("kill")
-                                .then(Commands.argument("entity", ResourceArgument.resource(event.getBuildContext(), Registries.ENTITY_TYPE))
-                                        .executes(ctx -> simulateKills(ctx, 1))
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
-                                                .executes(ctx -> simulateKills(ctx, IntegerArgumentType.getInteger(ctx, "amount"))))))
-                        .then(Commands.literal("forge")
-                                .then(Commands.argument("rating", StringArgumentType.word())
-                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                Arrays.stream(ItemRating.values()).map(ItemRating::getSerializedName), builder))
-                                        .executes(ctx -> simulateForges(ctx, 1))
-                                        .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
-                                                .executes(ctx -> simulateForges(ctx, IntegerArgumentType.getInteger(ctx, "amount")))))))
                 .then(Commands.literal("debug")
-                        .then(Commands.literal("smithing")
-                                .then(Commands.argument("level", IntegerArgumentType.integer(0, 1000))
-                                        .executes(ctx -> setSmithing(ctx, IntegerArgumentType.getInteger(ctx, "level")))))
-                        .then(Commands.literal("level")
-                                .then(Commands.argument("level", IntegerArgumentType.integer(1, 1000))
-                                        .executes(ctx -> setLevel(ctx, IntegerArgumentType.getInteger(ctx, "level")))))
-                        .then(Commands.literal("stat")
-                                .then(Commands.argument("stat", StringArgumentType.word())
-                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
-                                                .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value"))))))
-                        .then(Commands.literal("insight")
-                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
+                        .then(Commands.literal("set")
+                                .then(Commands.literal("smithing")
+                                        .then(Commands.argument("level", IntegerArgumentType.integer(0, 1000))
+                                                .executes(ctx -> setSmithing(ctx, IntegerArgumentType.getInteger(ctx, "level")))))
+                                .then(Commands.literal("level")
+                                        .then(Commands.argument("level", IntegerArgumentType.integer(1, 1000))
+                                                .executes(ctx -> setLevel(ctx, IntegerArgumentType.getInteger(ctx, "level")))))
+                                .then(Commands.literal("stat")
+                                        .then(Commands.argument("stat", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                        Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
+                                                .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
+                                                        .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value"))))))
+                                .then(Commands.literal("insight")
+                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
+                                                    player.setData(ModAttachments.INSIGHT, value);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
+                                                    return 1;
+                                                }))))
+                        .then(Commands.literal("give")
+                                .then(Commands.literal("xp")
+                                        .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    ProgressionService.awardXp(player, IntegerArgumentType.getInteger(ctx, "amount"));
+                                                    return 1;
+                                                }))))
+                        .then(Commands.literal("reset")
+                                .then(Commands.literal("all")
                                         .executes(ctx -> {
                                             ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                            int value = IntegerArgumentType.getInteger(ctx, "value");
-                                            player.setData(ModAttachments.INSIGHT, value);
-                                            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
+                                            ModAttachments.resetAll(player);
+                                            ProgressionService.set(player, PlayerStats.DEFAULT);
+                                            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.reset"), false);
+                                            return 1;
+                                        }))
+                                .then(Commands.literal("quests")
+                                        .executes(ctx -> {
+                                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                            player.setData(ModAttachments.PLAYER_QUESTS, PlayerQuests.EMPTY);
+                                            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.quests_reset"), false);
                                             return 1;
                                         })))
-                        .then(Commands.literal("apprentice")
-                                .then(Commands.argument("grade", StringArgumentType.word())
-                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
-                                                Arrays.stream(NpcGrade.values()).map(grade -> grade.name().toLowerCase()), builder))
-                                        .executes(ctx -> spawnApprentice(ctx, -1))
-                                        .then(Commands.argument("level", IntegerArgumentType.integer(0, 1000))
-                                                .executes(ctx -> spawnApprentice(ctx, IntegerArgumentType.getInteger(ctx, "level"))))))
-                        .then(Commands.literal("goto")
-                                .then(Commands.argument("site", StringArgumentType.word())
-                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.sites(), builder))
-                                        .executes(DebugCommands::gotoSite)))
                         .then(Commands.literal("quest")
                                 .then(Commands.literal("complete")
                                         .then(Commands.argument("quest", ResourceLocationArgument.id())
                                                 .suggests((ctx, builder) -> SharedSuggestionProvider.suggestResource(
                                                         Definitions.all(ctx.getSource().getLevel(), ModDatapackRegistries.QUEST).stream()
                                                                 .map(Definitions.Entry::id), builder))
-                                                .executes(DebugCommands::completeQuest)))))
-                .then(Commands.literal("quest")
-                        .then(Commands.literal("reset")
-                                .executes(ctx -> {
-                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                    player.setData(ModAttachments.PLAYER_QUESTS, PlayerQuests.EMPTY);
-                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.quests_reset"), false);
-                                    return 1;
-                                }))));
+                                                .executes(DebugCommands::completeQuest))))
+                        .then(Commands.literal("spawn")
+                                .then(Commands.literal("apprentice")
+                                        .then(Commands.argument("grade", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                        Arrays.stream(NpcGrade.values()).map(grade -> grade.name().toLowerCase()), builder))
+                                                .executes(ctx -> spawnApprentice(ctx, -1))
+                                                .then(Commands.argument("level", IntegerArgumentType.integer(0, 1000))
+                                                        .executes(ctx -> spawnApprentice(ctx, IntegerArgumentType.getInteger(ctx, "level")))))))
+                        .then(Commands.literal("goto")
+                                .then(Commands.argument("site", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.sites(), builder))
+                                        .executes(DebugCommands::gotoSite)))
+                        .then(Commands.literal("simulate")
+                                .then(Commands.literal("kill")
+                                        .then(Commands.argument("entity", ResourceArgument.resource(event.getBuildContext(), Registries.ENTITY_TYPE))
+                                                .executes(ctx -> simulateKills(ctx, 1))
+                                                .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
+                                                        .executes(ctx -> simulateKills(ctx, IntegerArgumentType.getInteger(ctx, "amount"))))))
+                                .then(Commands.literal("forge")
+                                        .then(Commands.argument("rating", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                        Arrays.stream(ItemRating.values()).map(ItemRating::getSerializedName), builder))
+                                                .executes(ctx -> simulateForges(ctx, 1))
+                                                .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
+                                                        .executes(ctx -> simulateForges(ctx, IntegerArgumentType.getInteger(ctx, "amount")))))))));
     }
 
     private static int simulateKills(CommandContext<CommandSourceStack> ctx, int amount) throws CommandSyntaxException {
