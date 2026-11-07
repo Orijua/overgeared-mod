@@ -94,7 +94,7 @@ public final class WinstonTests {
             WinstonStory.talkToSmith(player);
             helper.assertTrue(player.getInventory().countItem(Items.FILLED_MAP) == 1, "one map to Winston");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
             if (!hadWinston) {
                 WorldSites.forget(seed, WorldSites.WINSTON);
             }

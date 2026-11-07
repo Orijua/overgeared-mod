@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.orijua.overgearedmod.core.registry.ModLoot;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunction;
@@ -45,7 +46,9 @@ public final class RateEquipmentFunction extends LootItemConditionalFunction {
 
     @Override
     protected ItemStack run(ItemStack stack, LootContext context) {
-        EquipmentService.rateLoot(context.getLevel(), stack, luck, minimum, context.getRandom());
+        if (Satisfy.is(context.getLevel())) {
+            EquipmentService.rateLoot(context.getLevel(), stack, luck, minimum, context.getRandom());
+        }
         return stack;
     }
 }

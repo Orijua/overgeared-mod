@@ -66,12 +66,15 @@ final class TestSupport {
         return player;
     }
 
-    /** Posts a zombie kill, as a real kill would after awarding XP (the zombie is never added to the world). */
+    /**
+     * Posts a zombie kill, as a real kill would after awarding XP (the zombie is never added to the world). It skips the
+     * world filter of {@code ProgressionEvents.onLivingDeath}: don't use it in real-world tests (post a LivingDeathEvent).
+     */
     static void killZombie(GameTestHelper helper, ServerPlayer player) {
         kill(helper, player, EntityType.ZOMBIE);
     }
 
-    /** Posts a kill of a mob of {@code type}, which is never added to the world. */
+    /** Posts a kill of a mob of {@code type}, which is never added to the world (also skips the world filter, see above). */
     static void kill(GameTestHelper helper, ServerPlayer player, EntityType<? extends LivingEntity> type) {
         NeoForge.EVENT_BUS.post(new MobKilledEvent(player, type.create(helper.getLevel())));
     }

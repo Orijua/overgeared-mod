@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.feature.rumor;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Block;
@@ -31,7 +32,7 @@ public final class MaterialFinds {
     }
 
     private static void onBreak(BlockEvent.BreakEvent event) {
-        if (!(event.getPlayer() instanceof ServerPlayer player)) {
+        if (!(event.getPlayer() instanceof ServerPlayer player) || !Satisfy.is(player.level())) {
             return;
         }
         ORES.forEach((ore, milestone) -> {

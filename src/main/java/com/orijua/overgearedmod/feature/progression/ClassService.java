@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.skill.SkillService;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,8 +26,11 @@ public final class ClassService {
         return player.getData(ModAttachments.PLAYER_IDENTITY).playerClass();
     }
 
-    /** @return false if the player already has a class, or the class doesn't exist or isn't a selectable basic class. */
+    /** @return false in the real world, if the player already has a class, or the class doesn't exist or isn't a selectable basic class. */
     public static boolean choose(ServerPlayer player, ResourceLocation classId) {
+        if (!Satisfy.is(player.level())) {
+            return false;
+        }
         Optional<PlayerClassDefinition> definition = Definitions.get(player.level(), ModDatapackRegistries.PLAYER_CLASS, classId);
         if (current(player).isPresent() || definition.isEmpty() || !definition.get().selectable()) {
             return false;
@@ -37,6 +41,9 @@ public final class ClassService {
 
     /** Sets the class regardless of how it is obtained, replacing the current one. Skills already learned are kept. */
     public static boolean grant(ServerPlayer player, ResourceLocation classId) {
+        if (!Satisfy.is(player.level())) {
+            return false;
+        }
         Optional<PlayerClassDefinition> definition = Definitions.get(player.level(), ModDatapackRegistries.PLAYER_CLASS, classId);
         if (definition.isEmpty()) {
             return false;

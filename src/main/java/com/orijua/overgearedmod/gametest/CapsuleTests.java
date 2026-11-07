@@ -69,19 +69,19 @@ public final class CapsuleTests {
             WorldSites.rememberLanding(seed, landing);
             body.run();
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
             landingBefore.ifPresentOrElse(pos -> WorldSites.rememberLanding(seed, pos), () -> WorldSites.forgetLanding(seed));
         }
     }
 
-    /** Runs {@code body} with no level playing Satisfy (whatever another test left), and leaves it that way. */
+    /** Runs {@code body} with no level playing Satisfy (whatever another test left), and puts the test default back (the overworld plays Satisfy) afterwards. */
     static void outsideSatisfy(GameTestHelper helper, Runnable body) {
         try {
             Satisfy.standIn(null);
             helper.assertFalse(Satisfy.is(helper.getLevel()), "the test level is the real world here");
             body.run();
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
     }
 
@@ -205,7 +205,7 @@ public final class CapsuleTests {
             helper.assertFalse(CapsuleService.connect(player, at(helper, new BlockPos(0, 1, 0))), "so it does not connect");
             helper.assertTrue(CapsuleService.state(player).capsule().isEmpty(), "and the body is not left in the capsule");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
             landingBefore.ifPresent(pos -> WorldSites.rememberLanding(seed, pos));
         }
         helper.succeed();
@@ -440,7 +440,7 @@ public final class CapsuleTests {
                     "already connected: refused");
             helper.assertFalse(CapsuleService.isConnecting(player), "and no wait starts");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
             CapsuleService.cancel(player, false);
         }
         helper.succeed();
@@ -542,7 +542,7 @@ public final class CapsuleTests {
             helper.assertTrue(travelCancelled(player, Level.NETHER), "Satisfy to the real world: cancelled");
             helper.assertFalse(travelCancelled(player, Satisfy.LEVEL), "Satisfy to Satisfy: not touched");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
         helper.succeed();
     }
@@ -562,7 +562,7 @@ public final class CapsuleTests {
             });
             helper.assertTrue(travelCancelled(zombie, Level.NETHER), "and cancelled again afterwards");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
         helper.succeed();
     }
@@ -599,7 +599,7 @@ public final class CapsuleTests {
             Satisfy.standIn(null);
             helper.assertFalse(Satisfy.is(helper.getLevel().dimension()), "not without the stand-in");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
         helper.succeed();
     }
@@ -855,7 +855,7 @@ public final class CapsuleTests {
             helper.assertTrue(destination.level() == overworld, "the overworld");
             helper.assertTrue(destination.pos().equals(overworld.getSharedSpawnPos()), "at its spawn, not at the bed of Satisfy");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
         helper.succeed();
     }
@@ -878,7 +878,7 @@ public final class CapsuleTests {
             helper.assertTrue(spawnSetCancelled(helper, player, helper.getLevel().dimension()), "the stand-in's key: cancelled");
             helper.assertFalse(spawnSetCancelled(helper, player, real), "another real dimension: not touched");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
         helper.succeed();
     }

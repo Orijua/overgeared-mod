@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.feature.equipment;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -35,7 +36,7 @@ public final class RateEquipmentModifier extends LootModifier {
 
     @Override
     protected ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot, LootContext context) {
-        if (context.getQueriedLootTableId().getPath().startsWith(tablePrefix)) {
+        if (Satisfy.is(context.getLevel()) && context.getQueriedLootTableId().getPath().startsWith(tablePrefix)) {
             for (ItemStack stack : generatedLoot) {
                 EquipmentService.rateLoot(context.getLevel(), stack, luck, minimum, context.getRandom());
             }

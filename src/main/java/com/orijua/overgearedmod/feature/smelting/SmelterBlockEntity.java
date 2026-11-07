@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.core.registry.ModBlockEntities;
 import com.orijua.overgearedmod.core.registry.ModRecipes;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -170,6 +171,9 @@ public class SmelterBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, SmelterBlockEntity smelter) {
+        if (!Satisfy.is(level)) {
+            return; // inert in the real world: what is inside waits there
+        }
         smelter.tick((ServerLevel) level, pos, state);
     }
 

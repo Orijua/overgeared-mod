@@ -2,6 +2,8 @@ package com.orijua.overgearedmod.feature.smelting;
 
 import com.mojang.serialization.MapCodec;
 import com.orijua.overgearedmod.core.registry.ModBlockEntities;
+import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyOnly;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.Containers;
@@ -72,6 +74,12 @@ public class SmelterBlock extends BaseEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (!Satisfy.is(level)) {
+            if (!level.isClientSide) {
+                SatisfyOnly.warn(player);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof SmelterBlockEntity smelter) {
             player.openMenu(smelter);
         }

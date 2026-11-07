@@ -169,7 +169,7 @@ public final class CommandTests {
         } finally {
             bairan.ifPresentOrElse(chunk -> WorldSites.remember(seed, WorldSites.BAIRAN, chunk), () -> WorldSites.forget(seed, WorldSites.BAIRAN));
             cave.ifPresent(chunk -> WorldSites.remember(seed, WorldSites.NORTH_END_CAVE, chunk));
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
             landingBefore.ifPresentOrElse(pos -> WorldSites.rememberLanding(seed, pos), () -> WorldSites.forgetLanding(seed));
         }
         helper.succeed();
@@ -283,7 +283,7 @@ public final class CommandTests {
             helper.assertTrue(execute(helper, player, "satisfy debug goto reidan") == 1, "goto reidan");
             helper.assertFalse(WorldSeparation.crossingAllowed(), "the flag is off afterwards");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
         helper.succeed();
     }
@@ -354,7 +354,7 @@ public final class CommandTests {
                     .join().getList().stream().map(Suggestion::getText).toList();
             helper.assertTrue(suggested.contains("titan"), "titan is suggested: " + suggested);
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
         }
         helper.succeed();
     }

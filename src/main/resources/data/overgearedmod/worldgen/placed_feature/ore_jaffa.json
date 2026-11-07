@@ -1,6 +1,7 @@
 {
   "feature": "overgearedmod:ore_jaffa",
   "placement": [
+    { "type": "overgearedmod:satisfy_only" },
     { "type": "minecraft:count", "count": 7 },
     { "type": "minecraft:in_square" },
     {

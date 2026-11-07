@@ -8,6 +8,7 @@ import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
 import com.orijua.overgearedmod.feature.progression.PlayerStats;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.progression.StatType;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
@@ -61,6 +62,9 @@ public final class EquipmentEvents {
 
     /** Every option of the equipment the player wears where it counts and whose requirements they meet. */
     public static void forEachActiveOption(Player player, BiConsumer<OptionEffect, Float> action) {
+        if (!Satisfy.is(player.level())) {
+            return;
+        }
         PlayerStats stats = ProgressionService.statsWithoutEquipment(player);
         for (ItemStack stack : EquipmentBonuses.wornEquipment(player)) {
             if (!meetsRequirements(stats, stack)) {
@@ -97,7 +101,7 @@ public final class EquipmentEvents {
 
     /** Life steal and any other on-hit option, read from the attacker's main hand. */
     private static void onDamageDealt(LivingDamageEvent.Post event) {
-        if (!(event.getSource().getEntity() instanceof ServerPlayer attacker) || event.getNewDamage() <= 0) {
+        if (!(event.getSource().getEntity() instanceof ServerPlayer attacker) || event.getNewDamage() <= 0 || !Satisfy.is(attacker.level())) {
             return;
         }
         ItemStack weapon = attacker.getMainHandItem();
@@ -113,7 +117,7 @@ public final class EquipmentEvents {
     /** Fighting with an item whose requirements you don't meet is not allowed. */
     private static void onAttack(AttackEntityEvent event) {
         Player player = event.getEntity();
-        if (!meetsRequirements(player, player.getMainHandItem())) {
+        if (Satisfy.is(player.level()) && !meetsRequirements(player, player.getMainHandItem())) {
             event.setCanceled(true);
             player.displayClientMessage(Component.translatable("message.overgearedmod.requirements_unmet"), true);
         }

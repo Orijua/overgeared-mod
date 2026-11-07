@@ -39,6 +39,7 @@ import com.orijua.overgearedmod.feature.skill.SkillEvents;
 import com.orijua.overgearedmod.feature.winston.KhanContest;
 import com.orijua.overgearedmod.feature.winston.WinstonStory;
 import com.orijua.overgearedmod.feature.world.NorthEndCaveProtection;
+import com.orijua.overgearedmod.feature.world.SatisfyOnlyEvents;
 import com.orijua.overgearedmod.feature.world.StartingVillage;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -75,6 +76,7 @@ public class Overgearedmod {
         ModWorldgen.STRUCTURE_PLACEMENTS.register(modEventBus);
         ModWorldgen.BIOME_SOURCES.register(modEventBus);
         ModWorldgen.DENSITY_FUNCTIONS.register(modEventBus);
+        ModWorldgen.PLACEMENT_MODIFIERS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
 
         // Mod bus events (JSON registries, networking, creative tabs, entity attributes, datagen).
@@ -108,6 +110,7 @@ public class Overgearedmod {
         MaterialFinds.register(NeoForge.EVENT_BUS);
         CapsuleService.register(NeoForge.EVENT_BUS);
         WorldSeparation.register(NeoForge.EVENT_BUS);
+        SatisfyOnlyEvents.register(NeoForge.EVENT_BUS);
         LogoutService.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);

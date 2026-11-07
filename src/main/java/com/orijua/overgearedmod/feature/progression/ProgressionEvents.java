@@ -44,7 +44,7 @@ public final class ProgressionEvents {
             penalizeDeath(dead);
         }
         ServerPlayer killer = creditedKiller(victim, event.getSource());
-        if (victim instanceof Player || killer == null) {
+        if (victim instanceof Player || killer == null || !Satisfy.is(victim.level())) {
             return;
         }
         ProgressionService.awardXp(killer, ProgressionRules.killXp(Balance.current(), new ProgressionRules.Victim(

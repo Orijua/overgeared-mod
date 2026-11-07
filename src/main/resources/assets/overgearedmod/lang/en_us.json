@@ -20,6 +20,7 @@
   "message.overgearedmod.capsule.no_satisfy": "This world has no Satisfy (only new worlds have it)",
   "message.overgearedmod.capsule.in_real_world": "You are not in Satisfy",
   "message.overgearedmod.capsule.crossing_blocked": "You cannot travel between the real world and Satisfy that way: use the capsule",
+  "message.overgearedmod.satisfy_only": "This only works in Satisfy.",
   "message.overgearedmod.capsule.bed_ignored": "Beds in Satisfy do not set your respawn",
   "message.overgearedmod.capsule.logout_countdown": "Disconnecting in %s…",
   "message.overgearedmod.capsule.logout_in_danger": "You cannot disconnect while in danger",

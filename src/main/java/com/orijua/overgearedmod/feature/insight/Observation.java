@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.notification.NotificationEvents;
 import com.orijua.overgearedmod.feature.notification.SystemNotification;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -69,7 +70,7 @@ public final class Observation {
     }
 
     private static void onTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
+        if (event.getEntity() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             observe(player, target(player));
         }
     }
