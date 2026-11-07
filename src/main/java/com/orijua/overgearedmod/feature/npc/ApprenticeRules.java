@@ -82,6 +82,16 @@ public final class ApprenticeRules {
         return Math.max(FASTEST_TICKS, SLOWEST_TICKS - level * TICKS_SAVED_PER_LEVEL);
     }
 
+    /** {@link #failChance} as the percentage every view shows. */
+    public static int failPercent(int level) {
+        return (int) Math.round(failChance(level) * 100);
+    }
+
+    /** {@link #ticksPerPiece} in whole seconds, as every view shows it. */
+    public static int secondsPerPiece(int level) {
+        return ticksPerPiece(level) / 20;
+    }
+
     /** Days a payment of {@code emeralds} buys, given the days already paid ahead. */
     public static int daysBought(int emeralds, int daysAlreadyPaid) {
         return Math.max(0, Math.min(emeralds / DAILY_WAGE, MAX_PAID_DAYS - daysAlreadyPaid));

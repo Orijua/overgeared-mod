@@ -297,6 +297,11 @@ public final class ApprenticeTests {
         Workshop.report(player, apprentice);
         helper.assertTrue(Workshop.entries(player).get(0).order().equals(Optional.of(BuiltInRegistries.ITEM.getKey(ModItems.JAFFA_SWORD.get()))),
                 "with his order");
+        helper.assertTrue(Workshop.entries(player).get(0).progress() == 0 && Workshop.entries(player).get(0).missing().isEmpty(),
+                "nothing on the anvil and nothing missing yet");
+        helper.assertTrue(!Workshop.entries(player).get(0).isStale(helper.getLevel().getGameTime())
+                        && Workshop.entries(player).get(0).isStale(helper.getLevel().getGameTime() + WorkshopEntry.STALE_TICKS + 1),
+                "fresh now, stale if he stops reporting");
         apprentice.dismiss(player);
         helper.assertTrue(Workshop.entries(player).isEmpty(), "gone when dismissed");
         helper.succeed();

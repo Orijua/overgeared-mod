@@ -212,7 +212,7 @@ public class ApprenticeSmith extends PathfinderMob {
             name.withStyle(ChatFormatting.GOLD);
         }
         if (isCraftsman()) {
-            name.append(Component.translatable("entity.overgearedmod.apprentice_smith.craftsman_suffix").withStyle(ChatFormatting.YELLOW));
+            name.append(Component.translatable("entity.overgearedmod.apprentice_smith.craftsman_suffix").withStyle(ChatFormatting.GOLD));
         }
         setCustomName(name);
     }
@@ -279,15 +279,8 @@ public class ApprenticeSmith extends PathfinderMob {
      * the piece is while he works.
      */
     public Component statusText() {
-        Status status = status();
         ItemStack missing = shownMissing();
-        if (status == Status.NO_MATERIALS && !missing.isEmpty()) {
-            return Component.translatable("message.overgearedmod.apprentice_status.no_materials_item", missing.getCount(), missing.getHoverName());
-        }
-        if (status == Status.WORKING && shownProgress() > 0) {
-            return Component.translatable("message.overgearedmod.apprentice_status.working_progress", shownProgress());
-        }
-        return Component.translatable("message.overgearedmod.apprentice_status." + status.name().toLowerCase());
+        return Workshop.statusText(status(), shownProgress(), missing.getCount(), missing.isEmpty() ? null : missing.getItem().getDescription());
     }
 
     /** The container assigned to {@code slot}, if any; without one he uses those touching the anvil. */
@@ -308,7 +301,8 @@ public class ApprenticeSmith extends PathfinderMob {
         entityData.set(DATA_LEVEL, smithingLevel());
         entityData.set(DATA_ORDER, order == null ? ItemStack.EMPTY : new ItemStack(order));
         entityData.set(DATA_DAYS_PAID, daysPaid());
-        entityData.set(DATA_PROGRESS, onAnvil.isEmpty() ? 0 : Math.min(100, workTicks * 100 / ApprenticeRules.ticksPerPiece(smithingLevel())));
+        // Same steps for his window and the Workshop tab: the workshop's snapshot copies this value as it is.
+        entityData.set(DATA_PROGRESS, onAnvil.isEmpty() ? 0 : WorkshopEntry.quantize(workTicks * 100 / ApprenticeRules.ticksPerPiece(smithingLevel())));
     }
 
     private void setStatus(Status status) {
