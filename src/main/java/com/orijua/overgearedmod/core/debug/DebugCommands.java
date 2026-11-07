@@ -9,6 +9,8 @@ import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.mob.MobKilledEvent;
 import com.orijua.overgearedmod.feature.npc.ApprenticeContractItem;
@@ -49,7 +51,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Test helpers under /satisfy (op only), so titles and quests can be tried without grinding:
+ * Test helpers under /satisfy debug (op only; the rest of /satisfy, like logout, is open to everyone), so titles and quests can be tried without grinding:
  * <ul>
  *   <li>{@code /satisfy debug simulate kill <entity> [amount]}: counts kills as if they happened.</li>
  *   <li>{@code /satisfy debug simulate forge <rating> [amount]}: counts forges of that rating.</li>
@@ -80,8 +82,8 @@ public final class DebugCommands {
 
     private static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("satisfy")
-                .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("debug")
+                        .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("set")
                                 .then(Commands.literal("smithing")
                                         .then(Commands.argument("level", IntegerArgumentType.integer(0, 1000))
@@ -147,6 +149,9 @@ public final class DebugCommands {
                                 .then(Commands.argument("site", StringArgumentType.word())
                                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.sites(), builder))
                                         .executes(DebugCommands::gotoSite)))
+                        .then(Commands.literal("capsule")
+                                .then(Commands.literal("disconnect")
+                                        .executes(ctx -> disconnectFromSatisfy(ctx.getSource().getPlayerOrException()))))
                         .then(Commands.literal("simulate")
                                 .then(Commands.literal("kill")
                                         .then(Commands.argument("entity", ResourceArgument.resource(event.getBuildContext(), Registries.ENTITY_TYPE))
@@ -237,6 +242,15 @@ public final class DebugCommands {
         return 1;
     }
 
+    /** Out of Satisfy and back beside the capsule, as the logout will (until it exists, the only way back). */
+    private static int disconnectFromSatisfy(ServerPlayer player) {
+        boolean was = CapsuleService.disconnect(player, CapsuleService.Reason.DEBUG);
+        if (!was) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.in_real_world"), false);
+        }
+        return was ? 1 : 0;
+    }
+
     /** To the surface in front of one of the world's places, in the Satisfy dimension, facing it. */
     private static int gotoSite(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -251,7 +265,9 @@ public final class DebugCommands {
                     default -> "message.overgearedmod.debug_goto_none";
                 }, site)).create());
         // Facing the place: the landing is in front of it.
-        player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, found.yaw(), 0.0f);
+        // A debug crossing between the real world and Satisfy is allowed (operators only).
+        WorldSeparation.crossing(() ->
+                player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, found.yaw(), 0.0f));
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
                 landing.getX(), landing.getY(), landing.getZ()), false);
         return 1;

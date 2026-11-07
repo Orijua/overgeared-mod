@@ -23,6 +23,11 @@ public final class Satisfy {
         return level.dimension() == LEVEL || level == standIn;
     }
 
+    /** Same as {@link #is(Level)}, by dimension key (for events that only carry the destination). */
+    public static boolean is(ResourceKey<Level> key) {
+        return key == LEVEL || (standIn != null && standIn.dimension() == key);
+    }
+
     public static Optional<ServerLevel> of(MinecraftServer server) {
         ServerLevel level = server.getLevel(LEVEL);
         return Optional.ofNullable(level != null ? level : standIn);

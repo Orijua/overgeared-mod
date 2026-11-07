@@ -5,6 +5,8 @@ import com.orijua.overgearedmod.core.client.SatisfyTabs;
 import com.orijua.overgearedmod.core.client.SatisfyTooltips;
 import com.orijua.overgearedmod.core.registry.ModEntities;
 import com.orijua.overgearedmod.core.registry.ModMenus;
+import com.orijua.overgearedmod.feature.capsule.ClientCapsule;
+import com.orijua.overgearedmod.feature.capsule.client.CapsuleConnectingLayer;
 import com.orijua.overgearedmod.feature.mob.client.BoneLordRenderer;
 import com.orijua.overgearedmod.feature.mob.client.MobLevelNameTags;
 import com.orijua.overgearedmod.feature.notification.ClientNotifications;
@@ -65,6 +67,9 @@ public class OvergearedmodClient {
         NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(SatisfyTooltips::onTooltipColor);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientNotifications.QUEUE.clear());
+        // A "Connecting…" wait must not outlive the world it started in.
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientCapsule.connecting(0, 0));
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingIn event) -> ClientCapsule.connecting(0, 0));
     }
 
     private static KeyMapping key(String name, int defaultKey) {
@@ -101,6 +106,7 @@ public class OvergearedmodClient {
         event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), new SkillSlotsHudLayer());
         event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), new QuestTrackerHudLayer());
         event.registerAbove(Overgearedmod.id("quest_tracker"), Overgearedmod.id("system_notification"), new SystemNotificationHudLayer());
+        event.registerAboveAll(Overgearedmod.id("capsule_connecting"), new CapsuleConnectingLayer());
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {

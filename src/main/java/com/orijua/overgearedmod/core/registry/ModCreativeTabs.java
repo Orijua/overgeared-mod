@@ -23,6 +23,7 @@ public final class ModCreativeTabs {
                     .displayItems((parameters, output) -> {
                         output.accept(ModItems.SMITHING_ANVIL);
                         output.accept(ModItems.SMELTER);
+                        output.accept(ModItems.CAPSULE);
                         output.accept(ModItems.JAFFA_ORE);
                         output.accept(ModItems.DEEPSLATE_JAFFA_ORE);
                         output.accept(ModItems.RAW_JAFFA);
@@ -94,6 +95,7 @@ public final class ModCreativeTabs {
         if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
             event.accept(ModItems.SMITHING_ANVIL);
             event.accept(ModItems.SMELTER);
+            event.accept(ModItems.CAPSULE);
             event.accept(ModItems.GOLDEN_TABLE);
         }
     }

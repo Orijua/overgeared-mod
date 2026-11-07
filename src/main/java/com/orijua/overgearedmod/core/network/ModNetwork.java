@@ -1,6 +1,9 @@
 package com.orijua.overgearedmod.core.network;
 
+import com.orijua.overgearedmod.feature.capsule.CapsuleConnectingPayload;
+import com.orijua.overgearedmod.feature.capsule.ClientCapsule;
 import com.orijua.overgearedmod.feature.notification.ClientNotifications;
+import net.minecraft.Util;
 import com.orijua.overgearedmod.feature.notification.SystemNotificationPayload;
 import com.orijua.overgearedmod.feature.npc.ApprenticeActionPayload;
 import com.orijua.overgearedmod.feature.npc.NpcTradePayload;
@@ -43,6 +46,9 @@ public final class ModNetwork {
         registrar.playToServer(ReadPagmaBookPayload.TYPE, ReadPagmaBookPayload.STREAM_CODEC, ServerPayloadHandler::readPagmaBook);
         registrar.playToServer(ApprenticeActionPayload.TYPE, ApprenticeActionPayload.STREAM_CODEC, ServerPayloadHandler::apprenticeAction);
         registrar.playToServer(StartContestPayload.TYPE, StartContestPayload.STREAM_CODEC, ServerPayloadHandler::startContest);
+        // Like the one below, the handler only touches a client-state class with no client imports.
+        registrar.playToClient(CapsuleConnectingPayload.TYPE, CapsuleConnectingPayload.STREAM_CODEC,
+                (payload, context) -> ClientCapsule.connecting(payload.ticks(), Util.getMillis()));
         // The handler only touches ClientNotifications (no client classes), so this is safe on a dedicated server.
         registrar.playToClient(SystemNotificationPayload.TYPE, SystemNotificationPayload.STREAM_CODEC,
                 (payload, context) -> ClientNotifications.QUEUE.push(payload.notification()));

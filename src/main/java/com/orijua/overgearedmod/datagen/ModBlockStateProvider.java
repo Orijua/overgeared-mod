@@ -44,6 +44,11 @@ final class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.SMELTER.get(), state -> state.getValue(SmelterBlock.LIT) ? smelterLit : smelter);
         simpleBlockItem(ModBlocks.SMELTER.get(), smelter);
 
+        // The capsule: an iron box with a lapis front, until it has its own art.
+        ModelFile capsule = models().orientable("capsule", mcLoc("block/iron_block"), mcLoc("block/lapis_block"), mcLoc("block/iron_block"));
+        horizontalBlock(ModBlocks.CAPSULE.get(), capsule);
+        simpleBlockItem(ModBlocks.CAPSULE.get(), capsule);
+
         // The golden table: a gold-block table, with Pagma's book lying on it until taken.
         ModelFile table = goldenTable("golden_table", false);
         ModelFile tableWithBook = goldenTable("golden_table_book", true);

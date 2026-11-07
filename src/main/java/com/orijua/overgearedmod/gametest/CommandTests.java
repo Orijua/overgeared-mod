@@ -1,9 +1,14 @@
 package com.orijua.overgearedmod.gametest;
 
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.tree.CommandNode;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.debug.SiteLanding;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.LogoutService;
+import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.feature.npc.NpcGrade;
 import com.orijua.overgearedmod.feature.pagma.AshurBetrayal;
@@ -15,6 +20,7 @@ import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.SatisfyMapData;
 import com.orijua.overgearedmod.feature.world.SatisfyPlaces;
 import com.orijua.overgearedmod.feature.world.WorldSites;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -165,6 +171,119 @@ public final class CommandTests {
             cave.ifPresent(chunk -> WorldSites.remember(seed, WorldSites.NORTH_END_CAVE, chunk));
             Satisfy.standIn(null);
             landingBefore.ifPresentOrElse(pos -> WorldSites.rememberLanding(seed, pos), () -> WorldSites.forgetLanding(seed));
+        }
+        helper.succeed();
+    }
+
+    /** Runs a command with the given permission level and returns its result (a refusal throws). */
+    private static int executeWith(GameTestHelper helper, ServerPlayer player, String command, int permission) throws CommandSyntaxException {
+        return helper.getLevel().getServer().getCommands().getDispatcher()
+                .execute(command, player.createCommandSourceStack().withPermission(permission));
+    }
+
+    private static boolean refusedWith(GameTestHelper helper, ServerPlayer player, String command, int permission) {
+        try {
+            executeWith(helper, player, command, permission);
+            return false;
+        } catch (CommandSyntaxException e) {
+            return true;
+        }
+    }
+
+    /**
+     * Whether a source with {@code permission} may use every node along {@code path} (literal names). Fails the test if
+     * the command does not exist, so a missing command never counts as "denied".
+     */
+    private static boolean canUse(GameTestHelper helper, ServerPlayer player, int permission, String... path) {
+        CommandDispatcher<CommandSourceStack> dispatcher = helper.getLevel().getServer().getCommands().getDispatcher();
+        CommandSourceStack source = player.createCommandSourceStack().withPermission(permission);
+        CommandNode<CommandSourceStack> node = dispatcher.getRoot();
+        boolean allowed = true;
+        for (String name : path) {
+            node = node.getChild(name);
+            helper.assertTrue(node != null, "the command node exists: " + String.join(" ", path));
+            allowed &= node.canUse(source);
+        }
+        return allowed;
+    }
+
+    /** /satisfy logout is for everyone; the debug and validate parts of /satisfy stay op-only. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void logoutIsOpenToEveryoneButDebugAndValidateAreNot(GameTestHelper helper) throws CommandSyntaxException {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        CapsuleTests.inSatisfy(helper, helper.absolutePos(new BlockPos(1, 1, 1)), () -> {
+            try {
+                helper.assertTrue(executeWith(helper, player, "satisfy logout", 0) == 1, "in Satisfy: it starts");
+                helper.assertTrue(LogoutService.isCountingDown(player), "and the countdown is running");
+            } catch (CommandSyntaxException e) {
+                throw new AssertionError("satisfy logout with permission 0: " + e.getMessage(), e);
+            } finally {
+                LogoutService.forgetAll();
+            }
+        });
+        CapsuleTests.outsideSatisfy(helper, () -> {
+            try {
+                helper.assertTrue(executeWith(helper, player, "satisfy logout", 0) == 0, "outside Satisfy: it returns 0");
+                helper.assertFalse(LogoutService.isCountingDown(player), "and nothing counts");
+            } catch (CommandSyntaxException e) {
+                throw new AssertionError("satisfy logout with permission 0: " + e.getMessage(), e);
+            }
+        });
+        helper.assertTrue(canUse(helper, player, 0, "satisfy", "logout"), "logout is open to everyone");
+        helper.assertFalse(canUse(helper, player, 0, "satisfy", "debug", "reset", "quests"), "debug needs op (the node is denied)");
+        helper.assertFalse(canUse(helper, player, 0, "satisfy", "validate"), "validate needs op (the node is denied)");
+        helper.assertTrue(canUse(helper, player, 4, "satisfy", "debug", "reset", "quests"), "debug node is open to ops");
+        helper.assertTrue(canUse(helper, player, 4, "satisfy", "validate"), "validate node is open to ops");
+        helper.assertTrue(refusedWith(helper, player, "satisfy debug reset quests", 0), "debug needs op");
+        helper.assertTrue(refusedWith(helper, player, "satisfy validate", 0), "validate needs op");
+        helper.assertFalse(refusedWith(helper, player, "satisfy debug reset quests", 4), "debug works for ops");
+        helper.assertFalse(refusedWith(helper, player, "satisfy validate", 4), "and so does validate");
+        helper.succeed();
+    }
+
+    /** In danger, or with a countdown already running, /satisfy logout returns 0 and starts nothing new. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void logoutIsRefusedInDangerAndWhileAlreadyRunning(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        CapsuleTests.inSatisfy(helper, helper.absolutePos(new BlockPos(1, 1, 1)), () -> {
+            try {
+                LogoutService.markCombat(player, helper.getLevel().getServer().getTickCount());
+                helper.assertTrue(executeWith(helper, player, "satisfy logout", 0) == 0, "in danger: returns 0");
+                helper.assertFalse(LogoutService.isCountingDown(player), "and nothing counts (the message is client-side: N4)");
+
+                LogoutService.forgetAll();
+                helper.assertTrue(executeWith(helper, player, "satisfy logout", 0) == 1, "out of danger: starts");
+                helper.assertTrue(executeWith(helper, player, "satisfy logout", 0) == 0, "already running: returns 0");
+                helper.assertTrue(LogoutService.isCountingDown(player), "and the first countdown goes on");
+            } catch (CommandSyntaxException e) {
+                throw new AssertionError("satisfy logout with permission 0: " + e.getMessage(), e);
+            } finally {
+                LogoutService.forgetAll();
+            }
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void debugDisconnectIsInstant(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        CapsuleTests.inSatisfy(helper, helper.absolutePos(new BlockPos(1, 1, 1)), () -> {
+            helper.assertTrue(execute(helper, player, "satisfy debug capsule disconnect") == 1, "no countdown: it disconnects at once");
+            helper.assertTrue(CapsuleService.state(player).lastSave().isPresent(), "and the spot is saved");
+        });
+        helper.succeed();
+    }
+
+    /** The debug goto is a permitted crossing: its flag is not left on, and it still goes (with the test level as Satisfy). */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void gotoStillWorksAndLeavesNoCrossingFlag(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        try {
+            Satisfy.standIn(helper.getLevel());
+            helper.assertTrue(execute(helper, player, "satisfy debug goto reidan") == 1, "goto reidan");
+            helper.assertFalse(WorldSeparation.crossingAllowed(), "the flag is off afterwards");
+        } finally {
+            Satisfy.standIn(null);
         }
         helper.succeed();
     }

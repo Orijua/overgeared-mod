@@ -32,8 +32,8 @@ public final class ContentValidationEvents {
     /** /satisfy validate: checks the content as currently loaded, e.g. right after /reload. Joins the /satisfy root. */
     private static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("satisfy")
-                .requires(source -> source.hasPermission(2))
                 .then(Commands.literal("validate")
+                        .requires(source -> source.hasPermission(2))
                         .executes(ctx -> {
                             List<String> problems = ContentValidator.validate(ContentScanner.index(ctx.getSource().registryAccess(), ctx.getSource().getServer().getRecipeManager()));
                             if (problems.isEmpty()) {

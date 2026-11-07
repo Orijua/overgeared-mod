@@ -18,6 +18,7 @@ import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -48,6 +49,12 @@ final class ModRecipeProvider extends RecipeProvider {
                 .define('B', Items.BRICKS).define('F', Items.BLAST_FURNACE).define('i', Items.IRON_INGOT)
                 .unlockedBy("has_blast_furnace", has(Items.BLAST_FURNACE))
                 .save(output, Overgearedmod.id("smelter"));
+        // The basic capsule (own design; tiers come later): glass, a bed to lie on, iron and redstone for the circuits.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CAPSULE.get())
+                .pattern("GGG").pattern("IBI").pattern("IRI")
+                .define('G', Items.GLASS).define('B', ItemTags.BEDS).define('I', Items.IRON_INGOT).define('R', Items.REDSTONE)
+                .unlockedBy("has_redstone", has(Items.REDSTONE))
+                .save(output, Overgearedmod.id("capsule"));
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SMITHING_ANVIL.get())
                 .pattern("III").pattern(" i ").pattern("iii")
                 .define('I', Items.IRON_BLOCK).define('i', ModItems.MITHRIL_INGOT.get())

@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.core.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.feature.capsule.CapsuleBlock;
 import com.orijua.overgearedmod.feature.pagma.GoldenTableBlock;
 import com.orijua.overgearedmod.feature.smelting.SmelterBlock;
 import com.orijua.overgearedmod.feature.smithing.SmithingAnvilBlock;
@@ -32,6 +33,16 @@ public final class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .sound(SoundType.STONE)
                     .lightLevel(state -> state.getValue(SmelterBlock.LIT) ? 13 : 0));
+
+    // The VR capsule (canon: how Satisfy is entered): right-click to lie down and connect (feature/capsule).
+    public static final DeferredBlock<CapsuleBlock> CAPSULE = BLOCKS.registerBlock("capsule",
+            CapsuleBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL)
+                    .noOcclusion());
 
     // Jaffa ore (canon: the ore Smith teaches Grid to smelt in Bairan). Iron tier: around iron height, a bit rarer, plus
     // guaranteed veins in Bairan's mine (worldgen/placed_feature/ore_jaffa.json + neoforge/biome_modifier).
