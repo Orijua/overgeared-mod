@@ -1,10 +1,8 @@
 package com.orijua.overgearedmod.feature.progression;
 
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.mob.MobKilledEvent;
-import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -14,7 +12,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -30,7 +27,6 @@ public final class ProgressionEvents {
         gameBus.addListener(ProgressionEvents::onLivingDeath);
         gameBus.addListener(ProgressionEvents::onLogin);
         gameBus.addListener(ProgressionEvents::onRespawn);
-        gameBus.addListener(ProgressionEvents::onRegisterCommands);
     }
 
     /** Remembers which mobs came from a spawner, so farms give less XP. */
@@ -94,24 +90,4 @@ public final class ProgressionEvents {
         }
     }
 
-    /** Debug commands for testing without grinding: /satisfy xp <amount>, /satisfy reset. */
-    private static void onRegisterCommands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("satisfy")
-                .requires(source -> source.hasPermission(2))
-                .then(Commands.literal("xp")
-                        .then(Commands.argument("amount", IntegerArgumentType.integer(1))
-                                .executes(ctx -> {
-                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                    ProgressionService.awardXp(player, IntegerArgumentType.getInteger(ctx, "amount"));
-                                    return 1;
-                                })))
-                .then(Commands.literal("reset")
-                        .executes(ctx -> {
-                            ServerPlayer player = ctx.getSource().getPlayerOrException();
-                            ModAttachments.resetAll(player);
-                            ProgressionService.set(player, PlayerStats.DEFAULT);
-                            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.reset"), false);
-                            return 1;
-                        })));
-    }
 }
