@@ -350,13 +350,28 @@ public final class Winston {
                     || !SatisfyBiomeSource.onMapLand(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ())) {
                 continue;
             }
-            StructureStart start = winston.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
-                    height, winston.biomes()::contains);
-            if (start.isValid() && start.getPieces().stream().allMatch(piece -> SiteTerrain.onDryLand(piece, generator, random, height))) {
+            if (fitsAt(winston, registries, generator, random, templates, seed, height, chunk)) {
                 return Optional.of(chunk);
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * Whether the district assembles at this chunk (its biome check included) with every piece on dry land: what the
+     * search asks of its site. False if the generator doesn't have it.
+     */
+    public static boolean fitsAt(RegistryAccess registries, ChunkGenerator generator, RandomState random, StructureTemplateManager templates,
+                                 long seed, LevelHeightAccessor height, ChunkPos chunk) {
+        Structure winston = registries.registryOrThrow(Registries.STRUCTURE).get(KEY);
+        return winston != null && fitsAt(winston, registries, generator, random, templates, seed, height, chunk);
+    }
+
+    private static boolean fitsAt(Structure winston, RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                  StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos chunk) {
+        StructureStart start = winston.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
+                height, winston.biomes()::contains);
+        return start.isValid() && start.getPieces().stream().allMatch(piece -> SiteTerrain.onDryLand(piece, generator, random, height));
     }
 
     private static String pool(String name) {

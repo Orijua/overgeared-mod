@@ -269,6 +269,18 @@ public final class NorthEndCave {
         return Optional.empty();
     }
 
+    /**
+     * Whether the cave assembles at this chunk with its mound in a cold biome, on dry ground that is not too steep: what
+     * the search asks of its site. False if the generator doesn't have the cave.
+     */
+    public static boolean fitsAt(RegistryAccess registries, ChunkGenerator generator, RandomState random, StructureTemplateManager templates,
+                                 long seed, LevelHeightAccessor height, ChunkPos chunk) {
+        Structure cave = registries.registryOrThrow(Registries.STRUCTURE).get(KEY);
+        Predicate<Holder<Biome>> cold = registries.registryOrThrow(Registries.BIOME).getTag(COLD)
+                .<Predicate<Holder<Biome>>>map(set -> set::contains).orElse(biome -> false);
+        return cave != null && fits(cave, registries, generator, random, templates, seed, height, chunk, cold);
+    }
+
     /** A cheap first look: the biome in the middle of the chunk at sea level (temperature doesn't change with height). */
     private static Holder<Biome> seaLevelBiome(ChunkGenerator generator, RandomState random, ChunkPos chunk) {
         return generator.getBiomeSource().getNoiseBiome(QuartPos.fromBlock(chunk.getMiddleBlockX()), QuartPos.fromBlock(generator.getSeaLevel()),

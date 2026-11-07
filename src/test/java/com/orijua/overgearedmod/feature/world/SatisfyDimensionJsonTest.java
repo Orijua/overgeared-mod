@@ -44,7 +44,8 @@ class SatisfyDimensionJsonTest {
             assertEquals("overgearedmod:satisfy_terrain", terrain.get("type").getAsString());
             assertEquals(channel, terrain.get("channel").getAsString());
             assertEquals(source().get("map").getAsString(), terrain.get("map").getAsString(), channel + " reads the biomes' map");
-            assertEquals("minecraft:overworld/" + channel, terrain.get("noise").getAsString(), channel + " mixes in vanilla's noise");
+            assertTrue(terrain.get("detail").getAsBoolean(), channel + " mixes in the fixed-seed detail noise");
+            assertFalse(terrain.has("noise"), channel + " reads no noise of the world: Satisfy is the same in every seed");
         }
     }
 

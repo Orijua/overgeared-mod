@@ -4,6 +4,6 @@
     "type": "overgearedmod:satisfy_terrain",
     "channel": "ridges",
     "map": "overgearedmod:west",
-    "noise": "minecraft:overworld/ridges"
+    "detail": true
   }
 }

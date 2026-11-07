@@ -55,7 +55,7 @@ import java.util.Map;
 @GameTestHolder(Overgearedmod.MODID)
 @PrefixGameTestTemplate(false)
 public final class SatisfyDimensionTests {
-    private static final LevelHeightAccessor HEIGHT = LevelHeightAccessor.create(-64, 384);
+    static final LevelHeightAccessor HEIGHT = LevelHeightAccessor.create(-64, 384);
     /** The farthest, in chunks, Bairan may land from (0, 0), its place on the map: the terrain follows the map. */
     private static final int BAIRAN_DRIFT = 2;
     /**
@@ -92,8 +92,12 @@ public final class SatisfyDimensionTests {
     private static final int SOUTH_LAND_JUMP = 3;
     private static final int WEST_LAND_JUMP = 5;
     private static final int DIAGONAL_LAND_JUMP = 3;
-    /** The range on z = -4, x -1700..-2400: steepest step measured 7 and 9 (seeds 1, 99) + 2; lowest ground 45 and 49 blocks over the sea, - 5. */
-    private static final int MOUNTAIN_JUMP = 11;
+    /**
+     * The range on z = -4, x -1700..-2400, in the nine seeds of SatisfyFixedWorldTests: steepest step measured 12 in all
+     * of them (the detail of the ridges has a fixed seed since 2026-11-07; 7 and 9 in seeds 1 and 99 with their own
+     * vanilla noise) + 2; lowest ground 45 blocks over the sea in all (45 and 49 before), - 5.
+     */
+    private static final int MOUNTAIN_JUMP = 14;
     private static final int MOUNTAIN_MIN_HEIGHT = 40;
 
     /** Records a failed check to report every seed's failures at once, not only the first. */
@@ -107,7 +111,7 @@ public final class SatisfyDimensionTests {
     }
 
     /** The generator that data/overgearedmod/dimension/satisfy.json describes. */
-    private static ChunkGenerator generator(GameTestHelper helper) {
+    static ChunkGenerator generator(GameTestHelper helper) {
         var server = helper.getLevel().getServer();
         try (Reader reader = server.getResourceManager().openAsReader(ResourceLocation.fromNamespaceAndPath(Overgearedmod.MODID, "dimension/satisfy.json"))) {
             JsonElement json = JsonParser.parseReader(reader);
@@ -122,7 +126,7 @@ public final class SatisfyDimensionTests {
     private static final ResourceKey<NoiseGeneratorSettings> SATISFY_SETTINGS = ResourceKey.create(Registries.NOISE_SETTINGS, Overgearedmod.id("satisfy"));
 
     /** The noise of a world with this seed, with the dimension's own noise settings ({@link #SATISFY_SETTINGS}). */
-    private static RandomState random(RegistryAccess registries, long seed) {
+    static RandomState random(RegistryAccess registries, long seed) {
         var settings = registries.registryOrThrow(Registries.NOISE_SETTINGS).getHolderOrThrow(SATISFY_SETTINGS);
         return RandomState.create(settings.value(), registries.lookupOrThrow(Registries.NOISE), seed);
     }
@@ -186,7 +190,10 @@ public final class SatisfyDimensionTests {
         helper.succeed();
     }
 
-    /** Every world gets all four sites, in the right places of the map, and a landing on Bairan's plaza. */
+    /**
+     * The search that chose the fixed sites ({@link StartingVillage#search}; every world ran it before they were fixed)
+     * finds all four in every seed, in the right places of the map, and a landing on Bairan's plaza.
+     */
     @GameTest(template = TestSupport.EMPTY, timeoutTicks = 2400)
     public static void everyWorldChoosesItsSitesInSatisfy(GameTestHelper helper) {
         var registries = helper.getLevel().registryAccess();
@@ -200,7 +207,7 @@ public final class SatisfyDimensionTests {
         int[] farthest = new int[4]; // Bairan from (0, 0), Winston and the cave from their places, the manor from Bairan
         for (long seed = 1; seed <= 12; seed++) {
             RandomState random = random(registries, seed);
-            StartingVillage.Chosen chosen = StartingVillage.choose(registries, generator, random,
+            StartingVillage.Chosen chosen = StartingVillage.search(registries, generator, random,
                     helper.getLevel().getStructureManager(), seed, HEIGHT);
             Map<String, ChunkPos> sites = chosen.sites();
             // The cave search is capped (200 in the first loop, at most 17x17 in the second): re-run it to count them.
@@ -328,7 +335,7 @@ public final class SatisfyDimensionTests {
      * (no water over it), and {@code top}, the terrain's own level, where its depth is 0, without the 3D noise, the
      * jaggedness of peaks and the caves (a cave opening at the surface is not a hole in the terrain).
      */
-    private record Ground(int height, boolean dry, int top) {
+    record Ground(int height, boolean dry, int top) {
         static Ground at(ChunkGenerator generator, RandomState random, int x, int z) {
             int surface = generator.getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, HEIGHT, random);
             int floor = generator.getBaseHeight(x, z, Heightmap.Types.OCEAN_FLOOR_WG, HEIGHT, random);
@@ -564,7 +571,7 @@ public final class SatisfyDimensionTests {
         ChunkGenerator generator = generator(helper);
         SatisfyMap map = ((SatisfyBiomeSource) generator.getBiomeSource()).map();
         int sea = generator.getSeaLevel();
-        for (long seed : new long[]{1L, 99L}) {
+        for (long seed : SatisfyFixedWorldTests.SEEDS) {
             RandomState random = random(registries, seed);
             Ground previous = Ground.at(generator, random, -1700, -4);
             int maxJump = 0;
