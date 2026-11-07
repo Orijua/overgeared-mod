@@ -365,4 +365,101 @@ public final class CharacterTests {
         });
         helper.succeed();
     }
+
+    // ---- Step 3: vanilla XP, health, effects and hunger ----
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void xpHealthHungerAndEffectsAreSeparatedByWorld(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.experienceLevel = 12;
+        player.experienceProgress = 0.5f;
+        player.totalExperience = 300;
+        player.setHealth(7.0f);
+        player.getFoodData().setFoodLevel(5);
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 6000, 1));
+        in(helper, WorldSide.REAL, () -> Characters.settle(player));
+
+        in(helper, WorldSide.SATISFY, () -> {
+            helper.assertTrue(Characters.settle(player) == Characters.Result.SWAPPED, "entering Satisfy swaps");
+            helper.assertTrue(player.experienceLevel == 0 && player.totalExperience == 0 && player.experienceProgress == 0.0f, "a new character has no vanilla XP");
+            helper.assertTrue(player.getHealth() == player.getMaxHealth(), "full health");
+            helper.assertTrue(player.getFoodData().getFoodLevel() == 20, "full hunger");
+            helper.assertTrue(player.getActiveEffects().isEmpty(), "and no effects: the speed stayed behind");
+            player.experienceLevel = 3;
+            player.totalExperience = 40;
+            player.setHealth(10.0f);
+            player.getFoodData().setFoodLevel(12);
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 300));
+        });
+
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(player);
+            helper.assertTrue(player.experienceLevel == 12 && player.experienceProgress == 0.5f && player.totalExperience == 300, "the real XP is back");
+            helper.assertTrue(player.getHealth() == 7.0f, "the real health is back, not refilled");
+            helper.assertTrue(player.getFoodData().getFoodLevel() == 5, "the real hunger is back");
+            helper.assertTrue(player.hasEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED), "the real effect is back");
+            helper.assertFalse(player.hasEffect(net.minecraft.world.effect.MobEffects.REGENERATION), "and Satisfy's did not follow");
+            helper.assertTrue(player.getEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED).getAmplifier() == 1, "with its strength");
+        });
+
+        in(helper, WorldSide.SATISFY, () -> {
+            Characters.settle(player);
+            helper.assertTrue(player.experienceLevel == 3 && player.totalExperience == 40, "Satisfy's XP is back the second time");
+            helper.assertTrue(player.getHealth() == 10.0f && player.getFoodData().getFoodLevel() == 12, "and its health and hunger");
+            helper.assertTrue(player.hasEffect(net.minecraft.world.effect.MobEffects.REGENERATION), "and its effect");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void storedEffectsDoNotRunWhileTheyAreStored(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 6000));
+        in(helper, WorldSide.REAL, () -> Characters.settle(player));
+        in(helper, WorldSide.SATISFY, () -> Characters.settle(player));
+        for (int i = 0; i < 40; i++) {
+            player.tick();
+        }
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(player);
+            int left = player.getEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED).getDuration();
+            helper.assertTrue(left == 6000, "the duration was frozen while stored (left " + left + ")");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void restoredHealthIsCappedAtTheMaximumOfTheWorld(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, WorldSide.REAL, () -> Characters.settle(player));
+        CompoundTag stored = CharacterSnapshot.empty();
+        stored.putFloat("health", 500.0f);
+        player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(WorldSide.REAL, stored));
+        in(helper, WorldSide.SATISFY, () -> {
+            Characters.settle(player);
+            helper.assertTrue(player.getHealth() <= player.getMaxHealth() && player.getHealth() > 0, "capped at the maximum, not above it");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void dyingInSatisfyReturnsTheRealBodyWithItsOwnVitals(GameTestHelper helper) {
+        ServerPlayer old = TestSupport.fakePlayer(helper);
+        old.setHealth(9.0f);
+        old.getFoodData().setFoodLevel(6);
+        old.experienceLevel = 20;
+        old.totalExperience = 700;
+        in(helper, WorldSide.REAL, () -> Characters.settle(old));
+        in(helper, WorldSide.SATISFY, () -> Characters.settle(old));
+
+        ServerPlayer fresh = TestSupport.fakePlayer(helper);
+        fresh.restoreFrom(old, false);
+        fresh.setHealth(fresh.getMaxHealth());
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(fresh);
+            helper.assertTrue(fresh.getHealth() == 9.0f, "the real body did not die: its health is the one it had");
+            helper.assertTrue(fresh.getFoodData().getFoodLevel() == 6 && fresh.experienceLevel == 20, "and its hunger and XP");
+        });
+        helper.succeed();
+    }
 }

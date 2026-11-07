@@ -102,8 +102,10 @@ public final class Characters {
             return Result.FAILED;
         }
         player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(want, outgoing));
-        // Equipment changed, so the bonuses of what they wear are recomputed.
+        // Equipment changed, so the bonuses of what they wear are recomputed; only then is the health capped at the
+        // maximum of this world.
         ProgressionService.refreshEffects(player);
+        CharacterSnapshot.applyHealth(player, incoming);
         Overgearedmod.LOGGER.info("{} now carries the {} character", player.getGameProfile().getName(), want);
         return Result.SWAPPED;
     }
