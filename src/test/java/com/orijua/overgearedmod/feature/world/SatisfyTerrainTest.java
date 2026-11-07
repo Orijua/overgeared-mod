@@ -85,5 +85,25 @@ class SatisfyTerrainTest {
         assertThrows(IllegalArgumentException.class, () -> new SatisfyTerrain(List.of("0x"), 10, 0, 0));
         assertThrows(IllegalArgumentException.class, () -> new SatisfyTerrain(List.of("01"), 10, 5, 0));
         assertThrows(IllegalArgumentException.class, () -> new SatisfyTerrain(List.of("01"), 0, 0, 0));
+        assertThrows(IllegalArgumentException.class, () -> new SatisfyTerrain(List.of(), 10, 0, 0), "an empty grid");
+        assertThrows(IllegalArgumentException.class, () -> new SatisfyTerrain(List.of("01"), 10, 0, -1), "a negative origin row");
+        assertThrows(IllegalArgumentException.class, () -> new SatisfyTerrain(List.of("01"), 10, -1, 0), "a negative origin column");
+    }
+
+    @Test
+    void theEdgeOfTheGridFallsIntoTheSea() {
+        SatisfyTerrain terrain = new SatisfyTerrain(List.of("09", "09"), 100, 0, 0);
+        // The last cell (centre x = 100) is 9; half a cell farther it is halfway to the sea beyond, and one cell farther all sea.
+        assertEquals(9.0, terrain.relief(100, 0), 1e-9);
+        assertEquals(4.5, terrain.relief(150, 0), 1e-9);
+        assertEquals(0.0, terrain.relief(200, 0), 1e-9);
+        assertEquals(0.45, terrain.relief(195, 0), 1e-9, "the last half pixel before the sea");
+    }
+
+    @Test
+    void anUndefinedBlockGivesAnUndefinedRelief() {
+        // Documented, not wanted: NaN flows through (floor of NaN is cell 0, the lerp stays NaN). The generator only passes
+        // integer block coordinates, so it cannot reach this.
+        assertTrue(Double.isNaN(new SatisfyTerrain(List.of("09"), 100, 0, 0).relief(Double.NaN, 0)));
     }
 }

@@ -115,6 +115,12 @@ public final class NorthEndCaveTests {
     }
 
     /**
+     * Seeds out of 20 whose cave must be in the cold. Measured: 14/20 (seeds 1-20, after BUG-042's capped search) with a
+     * margin of 2. Recalibrate if the search, the cold tag or the terrain change.
+     */
+    private static final int MIN_COLD_SEEDS = 12;
+
+    /**
      * On real overworld terrain (no lore map), every one of 20 seeds gets its cave far to the north of Bairan, most of them
      * in the cold, Ashur's manor near Bairan and Winston off, away from both, at the map's offsets from Bairan.
      * The search reads only the noise: nothing generates.
@@ -157,10 +163,15 @@ public final class NorthEndCaveTests {
                     net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE_WG, height, random);
             if (biomes.getNoiseBiome(cave.get().getMiddleBlockX() >> 2, y >> 2, cave.get().getMiddleBlockZ() >> 2, random.sampler()).is(coldTag)) {
                 cold++;
+            } else {
+                // Not in the cold: it is still on dry land (the fallback looks for dry ground).
+                int floor = generator.getBaseHeight(cave.get().getMiddleBlockX(), cave.get().getMiddleBlockZ(),
+                        net.minecraft.world.level.levelgen.Heightmap.Types.OCEAN_FLOOR_WG, height, random);
+                helper.assertTrue(floor == y, "the cave of seed " + seed + " is not in the cold and not on dry land either: " + cave.get());
             }
         }
         Overgearedmod.LOGGER.info("Northern End Cave: {}/20 seeds in the cold, {} to {} blocks north of Bairan", cold, nearest * 16, farthest * 16);
-        helper.assertTrue(cold >= 14, "most caves should be in the cold: " + cold + "/20");
+        helper.assertTrue(cold >= MIN_COLD_SEEDS, "most caves should be in the cold: " + cold + "/20 (at least " + MIN_COLD_SEEDS + ")");
         helper.succeed();
     }
 

@@ -76,6 +76,10 @@ public final class SatisfyMapData {
             if (!legend.containsKey(region[i] & 0xFF)) {
                 throw new IllegalArgumentException("region " + (region[i] & 0xFF) + " of cell " + i + " is not in the legend");
             }
+            if ((region[i] == SEA) != (relief[i] < COAST_RELIEF)) {
+                throw new IllegalArgumentException("cell " + i + " is sea only if its relief is under " + COAST_RELIEF + ": region "
+                        + (region[i] & 0xFF) + ", relief " + relief[i]);
+            }
         }
         this.width = width;
         this.height = height;
@@ -100,7 +104,7 @@ public final class SatisfyMapData {
 
     /** Like {@link #load}, but each folder is read only once; a missing or broken map is an error of the mod's jar. */
     public static SatisfyMapData cached(String folder) {
-        return LOADED.computeIfAbsent(folder, key -> {
+        return LOADED.computeIfAbsent(folder.endsWith("/") ? folder : folder + "/", key -> {
             try {
                 return load(key);
             } catch (IOException e) {

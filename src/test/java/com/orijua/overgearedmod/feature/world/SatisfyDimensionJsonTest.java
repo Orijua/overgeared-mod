@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Checks the real {@code satisfy.json} (as a classpath resource, no registries) against the map it names. */
 class SatisfyDimensionJsonTest {
@@ -59,7 +60,21 @@ class SatisfyDimensionJsonTest {
     @Test
     void theMapIsTheWestContinent() throws IOException {
         assertEquals("overgearedmod:west", source().get("map").getAsString());
-        SatisfyMapData.load("/data/overgearedmod/satisfy_map/west/");
+        assertTrue(SatisfyMapData.load("/data/overgearedmod/satisfy_map/west/").width() > 0);
+    }
+
+    @Test
+    void theNoiseSettingsUseTheSatisfyDensityFunctions() throws IOException {
+        JsonObject router = json("/data/overgearedmod/worldgen/noise_settings/satisfy.json").getAsJsonObject("noise_router");
+        for (String channel : new String[]{"continents", "erosion", "depth", "ridges", "factor"}) {
+            boolean found = false;
+            for (Map.Entry<String, JsonElement> entry : router.entrySet()) {
+                found |= entry.getValue().toString().contains("overgearedmod:satisfy/" + channel);
+            }
+            assertTrue(found, "the noise router uses overgearedmod:satisfy/" + channel);
+            assertNotNull(getClass().getResourceAsStream("/data/overgearedmod/worldgen/density_function/satisfy/" + channel + ".json"),
+                    channel + " has its density function file");
+        }
     }
 
     @Test

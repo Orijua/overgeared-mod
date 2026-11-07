@@ -418,6 +418,8 @@ def convert(source: Path, out_dir: Path, cell_px: int = 16, overrides_path: Path
     an = analyse(rgb, overrides, **{k: v for k, v in kw.items() if k in ("river_px", "min_island_px", "min_lake_px", "snow_belts_px", "savanna_belt_px")})
     region, relief = to_cells(an, cell_px, overrides, **{k: v for k, v in kw.items() if k in ("shallow_blocks", "mid_blocks", "lake_relief", "coast_ramp")})
     origin_px = overrides["origin_px"]
+    if not (0 <= origin_px[0] < source_size[0] and 0 <= origin_px[1] < source_size[1]):
+        raise ValueError(f"el origen {origin_px} cae fuera del mapa {source_size}")
     meta = build_meta(region, cell_px, source_size, origin_px, "canon/Mapa_continente_oeste.png")
     out_dir.mkdir(parents=True, exist_ok=True)
     save_region_png(region, out_dir / "region.png")

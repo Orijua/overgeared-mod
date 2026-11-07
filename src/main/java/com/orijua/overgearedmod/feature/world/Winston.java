@@ -13,11 +13,9 @@ import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.Structure;
-import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -34,8 +32,8 @@ import java.util.Optional;
  * its central square. The city, Khan, his smithy, the Mero Company and the square are canon; the layout and how they
  * look are our own design. The whole city (castle, walls) comes in phase 10.
  * <p>
- * One per world, chosen with Bairan: as near as it fits to its place on the canon map ({@link #MAP_PIXEL_X},
- * {@link #MAP_PIXEL_Z}: about 200 blocks west-northwest of Bairan, its neighbour on the map). The central square with
+ * One per world, chosen with Bairan: as near as it fits to its place on the canon map (the {@code winston} place of
+ * {@code places.json}: about 200 blocks west-northwest of Bairan, its neighbour on the map). The central square with
  * a fountain and the contest stage, and around it, joined by jigsaws: Khan's ruined smithy (north), the Mero Company's
  * office (east) and houses (south and west).
  */
@@ -54,9 +52,6 @@ public final class Winston {
     public static final BlockPos RIVAL_SPOT = new BlockPos(10, 2, 12);
     public static final BlockPos PLAYER_ANVIL = new BlockPos(6, 2, 13);
 
-    /** Winston on the canon map of the West Continent ({@code canon/Localizaciones.md}), in source pixels. */
-    public static final int MAP_PIXEL_X = 1669;
-    public static final int MAP_PIXEL_Z = 410;
     /**
      * How far from its place on the map to look, in chunks (the nearest that fits wins). The terrain follows the map, so
      * its place is dry land; the room is for keeping away from Bairan, the cave and the manor.
@@ -321,7 +316,7 @@ public final class Winston {
 
     /** Where Winston is on the map, as chunks from Bairan (Bairan's chunk is the map's origin). */
     public static ChunkPos mapOffset(SatisfyMapData map) {
-        return new ChunkPos(map.blockXOfPixel(MAP_PIXEL_X) >> 4, map.blockZOfPixel(MAP_PIXEL_Z) >> 4);
+        return SatisfyPlaces.chunkOffset(map, SatisfyPlaces.west().get("winston").orElseThrow());
     }
 
     /**
@@ -357,19 +352,11 @@ public final class Winston {
             }
             StructureStart start = winston.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
                     height, winston.biomes()::contains);
-            if (start.isValid() && start.getPieces().stream().allMatch(piece -> onDryLand(piece, generator, random, height))) {
+            if (start.isValid() && start.getPieces().stream().allMatch(piece -> SiteTerrain.onDryLand(piece, generator, random, height))) {
                 return Optional.of(chunk);
             }
         }
         return Optional.empty();
-    }
-
-    /** Whether the ground under the middle of a piece is land, not the bottom of a lake, river or sea. */
-    private static boolean onDryLand(StructurePiece piece, ChunkGenerator generator, RandomState random, LevelHeightAccessor height) {
-        BlockPos middle = piece.getBoundingBox().getCenter();
-        int surface = generator.getBaseHeight(middle.getX(), middle.getZ(), Heightmap.Types.WORLD_SURFACE_WG, height, random);
-        int ground = generator.getBaseHeight(middle.getX(), middle.getZ(), Heightmap.Types.OCEAN_FLOOR_WG, height, random);
-        return surface == ground;
     }
 
     private static String pool(String name) {

@@ -16,6 +16,17 @@ python3 -m pytest -q                            # o: python3 -m unittest
 
 Tarda unos 10 s. El PNG por defecto es `/home/user/overgeared-docs/canon/Mapa_continente_oeste.png`; si el repo de docs
 esta en otra ruta, usa `--source`.
+
+### Tests
+
+`python3 -m pytest -q` en esta carpeta. Los datos comiteados (`satisfy_map/west`) son obligatorios: si faltan, los tests
+fallan. La prueba de regeneracion necesita el PNG del canon: lo busca en la variable de entorno `SATISFY_MAP_SOURCE` o, si
+no existe, en `../../../overgeared-docs/canon/Mapa_continente_oeste.png` (repo de docs hermano); si no lo encuentra, solo esa
+prueba se salta, con un mensaje que lo dice.
+
+Los datos comiteados se regeneran con bytes identicos con numpy 2.5.3, scipy 1.18.1 y Pillow 12.3.0. Con otras versiones la
+prueba avisa y acepta hasta un 0,5 % de celdas distintas (redondeos de `gaussian_filter`, etiquetado). Si cambias de versiones,
+regenera, ejecuta los tests de Java y de Python y actualiza `REFERENCE_VERSIONS` en `test_convert.py` y esta nota.
 Los tests de Java y de Python valen con cualquier `--cell-px`; tras regenerar, ejecuta ambos.
 
 ## Salidas

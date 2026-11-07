@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.minecraft.world.level.ChunkPos;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -94,12 +95,13 @@ public final class SatisfyPlaces {
             List<Place> places = new ArrayList<>();
             for (JsonElement element : root.getAsJsonArray("places")) {
                 JsonObject place = element.getAsJsonObject();
+                String id = string(place, "id", "?");
                 JsonArray px = place.getAsJsonArray("px");
-                if (px.size() != 2) {
-                    throw new IOException("px is [x, y]: " + place);
+                if (px == null || px.size() != 2) {
+                    throw new IOException("places.json: " + id + ".px must be [x, y]: " + place);
                 }
-                places.add(new Place(place.get("id").getAsString(), place.get("name").getAsString(), place.get("type").getAsString(),
-                        px.get(0).getAsInt(), px.get(1).getAsInt(), place.get("certainty").getAsString(), place.get("land").getAsBoolean()));
+                places.add(new Place(id, string(place, "name", id), string(place, "type", id),
+                        pixel(px.get(0), id), pixel(px.get(1), id), string(place, "certainty", id), bool(place, "land", id)));
             }
             return new SatisfyPlaces(places);
         } catch (IllegalArgumentException e) {
@@ -107,6 +109,33 @@ public final class SatisfyPlaces {
         } catch (NullPointerException | ClassCastException | IllegalStateException | IndexOutOfBoundsException | UnsupportedOperationException e) {
             throw new IOException("places.json is missing or has a wrong field: " + e, e);
         }
+    }
+
+    private static String string(JsonObject place, String field, String id) throws IOException {
+        JsonElement value = place.get(field);
+        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
+            throw new IOException("places.json: " + id + "." + field + " must be a string, not " + value);
+        }
+        return value.getAsString();
+    }
+
+    private static boolean bool(JsonObject place, String field, String id) throws IOException {
+        JsonElement value = place.get(field);
+        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
+            throw new IOException("places.json: " + id + "." + field + " must be true or false, not " + value);
+        }
+        return value.getAsBoolean();
+    }
+
+    private static int pixel(JsonElement value, String id) throws IOException {
+        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
+            throw new IOException("places.json: " + id + ".px must hold integers >= 0, not " + value);
+        }
+        double number = value.getAsDouble();
+        if (number < 0 || number != Math.rint(number) || number > Integer.MAX_VALUE) {
+            throw new IOException("places.json: " + id + ".px must hold integers >= 0, not " + value);
+        }
+        return (int) number;
     }
 
     /** In file order. */
@@ -132,6 +161,16 @@ public final class SatisfyPlaces {
     /** The block (x, z) of the place's pixel (its north-west corner). */
     public static int[] block(SatisfyMapData map, Place place) {
         return new int[]{map.blockXOfPixel(place.pixelX()), map.blockZOfPixel(place.pixelZ())};
+    }
+
+    /** A pixel of the source map as chunks from Bairan (Bairan's chunk is the map's origin). */
+    public static ChunkPos chunkOffset(SatisfyMapData map, int pixelX, int pixelZ) {
+        return new ChunkPos(map.blockXOfPixel(pixelX) >> 4, map.blockZOfPixel(pixelZ) >> 4);
+    }
+
+    /** A place as chunks from Bairan. */
+    public static ChunkPos chunkOffset(SatisfyMapData map, Place place) {
+        return chunkOffset(map, place.pixelX(), place.pixelZ());
     }
 
     /**

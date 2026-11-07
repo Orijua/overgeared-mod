@@ -124,7 +124,7 @@ public final class DebugCommands {
                                                 .executes(ctx -> spawnApprentice(ctx, IntegerArgumentType.getInteger(ctx, "level"))))))
                         .then(Commands.literal("goto")
                                 .then(Commands.argument("site", StringArgumentType.word())
-                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.SITES, builder))
+                                        .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.sites(), builder))
                                         .executes(DebugCommands::gotoSite)))
                         .then(Commands.literal("quest")
                                 .then(Commands.literal("complete")
@@ -224,12 +224,15 @@ public final class DebugCommands {
         String site = StringArgumentType.getString(ctx, "site");
         ServerLevel satisfy = Satisfy.of(ctx.getSource().getServer())
                 .orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.debug_goto_none", site)).create());
-        BlockPos landing = SiteLanding.find(satisfy, site).orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable(
-                !SiteLanding.SITES.contains(site) ? "message.overgearedmod.debug_goto_unknown"
-                        : SiteLanding.isMapPlace(site) ? "message.overgearedmod.debug_goto_sea"
-                        : "message.overgearedmod.debug_goto_none", site)).create());
-        // Facing north, towards the place: the landing is south of it.
-        player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, 180.0f, 0.0f);
+        SiteLanding.Landing found = SiteLanding.locate(satisfy, site);
+        BlockPos landing = found.pos().orElseThrow(() -> new SimpleCommandExceptionType(Component.translatable(
+                switch (found.reason()) {
+                    case UNKNOWN -> "message.overgearedmod.debug_goto_unknown";
+                    case SEA -> "message.overgearedmod.debug_goto_sea";
+                    default -> "message.overgearedmod.debug_goto_none";
+                }, site)).create());
+        // Facing the place: the landing is in front of it.
+        player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, found.yaw(), 0.0f);
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
                 landing.getX(), landing.getY(), landing.getZ()), false);
         return 1;

@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -123,6 +124,18 @@ class SatisfyMapDataTest {
         assertThrows(IllegalArgumentException.class, () -> new SatisfyMapData(4, 3, 2, 10, 15, 15, RELIEF, unknown, LEGEND), "region not in the legend");
     }
 
+    @Test
+    void seaAndLandMustAgreeWithTheRelief() {
+        byte[] seaOnLand = RELIEF.clone();
+        seaOnLand[0] = 4; // region 0 (sea) with relief 4
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new SatisfyMapData(4, 3, 2, 10, 15, 15, seaOnLand, REGION, LEGEND));
+        assertTrue(e.getMessage().contains("sea"), e.getMessage());
+        byte[] landInTheSea = RELIEF.clone();
+        landInTheSea[5] = 1; // plains with relief 1
+        assertThrows(IllegalArgumentException.class, () -> new SatisfyMapData(4, 3, 2, 10, 15, 15, landInTheSea, REGION, LEGEND));
+    }
+
     // --- Parsing the files --------------------------------------------------------------------------------------
 
     private static final String META = """
@@ -173,6 +186,32 @@ class SatisfyMapDataTest {
     }
 
     @Test
+    void rejectsAReliefImageOfTheWrongSize() throws IOException {
+        InputStream wrong = png(image(BufferedImage.TYPE_BYTE_GRAY, new byte[6], 3, 2));
+        IOException e = assertThrows(IOException.class, () -> SatisfyMapData.read(text(META),
+                png(image(BufferedImage.TYPE_BYTE_INDEXED, REGION, 4, 3)), wrong));
+        assertTrue(e.getMessage().contains("relief.png"), e.getMessage());
+    }
+
+    @Test
+    void rejectsNegativeRelief() throws IOException {
+        byte[] negative = RELIEF.clone();
+        negative[5] = (byte) 200; // a gray level above 127 reads as a negative byte
+        IOException e = assertThrows(IOException.class, () -> SatisfyMapData.read(text(META),
+                png(image(BufferedImage.TYPE_BYTE_INDEXED, REGION, 4, 3)), png(image(BufferedImage.TYPE_BYTE_GRAY, negative, 4, 3))));
+        assertTrue(e.getMessage().contains("relief"), e.getMessage());
+    }
+
+    @Test
+    void rejectsSeaWithReliefFromTheFiles() throws IOException {
+        byte[] seaOnLand = RELIEF.clone();
+        seaOnLand[0] = 4;
+        IOException e = assertThrows(IOException.class, () -> SatisfyMapData.read(text(META),
+                png(image(BufferedImage.TYPE_BYTE_INDEXED, REGION, 4, 3)), png(image(BufferedImage.TYPE_BYTE_GRAY, seaOnLand, 4, 3))));
+        assertTrue(e.getMessage().contains("sea"), e.getMessage());
+    }
+
+    @Test
     void rejectsAWrongVersionAndBrokenMeta() throws IOException {
         String v2 = META.replace("\"version\": 1", "\"version\": 2");
         assertThrows(IOException.class, () -> SatisfyMapData.read(text(v2),
@@ -193,8 +232,8 @@ class SatisfyMapDataTest {
     @Test
     void theWestMapLoadsAndBairanIsOnLand() throws IOException {
         SatisfyMapData west = SatisfyMapData.load(SatisfyMapData.WEST);
-        assertEquals(west.width() * west.cellPx(), 4096);
-        assertEquals(west.height() * west.cellPx(), 3072);
+        assertEquals(4096, west.width() * west.cellPx());
+        assertEquals(3072, west.height() * west.cellPx());
         assertEquals(2, west.blocksPerPixel());
         assertEquals("sea", west.legend(SatisfyMapData.SEA));
         assertEquals("minecraft:plains", west.biomeAtBlock(0, 0), "Bairan is in the plains");
@@ -216,16 +255,65 @@ class SatisfyMapDataTest {
         }
         assertEquals(0.0, west.relief(-1_000_000, 0), 1e-9);
         // Block offsets from Bairan (pixel 1772, 458) to a spot in the Travian Sierra (pixel 2400, 1500).
-        int dx = (2400 - 1772) * west.blocksPerPixel();
-        int dz = (1500 - 458) * west.blocksPerPixel();
+        int dx = (WestMapReference.TRAVIAN_X - WestMapReference.BAIRAN_X) * west.blocksPerPixel();
+        int dz = (WestMapReference.TRAVIAN_Z - WestMapReference.BAIRAN_Z) * west.blocksPerPixel();
         assertTrue(west.relief(dx, dz) >= 7, "Travian Sierra is mountain: " + west.relief(dx, dz));
         // The Red Sea, east of the continent, is deep sea.
-        assertEquals(0.0, west.relief((3600 - 1772) * 2, (1500 - 458) * 2), 1e-9);
+        assertEquals(0.0, west.relief((WestMapReference.RED_SEA_X - WestMapReference.BAIRAN_X) * west.blocksPerPixel(),
+                (WestMapReference.RED_SEA_Z - WestMapReference.BAIRAN_Z) * west.blocksPerPixel()), 1e-9);
         // Every region used is in the legend, and region 0 is exactly the water.
         for (int row = 0; row < west.height(); row++) {
             for (int col = 0; col < west.width(); col++) {
                 assertEquals(west.regionAtCell(col, row) == SatisfyMapData.SEA, west.reliefAtCell(col, row) < SatisfyMapData.COAST_RELIEF,
                         "region 0 <=> water at " + col + "," + row);
+            }
+        }
+    }
+
+    @Test
+    void cachedIgnoresTheTrailingSlashOfTheFolder() {
+        String folder = SatisfyMapData.WEST;
+        assertTrue(folder.endsWith("/"));
+        assertSame(SatisfyMapData.cached(folder), SatisfyMapData.cached(folder.substring(0, folder.length() - 1)));
+    }
+
+    /**
+     * The map points the terrain game tests (SatisfyDimensionTests) take on trust: they say what is there (relief or region)
+     * in the real data, so that a regenerated relief.png/region.png fails here as a data change, not as a terrain bug.
+     */
+    @Test
+    void theGameTestsReferencePointsAreWhatTheyClaim() throws IOException {
+        SatisfyMapData west = SatisfyMapData.load(SatisfyMapData.WEST);
+        // Block (x, z) -> cells within a radius: relief {min, max}.
+        int[][] reliefPoints = {
+                {-8, -580, 3, 0, 0},      // the open sea north of Bairan
+                {88, -132, 2, 4, 4},      // dry lowland
+                {-1864, -4, 2, 9, 9},     // a high mountain in the west
+                {88, 284, 2, 7, 9},       // the mountains south-east of Bairan
+                {0, 0, 1, 5, 5}};         // Bairan's place
+        for (int[] p : reliefPoints) {
+            int col = west.colAtBlock(p[0]);
+            int row = west.rowAtBlock(p[1]);
+            for (int dc = -p[2]; dc <= p[2]; dc++) {
+                for (int dr = -p[2]; dr <= p[2]; dr++) {
+                    int relief = west.reliefAtCell(col + dc, row + dr);
+                    assertTrue(relief >= p[3] && relief <= p[4], "relief at block " + p[0] + "," + p[1] + " cell offset " + dc + "," + dr + ": " + relief);
+                }
+            }
+        }
+        // Source pixel -> region of the 3x3 cells around it.
+        int[][] regionPoints = {
+                {0, 0, SatisfyMapData.PLAINS},
+                {WestMapReference.LILTON_X, WestMapReference.LILTON_Z, 3},
+                {1752, 344, 6}, {1880, 456, 5}, {1688, 904, 9}, {408, 744, 10}};
+        for (int i = 0; i < regionPoints.length; i++) {
+            int[] p = regionPoints[i];
+            int col = i == 0 ? west.colAtBlock(0) : Math.floorDiv(p[0], west.cellPx());
+            int row = i == 0 ? west.rowAtBlock(0) : Math.floorDiv(p[1], west.cellPx());
+            for (int dc = -1; dc <= 1; dc++) {
+                for (int dr = -1; dr <= 1; dr++) {
+                    assertEquals(p[2], west.regionAtCell(col + dc, row + dr), "region around " + p[0] + "," + p[1] + " offset " + dc + "," + dr);
+                }
             }
         }
     }

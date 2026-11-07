@@ -41,7 +41,10 @@ class SatisfyTerrainHeightTest {
         };
     }
 
-    /** Vanilla's peaks and valleys (NoiseRouterData.peaksAndValleys, which needs a bootstrapped game). */
+    /**
+     * Vanilla's peaks and valleys, copied from net.minecraft.world.level.levelgen.NoiseRouterData.peaksAndValleys (Minecraft
+     * 1.21.x), which needs a bootstrapped game. Check it against that class when Minecraft is updated.
+     */
     private static double peaksAndValleys(double weirdness) {
         return -(Math.abs(Math.abs(weirdness) - 2.0 / 3.0) - 1.0 / 3.0) * 3.0;
     }
@@ -77,18 +80,37 @@ class SatisfyTerrainHeightTest {
                 + ", expected " + low + "-" + high);
     }
 
+    /**
+     * Measured (low-high over the corners of the noise, with the vanilla spline of Minecraft 1.21.x): 0: 35.1-36.5;
+     * 1: 35.1-43.0; 2: 48.1-55.8; 2.5: 48.1-66.2; 3: 64.5-69.3; 4: 65.6-74.6; 5: 66.0-78.8; 6: 67.6-93.1; 6.5: 69.4-96.1;
+     * 7: 76.1-105.6; 8: 101.5-149.2; 9: 140.1-235.3. Each band is the measure plus or minus 5 blocks (10 from relief 8,
+     * where the spline is more sensitive). They tie the test to TerrainProvider's offset spline: recalibrate when
+     * Minecraft is updated.
+     */
     @Test
     void eachReliefHasItsHeight() {
-        assertBetween(0, 30, 40);                       // deep sea
-        assertBetween(2, 40, SEA_LEVEL - 5);             // shallow sea and lakes
-        assertBetween(3, SEA_LEVEL, 70);                 // a low coast, always dry
-        assertBetween(4, SEA_LEVEL + 2, 76);             // lowland
-        assertBetween(5, SEA_LEVEL + 2, 80);             // high lowland (Bairan)
+        assertBetween(0, 30, 41);
+        assertBetween(1, 30, 48);
+        assertBetween(2, 43, 61);                        // shallow sea and lakes
+        assertBetween(3, 59, 75);                        // a low coast, always dry (at or just above the sea)
+        assertBetween(4, 60, 80);                        // lowland
+        assertBetween(5, 61, 84);                        // high lowland (Bairan)
+        assertBetween(6, 62, 98);
+        assertBetween(6.5, 64, 101);                     // hills
+        assertBetween(7, 71, 111);
+        assertBetween(8, 91, 159);                       // mountains
+        assertBetween(9, 130, 245);                      // peaks
         assertTrue(height(4, 0, 0, 0) >= SEA_LEVEL + 5, "the lowland is a few blocks above the sea: " + height(4, 0, 0, 0));
-        assertBetween(6.5, 65, 110);                     // hills
-        assertBetween(8, 100, 180);                      // mountains
-        assertBetween(9, 140, 250);                      // peaks
+        assertTrue(range(3)[0] >= SEA_LEVEL, "a low coast is dry: " + range(3)[0]);
         assertTrue(height(9, 0, 0, 0) > 200, "the peaks are high: " + height(9, 0, 0, 0));
+    }
+
+    @Test
+    void theLowestHeightOfAReliefDoesNotFallAsReliefRises() {
+        for (int relief = 3; relief < 9; relief++) {
+            assertTrue(range(relief + 1)[0] >= range(relief)[0] - 1, "relief " + (relief + 1) + " starts at " + range(relief + 1)[0]
+                    + ", below relief " + relief + " (" + range(relief)[0] + ")");
+        }
     }
 
     @Test

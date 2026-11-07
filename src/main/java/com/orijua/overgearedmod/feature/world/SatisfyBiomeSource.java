@@ -129,4 +129,12 @@ public final class SatisfyBiomeSource extends BiomeSource {
     public static boolean onMapLand(BiomeSource biomes, int blockX, int blockZ) {
         return !(biomes instanceof SatisfyBiomeSource satisfy) || satisfy.map.isLand(blockX, blockZ);
     }
+
+    /**
+     * Whether the map's relief at block (x, z) is below {@code limit} (0-9; 8 or more is mountain). Always true for any
+     * other biome source (the real world, tests on vanilla terrain).
+     */
+    public static boolean reliefBelow(BiomeSource biomes, int blockX, int blockZ, double limit) {
+        return !(biomes instanceof SatisfyBiomeSource satisfy) || satisfy.map.reliefAt(blockX, blockZ) < limit;
+    }
 }
