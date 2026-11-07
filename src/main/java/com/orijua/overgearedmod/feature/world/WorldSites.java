@@ -13,7 +13,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The one-per-world structures' sites of each running world, by seed and site name: {@link WorldSitePlacement} only knows
- * the seed. They are chosen when the world is created ({@link StartingVillage}) and saved with it ({@link WorldSitesData}).
+ * the seed. A new world gets the fixed sites of {@code sites.json} ({@link SatisfySites}, the same in every seed) when it
+ * is created ({@link StartingVillage}) and saves them ({@link WorldSitesData}); an older world keeps the ones its search
+ * gave it.
  * All of them are in the Satisfy dimension; the other dimensions are {@linkplain #exclude excluded}.
  */
 public final class WorldSites {

@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
@@ -28,17 +29,18 @@ import java.util.stream.Stream;
 
 /**
  * Bairan, the starting village of the Satisfy dimension. The dimension's (0, 0) is Bairan's pixel on the canon map
- * ({@link SatisfyMapData}), in its plains. When the dimension first loads in a new world, it looks for the nearest
- * place around (0, 0) where the whole village fits on dry land in the map's plains, and saves it with the
- * landing spot on its square, by the well, where a player entering Satisfy starts, as Grid starts in Bairan. Bairan
- * then generates there with the terrain, like any village ({@link WorldSitePlacement}). The other places are chosen at
- * the same time, from Bairan and the map: the Northern End Cave on the snowy north coast ({@link NorthEndCave}), Earl
+ * ({@link SatisfyMapData}), in its plains. Satisfy is a world of the canon with a known map, so it is the same in every
+ * new world: when the dimension first loads in a new world, it gets the fixed sites of {@code satisfy_map/west/sites.json}
+ * ({@link SatisfySites}): Bairan at (0, 0), the Northern End Cave on the snowy north coast ({@link NorthEndCave}), Earl
  * Ashur's manor near Bairan ({@link AshurManor}) and Winston at its place on the map, west-northwest of Bairan
- * ({@link Winston}).
+ * ({@link Winston}), whatever the seed. They are saved with the landing spot on Bairan's square, by the well, where a
+ * player entering Satisfy starts, as Grid starts in Bairan. They then generate there with the terrain, like any village
+ * ({@link WorldSitePlacement}).
  * <p>
- * The search runs only once per world (it is remembered even if it finds nothing). Worlds created before the dimension
- * have no site, so no Bairan. So do worlds whose generator doesn't use the structure and the rare world with no fitting
- * land near Bairan's place on the map.
+ * The fixed sites were chosen once with {@link #search}, the search over the map that every world ran before
+ * 2026-11-07 (Bairan nearest (0, 0) on dry plains, the rest from it); the search stays for that and for the tests on
+ * terrain that doesn't follow the map. They are chosen only once per world (it is remembered); worlds created before
+ * keep the sites their search gave them, and worlds created before the dimension have none.
  */
 public final class StartingVillage {
     /**
@@ -86,20 +88,49 @@ public final class StartingVillage {
         data.landing().ifPresent(landing -> WorldSites.rememberLanding(seed, landing));
     }
 
-    /** The sites a new Satisfy world gets (none if Bairan has no room), and where a player lands in Bairan. */
+    /** The sites a new Satisfy world gets, and where a player lands in Bairan. */
     public record Chosen(Map<String, ChunkPos> sites, Optional<BlockPos> landing) {
     }
 
     /**
-     * Chooses every site of a new world, Bairan first and the rest from it and the map: the cave on the snowy north
-     * coast, the manor near Bairan and Winston at its place on the map, away from the other two. Only reads the terrain
-     * noise and the map: nothing is placed.
+     * The sites of every new world: the fixed ones of {@link SatisfySites#west}, the same in every seed, and the landing
+     * on Bairan's square (the village's layout, and so the exact landing, still follows the seed; if the village does not
+     * assemble, the surface in the middle of its chunk). Only reads the terrain noise: nothing is placed.
      */
     public static Chosen choose(RegistryAccess registries, ChunkGenerator generator, RandomState random, StructureTemplateManager templates,
                                 long seed, LevelHeightAccessor height) {
+        return fixed(SatisfySites.west(), registries, generator, random, templates, seed, height);
+    }
+
+    /** {@link #choose} with these sites. Without Bairan, no sites at all. */
+    public static Chosen fixed(SatisfySites fixed, RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                               StructureTemplateManager templates, long seed, LevelHeightAccessor height) {
+        Optional<ChunkPos> village = fixed.get(WorldSites.BAIRAN);
+        if (village.isEmpty()) {
+            Overgearedmod.LOGGER.warn("The fixed Satisfy sites have no Bairan; this world has no starting village");
+            return new Chosen(Map.of(), Optional.empty());
+        }
+        ChunkPos chunk = village.get();
+        BlockPos landing = villageAt(registries, generator, random, templates, seed, height, chunk).map(Site::spawn).orElseGet(() -> {
+            Overgearedmod.LOGGER.warn("Bairan does not assemble at its fixed chunk {}; landing in the middle of it", chunk);
+            int x = chunk.getMiddleBlockX();
+            int z = chunk.getMiddleBlockZ();
+            return new BlockPos(x, generator.getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, height, random), z);
+        });
+        return new Chosen(new LinkedHashMap<>(fixed.all()), Optional.of(landing));
+    }
+
+    /**
+     * The search every world ran before its sites were fixed, and how {@code sites.json} was chosen: Bairan first,
+     * nearest (0, 0) ({@link #findSite}), and the rest from it and the map: the cave on the snowy north coast, the manor
+     * near Bairan and Winston at its place on the map, away from the other two. Its result follows the seed a little (the
+     * 3D noise and the layout of the structures). Empty if Bairan has no room. Only reads the terrain noise and the map.
+     */
+    public static Chosen search(RegistryAccess registries, ChunkGenerator generator, RandomState random, StructureTemplateManager templates,
+                                long seed, LevelHeightAccessor height) {
         Optional<Site> bairan = findSite(registries, generator, random, templates, seed, height, new ChunkPos(0, 0));
         if (bairan.isEmpty()) {
-            Overgearedmod.LOGGER.warn("No room for Bairan within {} chunks of its place on the map; this world has no starting village", SEARCH_RADIUS);
+            Overgearedmod.LOGGER.warn("No room for Bairan within {} chunks of its place on the map", SEARCH_RADIUS);
             return new Chosen(Map.of(), Optional.empty());
         }
         ChunkPos village = bairan.get().chunk();
@@ -145,11 +176,30 @@ public final class StartingVillage {
             if (!SatisfyBiomeSource.inMapRegion(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ(), SatisfyMapData.PLAINS)) {
                 continue;
             }
-            StructureStart start = village.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
-                    height, village.biomes()::contains);
-            if (start.isValid() && start.getPieces().stream().allMatch(piece -> SiteTerrain.onDryLand(piece, generator, random, height))) {
-                return Optional.of(new Site(chunk, spawnOnSquare(start.getPieces().getFirst().getBoundingBox())));
+            Optional<Site> site = villageAt(village, registries, generator, random, templates, seed, height, chunk);
+            if (site.isPresent()) {
+                return site;
             }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * The village at this chunk, if it assembles there (its biome check included) with every piece on dry land, and the
+     * spawn on its square. Empty if the generator doesn't have it. Only reads the terrain noise.
+     */
+    public static Optional<Site> villageAt(RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                           StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos chunk) {
+        Structure village = registries.registryOrThrow(Registries.STRUCTURE).get(VILLAGE);
+        return village == null ? Optional.empty() : villageAt(village, registries, generator, random, templates, seed, height, chunk);
+    }
+
+    private static Optional<Site> villageAt(Structure village, RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                            StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos chunk) {
+        StructureStart start = village.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
+                height, village.biomes()::contains);
+        if (start.isValid() && start.getPieces().stream().allMatch(piece -> SiteTerrain.onDryLand(piece, generator, random, height))) {
+            return Optional.of(new Site(chunk, spawnOnSquare(start.getPieces().getFirst().getBoundingBox())));
         }
         return Optional.empty();
     }

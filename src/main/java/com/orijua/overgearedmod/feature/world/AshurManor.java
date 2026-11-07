@@ -107,13 +107,23 @@ public final class AshurManor {
                     || !SatisfyBiomeSource.onMapLand(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ())) {
                 continue;
             }
-            StructureStart start = manor.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
-                    height, biome -> true);
-            if (start.isValid() && flatAndDry(start.getPieces().getFirst().getBoundingBox(), generator, random, height)) {
+            if (fitsAt(registries, generator, random, templates, seed, height, chunk)) {
                 return Optional.of(chunk);
             }
         }
         return Optional.empty();
+    }
+
+    /** Whether the manor stands at this chunk on dry, fairly flat land: what the search asks of its site. */
+    public static boolean fitsAt(RegistryAccess registries, ChunkGenerator generator, RandomState random, StructureTemplateManager templates,
+                                 long seed, LevelHeightAccessor height, ChunkPos chunk) {
+        Structure manor = registries.registryOrThrow(Registries.STRUCTURE).get(KEY);
+        if (manor == null) {
+            return false;
+        }
+        StructureStart start = manor.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
+                height, biome -> true);
+        return start.isValid() && flatAndDry(start.getPieces().getFirst().getBoundingBox(), generator, random, height);
     }
 
     private static boolean flatAndDry(BoundingBox box, ChunkGenerator generator, RandomState random, LevelHeightAccessor height) {

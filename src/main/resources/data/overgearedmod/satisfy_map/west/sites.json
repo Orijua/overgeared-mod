@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "map": "west",
+  "source": "Sitios fijos de Satisfy (decisión del 2026-11-07: el mundo del canon es igual en todos los mundos nuevos). Elegidos con la búsqueda de antes (StartingVillage.search) sobre el terreno fijo y comprobados con 24 semillas: la estructura cabe (en seco y llana) en las 24, salvo la cueva, que falla 1 de 16 (pendiente algo mayor de 3 bajo el montículo) y no tiene vecino mejor. Coordenadas en chunks; el chunk (0, 0) es el píxel de Bairan.",
+  "sites": [
+    {
+      "id": "bairan",
+      "chunk": [0, 0],
+      "note": "Su píxel del mapa; la búsqueda lo daba en todas las semillas."
+    },
+    {
+      "id": "north_end_cave",
+      "chunk": [-62, -22],
+      "note": "Costa nevada del norte, a 13 chunks del rótulo Arctic Glacier (que cae en el mar); la búsqueda lo daba en 8 de 9 semillas."
+    },
+    {
+      "id": "ashur_manor",
+      "chunk": [5, -12],
+      "note": "A 12 chunks de Bairan (8-16): el único sitio del anillo donde cabe en las 24 semillas y a 8 chunks o más de Winston. La búsqueda daba (-8, -8), que falla en 4 de 16."
+    },
+    {
+      "id": "winston",
+      "chunk": [-12, -6],
+      "note": "A 1 chunk de su sitio del mapa (-13, -6); la búsqueda lo alejaba hasta 4 chunks para apartarse de la mansión en (-8, -8)."
+    }
+  ]
+}
