@@ -6,6 +6,7 @@ import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.feature.insight.InsightRules;
 import com.orijua.overgearedmod.feature.insight.Observation;
 import com.orijua.overgearedmod.feature.npc.ApprenticeActionPayload;
+import com.orijua.overgearedmod.feature.npc.Workshop;
 import com.orijua.overgearedmod.feature.npc.ApprenticeRules;
 import com.orijua.overgearedmod.feature.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.feature.npc.NpcGrade;
@@ -152,7 +153,7 @@ public final class ApprenticeScreen extends Screen {
         Component stage = Component.translatable("npc.overgearedmod.stage." + apprentice.shownStage().key());
         int insight = Observation.effectiveInsight(minecraft.player);
         InsightRules.Detail detail = InsightRules.detail(insight);
-        String level = detail == InsightRules.Detail.LOW ? "??" : String.valueOf(apprentice.shownLevel());
+        String level = ApprenticeUi.levelText(insight, apprentice.shownLevel());
         graphics.drawCenteredString(font, Component.translatable("screen.overgearedmod.apprentice.subtitle", role, stage, level),
                 centerX, top + PADDING + UiStyle.LINE, apprentice.isCraftsman() ? UiStyle.GOLD : UiStyle.MUTED);
         int lineY = top + PADDING + 2 * UiStyle.LINE + 2;
@@ -161,7 +162,7 @@ public final class ApprenticeScreen extends Screen {
         ApprenticeSmith.Status status = apprentice.status();
         int statusColor = ApprenticeUi.statusColor(status);
         row(graphics, 0, "status", apprentice.statusText(), statusColor);
-        if (status == ApprenticeSmith.Status.WORKING && apprentice.shownProgress() > 0) {
+        if (Workshop.showsProgress(status, apprentice.shownProgress())) {
             // The piece on the anvil, filling up under the status.
             UiStyle.bar(graphics, left + PADDING + LABEL_WIDTH, rowY(0) + font.lineHeight, valueWidth(), 1, apprentice.shownProgress() / 100f, UiStyle.GOOD);
         }
@@ -240,8 +241,9 @@ public final class ApprenticeScreen extends Screen {
         return Component.translatable("screen.overgearedmod.apprentice.hidden", insight, needed);
     }
 
-    private String clip(Component text, int maxWidth) {
-        return font.substrByWidth(text, maxWidth).getString();
+    /** Cut with "…", as in the Workshop tab. */
+    private Component clip(Component text, int maxWidth) {
+        return UiStyle.ellipsize(font, text, maxWidth);
     }
 
     /** The assigned container's block and position, or where he looks without one. */

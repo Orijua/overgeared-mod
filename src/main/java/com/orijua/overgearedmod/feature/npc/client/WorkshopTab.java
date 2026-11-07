@@ -4,7 +4,6 @@ import com.orijua.overgearedmod.core.client.ScrollList;
 import com.orijua.overgearedmod.core.client.SatisfyTab;
 import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
-import com.orijua.overgearedmod.feature.insight.InsightRules;
 import com.orijua.overgearedmod.feature.insight.Observation;
 import com.orijua.overgearedmod.feature.npc.ApprenticeRules;
 import com.orijua.overgearedmod.feature.npc.ApprenticeSmith;
@@ -123,12 +122,12 @@ public class WorkshopTab extends SatisfyTab {
 
         scroll.setVisibleRows(visibleRows());
         scroll.clamp(entries.size());
-        boolean showLevel = InsightRules.detail(Observation.effectiveInsight(player())) != InsightRules.Detail.LOW;
+        int insight = Observation.effectiveInsight(player());
         WorkshopEntry tooltipEntry = null;
         for (int i = scroll.first(); i < scroll.end(entries.size()); i++) {
             int y = cardTop(i - scroll.first());
             boolean hover = hovered(mouseX, mouseY, y);
-            renderCard(graphics, entries.get(i), y, hover, showLevel);
+            renderCard(graphics, entries.get(i), y, hover, insight);
             if (hover) {
                 tooltipEntry = entries.get(i);
             }
@@ -139,7 +138,7 @@ public class WorkshopTab extends SatisfyTab {
         }
     }
 
-    private void renderCard(GuiGraphics graphics, WorkshopEntry entry, int y, boolean hover, boolean showLevel) {
+    private void renderCard(GuiGraphics graphics, WorkshopEntry entry, int y, boolean hover, int insight) {
         int cardWidth = cardWidth();
         ApprenticeSmith.Status status = entry.statusValue();
         int statusColor = ApprenticeUi.statusColor(status);
@@ -163,9 +162,8 @@ public class WorkshopTab extends SatisfyTab {
         if (entry.craftsman()) {
             title.append(Component.translatable("entity.overgearedmod.apprentice_smith.craftsman_suffix").withColor(UiStyle.GOLD));
         }
-        if (showLevel) {
-            title.append(Component.translatable("screen.overgearedmod.workshop.level", entry.level()).withColor(UiStyle.MUTED));
-        }
+        title.append(Component.translatable("screen.overgearedmod.workshop.level", ApprenticeUi.levelText(insight, entry.level()))
+                .withColor(UiStyle.MUTED));
         graphics.drawString(font(), UiStyle.ellipsize(font(), title, cardWidth - 26 - statusWidth - 10), textX, y + 3, UiStyle.TEXT);
 
         Component detail = Component.translatable("screen.overgearedmod.workshop.detail",
@@ -173,7 +171,7 @@ public class WorkshopTab extends SatisfyTab {
         graphics.drawString(font(), UiStyle.ellipsize(font(), detail, cardWidth - 26 - 4), textX, y + 14,
                 ApprenticeUi.wageColor(entry.daysPaid(), UiStyle.MUTED));
 
-        if (status == ApprenticeSmith.Status.WORKING) {
+        if (Workshop.showsProgress(status, entry.progress())) {
             // The piece on the anvil, filling up along the bottom of the card.
             UiStyle.bar(graphics, textX, y + 25, cardWidth - 26 - 6, 3, entry.progress() / 100f, UiStyle.GOOD);
         }

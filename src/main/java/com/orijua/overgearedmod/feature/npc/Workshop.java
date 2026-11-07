@@ -72,10 +72,15 @@ public final class Workshop {
         if (status == ApprenticeSmith.Status.NO_MATERIALS && missingName != null) {
             return Component.translatable("message.overgearedmod.apprentice_status.no_materials_item", missingCount, missingName);
         }
-        if (status == ApprenticeSmith.Status.WORKING && progress > 0) {
+        if (showsProgress(status, progress)) {
             return Component.translatable("message.overgearedmod.apprentice_status.working_progress", progress);
         }
         return Component.translatable("message.overgearedmod.apprentice_status." + status.name().toLowerCase());
+    }
+
+    /** Whether the piece's progress is worth showing (as a bar or in the text): he is forging and it has started. */
+    public static boolean showsProgress(ApprenticeSmith.Status status, int progress) {
+        return status == ApprenticeSmith.Status.WORKING && progress > 0;
     }
 
     /** How many of {@code entries} are forging right now. */

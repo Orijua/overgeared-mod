@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.feature.npc.client;
 
 import com.orijua.overgearedmod.core.client.UiStyle;
+import com.orijua.overgearedmod.feature.insight.InsightRules;
 import com.orijua.overgearedmod.feature.npc.ApprenticeSmith;
 
 /**
@@ -18,6 +19,11 @@ final class ApprenticeUi {
             case NO_ORDER -> UiStyle.MUTED;
             default -> UiStyle.BAD;
         };
+    }
+
+    /** His level as the player may know it: "??" until their Insight reveals it (in his window and in the Workshop). */
+    static String levelText(int insight, int level) {
+        return InsightRules.detail(insight) == InsightRules.Detail.LOW ? "??" : String.valueOf(level);
     }
 
     /** Red when no day of wage is left. */

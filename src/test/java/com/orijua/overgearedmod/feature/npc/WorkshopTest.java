@@ -39,6 +39,13 @@ class WorkshopTest {
         assertEquals(0, Workshop.working(List.of()));
     }
 
+    @Test
+    void theBarShowsOnlyOnceAPieceHasStarted() {
+        assertTrue(Workshop.showsProgress(ApprenticeSmith.Status.WORKING, 5));
+        assertFalse(Workshop.showsProgress(ApprenticeSmith.Status.WORKING, 0), "no empty bar");
+        assertFalse(Workshop.showsProgress(ApprenticeSmith.Status.NO_MATERIALS, 40), "old progress of a stopped apprentice stays hidden");
+    }
+
     private static WorkshopEntry entry(ApprenticeSmith.Status status) {
         return new WorkshopEntry(UUID.randomUUID(), "Tom", false, false, 50, status.name(), Optional.empty(), 1, 0, Optional.empty(), 0);
     }

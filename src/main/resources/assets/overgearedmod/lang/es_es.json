@@ -188,7 +188,7 @@
   "message.overgearedmod.workshop_far": "%s está demasiado lejos para abrir su ventana.",
   "screen.overgearedmod.workshop.totals": "%s forjando · %s parados",
   "screen.overgearedmod.workshop.tip.order": "Encargo: %s",
-  "screen.overgearedmod.workshop.tip.wage": "Jornales pagados: %s",
+  "screen.overgearedmod.workshop.tip.wage": "Días pagados: %s",
   "screen.overgearedmod.workshop.tip.missing": "Le falta: %s × %s",
   "screen.overgearedmod.workshop.tip.open": "Clic para abrir su ventana",
   "item.overgearedmod.workshop_ledger": "Libro del taller",
