@@ -28,13 +28,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.IntConsumer;
 import java.util.function.Predicate;
 
 /**
  * The Northern End Cave, where Grid finds Pagma's rare book (canon, caps. 1-3: after a three-month journey, a cave at the
  * north end filled with mountains of battle gear the system won't let him take, and the book on a golden table). One
- * per world, far to the north of Bairan, in a cold biome when there is one within reach. The place and what is in it
- * are canon; the layout and the trap on the way down are our own design.
+ * per world, far to the north of Bairan, in a cold biome when there is one within reach. The cave is not on the canon
+ * map: we put it on the snowy north coast of the West Continent, near the Arctic Glacier. The place and what is in it
+ * are canon; the layout, where exactly it is and the trap on the way down are our own design.
  * <p>
  * Four pieces joined by jigsaws, each one deeper: an icy mound with the cave mouth, a long descent with a powder snow
  * trap and a stray spawner, the hall of gear (piles and armor stands, all protected: {@link NorthEndCaveProtection}),
@@ -52,14 +54,23 @@ public final class NorthEndCave {
     /** Entity tag of the gear in the hall: the system won't let anyone take it. */
     public static final String RELIC_TAG = Overgearedmod.MODID + ".relic";
 
-    /** How far north of Bairan to look, in chunks: about 800 blocks, never under 480. */
-    static final int DISTANCE = 50;
-    public static final int MIN_DISTANCE = 30;
+    /**
+     * Where to look: the Arctic Glacier label on the canon map ({@code canon/Localizaciones.md}), in source pixels. That
+     * pixel is in the sea (35 chunks north of Bairan): the search heads for the nearest snowy coast from it.
+     */
+    public static final int MAP_PIXEL_X = 1382;
+    public static final int MAP_PIXEL_Z = 178;
+    /** Never less than this, in chunks, north of Bairan (the label is 35 chunks north, in the sea; the snowy coast is nearer). */
+    public static final int MIN_DISTANCE = 16;
     /** Around that point, how far to look for cold land: closely (every other chunk), then farther and sparser. */
     static final int SEARCH_RADIUS = 40;
     static final int FAR_SEARCH_RADIUS = 128;
     /** How many blocks of difference the ground under the mound may have. */
     private static final int MAX_SLOPE = 3;
+    /** The most jigsaw assemblies ({@code fits}) the first search may make before giving up on cold land. */
+    public static final int MAX_ASSEMBLIES = 200;
+    /** On the map, land with this relief or more is mountain: the mound almost never fits on it (MAX_SLOPE). */
+    static final double MAX_MAP_RELIEF = 8;
     /** The cold biomes the cave prefers (the structure itself may generate anywhere: the search decides). */
     static final TagKey<Biome> COLD = TagKey.create(Registries.BIOME, Overgearedmod.id("has_structure/north_end_cave"));
 
@@ -195,35 +206,67 @@ public final class NorthEndCave {
         return piece.jigsaw(6, 1, 12, "south_up", IN, OUT, NO_POOL, "minecraft:polished_deepslate");
     }
 
+    /** Where the cave is looked for on the map, as chunks from Bairan (Bairan's chunk is the map's origin). */
+    public static ChunkPos mapOffset(SatisfyMapData map) {
+        return SatisfyPlaces.chunkOffset(map, MAP_PIXEL_X, MAP_PIXEL_Z);
+    }
+
     /**
-     * The site for this world's cave: the cold land nearest a point {@link #DISTANCE} chunks north of Bairan where the
-     * mound stands on dry, fairly flat ground, looking up to about 2000 blocks around it (never less than
-     * {@link #MIN_DISTANCE} north of Bairan). With no cold land within reach, the first dry ground around that point;
-     * failing that, the point itself. Empty only if this world's generator doesn't have the cave.
+     * The site for this world's cave: the cold land of the map nearest the Arctic Glacier ({@link #mapOffset}, taken
+     * from Bairan) where the mound stands on dry, fairly flat ground, looking up to about 2000 blocks around it (never
+     * less than {@link #MIN_DISTANCE} north of Bairan). With no cold land within reach, the first dry ground around that
+     * point. Empty if this world's generator doesn't have the cave or there is no reachable dry land (the point itself
+     * is sea: it is never returned as a last resort).
      */
     public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
                                               StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan) {
+        return findSite(registries, generator, random, templates, seed, height, bairan, count -> {
+        });
+    }
+
+    /** As {@link #findSite} and reports how many assemblies ({@code fits}) the search made. */
+    public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                              StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan,
+                                              IntConsumer assemblies) {
         Structure cave = registries.registryOrThrow(Registries.STRUCTURE).get(KEY);
         if (cave == null) {
             return Optional.empty();
         }
         Predicate<Holder<Biome>> cold = registries.registryOrThrow(Registries.BIOME).getTag(COLD)
                 .<Predicate<Holder<Biome>>>map(set -> set::contains).orElse(biome -> false);
-        ChunkPos target = new ChunkPos(bairan.x, bairan.z - DISTANCE);
+        ChunkPos offset = mapOffset(SatisfyMapData.west());
+        ChunkPos target = new ChunkPos(bairan.x + offset.x, bairan.z + offset.z);
+        int made = 0;
         for (ChunkPos chunk : ChunkSpiral.around(target, FAR_SEARCH_RADIUS)) {
+            if (made >= MAX_ASSEMBLIES) {
+                break;
+            }
             int step = target.getChessboardDistance(chunk) <= SEARCH_RADIUS ? 2 : 4;
             if (Math.floorMod(chunk.x, step) == 0 && Math.floorMod(chunk.z, step) == 0 && bairan.z - chunk.z >= MIN_DISTANCE
-                    && cold.test(seaLevelBiome(generator, random, chunk))
-                    && fits(cave, registries, generator, random, templates, seed, height, chunk, cold)) {
-                return Optional.of(chunk);
+                    && SatisfyBiomeSource.onMapLand(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ())
+                    && SatisfyBiomeSource.reliefBelow(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ(), MAX_MAP_RELIEF)
+                    && cold.test(seaLevelBiome(generator, random, chunk))) {
+                made++;
+                if (fits(cave, registries, generator, random, templates, seed, height, chunk, cold)) {
+                    Overgearedmod.LOGGER.debug("North end cave: {} assemblies, site {}", made, chunk);
+                    assemblies.accept(made);
+                    return Optional.of(chunk);
+                }
             }
         }
         for (ChunkPos chunk : ChunkSpiral.around(target, 8)) {
-            if (fits(cave, registries, generator, random, templates, seed, height, chunk, biome -> true)) {
-                return Optional.of(chunk);
+            if (SatisfyBiomeSource.onMapLand(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ())) {
+                made++;
+                if (fits(cave, registries, generator, random, templates, seed, height, chunk, biome -> true)) {
+                    Overgearedmod.LOGGER.debug("North end cave: {} assemblies, dry-land site {}", made, chunk);
+                    assemblies.accept(made);
+                    return Optional.of(chunk);
+                }
             }
         }
-        return Optional.of(target);
+        assemblies.accept(made);
+        Overgearedmod.LOGGER.warn("North end cave: no site found around {} after {} assemblies; this world has no cave", target, made);
+        return Optional.empty();
     }
 
     /** A cheap first look: the biome in the middle of the chunk at sea level (temperature doesn't change with height). */
@@ -246,11 +289,10 @@ public final class NorthEndCave {
         int highest = Integer.MIN_VALUE;
         for (BlockPos corner : List.of(new BlockPos(mound.minX(), 0, mound.minZ()), new BlockPos(mound.maxX(), 0, mound.minZ()),
                 new BlockPos(mound.minX(), 0, mound.maxZ()), new BlockPos(mound.maxX(), 0, mound.maxZ()), mound.getCenter())) {
-            int surface = generator.getBaseHeight(corner.getX(), corner.getZ(), Heightmap.Types.WORLD_SURFACE_WG, height, random);
-            int ground = generator.getBaseHeight(corner.getX(), corner.getZ(), Heightmap.Types.OCEAN_FLOOR_WG, height, random);
-            if (surface != ground) {
+            if (!SiteTerrain.dryAt(generator, random, height, corner.getX(), corner.getZ())) {
                 return false; // water
             }
+            int surface = generator.getBaseHeight(corner.getX(), corner.getZ(), Heightmap.Types.WORLD_SURFACE_WG, height, random);
             lowest = Math.min(lowest, surface);
             highest = Math.max(highest, surface);
         }

@@ -1,0 +1,520 @@
+{
+  "version": 1,
+  "map": "west",
+  "source": "overgeared-docs canon/Localizaciones.md (C1), con posiciones en píxeles del mapa del canon (4096x3072); block = (px - origen) * blocks_per_pixel, origen en meta.json (Bairan).",
+  "certainty": {
+    "alta": "en el texto, con capítulo",
+    "media": "en Estructuras_canon con certeza media",
+    "mapa": "solo en el mapa (capa base, no oficial)"
+  },
+  "omitted": "Lugares con lectura dudosa o ilegible, la capa de colores de fans (zonas rojas, templos, fortalezas, torres) salvo las Ruinas del Dios Marcial, y rótulos que caen lejos de tierra (Arctic Glacier, Seiren).",
+  "places": [
+    {
+      "id": "bairan",
+      "name": "Bairan",
+      "type": "village",
+      "px": [
+        1772,
+        458
+      ],
+      "certainty": "alta",
+      "land": true,
+      "note": "Icono de casas junto a Winston (origen del mapa, bloque 0,0); el (1778, 434) de Localizaciones.md era la etiqueta. Caps. 10 y 22."
+    },
+    {
+      "id": "winston",
+      "name": "Winston",
+      "type": "city",
+      "px": [
+        1669,
+        410
+      ],
+      "certainty": "alta",
+      "land": true,
+      "note": "Ciudad del Reino Eterno; herrería de Khan, caps. 36-40."
+    },
+    {
+      "id": "reidan",
+      "name": "Reidan",
+      "type": "city",
+      "px": [
+        1260,
+        703
+      ],
+      "certainty": "media",
+      "land": true,
+      "note": "Segunda ciudad del Reino Eterno (Estructuras_canon)."
+    },
+    {
+      "id": "patrian",
+      "name": "Patrian",
+      "type": "city",
+      "px": [
+        1321,
+        496
+      ],
+      "certainty": "media",
+      "land": true,
+      "note": "Grafía: Estructuras_canon escribe «Patrian»; el mapa parece decir «Partrian» (lectura dudosa). Se usa «Patrian»."
+    },
+    {
+      "id": "frontier",
+      "name": "Frontier",
+      "type": "city",
+      "px": [
+        1243,
+        311
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "reinhart",
+      "name": "Reinhart",
+      "type": "city",
+      "px": [
+        1536,
+        481
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "moroiz",
+      "name": "Moroiz",
+      "type": "city",
+      "px": [
+        590,
+        537
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "kesan_canyon",
+      "name": "Cañón de Kesan",
+      "type": "canyon",
+      "px": [
+        1864,
+        547
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Kesan Canyon» en el mapa."
+    },
+    {
+      "id": "yellow_mithril_mine",
+      "name": "Mina de mithril amarillo",
+      "type": "mine",
+      "px": [
+        1434,
+        788
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Yellow mithril mine» en el mapa."
+    },
+    {
+      "id": "lilton_desert",
+      "name": "Desierto de Lilton",
+      "type": "desert",
+      "px": [
+        911,
+        754
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Lilton Desert» en el mapa."
+    },
+    {
+      "id": "eternal_mountains",
+      "name": "Montañas Eternas",
+      "type": "mountains",
+      "px": [
+        1044,
+        819
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Eternal Mountains» en el mapa."
+    },
+    {
+      "id": "elf_forest",
+      "name": "Bosque Elfo",
+      "type": "forest",
+      "px": [
+        625,
+        881
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Elf Forest» en el mapa."
+    },
+    {
+      "id": "mysterious_forest",
+      "name": "Bosque Misterioso",
+      "type": "forest",
+      "px": [
+        1413,
+        952
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Mysterious Forest» en el mapa."
+    },
+    {
+      "id": "crime_forest",
+      "name": "Bosque del Crimen",
+      "type": "forest",
+      "px": [
+        1393,
+        1055
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Crime Forest» en el mapa."
+    },
+    {
+      "id": "cogro_island",
+      "name": "Isla de Cogro",
+      "type": "island",
+      "px": [
+        1567,
+        891
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "Grafía: el mapa dice «Cogro Island» (lectura dudosa); Estructuras_canon (cap. 1) dice «isla de Cokro». Probable variante de traducción; se usa «Cogro»."
+    },
+    {
+      "id": "rebeca",
+      "name": "Rebeca",
+      "type": "city",
+      "px": [
+        1208,
+        1106
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "Ciudad fortificada junto al Canal Saharan en el mapa. Estructuras_canon solo sitúa el Gran Templo de Rebecca en Titan; sin confirmar."
+    },
+    {
+      "id": "zievra",
+      "name": "Zievra",
+      "type": "city",
+      "px": [
+        932,
+        1225
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "dewars",
+      "name": "Dewars",
+      "type": "city",
+      "px": [
+        1112,
+        1419
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "dominion",
+      "name": "Dominion",
+      "type": "city",
+      "px": [
+        1429,
+        1612
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "titan",
+      "name": "Titan",
+      "type": "city",
+      "px": [
+        1690,
+        1614
+      ],
+      "certainty": "media",
+      "land": true,
+      "note": "Capital del Imperio Sahariano, con el mayor templo de Rebecca (Estructuras_canon)."
+    },
+    {
+      "id": "saharan_empire",
+      "name": "Imperio Sahariano",
+      "type": "region",
+      "px": [
+        1802,
+        1868
+      ],
+      "certainty": "media",
+      "land": true,
+      "note": "Grafía: el mapa pone «Saharan Empire», Localizaciones.md «Imperio Saharan»; se usa «Imperio Sahariano». Es el rótulo de la región."
+    },
+    {
+      "id": "basara",
+      "name": "Basara",
+      "type": "city",
+      "px": [
+        1853,
+        1317
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "vaintz",
+      "name": "Vaintz",
+      "type": "city",
+      "px": [
+        655,
+        1675
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "grenhal",
+      "name": "Grenhal",
+      "type": "city",
+      "px": [
+        958,
+        2187
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "limit",
+      "name": "Limit",
+      "type": "city",
+      "px": [
+        1659,
+        2314
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "judar",
+      "name": "Judar",
+      "type": "city",
+      "px": [
+        2212,
+        2283
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "fullbaz",
+      "name": "Fullbaz",
+      "type": "city",
+      "px": [
+        2324,
+        1894
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "galest",
+      "name": "Galest",
+      "type": "port",
+      "px": [
+        2929,
+        1997
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "greenich",
+      "name": "Greenich",
+      "type": "port",
+      "px": [
+        1059,
+        2621
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "media",
+      "name": "Media",
+      "type": "town",
+      "px": [
+        2728,
+        2570
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "kirim_peninsula",
+      "name": "Península de Kirim",
+      "type": "peninsula",
+      "px": [
+        205,
+        1706
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Kirim Peninsula» en el mapa."
+    },
+    {
+      "id": "lubana_peninsula",
+      "name": "Península de Lubana",
+      "type": "peninsula",
+      "px": [
+        3082,
+        2136
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Lubana Peninsula» en el mapa."
+    },
+    {
+      "id": "travian_sierra",
+      "name": "Sierra Travian",
+      "type": "mountains",
+      "px": [
+        2396,
+        1311
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Travian Sierra» en el mapa."
+    },
+    {
+      "id": "talima",
+      "name": "Talima",
+      "type": "city",
+      "px": [
+        2028,
+        686
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "regal",
+      "name": "Regal",
+      "type": "city",
+      "px": [
+        2392,
+        983
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "rachel",
+      "name": "Rachel",
+      "type": "city",
+      "px": [
+        2597,
+        1151
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "arc",
+      "name": "Arc",
+      "type": "city",
+      "px": [
+        3027,
+        682
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "haken",
+      "name": "Haken",
+      "type": "city",
+      "px": [
+        2933,
+        901
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "eileen",
+      "name": "Eileen",
+      "type": "city",
+      "px": [
+        2933,
+        1526
+      ],
+      "certainty": "mapa",
+      "land": true
+    },
+    {
+      "id": "valhalla",
+      "name": "Valhalla",
+      "type": "city",
+      "px": [
+        3113,
+        1294
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "Ciudad del Reino de Valhalla en el mapa."
+    },
+    {
+      "id": "behen_archipelago",
+      "name": "Archipiélago de Behen",
+      "type": "archipelago",
+      "px": [
+        3336,
+        2792
+      ],
+      "certainty": "alta",
+      "land": true,
+      "note": "Mazmorra de 66 islas, caps. 1029 y 1327. El rótulo (3359, 2707) cae en el mar; se usa la isla más cercana, al sur del rótulo."
+    },
+    {
+      "id": "war_god_ruins",
+      "name": "Ruinas del Dios Marcial",
+      "type": "ruins",
+      "px": [
+        3778,
+        2109
+      ],
+      "certainty": "media",
+      "land": true,
+      "note": "«Ruins of the War God» (capa morada, de fans); en el mapa es una isla al este. Estructuras_canon: a los seis años del lanzamiento."
+    },
+    {
+      "id": "hall_of_fame",
+      "name": "Salón de la Fama",
+      "type": "island",
+      "px": [
+        3963,
+        2601
+      ],
+      "certainty": "mapa",
+      "land": true,
+      "note": "«Hall of Fame»: isla pequeña con portal."
+    },
+    {
+      "id": "red_sea",
+      "name": "Mar Rojo",
+      "type": "sea",
+      "px": [
+        3666,
+        1444
+      ],
+      "certainty": "mapa",
+      "land": false,
+      "note": "«Red Sea»: mar abierto, sin tierra; /satisfy debug goto lo rechaza."
+    }
+  ]
+}

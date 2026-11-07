@@ -35,6 +35,11 @@ import java.util.UUID;
 final class TestSupport {
     /** data/overgearedmod/structure/empty.nbt: a 3x3x3 air box. */
     static final String EMPTY = "empty";
+    /**
+     * How far, in chunks, the searches for Bairan and Winston look on the vanilla overworld, whose terrain doesn't follow
+     * the canon map (seas and rivers anywhere): the radius they had before the Satisfy terrain followed the map.
+     */
+    static final int VANILLA_TERRAIN_SEARCH_RADIUS = 32;
 
     private TestSupport() {
     }

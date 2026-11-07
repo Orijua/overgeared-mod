@@ -13,11 +13,9 @@ import net.minecraft.world.level.LevelHeightAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.PoolElementStructurePiece;
 import net.minecraft.world.level.levelgen.structure.Structure;
-import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -34,7 +32,8 @@ import java.util.Optional;
  * its central square. The city, Khan, his smithy, the Mero Company and the square are canon; the layout and how they
  * look are our own design. The whole city (castle, walls) comes in phase 10.
  * <p>
- * One per world, {@link #MIN_DISTANCE}-{@link #MAX_DISTANCE} chunks from Bairan, chosen with it. The central square with
+ * One per world, chosen with Bairan: as near as it fits to its place on the canon map (the {@code winston} place of
+ * {@code places.json}: about 200 blocks west-northwest of Bairan, its neighbour on the map). The central square with
  * a fountain and the contest stage, and around it, joined by jigsaws: Khan's ruined smithy (north), the Mero Company's
  * office (east) and houses (south and west).
  */
@@ -53,11 +52,13 @@ public final class Winston {
     public static final BlockPos RIVAL_SPOT = new BlockPos(10, 2, 12);
     public static final BlockPos PLAYER_ANVIL = new BlockPos(6, 2, 13);
 
-    /** How far from Bairan, in chunks (the nearest that fits wins); farther in worlds that existed before Winston. */
-    public static final int MIN_DISTANCE = 30;
-    public static final int MAX_DISTANCE = 50;
-    /** Never this close, in chunks, to another one-per-world place (the cave can lie in the same ring). */
-    private static final int KEEP_AWAY = 8;
+    /**
+     * How far from its place on the map to look, in chunks (the nearest that fits wins). The terrain follows the map, so
+     * its place is dry land; the room is for keeping away from Bairan, the cave and the manor.
+     */
+    public static final int SEARCH_RADIUS = 8;
+    /** Never this close, in chunks, to Bairan or another one-per-world place. */
+    public static final int KEEP_AWAY = 8;
 
     private static final String SQUARE_JOINT = Overgearedmod.MODID + ":winston_square";
     /** Every building joins the square through a jigsaw with this name, in the middle of its front. */
@@ -313,38 +314,49 @@ public final class Winston {
         return front(piece, 3, 7);
     }
 
+    /** Where Winston is on the map, as chunks from Bairan (Bairan's chunk is the map's origin). */
+    public static ChunkPos mapOffset(SatisfyMapData map) {
+        return SatisfyPlaces.chunkOffset(map, SatisfyPlaces.west().get("winston").orElseThrow());
+    }
+
     /**
-     * The site for this world's Winston: the nearest chunk {@code minDistance}-{@code maxDistance} chunks from Bairan
-     * where the district assembles (its biome check included) with every piece on dry land, at least
-     * {@link #KEEP_AWAY} chunks from the places in {@code avoid}. Empty if the generator doesn't have it or nothing fits.
+     * The site for this world's Winston: the chunk nearest its place on the West Continent's map (taken from Bairan)
+     * where the district assembles (its biome check included) on the map's land with every piece on dry land, within
+     * {@link #SEARCH_RADIUS} chunks of that place and at least {@link #KEEP_AWAY} chunks from Bairan and the places in
+     * {@code avoid}. Empty if the generator doesn't have it or nothing fits.
      */
     public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
                                               StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan,
-                                              int minDistance, int maxDistance, List<ChunkPos> avoid) {
+                                              List<ChunkPos> avoid) {
+        return findSite(registries, generator, random, templates, seed, height, bairan, avoid, SEARCH_RADIUS);
+    }
+
+    /**
+     * The same search up to {@code radius} chunks from Winston's place: wider on terrain that doesn't follow the map,
+     * such as the vanilla overworld of the tests.
+     */
+    public static Optional<ChunkPos> findSite(RegistryAccess registries, ChunkGenerator generator, RandomState random,
+                                              StructureTemplateManager templates, long seed, LevelHeightAccessor height, ChunkPos bairan,
+                                              List<ChunkPos> avoid, int radius) {
         Structure winston = registries.registryOrThrow(Registries.STRUCTURE).get(KEY);
         if (winston == null) {
             return Optional.empty();
         }
-        for (ChunkPos chunk : ChunkSpiral.around(bairan, maxDistance)) {
-            if (bairan.getChessboardDistance(chunk) < minDistance
-                    || avoid.stream().anyMatch(other -> other.getChessboardDistance(chunk) < KEEP_AWAY)) {
+        ChunkPos offset = mapOffset(SatisfyMapData.west());
+        ChunkPos target = new ChunkPos(bairan.x + offset.x, bairan.z + offset.z);
+        for (ChunkPos chunk : ChunkSpiral.around(target, radius)) {
+            if (bairan.getChessboardDistance(chunk) < KEEP_AWAY
+                    || avoid.stream().anyMatch(other -> other.getChessboardDistance(chunk) < KEEP_AWAY)
+                    || !SatisfyBiomeSource.onMapLand(generator.getBiomeSource(), chunk.getMiddleBlockX(), chunk.getMiddleBlockZ())) {
                 continue;
             }
             StructureStart start = winston.generate(registries, generator, generator.getBiomeSource(), random, templates, seed, chunk, 0,
                     height, winston.biomes()::contains);
-            if (start.isValid() && start.getPieces().stream().allMatch(piece -> onDryLand(piece, generator, random, height))) {
+            if (start.isValid() && start.getPieces().stream().allMatch(piece -> SiteTerrain.onDryLand(piece, generator, random, height))) {
                 return Optional.of(chunk);
             }
         }
         return Optional.empty();
-    }
-
-    /** Whether the ground under the middle of a piece is land, not the bottom of a lake, river or sea. */
-    private static boolean onDryLand(StructurePiece piece, ChunkGenerator generator, RandomState random, LevelHeightAccessor height) {
-        BlockPos middle = piece.getBoundingBox().getCenter();
-        int surface = generator.getBaseHeight(middle.getX(), middle.getZ(), Heightmap.Types.WORLD_SURFACE_WG, height, random);
-        int ground = generator.getBaseHeight(middle.getX(), middle.getZ(), Heightmap.Types.OCEAN_FLOOR_WG, height, random);
-        return surface == ground;
     }
 
     private static String pool(String name) {

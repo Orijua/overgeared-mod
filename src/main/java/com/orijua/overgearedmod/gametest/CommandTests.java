@@ -12,10 +12,14 @@ import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyMapData;
+import com.orijua.overgearedmod.feature.world.SatisfyPlaces;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +28,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import com.mojang.brigadier.suggestion.Suggestion;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -126,12 +131,15 @@ public final class CommandTests {
         long seed = level.getSeed();
         Optional<ChunkPos> bairan = WorldSites.siteFor(seed, WorldSites.BAIRAN);
         Optional<ChunkPos> cave = WorldSites.siteFor(seed, WorldSites.NORTH_END_CAVE);
-        WorldSites.forget(seed, WorldSites.NORTH_END_CAVE);
         Optional<BlockPos> landingBefore = WorldSites.landingFor(seed);
-        Satisfy.standIn(level); // the test server has no Satisfy dimension
-        WorldSites.remember(seed, WorldSites.BAIRAN, new ChunkPos(level.getSharedSpawnPos()));
-        WorldSites.rememberLanding(seed, level.getSharedSpawnPos());
         try {
+            WorldSites.forget(seed, WorldSites.NORTH_END_CAVE);
+            Satisfy.standIn(level); // the test server has no Satisfy dimension
+            WorldSites.remember(seed, WorldSites.BAIRAN, new ChunkPos(level.getSharedSpawnPos()));
+            WorldSites.rememberLanding(seed, level.getSharedSpawnPos());
+            helper.assertTrue(SiteLanding.locate(level, WorldSites.NORTH_END_CAVE).reason() == SiteLanding.Reason.NO_SITE, "no cave: NO_SITE, not sea");
+            helper.assertTrue(SiteLanding.locate(level, "red_sea").reason() == SiteLanding.Reason.SEA, "a sea place: SEA");
+            helper.assertTrue(SiteLanding.locate(level, "nowhere").reason() == SiteLanding.Reason.UNKNOWN, "an unknown name: UNKNOWN");
             helper.assertTrue(SiteLanding.find(level, WorldSites.NORTH_END_CAVE).isEmpty(), "no cave in this world: nowhere to go");
             helper.assertTrue(SiteLanding.find(level, "nowhere").isEmpty(), "an unknown place");
 
@@ -144,11 +152,90 @@ public final class CommandTests {
 
             // A fake player ignores the teleport packet, so only the command's success is checked here.
             helper.assertTrue(execute(helper, player, "satisfy debug goto bairan") == 1, "the command goes there");
+
+            // Bairan with no site and no landing in this world: "no such place", never "in the sea".
+            WorldSites.forget(seed, WorldSites.BAIRAN);
+            WorldSites.forgetLanding(seed);
+            helper.assertTrue("message.overgearedmod.debug_goto_none".equals(refusal(helper, player, "satisfy debug goto bairan")),
+                    "Bairan without a site is refused as 'none'");
+            helper.assertTrue("message.overgearedmod.debug_goto_none".equals(refusal(helper, player, "satisfy debug goto north_end_cave")),
+                    "the cave without a site is refused as 'none'");
         } finally {
             bairan.ifPresentOrElse(chunk -> WorldSites.remember(seed, WorldSites.BAIRAN, chunk), () -> WorldSites.forget(seed, WorldSites.BAIRAN));
             cave.ifPresent(chunk -> WorldSites.remember(seed, WorldSites.NORTH_END_CAVE, chunk));
             Satisfy.standIn(null);
             landingBefore.ifPresentOrElse(pos -> WorldSites.rememberLanding(seed, pos), () -> WorldSites.forgetLanding(seed));
+        }
+        helper.succeed();
+    }
+
+    /** The key of the message a command fails with, or {@code null} if it does not fail. */
+    private static String refusal(GameTestHelper helper, ServerPlayer player, String command) {
+        try {
+            helper.getLevel().getServer().getCommands().getDispatcher().execute(command, player.createCommandSourceStack().withPermission(4));
+            return null;
+        } catch (CommandSyntaxException e) {
+            return e.getRawMessage() instanceof Component component && component.getContents() instanceof TranslatableContents contents
+                    ? contents.getKey() : e.getMessage();
+        }
+    }
+
+    /** The map's canon places (C4): goto lands on dry ground near them, refuses the sea and unknown names, and completes them. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void gotoReachesTheMapPlacesOrRefusesTheSea(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ServerLevel level = helper.getLevel();
+        Satisfy.standIn(level); // the test server has no Satisfy dimension: its flat overworld plays it
+        try {
+            helper.assertTrue(SiteLanding.sites().containsAll(List.of(WorldSites.BAIRAN, WorldSites.NORTH_END_CAVE, WorldSites.ASHUR_MANOR,
+                    WorldSites.WINSTON, "reidan", "titan", "behen_archipelago")), "structures and map places: " + SiteLanding.sites());
+            helper.assertTrue(SiteLanding.sites().size() == SiteLanding.sites().stream().distinct().count(), "each name once");
+
+            SatisfyMapData map = SatisfyMapData.west();
+            SatisfyPlaces.Place reidan = SatisfyPlaces.west().get("reidan").orElseThrow();
+            BlockPos landing = SiteLanding.findPlace(level, "reidan").orElseThrow(() -> new AssertionError("Reidan has a landing"));
+            int[] expected = SatisfyPlaces.landing(map, reidan).orElseThrow();
+            helper.assertTrue(Math.abs(landing.getX() - expected[0]) <= SiteLanding.DRY_SEARCH && Math.abs(landing.getZ() - expected[1]) <= SiteLanding.DRY_SEARCH,
+                    "Reidan: near its cell on the map, " + landing);
+            helper.assertTrue(map.isLandCell(map.colAtBlock(landing.getX()), map.rowAtBlock(landing.getZ())), "on a land cell of the map");
+            helper.assertTrue(level.getBlockState(landing).getCollisionShape(level, landing).isEmpty()
+                    && level.getBlockState(landing.above()).getCollisionShape(level, landing.above()).isEmpty(), "room to stand");
+            helper.assertFalse(level.getBlockState(landing.below()).isAir(), "on the ground");
+            helper.assertTrue(level.getFluidState(landing.below()).isEmpty(), "not on water");
+
+            // Every land place of the map that is not also a structure of the world (those have their own rules).
+            long started = System.nanoTime();
+            int visited = 0;
+            for (SatisfyPlaces.Place place : SatisfyPlaces.west().all()) {
+                if (!place.land() || SiteLanding.STRUCTURE_SITES.contains(place.id())) {
+                    continue;
+                }
+                helper.assertTrue(SiteLanding.locate(level, place.id()).reason() != SiteLanding.Reason.UNKNOWN, place.id() + " is known");
+                SiteLanding.Landing there = SiteLanding.locate(level, place.id());
+                helper.assertTrue(there.reason() == SiteLanding.Reason.OK || there.reason() == SiteLanding.Reason.SEA, place.id() + ": " + there);
+                if (there.reason() == SiteLanding.Reason.OK) {
+                    BlockPos spot = there.pos().get();
+                    helper.assertTrue(level.getFluidState(spot.below()).isEmpty(), place.id() + " lands on dry ground: " + spot);
+                    visited++;
+                }
+            }
+            Overgearedmod.LOGGER.info("goto: {} map places landed in {} ms", visited, (System.nanoTime() - started) / 1_000_000);
+            helper.assertTrue(visited >= 10, "most land places have a landing: " + visited);
+
+            helper.assertTrue(execute(helper, player, "satisfy debug goto reidan") == 1, "goto reidan");
+            helper.assertTrue(execute(helper, player, "satisfy debug goto behen_archipelago") == 1, "goto an island of Behen");
+            helper.assertTrue("message.overgearedmod.debug_goto_sea".equals(refusal(helper, player, "satisfy debug goto red_sea")),
+                    "the Red Sea is refused as sea");
+            helper.assertTrue("message.overgearedmod.debug_goto_unknown".equals(refusal(helper, player, "satisfy debug goto atlantis")),
+                    "an unknown name is refused");
+
+            List<String> suggested = level.getServer().getCommands().getDispatcher()
+                    .getCompletionSuggestions(level.getServer().getCommands().getDispatcher()
+                            .parse("satisfy debug goto ti", player.createCommandSourceStack().withPermission(4)))
+                    .join().getList().stream().map(Suggestion::getText).toList();
+            helper.assertTrue(suggested.contains("titan"), "titan is suggested: " + suggested);
+        } finally {
+            Satisfy.standIn(null);
         }
         helper.succeed();
     }

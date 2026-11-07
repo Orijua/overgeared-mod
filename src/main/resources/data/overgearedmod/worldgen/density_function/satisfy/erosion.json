@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:flat_cache",
+  "argument": {
+    "type": "overgearedmod:satisfy_terrain",
+    "channel": "erosion",
+    "map": "overgearedmod:west",
+    "noise": "minecraft:overworld/erosion"
+  }
+}

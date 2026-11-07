@@ -1,0 +1,25 @@
+{
+  "_comment": "Ajustes manuales sobre la clasificacion por color. Coordenadas en pixeles del PNG original (4096x3072). Ver README.md.",
+  "origin_px": [1772, 458],
+  "ignore_rects": [
+    {"name": "titulo", "box": [3100, 60, 4096, 420]},
+    {"name": "brujula", "box": [120, 2640, 440, 3000]},
+    {"name": "grieta entre dos mundos (llama)", "box": [3500, 960, 3780, 1200]},
+    {"name": "barco este 1", "box": [3250, 1430, 3400, 1560]},
+    {"name": "barco este 2", "box": [3540, 1620, 3660, 1720]},
+    {"name": "barco este 3", "box": [3620, 2160, 3700, 2260]},
+    {"name": "barco este 4", "box": [3220, 2160, 3320, 2220]},
+    {"name": "barco sur 1", "box": [2040, 2680, 2160, 2820]},
+    {"name": "barco sur 2", "box": [1100, 2660, 1200, 2760]},
+    {"name": "remolino de Seiren", "box": [1280, 2790, 1390, 2860]}
+  ],
+  "forests": [
+    {"name": "Elf Forest", "kind": "green_in_ellipse", "center": [560, 960], "radii": [340, 300]},
+    {"name": "Mysterious Forest", "kind": "ellipse", "center": [1370, 950], "radii": [110, 70]},
+    {"name": "Crime Forest", "kind": "ellipse", "center": [1330, 1070], "radii": [110, 70]}
+  ],
+  "volcano": {"name": "Veldon", "kind": "ellipse", "center": [255, 890], "radii": [245, 225]},
+  "protected": [
+    {"name": "Bairan", "center": [1772, 458], "radius_px": 90, "region": "plains", "max_relief": 5}
+  ]
+}
