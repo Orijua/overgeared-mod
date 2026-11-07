@@ -71,7 +71,7 @@ public record SatisfyTerrain(List<String> rows, int cell, int originCol, int ori
 
     /**
      * The climate parameter a density function feeds the vanilla terrain splines, as a function of the relief, plus a
-     * small share of vanilla's own noise for that parameter so coasts and ranges are not smooth. Tuned on the vanilla
+     * small share of a noise with a fixed seed ({@link SatisfyNoise}, vanilla's noise for that parameter) so coasts and ranges are not smooth. Tuned on the vanilla
      * 1.21.1 splines (sea level 63): relief {@code 0} is a deep sea (floor ~35), {@code 1-2} a shallower sea (~37-48),
      * the shore falls at {@code 2.5} (the border of a coast cell), {@code 3} is a low coast (~67), {@code 4-5} lowland
      * (~69-70, high enough that the 3D noise seldom leaves puddles under the sea level), {@code 6-7} hills (~80-90) and
@@ -130,12 +130,12 @@ public record SatisfyTerrain(List<String> rows, int cell, int originCol, int ori
             return piecewise(relief, base);
         }
 
-        /** How much of the vanilla noise is added at a relief (the noise is clamped to [-1, 1]). */
+        /** How much of the detail noise is added at a relief (the noise is clamped to [-1, 1]). */
         public double noiseWeight(double relief) {
             return piecewise(relief, noise);
         }
 
-        /** The channel's value for a relief, with a sample of the vanilla noise for it. */
+        /** The channel's value for a relief, with a sample of the detail noise ({@link SatisfyNoise}) for it. */
         public double of(double relief, double noiseSample) {
             return of(relief) + noiseWeight(relief) * Math.max(-1.0, Math.min(1.0, noiseSample));
         }
