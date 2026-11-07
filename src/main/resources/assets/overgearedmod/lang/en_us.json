@@ -13,6 +13,7 @@
   "screen.overgearedmod.capsule.connecting": "Connecting%s",
   "message.overgearedmod.capsule.connected": "Connected to Satisfy",
   "message.overgearedmod.capsule.disconnected": "Disconnected from Satisfy",
+  "message.overgearedmod.capsule.starter": "You took out a loan to buy this capsule. The debt will follow you wherever you go.",
   "message.overgearedmod.capsule.cancelled": "Connection cancelled",
   "message.overgearedmod.capsule.nowhere": "The capsule cannot find where to connect you (this world has no Satisfy ready)",
   "message.overgearedmod.capsule.only_overworld": "The capsule only connects from the overworld",

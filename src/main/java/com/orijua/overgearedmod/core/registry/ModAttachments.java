@@ -84,6 +84,10 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<CapsuleState>> CAPSULE =
             serverData("capsule", () -> CapsuleState.EMPTY, CapsuleState.CODEC);
 
+    /** Whether the player already got their starter capsule (see capsule.StarterCapsule). Server-only, kept on death. */
+    public static final Supplier<AttachmentType<Boolean>> STARTER_CAPSULE_GIVEN =
+            serverData("starter_capsule_given", () -> false, Codec.BOOL);
+
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
