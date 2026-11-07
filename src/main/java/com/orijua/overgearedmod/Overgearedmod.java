@@ -20,6 +20,7 @@ import com.orijua.overgearedmod.core.registry.ModWorldgen;
 import com.orijua.overgearedmod.core.validation.ContentValidationEvents;
 import com.orijua.overgearedmod.datagen.ModDataGenerators;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.StarterCapsule;
 import com.orijua.overgearedmod.feature.capsule.LogoutService;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.equipment.EquipmentEvents;
@@ -109,6 +110,7 @@ public class Overgearedmod {
         LegendTitle.register(NeoForge.EVENT_BUS);
         MaterialFinds.register(NeoForge.EVENT_BUS);
         CapsuleService.register(NeoForge.EVENT_BUS);
+        StarterCapsule.register(NeoForge.EVENT_BUS);
         WorldSeparation.register(NeoForge.EVENT_BUS);
         SatisfyOnlyEvents.register(NeoForge.EVENT_BUS);
         LogoutService.register(NeoForge.EVENT_BUS);

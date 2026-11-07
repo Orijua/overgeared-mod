@@ -10,6 +10,7 @@ import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.capsule.CapsuleState;
 import com.orijua.overgearedmod.feature.capsule.LevelProbe;
 import com.orijua.overgearedmod.feature.capsule.SafeSpot;
+import com.orijua.overgearedmod.feature.capsule.StarterCapsule;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.pagma.PagmaBook;
 import com.orijua.overgearedmod.feature.progression.PlayerStats;
@@ -106,6 +107,25 @@ public final class CapsuleTests {
             helper.assertTrue(state.exit().equals(Optional.of(lyingAt)), "and the spot to step out to is where they lay down");
             helper.assertTrue(state.lastSave().isEmpty(), "nothing saved yet");
         });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void starterCapsuleIsGivenOnlyOnce(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        helper.assertTrue(StarterCapsule.giveIfFirstTime(player), "the first time it is given");
+        helper.assertTrue(player.getInventory().countItem(ModItems.CAPSULE.get()) == 1, "one capsule in the inventory");
+        helper.assertFalse(StarterCapsule.giveIfFirstTime(player), "never again");
+        helper.assertTrue(player.getInventory().countItem(ModItems.CAPSULE.get()) == 1, "still one capsule");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void starterCapsuleFlagSurvivesDeath(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        StarterCapsule.giveIfFirstTime(player);
+        CapsuleService.died(player);
+        helper.assertTrue(player.getData(ModAttachments.STARTER_CAPSULE_GIVEN.get()), "dying does not clear the flag");
         helper.succeed();
     }
 
