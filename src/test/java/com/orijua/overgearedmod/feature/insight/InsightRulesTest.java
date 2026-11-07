@@ -35,8 +35,8 @@ class InsightRulesTest {
         assertEquals(30, InsightRules.observeTicks(30, 500), "a base already under the floor stays");
         assertEquals(200, InsightRules.observeTicks(200, -10), "negative Insight counts as none");
         assertEquals(0, InsightRules.observeTicks(0, 0), "a zero base stays zero");
-        assertEquals(137, InsightRules.observeTicks(140, 1), "the Commander's sword at 1 Insight");
-        assertEquals(98, InsightRules.observeTicks(100, 1), "the Ruler's sword at 1 Insight");
+        assertEquals(98, InsightRules.observeTicks(100, 1), "the Commander's sword at 1 Insight");
+        assertEquals(137, InsightRules.observeTicks(140, 1), "the Ruler's sword at 1 Insight");
     }
 
     @Test
