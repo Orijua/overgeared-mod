@@ -41,7 +41,8 @@ public record Balance(
             5, 1.0, 2.0, 1.0, 0.25, 50, 25,
             20.0f, 5.0f, 1.0f, 0.2f,
             0.95, 0.09, 0.005, 0.05,
-            0.10,
+            // Dying costs no XP: the canon has no such penalty (it takes levels for failing a quest instead). Still configurable.
+            0.0,
             2, 0.08, 0.05, 0.05, 0.5, 3.0, 0.25,
             ContestLoss.AUTO);
 
@@ -76,6 +77,14 @@ public record Balance(
                 xpBase, xpPerLevel, baseMana, manaPerIntelligence, baseManaRegen, manaRegenPerIntelligence,
                 enhanceBaseChance, enhanceChanceLossPerLevel, enhanceChancePerDexterity, enhanceMinChance, deathXpLoss,
                 mobLevelSpread, mobHealthPerLevel, mobDamagePerLevel, eliteChance, eliteStatBonus, eliteXpMultiplier, chance, contestLoss);
+    }
+
+    /** A copy with a different {@link #deathXpLoss}, to try the penalty (the default is none). */
+    public Balance withDeathXpLoss(double loss) {
+        return new Balance(statPointsPerLevel, killXpMultiplier, killXpPerAttackDamage, killXpPerArmor, spawnerXpMultiplier,
+                xpBase, xpPerLevel, baseMana, manaPerIntelligence, baseManaRegen, manaRegenPerIntelligence,
+                enhanceBaseChance, enhanceChanceLossPerLevel, enhanceChancePerDexterity, enhanceMinChance, loss,
+                mobLevelSpread, mobHealthPerLevel, mobDamagePerLevel, eliteChance, eliteStatBonus, eliteXpMultiplier, eliteEquipmentChance, contestLoss);
     }
 
     /** A copy with a different {@link #contestLoss}, so a test can try each way of losing. */

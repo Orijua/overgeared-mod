@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.core.registry;
 
 import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.feature.capsule.CapsuleState;
 import com.orijua.overgearedmod.feature.insight.LearnedToday;
 import com.orijua.overgearedmod.feature.mob.MobLevel;
 import com.orijua.overgearedmod.feature.npc.WorkshopEntry;
@@ -78,6 +79,10 @@ public final class ModAttachments {
     /** The production contest against Euphemina in Winston (see winston.KhanContest). */
     public static final Supplier<AttachmentType<ContestState>> KHAN_CONTEST =
             playerData("khan_contest", () -> ContestState.NONE, ContestState.CODEC, ContestState.STREAM_CODEC, true);
+
+    /** The VR capsule: where the player's body is while they are in Satisfy and where they last disconnected there. Server-only. */
+    public static final Supplier<AttachmentType<CapsuleState>> CAPSULE =
+            serverData("capsule", () -> CapsuleState.EMPTY, CapsuleState.CODEC);
 
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",

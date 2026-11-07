@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.feature.progression;
 import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.mob.MobKilledEvent;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -66,8 +67,14 @@ public final class ProgressionEvents {
         return victim.getKillCredit() instanceof ServerPlayer player ? player : null;
     }
 
-    /** Runs before the respawn copy, so the reduced stats are what the new player entity inherits. */
+    /**
+     * Runs before the respawn copy, so the reduced stats are what the new player entity inherits. Only deaths in
+     * Satisfy count: dying in the real world costs nothing.
+     */
     private static void penalizeDeath(ServerPlayer player) {
+        if (!Satisfy.is(player.level())) {
+            return;
+        }
         PlayerStats before = ProgressionService.get(player);
         PlayerStats after = ProgressionRules.applyDeathPenalty(Balance.current(), before);
         if (after.xp() < before.xp()) {

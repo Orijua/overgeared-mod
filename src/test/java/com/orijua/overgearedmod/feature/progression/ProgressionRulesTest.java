@@ -143,16 +143,23 @@ class ProgressionRulesTest {
     }
 
     @Test
+    void dyingCostsNoXpByDefault() {
+        PlayerStats stats = PlayerStats.DEFAULT.withProgress(4, 50, 0);
+        assertEquals(stats, ProgressionRules.applyDeathPenalty(B, stats), "the canon has no XP penalty for dying");
+    }
+
+    @Test
     void deathCostsPartOfTheLevelXpButNeverALevel() {
-        PlayerStats after = ProgressionRules.applyDeathPenalty(B, PlayerStats.DEFAULT.withProgress(4, 50, 0));
+        Balance penalty = B.withDeathXpLoss(0.10);
+        PlayerStats after = ProgressionRules.applyDeathPenalty(penalty, PlayerStats.DEFAULT.withProgress(4, 50, 0));
         assertEquals(45, after.xp());
         assertEquals(4, after.level());
-        assertEquals(PlayerStats.DEFAULT, ProgressionRules.applyDeathPenalty(B, PlayerStats.DEFAULT));
+        assertEquals(PlayerStats.DEFAULT, ProgressionRules.applyDeathPenalty(penalty, PlayerStats.DEFAULT));
     }
 
     @Test
     void deathAtLevelOneKeepsTheLevel() {
-        PlayerStats after = ProgressionRules.applyDeathPenalty(B, PlayerStats.DEFAULT.withProgress(1, 50, 0));
+        PlayerStats after = ProgressionRules.applyDeathPenalty(B.withDeathXpLoss(0.10), PlayerStats.DEFAULT.withProgress(1, 50, 0));
         assertEquals(1, after.level());
         assertEquals(45, after.xp(), "same share lost as at any other level");
     }

@@ -94,6 +94,7 @@ public final class ModItems {
 
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
     public static final DeferredItem<BlockItem> SMELTER = ITEMS.registerSimpleBlockItem(ModBlocks.SMELTER);
+    public static final DeferredItem<BlockItem> CAPSULE = ITEMS.registerSimpleBlockItem(ModBlocks.CAPSULE);
 
     public static final DeferredItem<Item> ENHANCEMENT_STONE = ITEMS.registerSimpleItem("enhancement_stone");
 

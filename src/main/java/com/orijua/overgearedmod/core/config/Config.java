@@ -70,7 +70,7 @@ public final class Config {
     }
 
     private static final ModConfigSpec.DoubleValue DEATH_XP_LOSS = BUILDER
-            .comment("Fraction of the current level's XP lost on death (0.1 = 10%). Never drops a level.")
+            .comment("Fraction of the current level's XP lost on death (0.1 = 10%). Never drops a level. 0 by default: the canon has no XP penalty for dying.")
             .defineInRange("xpLoss", D.deathXpLoss(), 0.0, 1.0);
 
     static {

@@ -1,5 +1,6 @@
-// 1.21.1	2026-11-01T22:01:13.5015319	Block States: overgearedmod
+// 1.21.1	2026-11-07T16:08:41.983359	Block States: overgearedmod
 9db3a670d2026c3b473d88d78183749bf5e33532 assets/overgearedmod/blockstates/blue_orichalcum_ore.json
+66efa6d32f600ef20eeb14c7c01a3e3f35ea2b3d assets/overgearedmod/blockstates/capsule.json
 5fa23022c8e57702e51d4462564fc2639ce409a0 assets/overgearedmod/blockstates/deepslate_blue_orichalcum_ore.json
 fb562f7819b44852d429376b3b4a8320a34dd0c5 assets/overgearedmod/blockstates/deepslate_jaffa_ore.json
 045607e7149d9f4664d1095be5b8c8c5b373f816 assets/overgearedmod/blockstates/deepslate_mithril_ore.json
@@ -9,6 +10,7 @@ e42d3a808545f418705a4544447312a4fe7f9a6e assets/overgearedmod/blockstates/golden
 179646d0e4211197d325ab29f6dea642b54bfe75 assets/overgearedmod/blockstates/smelter.json
 347a2ed3431a0567068253cced66a77d4a79d6f9 assets/overgearedmod/blockstates/smithing_anvil.json
 1d938b45f396b9165a2832c5458bc6d1bbb007a0 assets/overgearedmod/models/block/blue_orichalcum_ore.json
+5745323fbab5043775ba5d00beca0fd7b262d165 assets/overgearedmod/models/block/capsule.json
 9c952adf5792bd45a9ffe1093afd3e0bce96b376 assets/overgearedmod/models/block/deepslate_blue_orichalcum_ore.json
 f44750542389953f8f801dad7c198da9b89c2e6e assets/overgearedmod/models/block/deepslate_jaffa_ore.json
 7dcb3dce46c4a6d66fab353e91c785341a7e1829 assets/overgearedmod/models/block/deepslate_mithril_ore.json
@@ -19,6 +21,7 @@ dcbf36788ff291c6eba3535fb68b7f4d29371687 assets/overgearedmod/models/block/mithr
 879edc434194c8bd52733c4256095c8a8abd4661 assets/overgearedmod/models/block/smelter.json
 ba4c7a62b0bd6a092f95228c46510d195b6b9266 assets/overgearedmod/models/block/smelter_on.json
 5c7c90f5be5859feeb11be4bed27b137afb328d8 assets/overgearedmod/models/item/blue_orichalcum_ore.json
+39fb0fd94f3539bef400cc3cc85ef693e479a925 assets/overgearedmod/models/item/capsule.json
 4f897fa0621a690325c836be2db6dba4592b0dbe assets/overgearedmod/models/item/deepslate_blue_orichalcum_ore.json
 5bacd0ff7b870a20a55888d78987e93ea9a14ef0 assets/overgearedmod/models/item/deepslate_jaffa_ore.json
 dd611f0180eb39810b4041c80782ebec1c4e8fb6 assets/overgearedmod/models/item/deepslate_mithril_ore.json

@@ -20,6 +20,7 @@ final class ModBlockLoot extends BlockLootSubProvider {
     protected void generate() {
         dropSelf(ModBlocks.SMITHING_ANVIL.get());
         dropSelf(ModBlocks.SMELTER.get());
+        dropSelf(ModBlocks.CAPSULE.get());
         // Like iron ore: the raw material (more with Fortune), the ore itself with Silk Touch.
         add(ModBlocks.JAFFA_ORE.get(), block -> createOreDrop(block, ModItems.RAW_JAFFA.get()));
         add(ModBlocks.DEEPSLATE_JAFFA_ORE.get(), block -> createOreDrop(block, ModItems.RAW_JAFFA.get()));

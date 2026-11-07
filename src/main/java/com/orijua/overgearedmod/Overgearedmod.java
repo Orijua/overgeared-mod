@@ -19,6 +19,9 @@ import com.orijua.overgearedmod.core.registry.ModRecipes;
 import com.orijua.overgearedmod.core.registry.ModWorldgen;
 import com.orijua.overgearedmod.core.validation.ContentValidationEvents;
 import com.orijua.overgearedmod.datagen.ModDataGenerators;
+import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.LogoutService;
+import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.feature.equipment.LootEvents;
 import com.orijua.overgearedmod.feature.insight.Observation;
@@ -103,6 +106,9 @@ public class Overgearedmod {
         KhanContest.register(NeoForge.EVENT_BUS);
         LegendTitle.register(NeoForge.EVENT_BUS);
         MaterialFinds.register(NeoForge.EVENT_BUS);
+        CapsuleService.register(NeoForge.EVENT_BUS);
+        WorldSeparation.register(NeoForge.EVENT_BUS);
+        LogoutService.register(NeoForge.EVENT_BUS);
 
         modContainer.registerConfig(ModConfig.Type.SERVER, Config.SPEC);
     }

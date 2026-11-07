@@ -12,6 +12,8 @@ import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.smithing.ItemForgedEvent;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
@@ -24,9 +26,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * Shared helpers for the game tests. Tests run with `gradlew runGameTestServer`
@@ -50,6 +55,14 @@ final class TestSupport {
         Vec3 origin = helper.absoluteVec(new Vec3(0.5, 1, 0.5));
         player.moveTo(origin.x, origin.y, origin.z, 0.0f, 0.0f);
         player.setYHeadRot(0.0f);
+        return player;
+    }
+
+    /** A fake player standing at the spawn of another level (e.g. the Nether), for tests that depend on the dimension. */
+    static ServerPlayer fakePlayerIn(ServerLevel level) {
+        ServerPlayer player = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "satisfy-test-other"));
+        BlockPos spawn = level.getSharedSpawnPos();
+        player.moveTo(spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, 0.0f, 0.0f);
         return player;
     }
 
@@ -101,6 +114,18 @@ final class TestSupport {
         player.setItemInHand(InteractionHand.MAIN_HAND, weapon);
         player.tick();
         return player.getAttributeValue(Attributes.ATTACK_DAMAGE) - base;
+    }
+
+    /** Runs {@code tick} on {@code player} {@code ticks} times, by hand (a fake player does not tick). */
+    static void tickMany(ServerPlayer player, int ticks, Consumer<ServerPlayer> tick) {
+        for (int i = 0; i < ticks; i++) {
+            tick.accept(player);
+        }
+    }
+
+    /** Posts the "damage applied" event for {@code amount} damage to {@code player} (nothing is actually taken). */
+    static void hurt(ServerPlayer player, float amount) {
+        NeoForge.EVENT_BUS.post(new LivingDamageEvent.Post(player, new DamageContainer(player.damageSources().generic(), amount)));
     }
 
     static void assertClose(GameTestHelper helper, double expected, double actual, String what) {

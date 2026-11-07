@@ -1,4 +1,5 @@
-// 1.21.1	2026-11-02T22:39:06.1151454	Recipes
+// 1.21.1	2026-11-07T16:08:41.985863	Recipes
+82c4b146ab29b7ecc5150566739a34e054878521 data/overgearedmod/advancement/recipes/misc/capsule.json
 93385b93940b88efb769e568d18b794601d0e499 data/overgearedmod/advancement/recipes/misc/enhancement_stone.json
 41f00a759a982645ea66a85938ea2fb1d6d75c4e data/overgearedmod/advancement/recipes/misc/jaffa_ingot_from_blasting_deepslate_jaffa_ore.json
 da5db43adf49192e4d4569d38441a87a48a3e5b3 data/overgearedmod/advancement/recipes/misc/jaffa_ingot_from_blasting_jaffa_ore.json
@@ -10,6 +11,7 @@ ac36b70d1fc8c7e5bc19483f87773b802b436fca data/overgearedmod/advancement/recipes/
 0466232969c8b26e279a3862b90d41fcc509e5ab data/overgearedmod/advancement/recipes/misc/smelter.json
 bf6ddd6e672a108353cb717f062713ae1494185b data/overgearedmod/advancement/recipes/misc/smithing_anvil.json
 e37b926906c6b43617f8569626d2241832215398 data/overgearedmod/advancement/recipes/misc/workshop_ledger.json
+9829f9e9e4490154e3b964c8cedad435fb6d1a79 data/overgearedmod/recipe/capsule.json
 c9ff6724f2544ba626b0c074a72703b45a12fe95 data/overgearedmod/recipe/enhancement_stone.json
 506336355ce54abb6864946ec3e4edf4d117bb7f data/overgearedmod/recipe/forging/fracaso_sword.json
 5d4c4a6c000c2fda63d4ae95f16c1cf578c521ad data/overgearedmod/recipe/forging/grid_legendary_sword.json

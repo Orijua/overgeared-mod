@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "overgearedmod:block/capsule",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "overgearedmod:block/capsule"
+    },
+    "facing=south": {
+      "model": "overgearedmod:block/capsule",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "overgearedmod:block/capsule",
+      "y": 270
+    }
+  }
+}
