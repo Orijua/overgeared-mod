@@ -26,6 +26,7 @@ import com.orijua.overgearedmod.feature.quest.QuestDefinition;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.smithing.ItemForgedEvent;
 import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyOnly;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -111,6 +112,10 @@ public final class DebugCommands {
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))
                                                 .executes(ctx -> {
                                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    if (!Satisfy.is(player.level())) {
+                                                        ctx.getSource().sendFailure(Component.translatable(SatisfyOnly.WARNING_KEY));
+                                                        return 0;
+                                                    }
                                                     ProgressionService.awardXp(player, IntegerArgumentType.getInteger(ctx, "amount"));
                                                     return 1;
                                                 }))))

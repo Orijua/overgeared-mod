@@ -16,6 +16,9 @@ public final class Satisfy {
     /** For tests: the game-test server drops the datapack's dimensions, so a test lends the level that plays Satisfy. */
     private static volatile ServerLevel standIn;
 
+    /** What {@link #restoreStandIn()} gives back: in the game-test server, the overworld plays Satisfy by default. */
+    private static volatile ServerLevel testDefault;
+
     private Satisfy() {
     }
 
@@ -33,8 +36,18 @@ public final class Satisfy {
         return Optional.ofNullable(level != null ? level : standIn);
     }
 
-    /** Also for tests: {@code null} gives it back. */
+    /** Also for tests: {@code null} means that no level is Satisfy. */
     public static void standIn(ServerLevel level) {
         standIn = level;
+    }
+
+    /** The level that plays Satisfy by default in the game-test server ({@code null} outside it). */
+    public static void testDefault(ServerLevel level) {
+        testDefault = level;
+    }
+
+    /** Puts the standIn back to the default of the test server. */
+    public static void restoreStandIn() {
+        standIn = testDefault;
     }
 }

@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.orijua.overgearedmod.core.client.HudVisibility;
 import com.orijua.overgearedmod.core.client.SatisfyTabs;
 import com.orijua.overgearedmod.core.client.SatisfyTooltips;
 import com.orijua.overgearedmod.core.registry.ModEntities;
@@ -26,6 +27,7 @@ import com.orijua.overgearedmod.feature.winston.client.EupheminaRenderer;
 import com.orijua.overgearedmod.feature.winston.client.MeroThugRenderer;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.LayeredDraw;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -101,17 +103,41 @@ public class OvergearedmodClient {
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
-        event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, Overgearedmod.id("mana"), new ManaHudLayer());
-        event.registerAbove(Overgearedmod.id("mana"), Overgearedmod.id("xp"), new XpHudLayer());
-        event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), new SkillSlotsHudLayer());
-        event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), new QuestTrackerHudLayer());
-        event.registerAbove(Overgearedmod.id("quest_tracker"), Overgearedmod.id("system_notification"), new SystemNotificationHudLayer());
+        event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, Overgearedmod.id("mana"), satisfyOnly(new ManaHudLayer()));
+        event.registerAbove(Overgearedmod.id("mana"), Overgearedmod.id("xp"), satisfyOnly(new XpHudLayer()));
+        event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), satisfyOnly(new SkillSlotsHudLayer()));
+        event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), satisfyOnly(new QuestTrackerHudLayer()));
+        event.registerAbove(Overgearedmod.id("quest_tracker"), Overgearedmod.id("system_notification"), satisfyOnly(new SystemNotificationHudLayer()));
         event.registerAboveAll(Overgearedmod.id("capsule_connecting"), new CapsuleConnectingLayer());
+    }
+
+    /** Draws the layer only while the player is in Satisfy. */
+    private static LayeredDraw.Layer satisfyOnly(LayeredDraw.Layer layer) {
+        return (graphics, deltaTracker) -> {
+            if (HudVisibility.inSatisfy(Minecraft.getInstance())) {
+                layer.render(graphics, deltaTracker);
+            }
+        };
     }
 
     private static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) {
+            return;
+        }
+        if (!HudVisibility.inSatisfy(minecraft)) {
+            // In the real world the keys do nothing and say nothing: empty their clicks.
+            while (OPEN_STATUS.consumeClick()) {
+                // nothing
+            }
+            for (KeyMapping skillKey : SKILL_KEYS) {
+                while (skillKey.consumeClick()) {
+                    // nothing
+                }
+            }
+            while (WEAPON_SKILL.consumeClick()) {
+                // nothing
+            }
             return;
         }
         while (OPEN_STATUS.consumeClick()) {

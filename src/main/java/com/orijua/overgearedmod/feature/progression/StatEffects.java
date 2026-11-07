@@ -55,6 +55,21 @@ public final class StatEffects {
                         new AttributeModifier(mapping.id(), points * mapping.perPoint(), mapping.operation()));
             }
         }
+        limitHealth(player);
+    }
+
+    /** Takes every stat modifier off (the real world has no Satisfy bonuses); current health is capped, never lethal. */
+    public static void clear(Player player) {
+        for (Mapping mapping : MAPPINGS) {
+            AttributeInstance instance = player.getAttribute(mapping.attribute());
+            if (instance != null) {
+                instance.removeModifier(mapping.id());
+            }
+        }
+        limitHealth(player);
+    }
+
+    private static void limitHealth(Player player) {
         if (player.getHealth() > player.getMaxHealth()) {
             player.setHealth(player.getMaxHealth());
         }

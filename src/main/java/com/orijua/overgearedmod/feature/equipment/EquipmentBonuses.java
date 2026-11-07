@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
 import com.orijua.overgearedmod.feature.progression.PlayerStats;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -38,6 +39,13 @@ public final class EquipmentBonuses {
 
     public static void apply(Player player) {
         removeAll(player);
+        if (!Satisfy.is(player.level())) {
+            // The real world gets no bonuses from the mod's equipment.
+            if (player.getHealth() > player.getMaxHealth()) {
+                player.setHealth(player.getMaxHealth());
+            }
+            return;
+        }
         PlayerStats stats = ProgressionService.statsWithoutEquipment(player);
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             ItemStack stack = player.getItemBySlot(slot);

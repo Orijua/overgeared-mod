@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.equipment.EquipmentEvents;
 import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,7 +22,7 @@ public final class SkillService {
     /** The fourth skill key: casts the held weapon's own skill instead of a learned one. */
     public static final int WEAPON_SLOT = PlayerSkills.SLOT_COUNT;
 
-    public enum Result { SUCCESS, EMPTY_SLOT, UNKNOWN_SKILL, WRONG_ITEM, REQUIREMENTS_UNMET, ON_COOLDOWN, NO_MANA }
+    public enum Result { SUCCESS, EMPTY_SLOT, UNKNOWN_SKILL, WRONG_ITEM, REQUIREMENTS_UNMET, ON_COOLDOWN, NO_MANA, REAL_WORLD }
 
     private SkillService() {
     }
@@ -54,6 +55,9 @@ public final class SkillService {
 
     /** Casts the skill in key slot {@code slot}, or the held weapon's skill for {@link #WEAPON_SLOT}. */
     public static Result use(ServerPlayer player, int slot) {
+        if (!Satisfy.is(player.level())) {
+            return Result.REAL_WORLD;
+        }
         Optional<ResourceLocation> id = slot == WEAPON_SLOT ? weaponSkill(player.getMainHandItem()) : get(player).slot(slot);
         if (id.isEmpty()) {
             return Result.EMPTY_SLOT;

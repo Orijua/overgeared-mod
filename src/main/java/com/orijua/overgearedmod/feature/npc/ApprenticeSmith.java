@@ -15,6 +15,8 @@ import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.smithing.ForgingRecipe;
 import com.orijua.overgearedmod.feature.smithing.HammerRules;
 import com.orijua.overgearedmod.feature.smithing.SmithingHammers;
+import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyOnly;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -314,6 +316,12 @@ public class ApprenticeSmith extends PathfinderMob {
         if (!isAlive()) {
             return super.mobInteract(player, hand);
         }
+        if (!Satisfy.is(level())) {
+            if (!level().isClientSide) {
+                SatisfyOnly.warn(player);
+            }
+            return InteractionResult.FAIL;
+        }
         ItemStack held = player.getItemInHand(hand);
         if (level().isClientSide) {
             if (isOwnedBy(player) && held.isEmpty()) {
@@ -483,7 +491,7 @@ public class ApprenticeSmith extends PathfinderMob {
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
-        if (tickCount % WORK_STEP != 0 || !(level() instanceof ServerLevel level)) {
+        if (tickCount % WORK_STEP != 0 || !(level() instanceof ServerLevel level) || !Satisfy.is(level)) {
             return;
         }
         ServerPlayer master = master();

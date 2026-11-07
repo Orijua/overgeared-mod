@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-07T16:08:41.985863	Recipes
+// 1.21.1	2026-11-07T19:32:01.7756934	Recipes
 82c4b146ab29b7ecc5150566739a34e054878521 data/overgearedmod/advancement/recipes/misc/capsule.json
 93385b93940b88efb769e568d18b794601d0e499 data/overgearedmod/advancement/recipes/misc/enhancement_stone.json
 41f00a759a982645ea66a85938ea2fb1d6d75c4e data/overgearedmod/advancement/recipes/misc/jaffa_ingot_from_blasting_deepslate_jaffa_ore.json
@@ -12,7 +12,7 @@ ac36b70d1fc8c7e5bc19483f87773b802b436fca data/overgearedmod/advancement/recipes/
 bf6ddd6e672a108353cb717f062713ae1494185b data/overgearedmod/advancement/recipes/misc/smithing_anvil.json
 e37b926906c6b43617f8569626d2241832215398 data/overgearedmod/advancement/recipes/misc/workshop_ledger.json
 9829f9e9e4490154e3b964c8cedad435fb6d1a79 data/overgearedmod/recipe/capsule.json
-c9ff6724f2544ba626b0c074a72703b45a12fe95 data/overgearedmod/recipe/enhancement_stone.json
+19d23c23b1cd9a47ea1fea54a0f6599931ec9032 data/overgearedmod/recipe/enhancement_stone.json
 506336355ce54abb6864946ec3e4edf4d117bb7f data/overgearedmod/recipe/forging/fracaso_sword.json
 5d4c4a6c000c2fda63d4ae95f16c1cf578c521ad data/overgearedmod/recipe/forging/grid_legendary_sword.json
 7bfa553548799b402fd658e2b7f8e7e321c6708a data/overgearedmod/recipe/forging/iron_chestplate.json
@@ -39,7 +39,7 @@ bb25792e3740f363e4b342832a6920c19cbc8cca data/overgearedmod/recipe/melting/iron_
 f0955cdd7bec6487ab3ccf7a5f773bc9875ccda4 data/overgearedmod/recipe/melting/mithril_ingot_from_deepslate_mithril_ore.json
 519bc1b3d6701987bb7811a0d576b86837abe5a7 data/overgearedmod/recipe/melting/mithril_ingot_from_mithril_ore.json
 39d7fbd8a35b376275e169a6e17ddafbd2ca7631 data/overgearedmod/recipe/melting/mithril_ingot_from_raw_mithril.json
-e419ea816cd4ba97b357db9db639b544f62688f2 data/overgearedmod/recipe/respec_scroll.json
-d85a94c7b193b8968288361f3366ff39aa88eba3 data/overgearedmod/recipe/smelter.json
-05ca421026c5d5564df32b09a2b19336151eebbd data/overgearedmod/recipe/smithing_anvil.json
-30bf82a52c21da48dd4808ccdc889be621881689 data/overgearedmod/recipe/workshop_ledger.json
+2f1d2fe8b1742d8b9f4a63e15c60e6db07ffefb7 data/overgearedmod/recipe/respec_scroll.json
+ab4631c0b2d0b1ee54178ecf3405cd418fffa484 data/overgearedmod/recipe/smelter.json
+2e1fdf9dcbbb7e37719097a11428e5f38a17007a data/overgearedmod/recipe/smithing_anvil.json
+d2839f50b6e4d12643dd1855db061c0ce0da23fd data/overgearedmod/recipe/workshop_ledger.json

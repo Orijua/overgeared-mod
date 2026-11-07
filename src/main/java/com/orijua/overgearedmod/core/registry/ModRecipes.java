@@ -3,6 +3,8 @@ package com.orijua.overgearedmod.core.registry;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.smelting.MeltingRecipe;
 import com.orijua.overgearedmod.feature.smithing.ForgingRecipe;
+import com.orijua.overgearedmod.feature.world.SatisfyShapedRecipe;
+import com.orijua.overgearedmod.feature.world.SatisfyShapelessRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -27,6 +29,12 @@ public final class ModRecipes {
 
     public static final DeferredHolder<RecipeSerializer<?>, MeltingRecipe.Serializer> MELTING_SERIALIZER =
             RECIPE_SERIALIZERS.register("melting", MeltingRecipe.Serializer::new);
+
+    public static final DeferredHolder<RecipeSerializer<?>, SatisfyShapedRecipe.Serializer> SATISFY_SHAPED_SERIALIZER =
+            RECIPE_SERIALIZERS.register("satisfy_shaped", SatisfyShapedRecipe.Serializer::new);
+
+    public static final DeferredHolder<RecipeSerializer<?>, SatisfyShapelessRecipe.Serializer> SATISFY_SHAPELESS_SERIALIZER =
+            RECIPE_SERIALIZERS.register("satisfy_shapeless", SatisfyShapelessRecipe.Serializer::new);
 
     private ModRecipes() {
     }

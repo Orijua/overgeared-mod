@@ -6,6 +6,8 @@ import com.orijua.overgearedmod.core.registry.ModEntities;
 import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
+import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyOnly;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -50,6 +52,10 @@ public class ApprenticeContractItem extends Item {
 
     /** Hires an apprentice standing at {@code at}, if the player may have one more; empty (with a message) if not. */
     public static Optional<ApprenticeSmith> hire(ServerPlayer player, BlockPos at) {
+        if (!Satisfy.is(player.level())) {
+            SatisfyOnly.warn(player);
+            return Optional.empty();
+        }
         List<UUID> hired = player.getData(ModAttachments.APPRENTICES);
         int level = ProgressionService.effectiveSmithingLevel(player);
         if (hired.size() >= ApprenticeRules.allowedApprentices(level)) {

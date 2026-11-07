@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.quest.goal.PlayerCounters;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,6 +21,9 @@ public final class TitleService {
 
     /** Grants every title whose goal is now met. Called by GoalTracker after any countable event. */
     public static void checkUnlocks(ServerPlayer player) {
+        if (!Satisfy.is(player.level())) {
+            return;
+        }
         PlayerIdentity identity = player.getData(ModAttachments.PLAYER_IDENTITY);
         PlayerCounters counters = player.getData(ModAttachments.PLAYER_COUNTERS);
         PlayerStats stats = ProgressionService.get(player);

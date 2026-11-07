@@ -25,6 +25,7 @@ import com.orijua.overgearedmod.feature.smelting.ManualSmeltPayload;
 import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
 import com.orijua.overgearedmod.feature.smithing.ManualForgePayload;
 import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -32,6 +33,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 /**
  * Every client → server packet lands here and is forwarded to a service.
  * Payloads only carry data; services re-check every rule, since the client can't be trusted.
+ * Every packet that changes Satisfy's state must check {@code Satisfy.is(player.level())} (the real world has none of it).
  */
 final class ServerPayloadHandler {
     private ServerPayloadHandler() {
@@ -44,19 +46,19 @@ final class ServerPayloadHandler {
     }
 
     static void assignSkill(AssignSkillPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             SkillService.assign(player, payload.slot(), payload.skill());
         }
     }
 
     static void allocateStat(AllocateStatPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             ProgressionService.allocatePoints(player, payload.stat(), payload.amount());
         }
     }
 
     static void chooseClass(ChooseClassPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             ClassService.choose(player, payload.playerClass());
         }
     }
@@ -80,14 +82,14 @@ final class ServerPayloadHandler {
     }
 
     static void questsSeen(QuestsSeenPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             QuestService.markDiscoveriesSeen(player);
         }
     }
 
     /** From the Quests tab: quests with a giver are refused here (QuestService checks it). */
     static void questAction(QuestActionPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             switch (payload.action()) {
                 case ACCEPT -> QuestService.accept(player, payload.quest());
                 case CLAIM -> QuestService.claim(player, payload.quest());
@@ -99,7 +101,7 @@ final class ServerPayloadHandler {
 
     /** From an NPC's quest window; QuestService checks the NPC gives that quest and stands within reach. */
     static void npcQuest(NpcQuestPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             Entity npc = player.level().getEntity(payload.npc());
             switch (payload.action()) {
                 case ACCEPT -> QuestService.accept(player, payload.quest(), npc);
@@ -110,21 +112,23 @@ final class ServerPayloadHandler {
     }
 
     static void npcTrade(NpcTradePayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player && player.level().getEntity(payload.npc()) instanceof BlacksmithNpc smith
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())
+                && player.level().getEntity(payload.npc()) instanceof BlacksmithNpc smith
                 && smith.distanceToSqr(player) <= QuestService.GIVER_REACH * QuestService.GIVER_REACH) {
             smith.startTrading(player);
         }
     }
 
     static void readPagmaBook(ReadPagmaBookPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player) {
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())) {
             PagmaBook.read(player);
         }
     }
 
     /** Starting the contest: at Euphemina, standing near her. */
     static void startContest(StartContestPayload payload, IPayloadContext context) {
-        if (context.player() instanceof ServerPlayer player && player.level().getEntity(payload.euphemina()) instanceof EupheminaNpc euphemina
+        if (context.player() instanceof ServerPlayer player && Satisfy.is(player.level())
+                && player.level().getEntity(payload.euphemina()) instanceof EupheminaNpc euphemina
                 && euphemina.distanceToSqr(player) <= QuestService.GIVER_REACH * QuestService.GIVER_REACH) {
             KhanContest.start(player);
         }
@@ -132,7 +136,8 @@ final class ServerPayloadHandler {
 
     /** From an apprentice's window: only his master, standing near him. */
     static void apprenticeAction(ApprenticeActionPayload payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player) || !(player.level().getEntity(payload.apprentice()) instanceof ApprenticeSmith apprentice)
+        if (!(context.player() instanceof ServerPlayer player) || !Satisfy.is(player.level())
+                || !(player.level().getEntity(payload.apprentice()) instanceof ApprenticeSmith apprentice)
                 || !apprentice.isOwnedBy(player) || apprentice.distanceToSqr(player) > ApprenticeSmith.WINDOW_REACH * ApprenticeSmith.WINDOW_REACH) {
             return;
         }

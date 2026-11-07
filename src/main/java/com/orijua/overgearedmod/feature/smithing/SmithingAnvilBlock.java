@@ -1,5 +1,7 @@
 package com.orijua.overgearedmod.feature.smithing;
 
+import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyOnly;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -25,6 +27,12 @@ public class SmithingAnvilBlock extends Block {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (!Satisfy.is(level)) {
+            if (!level.isClientSide) {
+                SatisfyOnly.warn(player);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (!level.isClientSide) {
             player.openMenu(state.getMenuProvider(level, pos));
         }

@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.feature.mob.MobLevelService;
 import com.orijua.overgearedmod.feature.progression.ProgressionEvents;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
@@ -37,7 +38,7 @@ public final class LootEvents {
 
     private static void onLivingDrops(LivingDropsEvent event) {
         if (!(event.getEntity() instanceof Mob mob) || ProgressionEvents.creditedKiller(mob, event.getSource()) == null
-                || !MobLevelService.get(mob).elite()) {
+                || !Satisfy.is(mob.level()) || !MobLevelService.get(mob).elite()) {
             return;
         }
         RandomSource random = mob.getRandom();

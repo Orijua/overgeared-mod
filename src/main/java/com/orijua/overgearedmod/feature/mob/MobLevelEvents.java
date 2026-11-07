@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.feature.mob;
 
 import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
@@ -22,7 +23,7 @@ public final class MobLevelEvents {
 
     private static void onMobSpawn(FinalizeSpawnEvent event) {
         Mob mob = event.getEntity();
-        if (!(mob instanceof Enemy) || mob instanceof BossMob || MobLevelService.get(mob).isLeveled()) {
+        if (!(mob instanceof Enemy) || !Satisfy.is(event.getLevel().getLevel()) || mob instanceof BossMob || MobLevelService.get(mob).isLeveled()) {
             return;
         }
         Player nearest = event.getLevel().getNearestPlayer(event.getX(), event.getY(), event.getZ(), PLAYER_RANGE, false);

@@ -222,7 +222,7 @@ public final class PagmaStoryTests {
             AshurBetrayal.talk(player);
             helper.assertTrue(player.getInventory().countItem(Items.FILLED_MAP) == 1, "and only once");
         } finally {
-            Satisfy.standIn(null);
+            Satisfy.restoreStandIn();
             if (!hadCave) {
                 WorldSites.forget(seed, WorldSites.NORTH_END_CAVE);
             }

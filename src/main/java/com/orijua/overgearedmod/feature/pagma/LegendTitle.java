@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.feature.pagma;
 
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -42,7 +43,7 @@ public final class LegendTitle {
     }
 
     private static void onDeath(LivingDeathEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player) || !has(player) || event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+        if (!(event.getEntity() instanceof ServerPlayer player) || !has(player) || !Satisfy.is(player.level()) || event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             return;
         }
         long now = player.level().getGameTime();
@@ -57,7 +58,7 @@ public final class LegendTitle {
     }
 
     private static void onEffect(MobEffectEvent.Applicable event) {
-        if (event.getEntity() instanceof Player player && !player.level().isClientSide && has(player)
+        if (event.getEntity() instanceof Player player && !player.level().isClientSide && has(player) && Satisfy.is(player.level())
                 && event.getEffectInstance().getEffect().value().getCategory() == MobEffectCategory.HARMFUL
                 && player.getRandom().nextDouble() < RESIST_CHANCE) {
             event.setResult(MobEffectEvent.Applicable.Result.DO_NOT_APPLY);

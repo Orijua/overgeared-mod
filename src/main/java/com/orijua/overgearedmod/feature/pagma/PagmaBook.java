@@ -9,6 +9,8 @@ import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.skill.PlayerSkills;
+import com.orijua.overgearedmod.feature.world.Satisfy;
+import com.orijua.overgearedmod.feature.world.SatisfyOnly;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -20,7 +22,8 @@ import net.minecraft.world.entity.player.Inventory;
  * every stat point and every skill of the old class gone, and {@link PagmaStory#BONUS_POINTS} points to spend. Smithing
  * experience stays. Pagma's legacy is completed on the spot, which grants the class, Fracaso's blueprint and, through its
  * milestone, the title "One Who Became a Legend". The legacy is checked first: a second book is refused untouched
- * (nothing is spent or reset) once the legacy is done, or if it can't be started.
+ * (nothing is spent or reset) once the legacy is done, or if it can't be started. It only works in Satisfy: in the
+ * real world the book is refused untouched, since the reset is destructive.
  */
 public final class PagmaBook {
     private PagmaBook() {
@@ -28,6 +31,10 @@ public final class PagmaBook {
 
     /** Reads the book the player carries (and spends it); false if they carry none or the legacy can't be taken. */
     public static boolean read(ServerPlayer player) {
+        if (!Satisfy.is(player.level())) {
+            SatisfyOnly.warn(player);
+            return false;
+        }
         Inventory inventory = player.getInventory();
         int slot = -1;
         for (int i = 0; i < inventory.getContainerSize() && slot < 0; i++) {

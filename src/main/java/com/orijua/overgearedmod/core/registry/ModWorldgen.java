@@ -3,11 +3,13 @@ package com.orijua.overgearedmod.core.registry;
 import com.mojang.serialization.MapCodec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.world.SatisfyBiomeSource;
+import com.orijua.overgearedmod.feature.world.SatisfyOnlyPlacement;
 import com.orijua.overgearedmod.feature.world.SatisfyTerrainFunction;
 import com.orijua.overgearedmod.feature.world.WorldSitePlacement;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.levelgen.DensityFunction;
+import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 import net.minecraft.world.level.levelgen.structure.placement.StructurePlacementType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -34,6 +36,13 @@ public final class ModWorldgen {
     /** "type": "overgearedmod:satisfy_terrain": a climate parameter of the terrain, read from a relief map. */
     public static final DeferredHolder<MapCodec<? extends DensityFunction>, MapCodec<SatisfyTerrainFunction>> SATISFY_TERRAIN =
             DENSITY_FUNCTIONS.register("satisfy_terrain", () -> SatisfyTerrainFunction.CODEC);
+
+    public static final DeferredRegister<PlacementModifierType<?>> PLACEMENT_MODIFIERS =
+            DeferredRegister.create(Registries.PLACEMENT_MODIFIER_TYPE, Overgearedmod.MODID);
+
+    /** "type": "overgearedmod:satisfy_only": a placed feature that only generates in Satisfy (the mod's ores). */
+    public static final DeferredHolder<PlacementModifierType<?>, PlacementModifierType<SatisfyOnlyPlacement>> SATISFY_ONLY =
+            PLACEMENT_MODIFIERS.register("satisfy_only", () -> () -> SatisfyOnlyPlacement.CODEC);
 
     private ModWorldgen() {
     }

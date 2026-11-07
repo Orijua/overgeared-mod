@@ -10,6 +10,10 @@ import com.orijua.overgearedmod.feature.smelting.MeltingRecipe;
 import com.orijua.overgearedmod.feature.smelting.SmelterRules;
 import com.orijua.overgearedmod.feature.smithing.ForgingExtras;
 import com.orijua.overgearedmod.feature.smithing.ForgingRecipe;
+import com.orijua.overgearedmod.feature.world.SatisfyShapedRecipe;
+import com.orijua.overgearedmod.feature.world.SatisfyShapelessRecipe;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.RecipeCategory;
@@ -18,11 +22,16 @@ import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.ShapedRecipe;
+import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.level.ItemLike;
+import net.neoforged.neoforge.common.conditions.ICondition;
 
 import java.util.List;
 import java.util.Map;
@@ -43,12 +52,32 @@ final class ModRecipeProvider extends RecipeProvider {
         forging(output);
     }
 
+    /**
+     * Wraps the output so the crafting recipes saved through it become Satisfy-only: the builders still make the
+     * recipe and its unlock advancement, and the recipe is swapped for its Satisfy-only twin on the way out.
+     */
+    private static RecipeOutput satisfyOnly(RecipeOutput output) {
+        return new RecipeOutput() {
+            @Override
+            public void accept(ResourceLocation id, Recipe<?> recipe, AdvancementHolder advancement, ICondition... conditions) {
+                Recipe<?> swapped = recipe instanceof ShapedRecipe shaped ? new SatisfyShapedRecipe(shaped)
+                        : recipe instanceof ShapelessRecipe shapeless ? new SatisfyShapelessRecipe(shapeless) : recipe;
+                output.accept(id, swapped, advancement, conditions);
+            }
+
+            @Override
+            public Advancement.Builder advancement() {
+                return output.advancement();
+            }
+        };
+    }
+
     private void crafting(RecipeOutput output) {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SMELTER.get())
                 .pattern("BBB").pattern("BFB").pattern("iii")
                 .define('B', Items.BRICKS).define('F', Items.BLAST_FURNACE).define('i', Items.IRON_INGOT)
                 .unlockedBy("has_blast_furnace", has(Items.BLAST_FURNACE))
-                .save(output, Overgearedmod.id("smelter"));
+                .save(satisfyOnly(output), Overgearedmod.id("smelter"));
         // The basic capsule (own design; tiers come later): glass, a bed to lie on, iron and redstone for the circuits.
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CAPSULE.get())
                 .pattern("GGG").pattern("IBI").pattern("IRI")
@@ -59,19 +88,19 @@ final class ModRecipeProvider extends RecipeProvider {
                 .pattern("III").pattern(" i ").pattern("iii")
                 .define('I', Items.IRON_BLOCK).define('i', ModItems.MITHRIL_INGOT.get())
                 .unlockedBy("has_mithril_ingot", has(ModItems.MITHRIL_INGOT.get()))
-                .save(output, Overgearedmod.id("smithing_anvil"));
+                .save(satisfyOnly(output), Overgearedmod.id("smithing_anvil"));
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.WORKSHOP_LEDGER.get())
                 .requires(Items.BOOK).requires(Items.IRON_INGOT)
                 .unlockedBy("has_apprentice_contract", has(ModItems.APPRENTICE_CONTRACT.get()))
-                .save(output, Overgearedmod.id("workshop_ledger"));
+                .save(satisfyOnly(output), Overgearedmod.id("workshop_ledger"));
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.ENHANCEMENT_STONE.get(), 2)
                 .requires(ModItems.MITHRIL_INGOT.get()).requires(Items.AMETHYST_SHARD)
                 .unlockedBy("has_mithril_ingot", has(ModItems.MITHRIL_INGOT.get()))
-                .save(output, Overgearedmod.id("enhancement_stone"));
+                .save(satisfyOnly(output), Overgearedmod.id("enhancement_stone"));
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.RESPEC_SCROLL.get())
                 .requires(Items.PAPER).requires(Items.LAPIS_LAZULI).requires(ModItems.MITHRIL_INGOT.get())
                 .unlockedBy("has_mithril_ingot", has(ModItems.MITHRIL_INGOT.get()))
-                .save(output, Overgearedmod.id("respec_scroll"));
+                .save(satisfyOnly(output), Overgearedmod.id("respec_scroll"));
     }
 
     /**

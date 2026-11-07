@@ -1,6 +1,7 @@
 {
   "feature": "overgearedmod:ore_mithril",
   "placement": [
+    { "type": "overgearedmod:satisfy_only" },
     { "type": "minecraft:count", "count": 6 },
     { "type": "minecraft:in_square" },
     {

@@ -8,6 +8,7 @@ import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.equipment.EquipRequirements;
 import com.orijua.overgearedmod.feature.equipment.EquipmentBonuses;
 import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -81,6 +82,9 @@ public final class ProgressionService {
      */
     private static List<StatModifier> equipmentModifiers(Player player, PlayerStats withoutEquipment) {
         List<StatModifier> modifiers = new ArrayList<>();
+        if (!Satisfy.is(player.level())) {
+            return modifiers;
+        }
         for (ItemStack stack : EquipmentBonuses.wornEquipment(player)) {
             EquipRequirements requirements = stack.get(ModDataComponents.REQUIREMENTS);
             if (requirements != null && !requirements.metBy(withoutEquipment)) {
@@ -102,11 +106,20 @@ public final class ProgressionService {
 
     /** Re-applies attribute modifiers; call after anything that changes effective stats (requirements may change too). */
     public static void refreshEffects(Player player) {
+        if (!Satisfy.is(player.level())) {
+            // The real world has no Satisfy bonuses; they come back when the player returns.
+            StatEffects.clear(player);
+            EquipmentBonuses.apply(player);
+            return;
+        }
         StatEffects.apply(player, effectiveStats(player));
         EquipmentBonuses.apply(player);
     }
 
     public static void awardXp(ServerPlayer player, int amount) {
+        if (!Satisfy.is(player.level())) {
+            return;
+        }
         ProgressionRules.XpResult result = ProgressionRules.addXp(Balance.current(), get(player), amount);
         set(player, result.stats());
         if (result.levelsGained() > 0) {
@@ -128,6 +141,9 @@ public final class ProgressionService {
 
     /** Adds smithing experience, raised by the titles that boost it (Khan's Disciple). */
     public static void addSmithingXp(ServerPlayer player, int amount) {
+        if (!Satisfy.is(player.level())) {
+            return;
+        }
         PlayerStats stats = get(player);
         set(player, stats.withSmithingXp(stats.smithingXp() + ProgressionRules.boostedSmithingXp(amount, titleSmithingXpBonus(player))));
     }
