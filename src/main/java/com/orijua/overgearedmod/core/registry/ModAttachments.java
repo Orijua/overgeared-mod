@@ -18,6 +18,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import com.orijua.overgearedmod.feature.character.CharacterVault;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.NeoForgeRegistries;
@@ -88,6 +89,14 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Boolean>> STARTER_CAPSULE_GIVEN =
             serverData("starter_capsule_given", () -> false, Codec.BOOL);
 
+    /**
+     * The two characters: which world's things the player carries and the snapshot of the other's (see
+     * character.CharacterVault). Server-only, kept on death, and NOT cleared by {@link #resetAll}: they are the
+     * player's belongings, not progress.
+     */
+    public static final Supplier<AttachmentType<CharacterVault>> CHARACTER_VAULT =
+            serverData("character_vault", () -> CharacterVault.EMPTY, CharacterVault.CODEC);
+
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
@@ -101,7 +110,9 @@ public final class ModAttachments {
 
     /** Back to defaults for every system (used by /satisfy debug reset all). */
     public static void resetAll(Player player) {
-        ATTACHMENT_TYPES.getEntries().forEach(type -> player.removeData(type.get()));
+        ATTACHMENT_TYPES.getEntries().stream()
+                .filter(type -> type.get() != CHARACTER_VAULT.get())
+                .forEach(type -> player.removeData(type.get()));
     }
 
     /** Saved with the player and kept on death, but never synced: state only the server needs. */
