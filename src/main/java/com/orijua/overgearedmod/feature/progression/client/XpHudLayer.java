@@ -46,8 +46,9 @@ public final class XpHudLayer implements LayeredDraw.Layer {
         if (minecraft.player != seenPlayer) {
             // Joining a world or respawning: what the new player already has is not a gain.
             seenPlayer = minecraft.player;
-            fade.reset();
-            gain.reset();
+            long arrived = Util.getMillis();
+            fade.settle(arrived);
+            gain.settle(arrived);
         }
         PlayerStats stats = ProgressionService.get(minecraft.player);
         long now = Util.getMillis();
@@ -71,6 +72,7 @@ public final class XpHudLayer implements LayeredDraw.Layer {
             int barY = bottom - BAR_HEIGHT;
             UiStyle.bar(graphics, barX, barY, WIDTH, BAR_HEIGHT, gain.barFill(), UiStyle.XP, alpha);
             renderGlow(graphics, barX, barY, now, alpha);
+            renderLoss(graphics, barX, barY, now, alpha);
         }
         if (alpha >= MIN_TEXT_ALPHA) {
             graphics.drawString(minecraft.font, xp, xpX, textY, UiStyle.withAlpha(UiStyle.HEADING, alpha));
@@ -81,6 +83,24 @@ public final class XpHudLayer implements LayeredDraw.Layer {
             int popupY = textY - 10 - Math.round(RISE * gain.rise(now));
             graphics.drawString(minecraft.font, popup, right - minecraft.font.width(popup), popupY, UiStyle.withAlpha(UiStyle.GOLD, popupAlpha));
         }
+        float lossAlpha = gain.lossAlpha(now);
+        if (lossAlpha >= MIN_TEXT_ALPHA) {
+            Component popup = Component.translatable("hud.overgearedmod.xp_loss", gain.lostAmount());
+            // Mirror of the gain: starts at the top and sinks instead of rising.
+            int popupY = textY - 10 - RISE + Math.round(RISE * gain.sink(now));
+            graphics.drawString(minecraft.font, popup, right - minecraft.font.width(popup), popupY, UiStyle.withAlpha(UiStyle.BAD, lossAlpha));
+        }
+    }
+
+    /** The part of the bar just lost, in red between the bar's new end and where it was, fading with the "-N XP". */
+    private void renderLoss(GuiGraphics graphics, int barX, int barY, long now, float alpha) {
+        float red = gain.lossAlpha(now) * alpha;
+        int from = barX + Math.round(WIDTH * gain.barFill());
+        int to = barX + Math.round(WIDTH * gain.lossEnd());
+        if (red <= 0 || to <= from) {
+            return;
+        }
+        graphics.fill(from, barY - 1, to, barY + BAR_HEIGHT + 1, UiStyle.withAlpha(UiStyle.BAD, red * 0.8f));
     }
 
     /** The part of the bar gained in this count, lit up and pulsing, spilling over the border so it reads at 2 px. */

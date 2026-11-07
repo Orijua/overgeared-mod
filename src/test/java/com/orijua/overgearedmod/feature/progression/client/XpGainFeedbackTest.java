@@ -94,12 +94,76 @@ class XpGainFeedbackTest {
     }
 
     @Test
-    void losingXpMovesTheBarAtOnceWithoutAPopup() {
+    void losingXpDrainsTheBarGraduallyWithARedLostPart() {
         XpGainFeedback gain = feedback();
         gain.update(0, 4, 60);
         gain.update(50, 4, 30);
         assertEquals(0, gain.amount());
+        assertEquals(30, gain.lostAmount());
+        assertEquals(1, gain.lossAlpha(50 + XpGainFeedback.FADE_IN_MILLIS), EPSILON);
+        float first = gain.barFill();
+        assertTrue(first > 0.3f && first < 0.6f);
+        assertEquals(0.6f, gain.lossEnd(), EPSILON);
+        run(gain, 100, 2500, 4, 30);
         assertEquals(0.3f, gain.barFill(), EPSILON);
+        assertEquals(0.6f, gain.lossEnd(), EPSILON);
+    }
+
+    @Test
+    void lossesInARowAddUpThenFadeAndTheNextOneCountsAnew() {
+        XpGainFeedback gain = feedback();
+        gain.update(0, 4, 60);
+        gain.update(50, 4, 50);
+        gain.update(100, 4, 30);
+        assertEquals(30, gain.lostAmount());
+        run(gain, 150, 3000, 4, 30);
+        assertEquals(0, gain.lostAmount());
+        assertEquals(0, gain.lossAlpha(3000), EPSILON);
+        gain.update(3050, 4, 25);
+        assertEquals(5, gain.lostAmount());
+    }
+
+    @Test
+    void aGainCancelsTheLossCountAndTheOtherWayRound() {
+        XpGainFeedback gain = feedback();
+        gain.update(0, 4, 60);
+        gain.update(50, 4, 30);
+        gain.update(100, 4, 40);
+        assertEquals(0, gain.lostAmount());
+        assertEquals(10, gain.amount());
+        gain.update(150, 4, 35);
+        assertEquals(0, gain.amount());
+        assertEquals(5, gain.lostAmount());
+    }
+
+    @Test
+    void losingALevelDrainsPastTheStartOfTheBar() {
+        XpGainFeedback gain = feedback();
+        gain.update(0, 3, 10);
+        gain.update(50, 2, 90);
+        // 10 into level 3 plus 10 back in level 2.
+        assertEquals(20, gain.lostAmount());
+        run(gain, 100, 3000, 2, 90);
+        assertEquals(0.9f, gain.barFill(), EPSILON);
+        // The bar was in the level above, so the red part runs to the end of the bar.
+        assertEquals(1, gain.lossEnd(), EPSILON);
+    }
+
+    @Test
+    void respawningDoesNotReplayTheLevelsAsAGain() {
+        XpGainFeedback gain = feedback();
+        gain.settle(0);
+        // The new player first has the default data, then the real data arrives a moment later.
+        gain.update(0, 1, 0);
+        gain.update(100, 1, 0);
+        gain.update(150, 12, 40);
+        assertEquals(0, gain.amount());
+        assertEquals(0, gain.lostAmount());
+        assertEquals(0.4f, gain.barFill(), EPSILON);
+        // Once settled, real gains count again.
+        run(gain, 200, XpGainFeedback.SETTLE_MILLIS + 100, 12, 40);
+        gain.update(XpGainFeedback.SETTLE_MILLIS + 150, 12, 50);
+        assertEquals(10, gain.amount());
     }
 
     @Test
