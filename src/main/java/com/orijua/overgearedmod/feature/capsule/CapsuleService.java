@@ -3,6 +3,8 @@ package com.orijua.overgearedmod.feature.capsule;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
@@ -265,6 +267,12 @@ public final class CapsuleService {
         if (spawn.isEmpty()) {
             player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.nowhere"), true);
             PacketDistributor.sendToPlayer(player, new CapsuleConnectingPayload(0));
+            return false;
+        }
+        if (!Characters.canCross(player, WorldSide.SATISFY)) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.character_unreadable"), true);
+            PacketDistributor.sendToPlayer(player, new CapsuleConnectingPayload(0));
+            Overgearedmod.LOGGER.error("{} cannot connect: the stored character cannot be read", player.getGameProfile().getName());
             return false;
         }
         GlobalPos exit = GlobalPos.of(player.level().dimension(), player.blockPosition());

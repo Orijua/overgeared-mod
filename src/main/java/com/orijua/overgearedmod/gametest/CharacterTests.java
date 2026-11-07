@@ -345,4 +345,24 @@ public final class CharacterTests {
         });
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void connectingIsRefusedWhenTheStoredCharacterCannotBeRead(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        net.minecraft.core.BlockPos bairan = helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1));
+        net.minecraft.core.GlobalPos capsule = net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(new net.minecraft.core.BlockPos(0, 1, 0)));
+        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 5));
+        CharacterVault broken = CharacterVault.of(WorldSide.REAL, new CompoundTag());
+        player.setData(ModAttachments.CHARACTER_VAULT.get(), broken);
+
+        helper.assertFalse(Characters.canCross(player, WorldSide.SATISFY), "crossing needs a readable stored character");
+        helper.assertTrue(Characters.canCross(player, WorldSide.REAL), "staying in the same world needs nothing");
+        CapsuleTests.inSatisfy(helper, bairan, () -> {
+            helper.assertFalse(CapsuleService.connect(player, capsule), "the connection is refused");
+            helper.assertTrue(count(player, Items.DIAMOND) == 5, "nothing moved");
+            helper.assertTrue(Characters.vault(player).equals(broken), "the vault is as it was");
+            helper.assertFalse(CapsuleService.state(player).isConnected(), "and the body did not leave the real world");
+        });
+        helper.succeed();
+    }
 }

@@ -54,6 +54,19 @@ public final class Characters {
         player.closeContainer();
     }
 
+    /**
+     * Whether a crossing into {@code target} would work: false only when it would need to swap in a stored character
+     * that cannot be read. Asked BEFORE teleporting, so the crossing is refused instead of leaving the player in a world
+     * wearing the other world's things.
+     */
+    public static boolean canCross(ServerPlayer player, WorldSide target) {
+        CharacterVault vault = vault(player);
+        if (vault.live().isEmpty() || vault.live().get() == target) {
+            return true;
+        }
+        return vault.stored().map(CharacterSnapshot::isReadable).orElse(true);
+    }
+
     /** Makes the player carry the character of the world they stand in. Safe to call any time, any number of times. */
     public static Result settle(ServerPlayer player) {
         WorldSide want = WorldSide.of(player.level());
@@ -79,8 +92,13 @@ public final class Characters {
             CharacterSnapshot.apply(player, incoming);
         } catch (RuntimeException e) {
             // Half applied: put back what was there so nothing is duplicated or lost, and keep the vault as it was.
-            CharacterSnapshot.apply(player, outgoing);
-            Overgearedmod.LOGGER.error("Could not restore the {} character of {}: undone", want, player.getGameProfile().getName(), e);
+            Overgearedmod.LOGGER.error("Could not restore the {} character of {}: undoing", want, player.getGameProfile().getName(), e);
+            try {
+                CharacterSnapshot.apply(player, outgoing);
+            } catch (RuntimeException undo) {
+                // Nothing more can be done here; the vault is untouched, so the next settle tries again.
+                Overgearedmod.LOGGER.error("The undo failed too for {}", player.getGameProfile().getName(), undo);
+            }
             return Result.FAILED;
         }
         player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(want, outgoing));
