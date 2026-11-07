@@ -31,7 +31,7 @@ public final class Workshop {
         WorkshopEntry entry = new WorkshopEntry(apprentice.getUUID(), apprentice.baseName(), apprentice.grade() == NpcGrade.NAMED,
                 apprentice.isCraftsman(), apprentice.smithingLevel(), apprentice.status().name(),
                 apprentice.order().map(BuiltInRegistries.ITEM::getKey), apprentice.daysPaid(),
-                WorkshopEntry.quantize(apprentice.shownProgress()),
+                apprentice.shownProgress(),
                 apprentice.shownMissing().isEmpty() ? Optional.empty() : Optional.of(BuiltInRegistries.ITEM.getKey(apprentice.shownMissing().getItem())),
                 apprentice.shownMissing().getCount());
         List<WorkshopEntry> entries = new ArrayList<>(entries(master));
@@ -61,14 +61,19 @@ public final class Workshop {
 
     /** His status in words, as his window shows it: what he lacks, or how far the piece is while he works. */
     public static Component statusText(WorkshopEntry entry) {
-        ApprenticeSmith.Status status = entry.statusValue();
-        Optional<Item> missing = missingItem(entry);
-        if (status == ApprenticeSmith.Status.NO_MATERIALS && missing.isPresent()) {
-            return Component.translatable("message.overgearedmod.apprentice_status.no_materials_item", entry.missingCount(),
-                    missing.get().getDescription());
+        return statusText(entry.statusValue(), entry.progress(), entry.missingCount(), missingItem(entry).map(Item::getDescription).orElse(null));
+    }
+
+    /**
+     * The one place that words an apprentice's status: his window, the Workshop tab and the chat warning all use it, so
+     * they always agree. {@code missingName} is null when he lacks nothing.
+     */
+    public static Component statusText(ApprenticeSmith.Status status, int progress, int missingCount, Component missingName) {
+        if (status == ApprenticeSmith.Status.NO_MATERIALS && missingName != null) {
+            return Component.translatable("message.overgearedmod.apprentice_status.no_materials_item", missingCount, missingName);
         }
-        if (status == ApprenticeSmith.Status.WORKING && entry.progress() > 0) {
-            return Component.translatable("message.overgearedmod.apprentice_status.working_progress", entry.progress());
+        if (status == ApprenticeSmith.Status.WORKING && progress > 0) {
+            return Component.translatable("message.overgearedmod.apprentice_status.working_progress", progress);
         }
         return Component.translatable("message.overgearedmod.apprentice_status." + status.name().toLowerCase());
     }

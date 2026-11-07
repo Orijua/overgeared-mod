@@ -159,11 +159,7 @@ public final class ApprenticeScreen extends Screen {
         graphics.fill(left + PADDING, lineY, left + WIDTH - PADDING, lineY + 1, UiStyle.LINE_SOFT);
 
         ApprenticeSmith.Status status = apprentice.status();
-        int statusColor = switch (status) {
-            case WORKING -> UiStyle.GOOD;
-            case NO_ORDER -> UiStyle.MUTED;
-            default -> UiStyle.BAD;
-        };
+        int statusColor = ApprenticeUi.statusColor(status);
         row(graphics, 0, "status", apprentice.statusText(), statusColor);
         if (status == ApprenticeSmith.Status.WORKING && apprentice.shownProgress() > 0) {
             // The piece on the anvil, filling up under the status.
@@ -180,7 +176,7 @@ public final class ApprenticeScreen extends Screen {
             graphics.drawString(font, clip(order.getHoverName(), valueWidth() - 18), x + 18, rowY(1), UiStyle.TEXT);
         }
         row(graphics, 2, "wage", Component.translatable("screen.overgearedmod.apprentice.wage_days", apprentice.shownDaysPaid()),
-                apprentice.shownDaysPaid() > 0 ? UiStyle.TEXT : UiStyle.BAD);
+                ApprenticeUi.wageColor(apprentice.shownDaysPaid(), UiStyle.TEXT));
         row(graphics, 3, "materials", container(ApprenticeSmith.Slot.MATERIALS, "screen.overgearedmod.apprentice.materials_default"), UiStyle.TEXT);
         row(graphics, 4, "output", container(ApprenticeSmith.Slot.OUTPUT, "screen.overgearedmod.apprentice.output_default"), UiStyle.TEXT);
 

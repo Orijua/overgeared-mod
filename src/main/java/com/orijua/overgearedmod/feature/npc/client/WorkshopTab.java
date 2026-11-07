@@ -142,11 +142,7 @@ public class WorkshopTab extends SatisfyTab {
     private void renderCard(GuiGraphics graphics, WorkshopEntry entry, int y, boolean hover, boolean showLevel) {
         int cardWidth = cardWidth();
         ApprenticeSmith.Status status = entry.statusValue();
-        int statusColor = switch (status) {
-            case WORKING -> UiStyle.GOOD;
-            case NO_ORDER -> UiStyle.MUTED;
-            default -> UiStyle.BAD;
-        };
+        int statusColor = ApprenticeUi.statusColor(status);
         graphics.fill(left, y, left + cardWidth, y + CARD, hover ? CARD_HOVER : CARD_FILL);
         graphics.fill(left, y, left + STRIPE, y + CARD, 0xFF000000 | statusColor);
 
@@ -175,7 +171,7 @@ public class WorkshopTab extends SatisfyTab {
         Component detail = Component.translatable("screen.overgearedmod.workshop.detail",
                 order.map(Item::getDescription).orElse(Component.translatable("message.overgearedmod.apprentice_no_order_name")), entry.daysPaid());
         graphics.drawString(font(), UiStyle.ellipsize(font(), detail, cardWidth - 26 - 4), textX, y + 14,
-                entry.daysPaid() > 0 ? UiStyle.MUTED : UiStyle.BAD);
+                ApprenticeUi.wageColor(entry.daysPaid(), UiStyle.MUTED));
 
         if (status == ApprenticeSmith.Status.WORKING) {
             // The piece on the anvil, filling up along the bottom of the card.
@@ -192,7 +188,7 @@ public class WorkshopTab extends SatisfyTab {
                 .orElse(Component.translatable("message.overgearedmod.apprentice_no_order_name"));
         lines.add(Component.translatable("screen.overgearedmod.workshop.tip.order", order).withColor(UiStyle.MUTED));
         lines.add(Component.translatable("screen.overgearedmod.workshop.tip.wage", entry.daysPaid())
-                .withColor(entry.daysPaid() > 0 ? UiStyle.MUTED : UiStyle.BAD));
+                .withColor(ApprenticeUi.wageColor(entry.daysPaid(), UiStyle.MUTED)));
         Workshop.missingItem(entry).ifPresent(item -> lines.add(Component.translatable("screen.overgearedmod.workshop.tip.missing",
                 entry.missingCount(), item.getDescription()).withColor(UiStyle.BAD)));
         lines.add(Component.translatable("screen.overgearedmod.workshop.tip.open").withColor(UiStyle.MUTED));
