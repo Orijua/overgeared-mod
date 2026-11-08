@@ -24,6 +24,7 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.TradeWithPlayerGoal;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.ItemCost;
@@ -60,15 +61,18 @@ public class BlacksmithNpc extends AbstractVillager {
         goalSelector.addGoal(3, new RandomLookAroundGoal(this));
     }
 
+    // Only for spotting shops stocked before the economy; the currency now is the Satisfy emerald.
+    private static final Item LEGACY_CURRENCY = Items.EMERALD;
+
     /** The shop. Edit this list to change what the blacksmith sells or buys. */
     @Override
     protected void updateTrades() {
         MerchantOffers offers = getOffers();
-        offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 6), new ItemStack(ModItems.ENHANCEMENT_STONE.get()), 16, 0, 0.05f));
-        offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 12), new ItemStack(ModItems.RESPEC_SCROLL.get()), 4, 0, 0.05f));
-        offers.add(new MerchantOffer(new ItemCost(ModItems.MITHRIL_INGOT.get(), 4), new ItemStack(Items.EMERALD, 3), 16, 0, 0.05f));
+        offers.add(new MerchantOffer(new ItemCost(ModItems.SATISFY_EMERALD.get(), 6), new ItemStack(ModItems.ENHANCEMENT_STONE.get()), 16, 0, 0.05f));
+        offers.add(new MerchantOffer(new ItemCost(ModItems.SATISFY_EMERALD.get(), 12), new ItemStack(ModItems.RESPEC_SCROLL.get()), 4, 0, 0.05f));
+        offers.add(new MerchantOffer(new ItemCost(ModItems.MITHRIL_INGOT.get(), 4), new ItemStack(ModItems.SATISFY_EMERALD.get(), 3), 16, 0, 0.05f));
         for (ResourceLocation skill : SOLD_SKILLS) {
-            offers.add(new MerchantOffer(new ItemCost(Items.EMERALD, 16),
+            offers.add(new MerchantOffer(new ItemCost(ModItems.SATISFY_EMERALD.get(), 16),
                     SkillBookItem.forSkill(ModItems.SKILL_BOOK.get(), skill), 3, 0, 0.05f));
         }
         offers.add(eyeOfPallalian());
@@ -77,25 +81,38 @@ public class BlacksmithNpc extends AbstractVillager {
 
     /** More apprentice blacksmiths, once the smith's level allows them (the first contract he gives for free). */
     private static MerchantOffer apprenticeContract() {
-        return new MerchantOffer(new ItemCost(Items.EMERALD, ApprenticeRules.CONTRACT_PRICE), new ItemStack(ModItems.APPRENTICE_CONTRACT.get()),
+        return new MerchantOffer(new ItemCost(ModItems.SATISFY_EMERALD.get(), ApprenticeRules.CONTRACT_PRICE), new ItemStack(ModItems.APPRENTICE_CONTRACT.get()),
                 5, 0, 0.05f);
     }
 
     /** The most expensive appraisal item (canon, cap. 1), to know what Pagma's old book is. */
     private static MerchantOffer eyeOfPallalian() {
-        return new MerchantOffer(new ItemCost(Items.EMERALD, 32), Optional.of(new ItemCost(Items.DIAMOND, 2)),
+        return new MerchantOffer(new ItemCost(ModItems.SATISFY_EMERALD.get(), 32), Optional.of(new ItemCost(Items.DIAMOND, 2)),
                 new ItemStack(ModItems.EYE_OF_PALLALIAN.get()), 2, 0, 0.05f);
     }
 
-    /** Smiths whose shop was stocked before these offers existed get them added. */
+    /**
+     * Smiths whose shop was stocked before these offers existed get them added. One stocked before the economy (it
+     * trades in vanilla emeralds) is restocked from scratch, which also refills its spent uses.
+     */
     private void stockNewOffers() {
         MerchantOffers offers = getOffers();
+        if (offers.stream().anyMatch(BlacksmithNpc::usesLegacyCurrency)) {
+            offers.clear();
+            updateTrades();
+            return;
+        }
         if (offers.stream().noneMatch(offer -> offer.getResult().is(ModItems.EYE_OF_PALLALIAN.get()))) {
             offers.add(eyeOfPallalian());
         }
         if (offers.stream().noneMatch(offer -> offer.getResult().is(ModItems.APPRENTICE_CONTRACT.get()))) {
             offers.add(apprenticeContract());
         }
+    }
+
+    private static boolean usesLegacyCurrency(MerchantOffer offer) {
+        return offer.getBaseCostA().is(LEGACY_CURRENCY) || offer.getCostB().is(LEGACY_CURRENCY)
+                || offer.getResult().is(LEGACY_CURRENCY);
     }
 
     /** Right-click: his quest window, whose Trade button opens the shop ({@link #startTrading}). */

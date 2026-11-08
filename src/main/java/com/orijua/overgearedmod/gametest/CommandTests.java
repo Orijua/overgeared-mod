@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.debug.SiteLanding;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.capsule.LogoutService;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
@@ -13,6 +14,10 @@ import com.orijua.overgearedmod.feature.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.feature.npc.NpcGrade;
 import com.orijua.overgearedmod.feature.pagma.AshurBetrayal;
 import com.orijua.overgearedmod.feature.pagma.PagmaStory;
+import com.orijua.overgearedmod.core.config.Balance;
+import com.orijua.overgearedmod.feature.progression.PlayerStats;
+import com.orijua.overgearedmod.feature.progression.ProgressionRules;
+import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
@@ -98,19 +103,48 @@ public final class CommandTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void questCompleteMarksTheWholeChainDone(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        int emeralds = player.getInventory().countItem(Items.EMERALD);
         run(helper, player, "satisfy debug quest complete overgearedmod:quality_test");
         PlayerQuests quests = QuestService.get(player);
         helper.assertTrue(quests.isCompleted(PagmaStory.SMITH_CHAIN_END), "the quest itself");
         helper.assertTrue(quests.isCompleted(Overgearedmod.id("first_commission")), "and the one before it");
         helper.assertTrue(quests.isCompleted(Overgearedmod.id("smith_firewood")), "back to the start of the chain");
-        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == emeralds, "no rewards");
+        helper.assertTrue(player.getInventory().countItem(ModItems.ENHANCEMENT_STONE.get()) == 3, "the requested quest gives its 3 stones");
 
         run(helper, player, "satisfy debug quest complete overgearedmod:quality_test");
+        helper.assertTrue(player.getInventory().countItem(ModItems.ENHANCEMENT_STONE.get()) == 3, "and not again");
         helper.assertTrue(QuestService.get(player).timesCompleted(PagmaStory.SMITH_CHAIN_END) == 1, "done ones are not done twice");
 
         AshurBetrayal.talk(player);
         helper.assertTrue(QuestService.get(player).isDiscovered(PagmaStory.SECRET_REQUEST), "Ashur now tells of his request");
+        helper.succeed();
+    }
+
+    /** Only the quest named gives its rewards, once; the earlier ones of the chain are marked done without them. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void questCompleteGivesOnlyTheRequestedQuestRewardsOnce(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        run(helper, player, "satisfy debug quest complete overgearedmod:bairan_talents");
+        helper.assertTrue(QuestService.get(player).isCompleted(Overgearedmod.id("watch_commander")), "the chain is done");
+        helper.assertTrue(player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) == 16, "16 Satisfy emeralds");
+        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 0, "no plain emeralds");
+        helper.assertTrue(player.getInventory().countItem(ModItems.COMMANDERS_SWORD.get()) == 0, "no reward of watch_commander");
+        helper.assertTrue(player.getInventory().countItem(ModItems.RULERS_SWORD.get()) == 0, "no loan");
+        PlayerStats expected = ProgressionRules.addXp(Balance.current(), PlayerStats.DEFAULT, 500).stats();
+        PlayerStats stats = ProgressionService.get(player);
+        helper.assertTrue(stats.level() == expected.level() && stats.xp() == expected.xp(), "only the 500 XP of the quest: " + stats);
+
+        run(helper, player, "satisfy debug quest complete overgearedmod:bairan_talents");
+        helper.assertTrue(player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) == 16, "repeating gives nothing more");
+        PlayerStats again = ProgressionService.get(player);
+        helper.assertTrue(again.level() == stats.level() && again.xp() == stats.xp(), "nor XP: " + again);
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void questCompleteOfAshurRequestGives48Emeralds(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        run(helper, player, "satisfy debug quest complete overgearedmod:ashur_secret_request");
+        helper.assertTrue(player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) == 48, "48 Satisfy emeralds");
         helper.succeed();
     }
 

@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.feature.npc.client;
 import com.orijua.overgearedmod.core.client.SatisfyButton;
 import com.orijua.overgearedmod.core.client.SatisfyConfirmScreen;
 import com.orijua.overgearedmod.core.client.UiStyle;
+import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.insight.InsightRules;
 import com.orijua.overgearedmod.feature.insight.Observation;
 import com.orijua.overgearedmod.feature.npc.ApprenticeActionPayload;
@@ -20,7 +21,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.List;
@@ -121,7 +121,7 @@ public final class ApprenticeScreen extends Screen {
     private void updateButtons() {
         cancel.active = !apprentice.shownOrder().isEmpty();
         pay.active = apprentice.shownDaysPaid() < ApprenticeRules.MAX_PAID_DAYS
-                && minecraft.player.getInventory().countItem(Items.EMERALD) >= ApprenticeRules.DAILY_WAGE;
+                && minecraft.player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) >= ApprenticeRules.DAILY_WAGE;
         clear.active = apprentice.assigned(ApprenticeSmith.Slot.MATERIALS).isPresent() || apprentice.assigned(ApprenticeSmith.Slot.OUTPUT).isPresent();
         boolean hasHammer = !apprentice.getMainHandItem().isEmpty();
         hammer.setMessage(Component.translatable(hasHammer ? "screen.overgearedmod.apprentice.hammer_take" : "screen.overgearedmod.apprentice.hammer_give"));

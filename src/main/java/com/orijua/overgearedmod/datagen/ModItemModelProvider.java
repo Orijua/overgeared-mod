@@ -32,6 +32,7 @@ final class ModItemModelProvider extends ItemModelProvider {
 
         // Placeholders that reuse a vanilla texture until there is an own PNG.
         vanillaTexture(ModItems.ENHANCEMENT_STONE.get(), "amethyst_shard");
+        vanillaTexture(ModItems.SATISFY_EMERALD.get(), "emerald");
         vanillaTexture(ModItems.SKILL_BOOK.get(), "writable_book");
         vanillaTexture(ModItems.FRACASO_BLUEPRINT.get(), "map");
         vanillaTexture(ModItems.UNAPPRAISED_BOOK.get(), "book");

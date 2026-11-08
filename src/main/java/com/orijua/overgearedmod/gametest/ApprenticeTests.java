@@ -98,7 +98,10 @@ public final class ApprenticeTests {
         ServerPlayer player = smithOfLevel(helper, 50);
         ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
         helper.assertTrue(apprentice.daysPaid() == 1, "the first day is on Smith");
-        ItemStack emeralds = new ItemStack(Items.EMERALD, 10);
+        ItemStack vanilla = new ItemStack(Items.EMERALD, 10);
+        apprentice.pay(player, vanilla);
+        helper.assertTrue(apprentice.daysPaid() == 1 && vanilla.getCount() == 10, "vanilla emeralds pay no day and are not spent");
+        ItemStack emeralds = new ItemStack(ModItems.SATISFY_EMERALD.get(), 10);
         apprentice.pay(player, emeralds);
         helper.assertTrue(apprentice.daysPaid() == 4 && emeralds.getCount() == 1, "three more days for nine emeralds: "
                 + apprentice.daysPaid() + ", " + emeralds.getCount() + " left");
@@ -313,9 +316,13 @@ public final class ApprenticeTests {
         ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
         helper.assertFalse(apprentice.payDay(player), "no emeralds");
         player.getInventory().add(new ItemStack(Items.EMERALD, 5));
+        helper.assertFalse(apprentice.payDay(player), "vanilla emeralds do not pay");
+        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 5, "and are not spent");
+        player.getInventory().clearContent();
+        player.getInventory().add(new ItemStack(ModItems.SATISFY_EMERALD.get(), 5));
         helper.assertTrue(apprentice.payDay(player), "three emeralds from the inventory");
         helper.assertTrue(apprentice.daysPaid() == 2 && apprentice.shownDaysPaid() == 2, "two days, synced to the window");
-        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 2, "two emeralds left");
+        helper.assertTrue(player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) == 2, "two emeralds left");
         apprentice.takeOrder(player, ModItems.JAFFA_SWORD.get());
         helper.assertTrue(apprentice.shownOrder().is(ModItems.JAFFA_SWORD.get()), "the order is synced");
         apprentice.cancelOrder(player);

@@ -98,6 +98,10 @@ public final class ModItems {
 
     public static final DeferredItem<Item> ENHANCEMENT_STONE = ITEMS.registerSimpleItem("enhancement_stone");
 
+    // Game money; not the vanilla emerald.
+    public static final DeferredItem<Item> SATISFY_EMERALD = ITEMS.registerSimpleItem("satisfy_emerald",
+            new Item.Properties().rarity(Rarity.UNCOMMON));
+
     public static final DeferredItem<SkillBookItem> SKILL_BOOK = ITEMS.registerItem("skill_book",
             SkillBookItem::new, new Item.Properties().stacksTo(1));
 

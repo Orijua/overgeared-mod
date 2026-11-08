@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.feature.npc;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.core.registry.ModRecipes;
 import com.orijua.overgearedmod.feature.equipment.EquipmentService;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
@@ -74,7 +75,7 @@ import java.util.UUID;
  * never reaches his master's. Without his daily wage he stops.
  * <p>
  * His master deals with him by right-clicking: empty-handed, opens his window (status, wage, containers, dismiss); with
- * emeralds, pays his wage; with an item, orders it (any forging recipe without a class). What the window shows is synced
+ * Satisfy emeralds, pays his wage; with an item, orders it (any forging recipe without a class). What the window shows is synced
  * to the client through the entity data.
  */
 public class ApprenticeSmith extends PathfinderMob {
@@ -335,7 +336,7 @@ public class ApprenticeSmith extends PathfinderMob {
         }
         if (!isOwnedBy(master)) {
             master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_not_yours", getDisplayName()), true);
-        } else if (held.is(Items.EMERALD)) {
+        } else if (held.is(ModItems.SATISFY_EMERALD.get())) {
             pay(master, held);
         } else if (!held.isEmpty()) {
             takeOrder(master, held.getItem());
@@ -343,8 +344,11 @@ public class ApprenticeSmith extends PathfinderMob {
         return InteractionResult.CONSUME;
     }
 
-    /** Pays as many days as the emeralds in hand buy (up to {@link ApprenticeRules#MAX_PAID_DAYS} ahead). */
+    /** Pays as many days as the Satisfy emeralds in hand buy (up to {@link ApprenticeRules#MAX_PAID_DAYS} ahead). */
     public void pay(ServerPlayer master, ItemStack emeralds) {
+        if (!emeralds.is(ModItems.SATISFY_EMERALD.get())) {
+            return;
+        }
         int days = ApprenticeRules.daysBought(emeralds.getCount(), daysPaid());
         if (days == 0) {
             master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_paid_enough", getDisplayName()), true);
@@ -360,11 +364,11 @@ public class ApprenticeSmith extends PathfinderMob {
             master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_paid_enough", getDisplayName()), true);
             return false;
         }
-        if (master.getInventory().countItem(Items.EMERALD) < ApprenticeRules.DAILY_WAGE) {
+        if (master.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) < ApprenticeRules.DAILY_WAGE) {
             master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_no_emeralds", ApprenticeRules.DAILY_WAGE), true);
             return false;
         }
-        master.getInventory().clearOrCountMatchingItems(stack -> stack.is(Items.EMERALD), ApprenticeRules.DAILY_WAGE,
+        master.getInventory().clearOrCountMatchingItems(stack -> stack.is(ModItems.SATISFY_EMERALD.get()), ApprenticeRules.DAILY_WAGE,
                 master.inventoryMenu.getCraftSlots());
         addPaidDays(master, 1);
         return true;

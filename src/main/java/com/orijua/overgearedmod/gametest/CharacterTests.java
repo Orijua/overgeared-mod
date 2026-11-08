@@ -8,6 +8,8 @@ import com.orijua.overgearedmod.feature.character.CharacterVault;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.economy.Account;
+import com.orijua.overgearedmod.feature.economy.AccountService;
 import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -459,6 +461,27 @@ public final class CharacterTests {
             Characters.settle(fresh);
             helper.assertTrue(fresh.getHealth() == 9.0f, "the real body did not die: its health is the one it had");
             helper.assertTrue(fresh.getFoodData().getFoodLevel() == 6 && fresh.experienceLevel == 20, "and its hunger and XP");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void settleLeavesTheAccountAlone(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.ACCOUNT.get(), new Account(1234, 50));
+        Account expected = new Account(1234, 50);
+
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(player);
+            helper.assertTrue(AccountService.get(player).equals(expected), "the account is intact after adopting the real world");
+        });
+        in(helper, WorldSide.SATISFY, () -> {
+            helper.assertTrue(Characters.settle(player) == Characters.Result.SWAPPED, "entering Satisfy swaps");
+            helper.assertTrue(AccountService.get(player).equals(expected), "the account is intact in Satisfy");
+        });
+        in(helper, WorldSide.REAL, () -> {
+            Characters.settle(player);
+            helper.assertTrue(AccountService.get(player).equals(expected), "and back in the real world");
         });
         helper.succeed();
     }
