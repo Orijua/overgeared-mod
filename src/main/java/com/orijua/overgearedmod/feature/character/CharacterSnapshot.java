@@ -17,6 +17,10 @@ import net.minecraft.world.food.FoodData;
  * <p>Not covered: slots that other mods add (e.g. Curios). They stay with the player in both worlds.
  */
 public final class CharacterSnapshot {
+    /**
+     * The game's data version when the snapshot was taken. Nothing reads it yet, on purpose: it is there so that a
+     * future change of format (or a Minecraft update that needs a data fixer) can tell an old snapshot from a new one.
+     */
     private static final String VERSION = "data_version";
     private static final String INVENTORY = "inventory";
     private static final String ENDER_CHEST = "ender_chest";

@@ -72,6 +72,9 @@ public final class Characters {
         WorldSide want = WorldSide.of(player.level());
         CharacterVault vault = vault(player);
         if (vault.live().isEmpty()) {
+            // Adoption: there is no vault yet (a new player, or one who played before this feature existed). What they carry
+            // is taken as this world's character, wherever they happen to be, and nothing is moved or lost. Consequence for
+            // players from before: anything they had mixed between the two worlds stays together in that one character.
             player.setData(ModAttachments.CHARACTER_VAULT.get(), vault.adopted(want));
             Overgearedmod.LOGGER.info("{} is taken as carrying the {} character", player.getGameProfile().getName(), want);
             return Result.ADOPTED;
