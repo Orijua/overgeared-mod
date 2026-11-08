@@ -36,7 +36,9 @@ public record SystemNotification(Kind kind, List<Component> lines, Optional<Item
         LEGENDARY_ITEM("legendary_item", true),
         FATIGUE_WARNING("fatigue_warning", false),
         FATIGUE_EXHAUSTED("fatigue_exhausted", false),
-        RARE_TITLE("rare_title", true);
+        RARE_TITLE("rare_title", true),
+        // Always at the end: the stream codec goes by ordinal.
+        TRADE("trade", false);
 
         // CLAMP: a bogus id can never index outside the enum.
         public static final StreamCodec<ByteBuf, Kind> STREAM_CODEC = ByteBufCodecs.idMapper(

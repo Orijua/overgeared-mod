@@ -1,5 +1,7 @@
 package com.orijua.overgearedmod.core.network;
 
+import com.orijua.overgearedmod.feature.economy.TradeSellPayload;
+import com.orijua.overgearedmod.feature.economy.TradeService;
 import com.orijua.overgearedmod.feature.npc.ApprenticeActionPayload;
 import com.orijua.overgearedmod.feature.npc.ApprenticeAssignments;
 import com.orijua.overgearedmod.feature.npc.ApprenticeSmith;
@@ -26,6 +28,7 @@ import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
 import com.orijua.overgearedmod.feature.smithing.ManualForgePayload;
 import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
 import com.orijua.overgearedmod.feature.world.Satisfy;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -132,6 +135,14 @@ final class ServerPayloadHandler {
                 && euphemina.distanceToSqr(player) <= QuestService.GIVER_REACH * QuestService.GIVER_REACH) {
             KhanContest.start(player);
         }
+    }
+
+    /** From the Trade tab: sells or exports a piece of the sender. The Satisfy gate (BUG-050) is in {@code TradeService.sell}. */
+    static void tradeSell(TradeSellPayload payload, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        TradeService.message(TradeService.sell(player, payload)).ifPresent(message -> player.displayClientMessage(message, true));
     }
 
     /** From an apprentice's window: only his master, standing near him. */

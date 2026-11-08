@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.capsule.CapsuleState;
 import com.orijua.overgearedmod.feature.economy.Account;
+import com.orijua.overgearedmod.feature.economy.TradeSaturation;
 import com.orijua.overgearedmod.feature.insight.LearnedToday;
 import com.orijua.overgearedmod.feature.mob.MobLevel;
 import com.orijua.overgearedmod.feature.npc.WorkshopEntry;
@@ -58,6 +59,14 @@ public final class ModAttachments {
      */
     public static final Supplier<AttachmentType<Account>> ACCOUNT =
             playerData("account", () -> Account.EMPTY, Account.CODEC, Account.STREAM_CODEC, true);
+
+    /**
+     * How saturated each category and rating of equipment is for the player's sales (see economy.TradeService). One
+     * value for the player, not swapped with the characters and outside their vault; synced to its owner (the Trade
+     * tab shows the prices), kept on death and cleared by {@link #resetAll}.
+     */
+    public static final Supplier<AttachmentType<TradeSaturation>> TRADE_SATURATION =
+            playerData("trade_saturation", () -> TradeSaturation.EMPTY, TradeSaturation.CODEC, TradeSaturation.STREAM_CODEC, true);
 
     /** Seconds left of the grace period after running out of energy, or -1 when it is not running. Saved (quitting does not stretch it) and synced to its owner, for the countdown on screen. */
     public static final Supplier<AttachmentType<Integer>> FATIGUE_GRACE =

@@ -7,6 +7,10 @@ import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.economy.TradeMode;
+import com.orijua.overgearedmod.feature.economy.TradeSaturation;
+import com.orijua.overgearedmod.feature.economy.TradeSellPayload;
+import com.orijua.overgearedmod.feature.economy.TradeService;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.equipment.RateEquipmentModifier;
 import com.orijua.overgearedmod.feature.mob.MobKilledEvent;
@@ -723,6 +727,22 @@ public final class SatisfyOnlyTests {
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void tradeSellOutsideSatisfyTouchesNothing(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        sword.set(ModDataComponents.ITEM_RATING, ItemRating.EPIC);
+        player.getInventory().setItem(3, sword.copy());
+        TradeSellPayload payload = new TradeSellPayload(3, TradeMode.SELL, sword.copy(), 16);
+        realWorld(helper, () -> {
+            invokeHandler("tradeSell", TradeSellPayload.class, payload, player);
+            helper.assertTrue(ItemStack.matches(player.getInventory().getItem(3), sword), "the sword stays in the real world");
+            helper.assertTrue(player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) == 0, "nothing paid");
+            helper.assertTrue(TradeService.saturation(player).equals(TradeSaturation.EMPTY), "nothing counted");
+        });
+        helper.succeed();
     }
 
     @GameTest(template = TestSupport.EMPTY)

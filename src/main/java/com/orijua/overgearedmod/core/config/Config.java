@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.core.config;
 
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
@@ -151,6 +152,89 @@ public final class Config {
         BUILDER.pop();
     }
 
+    static {
+        BUILDER.push("trade");
+    }
+
+    private static final TradeBalance T = TradeBalance.DEFAULT;
+    private static final ModConfigSpec.IntValue TRADE_BASE_NORMAL = BUILDER
+            .comment("Trade: selling equipment for Satisfy emeralds or exporting it for Won. These numbers are the mod's own design, not the canon's.",
+                    "Reference price of a piece of each rating, before material and enhancement (this one: normal).")
+            .defineInRange("basePriceNormal", T.basePrice().get(ItemRating.NORMAL), 1, 1_000_000);
+    private static final ModConfigSpec.IntValue TRADE_BASE_RARE = BUILDER
+            .comment("Reference price of a rare piece.")
+            .defineInRange("basePriceRare", T.basePrice().get(ItemRating.RARE), 1, 1_000_000);
+    private static final ModConfigSpec.IntValue TRADE_BASE_EPIC = BUILDER
+            .comment("Reference price of a epic piece.")
+            .defineInRange("basePriceEpic", T.basePrice().get(ItemRating.EPIC), 1, 1_000_000);
+    private static final ModConfigSpec.IntValue TRADE_BASE_UNIQUE = BUILDER
+            .comment("Reference price of a unique piece.")
+            .defineInRange("basePriceUnique", T.basePrice().get(ItemRating.UNIQUE), 1, 1_000_000);
+    private static final ModConfigSpec.IntValue TRADE_BASE_LEGENDARY = BUILDER
+            .comment("Reference price of a legendary piece.")
+            .defineInRange("basePriceLegendary", T.basePrice().get(ItemRating.LEGENDARY), 1, 1_000_000);
+    private static final ModConfigSpec.IntValue TRADE_BASE_MYTH = BUILDER
+            .comment("Reference price of a myth piece.")
+            .defineInRange("basePriceMyth", T.basePrice().get(ItemRating.MYTH), 1, 1_000_000);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_WOOD = BUILDER
+            .comment("Price multiplier of wood equipment.")
+            .defineInRange("materialWood", T.materialMultiplier().get("wood"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_STONE = BUILDER
+            .comment("Price multiplier of stone equipment.")
+            .defineInRange("materialStone", T.materialMultiplier().get("stone"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_IRON = BUILDER
+            .comment("Price multiplier of iron equipment.")
+            .defineInRange("materialIron", T.materialMultiplier().get("iron"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_GOLD = BUILDER
+            .comment("Price multiplier of gold equipment.")
+            .defineInRange("materialGold", T.materialMultiplier().get("gold"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_DIAMOND = BUILDER
+            .comment("Price multiplier of diamond equipment.")
+            .defineInRange("materialDiamond", T.materialMultiplier().get("diamond"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_NETHERITE = BUILDER
+            .comment("Price multiplier of netherite equipment.")
+            .defineInRange("materialNetherite", T.materialMultiplier().get("netherite"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_LEATHER = BUILDER
+            .comment("Price multiplier of leather equipment.")
+            .defineInRange("materialLeather", T.materialMultiplier().get("leather"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_MATERIAL_CHAINMAIL = BUILDER
+            .comment("Price multiplier of chainmail equipment.")
+            .defineInRange("materialChainmail", T.materialMultiplier().get("chainmail"), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_OTHER_MATERIAL = BUILDER
+            .comment("Price multiplier of any other material.")
+            .defineInRange("otherMaterial", T.otherMaterial(), 0.0, 100.0);
+    private static final ModConfigSpec.DoubleValue TRADE_ENHANCEMENT_BONUS = BUILDER
+            .comment("Share of the reference price added per enhancement level (weapons only).")
+            .defineInRange("enhancementBonus", T.enhancementBonus(), 0.0, 10.0);
+    private static final ModConfigSpec.DoubleValue TRADE_SELL_SHARE = BUILDER
+            .comment("Share of the reference price paid in Satisfy emeralds when selling (0 to 1: selling never pays more than the reference).")
+            .defineInRange("sellShare", T.sellShare(), 0.0, 1.0);
+    private static final ModConfigSpec.IntValue TRADE_WON_PER_REFERENCE = BUILDER
+            .comment("Won that one point of reference price is worth when exporting.")
+            .defineInRange("wonPerReference", T.wonPerReference(), 0, 1_000_000);
+    private static final ModConfigSpec.DoubleValue TRADE_EXPORT_COMMISSION = BUILDER
+            .comment("Share of the export that is kept as commission (0.05 = the player gets 95 %).")
+            .defineInRange("exportCommission", T.exportCommission(), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue TRADE_SATURATION_STEP = BUILDER
+            .comment("Price factor for each point of pressure (each piece sold or exported of the same category and rating).")
+            .defineInRange("saturationStep", T.saturationStep(), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue TRADE_SATURATION_FLOOR = BUILDER
+            .comment("The saturation factor never goes below this.")
+            .defineInRange("saturationFloor", T.saturationFloor(), 0.0, 1.0);
+    private static final ModConfigSpec.IntValue TRADE_RECOVERY_PER_DAY = BUILDER
+            .comment("Points of pressure that go away each whole game day.")
+            .defineInRange("recoveryPerDay", T.recoveryPerDay(), 0, 10_000);
+    private static final ModConfigSpec.IntValue TRADE_PRESSURE_CAP = BUILDER
+            .comment("Pressure never grows beyond this.")
+            .defineInRange("pressureCap", T.pressureCap(), 1, 10_000);
+    private static final ModConfigSpec.LongValue TRADE_MAX_SELL_EMERALDS = BUILDER
+            .comment("A sale that would pay more Satisfy emeralds than this is refused without touching the piece.")
+            .defineInRange("maxSellEmeralds", T.maxSellEmeralds(), 64L, 100_000L);
+
+    static {
+        BUILDER.pop();
+    }
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config() {
@@ -168,6 +252,28 @@ public final class Config {
                 java.util.stream.Stream.of(FATIGUE_WARN_1.get(), FATIGUE_WARN_2.get(), FATIGUE_WARN_3.get())
                         .sorted(java.util.Comparator.reverseOrder()).toList(),
                 FATIGUE_SLEEP_RECOVERY.get());
+    }
+
+    static TradeBalance tradeBalance() {
+        java.util.Map<ItemRating, Integer> prices = new java.util.EnumMap<>(ItemRating.class);
+        prices.put(ItemRating.NORMAL, TRADE_BASE_NORMAL.get());
+        prices.put(ItemRating.RARE, TRADE_BASE_RARE.get());
+        prices.put(ItemRating.EPIC, TRADE_BASE_EPIC.get());
+        prices.put(ItemRating.UNIQUE, TRADE_BASE_UNIQUE.get());
+        prices.put(ItemRating.LEGENDARY, TRADE_BASE_LEGENDARY.get());
+        prices.put(ItemRating.MYTH, TRADE_BASE_MYTH.get());
+        java.util.Map<String, Double> materials = new java.util.HashMap<>();
+        materials.put("wood", TRADE_MATERIAL_WOOD.get());
+        materials.put("stone", TRADE_MATERIAL_STONE.get());
+        materials.put("iron", TRADE_MATERIAL_IRON.get());
+        materials.put("gold", TRADE_MATERIAL_GOLD.get());
+        materials.put("diamond", TRADE_MATERIAL_DIAMOND.get());
+        materials.put("netherite", TRADE_MATERIAL_NETHERITE.get());
+        materials.put("leather", TRADE_MATERIAL_LEATHER.get());
+        materials.put("chainmail", TRADE_MATERIAL_CHAINMAIL.get());
+        return new TradeBalance(prices, materials, TRADE_OTHER_MATERIAL.get(), TRADE_ENHANCEMENT_BONUS.get(), TRADE_SELL_SHARE.get(),
+                TRADE_WON_PER_REFERENCE.get(), TRADE_EXPORT_COMMISSION.get(), TRADE_SATURATION_STEP.get(), TRADE_SATURATION_FLOOR.get(),
+                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get());
     }
 
     static Balance balance() {
