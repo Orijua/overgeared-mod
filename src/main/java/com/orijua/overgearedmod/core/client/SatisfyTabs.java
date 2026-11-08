@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.core.client;
 
+import com.orijua.overgearedmod.feature.economy.client.TradeTab;
 import com.orijua.overgearedmod.feature.npc.client.WorkshopTab;
 import com.orijua.overgearedmod.feature.progression.client.ProfileTab;
 import com.orijua.overgearedmod.feature.progression.client.StatusTab;
@@ -17,7 +18,8 @@ public final class SatisfyTabs {
             SkillsTab::new,
             ProfileTab::new,
             QuestsTab::new,
-            WorkshopTab::new);
+            WorkshopTab::new,
+            TradeTab::new);
 
     private SatisfyTabs() {
     }

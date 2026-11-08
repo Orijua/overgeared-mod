@@ -7,6 +7,11 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.orijua.overgearedmod.core.config.Balance;
+import com.orijua.overgearedmod.core.config.TradeBalance;
+import com.orijua.overgearedmod.feature.economy.TradeKey;
+import com.orijua.overgearedmod.feature.economy.TradeRules;
+import com.orijua.overgearedmod.feature.economy.TradeSaturation;
+import com.orijua.overgearedmod.feature.economy.TradeService;
 import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
@@ -54,6 +59,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,6 +76,7 @@ import java.util.Optional;
  *   <li>{@code /satisfy debug set insight <value>}: sets Insight.</li>
  *   <li>{@code /satisfy debug set won <amount>}: sets the Won balance of the account.</li>
  *   <li>{@code /satisfy debug account}: shows the Won and the debt of the account.</li>
+ *   <li>{@code /satisfy debug trade}: lists the pressure and the price percentage of each trade key; {@code reset} clears them.</li>
  *   <li>{@code /satisfy debug spawn apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
  *   <li>{@code /satisfy debug goto <place>}: to the surface in front of a structure (bairan, north_end_cave, ashur_manor,
  *   winston) or on dry ground at a canon place of the map (reidan, titan, behen_archipelago...); refused in the sea.</li>
@@ -142,6 +149,28 @@ public final class DebugCommands {
                                             "message.overgearedmod.debug_account", account.won(), account.debt()), false);
                                     return 1;
                                 }))
+                        .then(Commands.literal("trade")
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    TradeBalance balance = TradeBalance.current();
+                                    long today = TradeRules.day(player.serverLevel().getGameTime());
+                                    TradeSaturation saturation = TradeService.saturation(player);
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_trade"), false);
+                                    saturation.entries().keySet().stream().sorted(Comparator.comparing(TradeKey::asString)).forEach(key -> {
+                                        int pressure = saturation.pressure(key, today, balance);
+                                        long percent = Math.round(TradeRules.saturation(pressure, balance) * 100.0);
+                                        ctx.getSource().sendSuccess(() -> Component.translatable(
+                                                "message.overgearedmod.debug_trade_entry", key.asString(), pressure, percent), false);
+                                    });
+                                    return 1;
+                                })
+                                .then(Commands.literal("reset")
+                                        .executes(ctx -> {
+                                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                            player.removeData(ModAttachments.TRADE_SATURATION.get());
+                                            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_trade_reset"), false);
+                                            return 1;
+                                        })))
                         .then(Commands.literal("fatigue")
                                 .then(Commands.literal("overlay")
                                         .executes(ctx -> {

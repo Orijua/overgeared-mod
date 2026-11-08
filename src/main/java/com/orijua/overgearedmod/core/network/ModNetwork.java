@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.core.network;
 
 import com.orijua.overgearedmod.feature.capsule.CapsuleConnectingPayload;
+import com.orijua.overgearedmod.feature.economy.TradeSellPayload;
 import com.orijua.overgearedmod.feature.fatigue.ClientFatigue;
 import com.orijua.overgearedmod.feature.fatigue.FatigueDebugPayload;
 import com.orijua.overgearedmod.feature.capsule.ClientCapsule;
@@ -47,6 +48,7 @@ public final class ModNetwork {
         registrar.playToServer(ManualSmeltPayload.TYPE, ManualSmeltPayload.STREAM_CODEC, ServerPayloadHandler::manualSmelt);
         registrar.playToServer(ReadPagmaBookPayload.TYPE, ReadPagmaBookPayload.STREAM_CODEC, ServerPayloadHandler::readPagmaBook);
         registrar.playToServer(ApprenticeActionPayload.TYPE, ApprenticeActionPayload.STREAM_CODEC, ServerPayloadHandler::apprenticeAction);
+        registrar.playToServer(TradeSellPayload.TYPE, TradeSellPayload.STREAM_CODEC, ServerPayloadHandler::tradeSell);
         registrar.playToServer(StartContestPayload.TYPE, StartContestPayload.STREAM_CODEC, ServerPayloadHandler::startContest);
         // Like the one below, the handler only touches a client-state class with no client imports.
         registrar.playToClient(CapsuleConnectingPayload.TYPE, CapsuleConnectingPayload.STREAM_CODEC,
