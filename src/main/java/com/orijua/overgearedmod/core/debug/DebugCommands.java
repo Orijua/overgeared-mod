@@ -73,10 +73,11 @@ import java.util.Optional;
  *   <li>{@code /satisfy debug spawn apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
  *   <li>{@code /satisfy debug goto <place>}: to the surface in front of a structure (bairan, north_end_cave, ashur_manor,
  *   winston) or on dry ground at a canon place of the map (reidan, titan, behen_archipelago...); refused in the sea.</li>
- *   <li>{@code /satisfy debug quest complete <quest>}: marks it and the quests before it in its chain done, without rewards.</li>
+ *   <li>{@code /satisfy debug quest complete <quest>}: marks it and the quests before it in its chain done; only the named
+ *   quest, and only if it was not done yet, gives its item and XP rewards (not its class reward nor its loans; the ones before it give nothing).</li>
  * </ul>
  * Simulations post the same domain events as real play, so every listener (counters, titles,
- * hidden quests, notifications) reacts the same way. No mob dies and no item is created.
+ * hidden quests, notifications) reacts the same way. No mob dies and no item is created, except the quest rewards of {@code quest complete}.
  */
 public final class DebugCommands {
     private static final SimpleCommandExceptionType NOT_A_MOB =
@@ -325,8 +326,10 @@ public final class DebugCommands {
     }
 
     /**
-     * Marks the quest done along with every quest before it in its chain ({@code requires_quest}), with no rewards, and
-     * tells the listeners as if each had been claimed. Hidden ones count as discovered.
+     * Marks the quest done along with every quest before it in its chain ({@code requires_quest}), and tells the
+     * listeners as if each had been claimed. Hidden ones count as discovered. Gives the item and XP rewards ({@link QuestService#giveRewards})
+     * of the named quest only, and only if it was not done yet (so repeating the command does not duplicate them); the earlier quests of the
+     * chain give nothing. It does not grant the class reward (it changes the class without the confirmation the window asks for) nor touch loans.
      */
     private static int completeQuest(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -347,6 +350,10 @@ public final class DebugCommands {
             updated = updated.discover(quest).complete(quest);
         }
         player.setData(ModAttachments.PLAYER_QUESTS, updated);
+        if (done.contains(id)) {
+            QuestDefinition requested = Definitions.get(player.level(), ModDatapackRegistries.QUEST, id).orElseThrow();
+            QuestService.giveRewards(player, requested);
+        }
         done.forEach(quest -> NeoForge.EVENT_BUS.post(new QuestCompletedEvent(player, quest)));
         QuestService.checkDiscoveries(player);
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_quest_complete", id.toString(), done.size()), false);

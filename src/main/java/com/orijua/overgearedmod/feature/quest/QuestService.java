@@ -245,6 +245,19 @@ public final class QuestService {
         return claim(player, id, null);
     }
 
+    /** Gives the item rewards (to the inventory, or dropped if full) and the XP of the quest; nothing else (no class, no loans). */
+    public static void giveRewards(ServerPlayer player, QuestDefinition quest) {
+        for (ItemStack reward : quest.itemRewards()) {
+            ItemStack copy = reward.copy();
+            if (!player.getInventory().add(copy)) {
+                player.drop(copy, false);
+            }
+        }
+        if (quest.xpReward() > 0) {
+            ProgressionService.awardXp(player, quest.xpReward());
+        }
+    }
+
     /** {@code at}: the NPC whose quest window the player used, or null (see {@link #atGiver}). */
     public static Result claim(ServerPlayer player, ResourceLocation id, @Nullable Entity at) {
         Optional<QuestDefinition> found = Definitions.get(player.level(), ModDatapackRegistries.QUEST, id);
@@ -267,15 +280,7 @@ public final class QuestService {
         if (reclaimLoans(player, id) > 0) {
             player.displayClientMessage(Component.translatable("message.overgearedmod.quest_loan_returned", quest.name()), false);
         }
-        for (ItemStack reward : quest.itemRewards()) {
-            ItemStack copy = reward.copy();
-            if (!player.getInventory().add(copy)) {
-                player.drop(copy, false);
-            }
-        }
-        if (quest.xpReward() > 0) {
-            ProgressionService.awardXp(player, quest.xpReward());
-        }
+        giveRewards(player, quest);
         quest.classReward().ifPresent(classId -> ClassService.grant(player, classId));
         player.displayClientMessage(Component.translatable("message.overgearedmod.quest_completed", quest.name()), false);
         player.level().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.8f, 1.5f);
