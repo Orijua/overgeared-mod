@@ -3,7 +3,10 @@ package com.orijua.overgearedmod.feature.capsule;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.fatigue.FatigueRules;
+import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.WorldSites;
@@ -55,10 +58,10 @@ public final class CapsuleService {
     }
 
     /** Why a player was taken out of Satisfy. */
-    public enum Reason { MANUAL, DEBUG, LOGOUT }
+    public enum Reason { MANUAL, DEBUG, LOGOUT, FATIGUE }
 
     /** What lying down in a capsule did. */
-    public enum Begin { STARTED, ALREADY_CONNECTING, IN_SATISFY, ALREADY_CONNECTED, NOT_OVERWORLD, NO_SATISFY }
+    public enum Begin { STARTED, ALREADY_CONNECTING, IN_SATISFY, ALREADY_CONNECTED, NOT_OVERWORLD, NO_SATISFY, TOO_TIRED }
 
     private CapsuleService() {
     }
@@ -99,6 +102,10 @@ public final class CapsuleService {
         }
         if (PENDING.containsKey(player.getUUID())) {
             return Begin.ALREADY_CONNECTING;
+        }
+        // Own design: below the minimum energy the capsule refuses; the real world refills it.
+        if (!FatigueRules.canConnect(FatigueBalance.current(), FatigueService.energy(player))) {
+            return Begin.TOO_TIRED;
         }
         start(player, GlobalPos.of(player.level().dimension(), capsule));
         return Begin.STARTED;
@@ -315,7 +322,8 @@ public final class CapsuleService {
         WorldSeparation.cross(player, () ->
                 player.teleportTo(target, free.getX() + 0.5, free.getY(), free.getZ() + 0.5, player.getYRot(), 0.0f));
         player.resetFallDistance();
-        player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.disconnected"), true);
+        player.displayClientMessage(Component.translatable(reason == Reason.FATIGUE
+                ? "message.overgearedmod.capsule.disconnected_tired" : "message.overgearedmod.capsule.disconnected"), true);
         return true;
     }
 

@@ -4,6 +4,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.LogoutService;
 import com.orijua.overgearedmod.feature.fatigue.FatigueRules;
 import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.world.Satisfy;
@@ -164,6 +166,160 @@ public final class FatigueTests {
             needsOp = true;
         }
         helper.assertTrue(needsOp, "the command is for operators");
+        helper.succeed();
+    }
+
+    // ---- Step 3: warnings, grace period, forced disconnection, refusal to connect ----
+
+    private static final int GRACE = FatigueBalance.DEFAULT.graceSeconds();
+
+    private static net.minecraft.core.GlobalPos capsuleAt(GameTestHelper helper) {
+        return net.minecraft.core.GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(new net.minecraft.core.BlockPos(0, 1, 0)));
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void runningOutOfEnergyStartsTheGracePeriod(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        FatigueService.setEnergy(player, 0.0);
+        in(helper, true, () -> {
+            helper.assertFalse(FatigueService.isInGrace(player), "no grace before the first second at zero");
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.isInGrace(player) && FatigueService.graceLeft(player) == GRACE, "the grace period starts at its full length");
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.graceLeft(player) == GRACE - 1, "and counts down one second at a time");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theGracePeriodEndsInAForcedDisconnection(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        net.minecraft.core.BlockPos bairan = helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1));
+        CapsuleTests.inSatisfy(helper, bairan, () -> {
+            helper.assertTrue(CapsuleService.connect(player, capsuleAt(helper)), "connected");
+            FatigueService.setEnergy(player, 0.0);
+            for (int i = 0; i < GRACE; i++) {
+                FatigueService.tickSecond(player);
+            }
+            helper.assertTrue(CapsuleService.state(player).isConnected(), "still connected one second before the end (" + FatigueService.graceLeft(player) + " left)");
+            FatigueService.tickSecond(player);
+            helper.assertFalse(CapsuleService.state(player).isConnected(), "the capsule took the player out");
+            helper.assertTrue(CapsuleService.state(player).lastSave().isPresent(), "and remembers where they were");
+            helper.assertFalse(FatigueService.isInGrace(player), "the grace period is over");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void gettingEnergyBackCancelsTheGracePeriod(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        FatigueService.setEnergy(player, 0.0);
+        in(helper, true, () -> {
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.isInGrace(player), "in grace");
+            FatigueService.setEnergy(player, 0.5);
+            FatigueService.tickSecond(player);
+            helper.assertFalse(FatigueService.isInGrace(player), "with energy again there is nothing to wait for");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void thereIsNoGracePeriodInTheRealWorldNorForCreative(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        FatigueService.setEnergy(player, 0.0);
+        in(helper, false, () -> {
+            FatigueService.tickSecond(player);
+            helper.assertFalse(FatigueService.isInGrace(player), "empty in the real world just refills");
+        });
+        try {
+            in(helper, true, () -> {
+                player.setGameMode(GameType.CREATIVE);
+                FatigueService.tickSecond(player);
+                helper.assertFalse(FatigueService.isInGrace(player), "creative is never thrown out");
+            });
+        } finally {
+            player.setGameMode(GameType.SURVIVAL);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void leavingTheServerOrRespawningForgetsTheGracePeriod(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        FatigueService.setEnergy(player, 0.0);
+        in(helper, true, () -> {
+            FatigueService.tickSecond(player);
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(player));
+            helper.assertFalse(FatigueService.isInGrace(player), "quitting forgets it");
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.graceLeft(player) == GRACE, "and coming back starts it again from the full length");
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent(player, false));
+            helper.assertFalse(FatigueService.isInGrace(player), "respawning forgets it too");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aLogoutCountdownDoesNotRaceTheForcedDisconnection(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        net.minecraft.core.BlockPos bairan = helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1));
+        CapsuleTests.inSatisfy(helper, bairan, () -> {
+            helper.assertTrue(CapsuleService.connect(player, capsuleAt(helper)), "connected");
+            helper.assertTrue(LogoutService.start(player) == LogoutService.Start.STARTED, "a logout countdown is running");
+            FatigueService.setEnergy(player, 0.0);
+            for (int i = 0; i <= GRACE; i++) {
+                FatigueService.tickSecond(player);
+            }
+            helper.assertFalse(LogoutService.isCountingDown(player), "the forced disconnection cancelled the logout");
+            helper.assertFalse(CapsuleService.state(player).isConnected(), "and the player left exactly once");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theCapsuleRefusesToConnectBelowTheMinimumEnergy(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        net.minecraft.server.level.ServerLevel other = CapsuleTests.otherLevel(helper);
+        if (other == null) {
+            helper.fail("BLOCKED: no second level to play Satisfy");
+            return;
+        }
+        net.minecraft.core.BlockPos spot = helper.absolutePos(new net.minecraft.core.BlockPos(0, 1, 1));
+        try {
+            Satisfy.standIn(other);
+            FatigueService.setEnergy(player, 0.05);
+            helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.TOO_TIRED, "below the minimum: refused");
+            helper.assertFalse(CapsuleService.isConnecting(player), "and nothing started");
+            FatigueService.setEnergy(player, 0.10);
+            helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.STARTED, "exactly the minimum: allowed");
+            CapsuleService.cancel(player, false);
+            FatigueBalance.withOverride(new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.1, 15, List.of(0.25)), () -> {
+                FatigueService.setEnergy(player, 0.0);
+                helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.STARTED, "with the fatigue off nobody is refused");
+                CapsuleService.cancel(player, false);
+            });
+        } finally {
+            CapsuleService.cancel(player, false);
+            Satisfy.restoreStandIn();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void crossingAWarningThresholdDoesNotBreakTheSecond(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, true, () -> {
+            double drain = SECOND_OF_PLAY;
+            FatigueService.setEnergy(player, 0.25 + drain / 2);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.energy(player) <= 0.25f && !FatigueService.isInGrace(player), "crossed 25 % and carried on");
+            FatigueService.setEnergy(player, drain / 2);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.energy(player) == 0.0f, "reached zero");
+            helper.assertTrue(FatigueService.isInGrace(player) && FatigueService.graceLeft(player) == GRACE,
+                    "the grace period starts in the very second the energy reaches zero, at its full length");
+        });
         helper.succeed();
     }
 }

@@ -34,6 +34,8 @@ public record SystemNotification(Kind kind, List<Component> lines, Optional<Item
         CONTEST_RESULT("contest_result", false),
         HIDDEN_CLASS("hidden_class", true),
         LEGENDARY_ITEM("legendary_item", true),
+        FATIGUE_WARNING("fatigue_warning", false),
+        FATIGUE_EXHAUSTED("fatigue_exhausted", false),
         RARE_TITLE("rare_title", true);
 
         // CLAMP: a bogus id can never index outside the enum.
