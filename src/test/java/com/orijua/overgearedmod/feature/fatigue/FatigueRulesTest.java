@@ -138,4 +138,21 @@ class FatigueRulesTest {
     void anEnergyThatIsNotANumberCountsAsEmpty() {
         assertEquals(0.0, FatigueRules.clamp(Double.NaN));
     }
+
+    @Test
+    void combatLastsTenSecondsAfterTheLastDamage() {
+        assertFalse(FatigueRules.inCombat(1000, java.util.OptionalLong.empty()));
+        assertTrue(FatigueRules.inCombat(1000, java.util.OptionalLong.of(1000)));
+        assertTrue(FatigueRules.inCombat(1000, java.util.OptionalLong.of(801)), "199 ticks ago");
+        assertFalse(FatigueRules.inCombat(1000, java.util.OptionalLong.of(800)), "200 ticks ago");
+        assertTrue(FatigueRules.inCombat(1000, java.util.OptionalLong.of(5000)), "a tick in the future counts as combat");
+    }
+
+    @Test
+    void movingLessThanHalfABlockInASecondIsResting() {
+        assertTrue(FatigueRules.isResting(0.0));
+        assertTrue(FatigueRules.isResting(0.2499));
+        assertFalse(FatigueRules.isResting(0.25), "exactly half a block squared is already moving");
+        assertFalse(FatigueRules.isResting(9.0));
+    }
 }

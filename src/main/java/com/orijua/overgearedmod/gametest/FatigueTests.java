@@ -245,17 +245,20 @@ public final class FatigueTests {
     }
 
     @GameTest(template = TestSupport.EMPTY)
-    public static void leavingTheServerOrRespawningForgetsTheGracePeriod(GameTestHelper helper) {
+    public static void quittingKeepsTheGracePeriodAndRespawningEndsIt(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         FatigueService.setEnergy(player, 0.0);
         in(helper, true, () -> {
             FatigueService.tickSecond(player);
-            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent(player));
-            helper.assertFalse(FatigueService.isInGrace(player), "quitting forgets it");
             FatigueService.tickSecond(player);
-            helper.assertTrue(FatigueService.graceLeft(player) == GRACE, "and coming back starts it again from the full length");
+            int left = FatigueService.graceLeft(player);
+            FatigueService.onLogout(player);
+            helper.assertTrue(FatigueService.graceLeft(player) == left, "quitting does not stretch the grace period: " + left + " seconds left");
+            FatigueService.onLogin(player);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.graceLeft(player) == left - 1, "coming back it goes on from where it was");
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerRespawnEvent(player, false));
-            helper.assertFalse(FatigueService.isInGrace(player), "respawning forgets it too");
+            helper.assertFalse(FatigueService.isInGrace(player), "respawning ends it");
         });
         helper.succeed();
     }
@@ -314,7 +317,7 @@ public final class FatigueTests {
             FatigueService.setEnergy(player, 0.25 + drain / 2);
             FatigueService.tickSecond(player);
             helper.assertTrue(FatigueService.energy(player) <= 0.25f && !FatigueService.isInGrace(player), "crossed 25 % and carried on");
-            FatigueService.setEnergy(player, drain / 2);
+            FatigueService.setEnergy(player, 0.00001);
             FatigueService.tickSecond(player);
             helper.assertTrue(FatigueService.energy(player) == 0.0f, "reached zero");
             helper.assertTrue(FatigueService.isInGrace(player) && FatigueService.graceLeft(player) == GRACE,
@@ -355,6 +358,169 @@ public final class FatigueTests {
             });
         } finally {
             player.setGameMode(GameType.SURVIVAL);
+        }
+        helper.succeed();
+    }
+
+    // ---- Step 4: activity, forge, protection, away from the game ----
+
+    /** Whether the damage would be cancelled: posts the event as a hit would (a fake player is immune to a real hit while it spawns). */
+    private static boolean damageIsCancelled(ServerPlayer player, net.minecraft.world.damagesource.DamageSource source) {
+        var event = new net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent(player, new net.neoforged.neoforge.common.damagesource.DamageContainer(source, 5.0f));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(event);
+        return event.isCanceled();
+    }
+
+    private static double drainOf(FatigueRules.Activity activity) {
+        return FatigueRules.drainPerSecond(FatigueBalance.DEFAULT, activity, FatigueRules.SessionModifiers.NEUTRAL);
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void fightingDrainsDoubleAndStandingStillHalf(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, true, () -> {
+            FatigueService.setEnergy(player, 0.5);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(near(FatigueService.energy(player), 0.5 - drainOf(FatigueRules.Activity.NORMAL)), "the first second has nowhere to compare: normal play");
+            double afterFirst = FatigueService.energy(player);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(near(FatigueService.energy(player), afterFirst - drainOf(FatigueRules.Activity.REST)), "standing still costs half");
+            double afterRest = FatigueService.energy(player);
+            com.orijua.overgearedmod.feature.capsule.CombatClock.mark(player, helper.getLevel().getServer().getTickCount());
+            FatigueService.tickSecond(player);
+            helper.assertTrue(near(FatigueService.energy(player), afterRest - drainOf(FatigueRules.Activity.COMBAT)), "fighting costs double");
+            com.orijua.overgearedmod.feature.capsule.CombatClock.forget(player);
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void movingCountsAsNormalPlay(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, true, () -> {
+            FatigueService.setEnergy(player, 0.5);
+            FatigueService.tickSecond(player);
+            double before = FatigueService.energy(player);
+            player.setPos(player.getX() + 3.0, player.getY(), player.getZ());
+            FatigueService.tickSecond(player);
+            helper.assertTrue(near(FatigueService.energy(player), before - drainOf(FatigueRules.Activity.NORMAL)), "walking is normal play");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void forgingCostsTwentySecondsOfPlayInSatisfyOnly(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        double cost = FatigueBalance.DEFAULT.forgeCostSeconds() * drainOf(FatigueRules.Activity.NORMAL);
+        in(helper, true, () -> {
+            FatigueService.setEnergy(player, 0.5);
+            TestSupport.forge(player, com.orijua.overgearedmod.feature.equipment.ItemRating.NORMAL);
+            helper.assertTrue(near(FatigueService.energy(player), 0.5 - cost), "a forged item costs 20 seconds of play");
+        });
+        in(helper, false, () -> {
+            FatigueService.setEnergy(player, 0.5);
+            TestSupport.forge(player, com.orijua.overgearedmod.feature.equipment.ItemRating.NORMAL);
+            helper.assertTrue(near(FatigueService.energy(player), 0.5), "in the real world it costs nothing");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void nothingCanHurtThePlayerDuringTheGracePeriod(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, true, () -> {
+            helper.assertFalse(damageIsCancelled(player, player.damageSources().generic()), "before the grace period damage goes through");
+            FatigueService.setEnergy(player, 0.0);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(FatigueService.isProtected(player), "protected in the grace period");
+            helper.assertTrue(damageIsCancelled(player, player.damageSources().generic()), "ordinary damage is cancelled");
+            helper.assertTrue(damageIsCancelled(player, player.damageSources().mobAttack(null)), "so is a mob's");
+            helper.assertFalse(damageIsCancelled(player, player.damageSources().fellOutOfWorld()), "but the void still gets through");
+            helper.assertFalse(damageIsCancelled(player, player.damageSources().genericKill()), "and so does /kill");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aForcedDisconnectionIsFollowedByProtectionWhenConnectingAgain(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        net.minecraft.core.BlockPos bairan = helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1));
+        CapsuleTests.inSatisfy(helper, bairan, () -> {
+            helper.assertTrue(CapsuleService.connect(player, capsuleAt(helper)), "connected");
+            helper.assertFalse(FatigueService.isProtected(player), "a normal connection brings no protection");
+            FatigueService.setEnergy(player, 0.0);
+            for (int i = 0; i <= GRACE; i++) {
+                FatigueService.tickSecond(player);
+            }
+            helper.assertFalse(CapsuleService.state(player).isConnected(), "forced out");
+            helper.assertFalse(FatigueService.isInGrace(player), "grace over");
+            FatigueService.setEnergy(player, 0.5);
+            helper.assertTrue(CapsuleService.connect(player, capsuleAt(helper)), "connected again");
+            helper.assertTrue(FatigueService.isProtected(player), "a few seconds of protection after a forced disconnection");
+            helper.assertTrue(damageIsCancelled(player, player.damageSources().generic()), "they cannot be hurt");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theRealWorldRefillsTheEnergyWhileTheGameIsClosed(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        long[] now = {1_000_000L};
+        FatigueService.setClock(() -> now[0]);
+        try {
+            in(helper, false, () -> {
+                FatigueService.setEnergy(player, 0.2);
+                FatigueService.onLogout(player);
+                now[0] += 5 * 60 * 1000L;
+                FatigueService.onLogin(player);
+                helper.assertTrue(near(FatigueService.energy(player), 0.7), "five minutes away from the real world refill half of ten: " + FatigueService.energy(player));
+                FatigueService.onLogout(player);
+                now[0] += 60 * 60 * 1000L;
+                FatigueService.onLogin(player);
+                helper.assertTrue(FatigueService.energy(player) == 1.0f, "an hour away leaves it full, not above");
+                FatigueService.onLogin(player);
+                helper.assertTrue(FatigueService.energy(player) == 1.0f, "a login with no logout before changes nothing");
+            });
+        } finally {
+            FatigueService.restoreClock();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theEnergyIsFrozenWhileTheGameIsClosedInsideSatisfy(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        long[] now = {1_000_000L};
+        FatigueService.setClock(() -> now[0]);
+        try {
+            in(helper, true, () -> {
+                FatigueService.setEnergy(player, 0.3);
+                FatigueService.onLogout(player);
+                now[0] += 60 * 60 * 1000L;
+                FatigueService.onLogin(player);
+                helper.assertTrue(near(FatigueService.energy(player), 0.3), "quitting inside Satisfy neither drains nor refills");
+            });
+        } finally {
+            FatigueService.restoreClock();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theClockGoingBackwardsDoesNotBreakTheEnergy(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        long[] now = {5_000_000L};
+        FatigueService.setClock(() -> now[0]);
+        try {
+            in(helper, false, () -> {
+                FatigueService.setEnergy(player, 0.4);
+                FatigueService.onLogout(player);
+                now[0] -= 10_000L;
+                FatigueService.onLogin(player);
+                helper.assertTrue(near(FatigueService.energy(player), 0.4), "a negative time away counts as none");
+            });
+        } finally {
+            FatigueService.restoreClock();
         }
         helper.succeed();
     }

@@ -26,8 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * server or changing dimension. Damage dealt during the countdown does not cancel it.
  */
 public final class LogoutService {
-    /** Server tick of the last effective damage dealt or taken, by player. */
-    private static final Map<UUID, Long> LAST_COMBAT = new ConcurrentHashMap<>();
     /** Ticks left of the countdown, by player. */
     private static final Map<UUID, Integer> COUNTDOWN = new ConcurrentHashMap<>();
 
@@ -56,8 +54,7 @@ public final class LogoutService {
         if (isCountingDown(player)) {
             return Start.ALREADY_RUNNING;
         }
-        Long last = LAST_COMBAT.get(player.getUUID());
-        if (LogoutRules.inDanger(player.server.getTickCount(), last == null ? OptionalLong.empty() : OptionalLong.of(last))) {
+        if (LogoutRules.inDanger(player.server.getTickCount(), CombatClock.last(player))) {
             return Start.IN_DANGER;
         }
         COUNTDOWN.put(player.getUUID(), LogoutRules.COUNTDOWN_TICKS);
@@ -105,18 +102,18 @@ public final class LogoutService {
     }
 
     public static void markCombat(ServerPlayer player, long tick) {
-        LAST_COMBAT.put(player.getUUID(), tick);
+        CombatClock.mark(player, tick);
     }
 
     /** Forgets everything about this player. */
     public static void forget(ServerPlayer player) {
         COUNTDOWN.remove(player.getUUID());
-        LAST_COMBAT.remove(player.getUUID());
+        CombatClock.forget(player);
     }
 
     public static void forgetAll() {
         COUNTDOWN.clear();
-        LAST_COMBAT.clear();
+        CombatClock.forgetAll();
     }
 
     private static void onTick(PlayerTickEvent.Post event) {

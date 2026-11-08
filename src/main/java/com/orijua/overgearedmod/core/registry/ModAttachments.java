@@ -51,6 +51,18 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Float>> FATIGUE =
             playerData("fatigue", () -> 1.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, true);
 
+    /** Seconds left of the grace period after running out of energy, or -1 when it is not running. Saved, so quitting does not stretch it. */
+    public static final Supplier<AttachmentType<Integer>> FATIGUE_GRACE =
+            serverData("fatigue_grace", () -> -1, Codec.INT);
+
+    /** The last disconnection was forced by the fatigue: the next connection starts with a few seconds of protection. */
+    public static final Supplier<AttachmentType<Boolean>> FATIGUE_FORCED_OUT =
+            serverData("fatigue_forced_out", () -> false, Codec.BOOL);
+
+    /** Wall-clock milliseconds when the player last left the server, or 0: lets the real world refill the energy while they are away. */
+    public static final Supplier<AttachmentType<Long>> FATIGUE_AWAY_SINCE =
+            serverData("fatigue_away_since", () -> 0L, Codec.LONG);
+
     public static final Supplier<AttachmentType<PlayerIdentity>> PLAYER_IDENTITY =
             playerData("player_identity", () -> PlayerIdentity.DEFAULT, PlayerIdentity.CODEC, PlayerIdentity.STREAM_CODEC, true);
 

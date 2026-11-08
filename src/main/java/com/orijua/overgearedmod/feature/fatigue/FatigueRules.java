@@ -13,6 +13,13 @@ public final class FatigueRules {
     /** Never divide by less than this many seconds, however low the configuration is set. */
     private static final double MIN_SECONDS = 1.0;
 
+    // Fixed numbers, not configuration (like the logout's): the drain counts as combat for 10 seconds after damage given or
+    // taken, a player who moved less than half a block in the last second is resting, and a forced disconnection is followed
+    // by 10 seconds of protection when the player connects again.
+    public static final int COMBAT_WINDOW_TICKS = 200;
+    public static final int PROTECTION_TICKS = 200;
+    public static final double REST_MAX_MOVE_SQUARED = 0.25;
+
     private FatigueRules() {
     }
 
@@ -25,6 +32,16 @@ public final class FatigueRules {
      */
     public record SessionModifiers(double durationMul, double drainMul, double recoveryMul) {
         public static final SessionModifiers NEUTRAL = new SessionModifiers(1.0, 1.0, 1.0);
+    }
+
+    /** Whether damage was dealt or taken within the combat window. A tick in the future counts as combat. */
+    public static boolean inCombat(long nowTick, java.util.OptionalLong lastCombatTick) {
+        return lastCombatTick.isPresent() && nowTick - lastCombatTick.getAsLong() < COMBAT_WINDOW_TICKS;
+    }
+
+    /** Whether a player who moved {@code distanceSquared} blocks (squared) in the last second counts as resting. */
+    public static boolean isResting(double distanceSquared) {
+        return distanceSquared < REST_MAX_MOVE_SQUARED;
     }
 
     public static double clamp(double energy) {

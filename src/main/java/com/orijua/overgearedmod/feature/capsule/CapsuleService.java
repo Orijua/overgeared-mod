@@ -300,6 +300,7 @@ public final class CapsuleService {
             return false;
         }
         player.resetFallDistance();
+        FatigueService.onConnected(player);
         player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.connected"), true);
         return true;
     }
