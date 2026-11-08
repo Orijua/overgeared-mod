@@ -44,6 +44,25 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Float>> MANA =
             playerData("mana", () -> 20.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, false);
 
+    /**
+     * The energy of the player's body, 1 (rested) to 0 (spent): drains in Satisfy, refills in the real world (see
+     * fatigue.FatigueService). One value for the player, not swapped with the characters; kept on death.
+     */
+    public static final Supplier<AttachmentType<Float>> FATIGUE =
+            playerData("fatigue", () -> 1.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, true);
+
+    /** Seconds left of the grace period after running out of energy, or -1 when it is not running. Saved (quitting does not stretch it) and synced to its owner, for the countdown on screen. */
+    public static final Supplier<AttachmentType<Integer>> FATIGUE_GRACE =
+            playerData("fatigue_grace", () -> -1, Codec.INT, ByteBufCodecs.VAR_INT, true);
+
+    /** The last disconnection was forced by the fatigue: the next connection starts with a few seconds of protection. */
+    public static final Supplier<AttachmentType<Boolean>> FATIGUE_FORCED_OUT =
+            serverData("fatigue_forced_out", () -> false, Codec.BOOL);
+
+    /** Wall-clock milliseconds when the player last left the server, or 0: lets the real world refill the energy while they are away. */
+    public static final Supplier<AttachmentType<Long>> FATIGUE_AWAY_SINCE =
+            serverData("fatigue_away_since", () -> 0L, Codec.LONG);
+
     public static final Supplier<AttachmentType<PlayerIdentity>> PLAYER_IDENTITY =
             playerData("player_identity", () -> PlayerIdentity.DEFAULT, PlayerIdentity.CODEC, PlayerIdentity.STREAM_CODEC, true);
 

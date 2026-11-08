@@ -25,7 +25,13 @@ import com.orijua.overgearedmod.feature.smelting.client.SmelterScreen;
 import com.orijua.overgearedmod.feature.smithing.client.SmithingAnvilScreen;
 import com.orijua.overgearedmod.feature.winston.client.EupheminaRenderer;
 import com.orijua.overgearedmod.feature.winston.client.MeroThugRenderer;
+import com.orijua.overgearedmod.core.config.ClientConfig;
+import com.orijua.overgearedmod.feature.fatigue.ClientFatigue;
+import com.orijua.overgearedmod.feature.fatigue.client.FatigueDebugLayer;
+import com.orijua.overgearedmod.feature.fatigue.client.FatigueGraceLayer;
+import com.orijua.overgearedmod.feature.fatigue.client.FatigueHudLayer;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.LayeredDraw;
 import net.neoforged.api.distmarker.Dist;
@@ -59,8 +65,11 @@ public class OvergearedmodClient {
             key("skill_3", GLFW.GLFW_KEY_C));
     /** Casts the held weapon's own skill (Bisection on a Legendary Fracaso); its HUD slot only shows while one is held. */
     public static final KeyMapping WEAPON_SKILL = key("weapon_skill", GLFW.GLFW_KEY_V);
+    /** Cycles how the energy bar shows (auto, always, hidden). Unbound by default so it does not take anyone's key; works in both worlds. */
+    public static final KeyMapping FATIGUE_DISPLAY = key("fatigue_display", GLFW.GLFW_KEY_UNKNOWN);
 
     public OvergearedmodClient(IEventBus modEventBus, ModContainer modContainer) {
+        modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.CLIENT, com.orijua.overgearedmod.core.config.ClientConfig.SPEC);
         modEventBus.addListener(OvergearedmodClient::onRegisterKeys);
         modEventBus.addListener(OvergearedmodClient::onRegisterScreens);
         modEventBus.addListener(OvergearedmodClient::onRegisterGuiLayers);
@@ -69,6 +78,7 @@ public class OvergearedmodClient {
         NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(SatisfyTooltips::onTooltipColor);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientNotifications.QUEUE.clear());
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientFatigue.debug(com.orijua.overgearedmod.feature.fatigue.FatigueDebugPayload.HIDDEN));
         // A "Connecting…" wait must not outlive the world it started in.
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientCapsule.connecting(0, 0));
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingIn event) -> ClientCapsule.connecting(0, 0));
@@ -83,6 +93,7 @@ public class OvergearedmodClient {
         event.register(OPEN_STATUS);
         SKILL_KEYS.forEach(event::register);
         event.register(WEAPON_SKILL);
+        event.register(FATIGUE_DISPLAY);
     }
 
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
@@ -105,6 +116,10 @@ public class OvergearedmodClient {
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAbove(VanillaGuiLayers.FOOD_LEVEL, Overgearedmod.id("mana"), satisfyOnly(new ManaHudLayer()));
         event.registerAbove(Overgearedmod.id("mana"), Overgearedmod.id("xp"), satisfyOnly(new XpHudLayer()));
+        // The energy bar also shows in the real world, where it refills.
+        event.registerAbove(Overgearedmod.id("xp"), Overgearedmod.id("fatigue"), new FatigueHudLayer());
+        event.registerAbove(Overgearedmod.id("system_notification"), Overgearedmod.id("fatigue_grace"), new FatigueGraceLayer());
+        event.registerAboveAll(Overgearedmod.id("fatigue_debug"), new FatigueDebugLayer());
         event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), satisfyOnly(new SkillSlotsHudLayer()));
         event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), satisfyOnly(new QuestTrackerHudLayer()));
         event.registerAbove(Overgearedmod.id("quest_tracker"), Overgearedmod.id("system_notification"), satisfyOnly(new SystemNotificationHudLayer()));
@@ -124,6 +139,12 @@ public class OvergearedmodClient {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null) {
             return;
+        }
+        // Works in both worlds: the energy also shows in the real world.
+        while (FATIGUE_DISPLAY.consumeClick()) {
+            ClientFatigue.Display next = ClientConfig.fatigueDisplay().next();
+            ClientConfig.setFatigueDisplay(next);
+            minecraft.player.displayClientMessage(Component.translatable("message.overgearedmod.fatigue_display." + next.name().toLowerCase(java.util.Locale.ROOT)), true);
         }
         if (!HudVisibility.inSatisfy(minecraft)) {
             // In the real world the keys do nothing and say nothing: empty their clicks.

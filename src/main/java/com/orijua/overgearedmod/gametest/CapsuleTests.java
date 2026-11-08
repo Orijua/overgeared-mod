@@ -293,7 +293,7 @@ public final class CapsuleTests {
     // ---- Hardening: stale connections, double clicks, fall damage, death and login ----
 
     /** A level other than the test's, to play Satisfy while the player stays "in the real world". Null if there is none. */
-    private static ServerLevel otherLevel(GameTestHelper helper) {
+    static ServerLevel otherLevel(GameTestHelper helper) {
         ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
         if (nether != null && nether != helper.getLevel()) {
             return nether;

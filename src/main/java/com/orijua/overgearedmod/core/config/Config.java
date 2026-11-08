@@ -107,6 +107,47 @@ public final class Config {
             .defineEnum("contestLoss", D.contestLoss());
 
     static {
+        BUILDER.pop().push("fatigue");
+    }
+
+    private static final FatigueBalance F = FatigueBalance.DEFAULT;
+    private static final ModConfigSpec.BooleanValue FATIGUE_ENABLED = BUILDER
+            .comment("Fatigue: a bar that drains only in Satisfy and refills in the real world. When it runs out the capsule disconnects you.",
+                    "These numbers are the mod's own design, not the canon's.")
+            .define("enabled", F.enabled());
+    private static final ModConfigSpec.DoubleValue FATIGUE_SESSION_MINUTES = BUILDER
+            .comment("Real minutes of normal play from full energy to empty.")
+            .defineInRange("sessionMinutes", F.sessionMinutes(), 1.0, 1440.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_REST_MULTIPLIER = BUILDER
+            .comment("Share of the normal drain paid while standing still.")
+            .defineInRange("restMultiplier", F.restMultiplier(), 0.0, 10.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_COMBAT_MULTIPLIER = BUILDER
+            .comment("Multiplier of the normal drain while fighting (damage given or taken in the last 10 seconds).")
+            .defineInRange("combatMultiplier", F.combatMultiplier(), 0.0, 10.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_FORGE_COST_SECONDS = BUILDER
+            .comment("Seconds of normal play that each forged item costs.")
+            .defineInRange("forgeCostSeconds", F.forgeCostSeconds(), 0.0, 3600.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_RECOVERY_MINUTES = BUILDER
+            .comment("Real minutes to go from empty to full while resting in the real world.")
+            .defineInRange("recoveryMinutes", F.recoveryMinutes(), 0.1, 1440.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_MIN_ENERGY_TO_CONNECT = BUILDER
+            .comment("The capsule refuses to connect below this energy (0 to 1).")
+            .defineInRange("minEnergyToConnect", F.minEnergyToConnect(), 0.0, 1.0);
+    private static final ModConfigSpec.IntValue FATIGUE_GRACE_SECONDS = BUILDER
+            .comment("Seconds between running out of energy and the forced disconnection.")
+            .defineInRange("graceSeconds", F.graceSeconds(), 0, 600);
+    private static final ModConfigSpec.DoubleValue FATIGUE_WARN_1 = BUILDER
+            .comment("Energies (0 to 1) at which a warning shows once when crossed downwards.")
+            .defineInRange("warnFirst", F.warnAt().get(0), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_WARN_2 = BUILDER
+            .defineInRange("warnSecond", F.warnAt().get(1), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_WARN_3 = BUILDER
+            .defineInRange("warnThird", F.warnAt().get(2), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_SLEEP_RECOVERY = BUILDER
+            .comment("Energy (0 to 1) that sleeping through the night in the real world gives back.")
+            .defineInRange("sleepRecovery", F.sleepRecovery(), 0.0, 1.0);
+
+    static {
         BUILDER.pop();
     }
 
@@ -117,6 +158,16 @@ public final class Config {
 
     static boolean isLoaded() {
         return SPEC.isLoaded();
+    }
+
+    static FatigueBalance fatigueBalance() {
+        return new FatigueBalance(
+                FATIGUE_ENABLED.get(), FATIGUE_SESSION_MINUTES.get(), FATIGUE_REST_MULTIPLIER.get(), FATIGUE_COMBAT_MULTIPLIER.get(),
+                FATIGUE_FORGE_COST_SECONDS.get(), FATIGUE_RECOVERY_MINUTES.get(), FATIGUE_MIN_ENERGY_TO_CONNECT.get(),
+                FATIGUE_GRACE_SECONDS.get(),
+                java.util.stream.Stream.of(FATIGUE_WARN_1.get(), FATIGUE_WARN_2.get(), FATIGUE_WARN_3.get())
+                        .sorted(java.util.Comparator.reverseOrder()).toList(),
+                FATIGUE_SLEEP_RECOVERY.get());
     }
 
     static Balance balance() {

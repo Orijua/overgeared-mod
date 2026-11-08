@@ -1,6 +1,8 @@
 package com.orijua.overgearedmod.feature.capsule;
 
 import com.mojang.serialization.MapCodec;
+import com.orijua.overgearedmod.core.config.FatigueBalance;
+import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -49,6 +51,8 @@ public class CapsuleBlock extends HorizontalDirectionalBlock {
                 case IN_SATISFY, ALREADY_CONNECTED -> serverPlayer.displayClientMessage(Component.translatable("message.overgearedmod.capsule.in_satisfy"), true);
                 case NOT_OVERWORLD -> serverPlayer.displayClientMessage(Component.translatable("message.overgearedmod.capsule.only_overworld"), true);
                 case NO_SATISFY -> serverPlayer.displayClientMessage(Component.translatable("message.overgearedmod.capsule.no_satisfy"), true);
+                case TOO_TIRED -> serverPlayer.displayClientMessage(Component.translatable("message.overgearedmod.capsule.too_tired",
+                        Math.round(FatigueService.energy(serverPlayer) * 100), Math.round(FatigueBalance.current().minEnergyToConnect() * 100)), true);
                 case ALREADY_CONNECTING, STARTED -> {
                 }
             }
