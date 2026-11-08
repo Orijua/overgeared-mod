@@ -4,6 +4,9 @@ import com.orijua.overgearedmod.core.client.SatisfyButton;
 import com.orijua.overgearedmod.core.client.SatisfyTab;
 import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.config.Balance;
+import com.orijua.overgearedmod.core.config.FatigueBalance;
+import com.orijua.overgearedmod.feature.fatigue.FatigueRules;
+import com.orijua.overgearedmod.feature.fatigue.client.FatigueHudLayer;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.insight.Observation;
 import com.orijua.overgearedmod.feature.progression.AllocateStatPayload;
@@ -90,6 +93,8 @@ public class StatusTab extends SatisfyTab {
         UiStyle.text(graphics, font(), insight, half, top + 30, UiStyle.MUTED);
         boolean overInsight = mouseX >= half && mouseX < half + font().width(insight) && mouseY >= top + 28 && mouseY < top + 40;
 
+        boolean overEnergy = renderEnergy(graphics, mouseX, mouseY, half);
+
         StatType[] types = StatType.values();
         StatType hovered = null;
         for (int i = 0; i < types.length; i++) {
@@ -104,12 +109,48 @@ public class StatusTab extends SatisfyTab {
                 hovered = types[i];
             }
         }
-        if (hovered != null) {
+        if (overEnergy) {
+            graphics.renderTooltip(font(), font().split(energyTooltip(), 220), mouseX, mouseY);
+        } else if (hovered != null) {
             graphics.renderTooltip(font(), tooltip(hovered), mouseX, mouseY);
         } else if (overInsight) {
             graphics.renderTooltip(font(), font().split(Component.translatable("screen.overgearedmod.insight.tooltip",
                     String.format("%.1f", Observation.observeTicks(player()) / 20.0)), 200), mouseX, mouseY);
         }
+    }
+
+    /** The energy line: percentage, minutes left at normal play and a small bar. Returns whether the mouse is over it. */
+    private boolean renderEnergy(GuiGraphics graphics, int mouseX, int mouseY, int half) {
+        FatigueBalance balance = FatigueBalance.current();
+        if (!balance.enabled()) {
+            return false;
+        }
+        float energy = player().getData(ModAttachments.FATIGUE);
+        int percent = Math.round(energy * 100);
+        var minutes = FatigueRules.minutesLeft(balance, energy, FatigueRules.Activity.NORMAL, FatigueRules.SessionModifiers.NEUTRAL);
+        Component text = minutes.isPresent()
+                ? Component.translatable("screen.overgearedmod.fatigue", percent, (int) minutes.getAsDouble())
+                : Component.translatable("screen.overgearedmod.fatigue.plain", percent);
+        int y = top + 42;
+        UiStyle.text(graphics, font(), text, left, y, UiStyle.TEXT);
+        UiStyle.bar(graphics, half, y + 2, Math.min(70, width / 2 - 8), 4, energy, FatigueHudLayer.COLOR);
+        return mouseX >= left && mouseX < half + 70 && mouseY >= y - 2 && mouseY < y + 10;
+    }
+
+    /** How long the energy lasts at each activity, and how it comes back. */
+    private Component energyTooltip() {
+        FatigueBalance balance = FatigueBalance.current();
+        float energy = player().getData(ModAttachments.FATIGUE);
+        return Component.translatable("screen.overgearedmod.fatigue.tooltip",
+                minutesOrDash(balance, energy, FatigueRules.Activity.REST),
+                minutesOrDash(balance, energy, FatigueRules.Activity.NORMAL),
+                minutesOrDash(balance, energy, FatigueRules.Activity.COMBAT),
+                (int) Math.round(balance.recoveryMinutes()), Math.round(balance.minEnergyToConnect() * 100));
+    }
+
+    private static String minutesOrDash(FatigueBalance balance, float energy, FatigueRules.Activity activity) {
+        var minutes = FatigueRules.minutesLeft(balance, energy, activity, FatigueRules.SessionModifiers.NEUTRAL);
+        return minutes.isPresent() ? String.valueOf((int) minutes.getAsDouble()) : "-";
     }
 
     /** Control: 100 points, Shift: 10, plain click: 1. The server spends only what's left. */

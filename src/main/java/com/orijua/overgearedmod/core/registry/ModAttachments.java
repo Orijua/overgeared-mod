@@ -51,9 +51,9 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Float>> FATIGUE =
             playerData("fatigue", () -> 1.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, true);
 
-    /** Seconds left of the grace period after running out of energy, or -1 when it is not running. Saved, so quitting does not stretch it. */
+    /** Seconds left of the grace period after running out of energy, or -1 when it is not running. Saved (quitting does not stretch it) and synced to its owner, for the countdown on screen. */
     public static final Supplier<AttachmentType<Integer>> FATIGUE_GRACE =
-            serverData("fatigue_grace", () -> -1, Codec.INT);
+            playerData("fatigue_grace", () -> -1, Codec.INT, ByteBufCodecs.VAR_INT, true);
 
     /** The last disconnection was forced by the fatigue: the next connection starts with a few seconds of protection. */
     public static final Supplier<AttachmentType<Boolean>> FATIGUE_FORCED_OUT =

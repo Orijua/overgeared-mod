@@ -16,6 +16,7 @@ import java.util.List;
  * @param minEnergyToConnect  the capsule refuses to connect below this energy (0 to 1)
  * @param graceSeconds        time between running out and the forced disconnection
  * @param warnAt              energies (1 to 0, descending) that each trigger a warning once when crossed downwards
+ * @param sleepRecovery       energy (0 to 1) that sleeping through the night in the real world gives back
  */
 public record FatigueBalance(
         boolean enabled,
@@ -26,10 +27,11 @@ public record FatigueBalance(
         double recoveryMinutes,
         double minEnergyToConnect,
         int graceSeconds,
-        List<Double> warnAt) {
+        List<Double> warnAt,
+        double sleepRecovery) {
 
     public static final FatigueBalance DEFAULT = new FatigueBalance(
-            true, 40.0, 0.5, 2.0, 20.0, 10.0, 0.10, 15, List.of(0.25, 0.10, 0.02));
+            true, 40.0, 0.5, 2.0, 20.0, 10.0, 0.25, 15, List.of(0.15, 0.08, 0.02), 0.30);
 
     public FatigueBalance {
         warnAt = List.copyOf(warnAt);

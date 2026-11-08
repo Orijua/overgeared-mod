@@ -1,6 +1,8 @@
 package com.orijua.overgearedmod.core.network;
 
 import com.orijua.overgearedmod.feature.capsule.CapsuleConnectingPayload;
+import com.orijua.overgearedmod.feature.fatigue.ClientFatigue;
+import com.orijua.overgearedmod.feature.fatigue.FatigueDebugPayload;
 import com.orijua.overgearedmod.feature.capsule.ClientCapsule;
 import com.orijua.overgearedmod.feature.notification.ClientNotifications;
 import net.minecraft.Util;
@@ -49,6 +51,8 @@ public final class ModNetwork {
         // Like the one below, the handler only touches a client-state class with no client imports.
         registrar.playToClient(CapsuleConnectingPayload.TYPE, CapsuleConnectingPayload.STREAM_CODEC,
                 (payload, context) -> ClientCapsule.connecting(payload.ticks(), Util.getMillis()));
+        registrar.playToClient(FatigueDebugPayload.TYPE, FatigueDebugPayload.STREAM_CODEC,
+                (payload, context) -> ClientFatigue.debug(payload));
         // The handler only touches ClientNotifications (no client classes), so this is safe on a dedicated server.
         registrar.playToClient(SystemNotificationPayload.TYPE, SystemNotificationPayload.STREAM_CODEC,
                 (payload, context) -> ClientNotifications.QUEUE.push(payload.notification()));

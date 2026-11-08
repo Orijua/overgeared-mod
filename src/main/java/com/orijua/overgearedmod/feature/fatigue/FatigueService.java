@@ -20,6 +20,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.minecraft.server.level.ServerLevel;
+import java.util.Set;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -48,6 +52,9 @@ public final class FatigueService {
     /** Server tick until which each player is protected after a forced disconnection. Only in memory (10 seconds). */
     private static final Map<UUID, Long> PROTECTED_UNTIL = new ConcurrentHashMap<>();
 
+    /** The operators who asked for the debug panel. Only in memory. */
+    private static final Set<UUID> DEBUG_VIEWERS = ConcurrentHashMap.newKeySet();
+
     private static final LongSupplier SYSTEM_CLOCK = System::currentTimeMillis;
     private static volatile LongSupplier clock = SYSTEM_CLOCK;
 
@@ -64,6 +71,69 @@ public final class FatigueService {
         gameBus.addListener(FatigueService::onServerStarting);
         gameBus.addListener(FatigueService::onIncomingDamage);
         gameBus.addListener(FatigueService::onForged);
+        gameBus.addListener(FatigueService::onSleepFinished);
+    }
+
+    /** Everyone who slept through the night in the real world rests a bit. */
+    private static void onSleepFinished(SleepFinishedTimeEvent event) {
+        if (event.getLevel() instanceof ServerLevel level) {
+            for (ServerPlayer player : level.players()) {
+                if (player.isSleepingLongEnough()) {
+                    onSlept(player);
+                }
+            }
+        }
+    }
+
+    /** The player slept through the night: gives back a share of the energy (not all of it, so it cannot be abused). */
+    public static void onSlept(ServerPlayer player) {
+        FatigueBalance balance = FatigueBalance.current();
+        if (!balance.enabled() || WorldSide.of(player.level()) != WorldSide.REAL) {
+            return;
+        }
+        double before = energy(player);
+        setEnergy(player, before + balance.sleepRecovery());
+        long gained = Math.round((energy(player) - before) * 100);
+        if (gained > 0) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.fatigue.slept", gained), true);
+        }
+    }
+
+    // ---- debug panel ----
+
+    /** Turns the debug panel of this operator on or off; returns whether it is on now. */
+    public static boolean toggleDebug(ServerPlayer player) {
+        if (DEBUG_VIEWERS.remove(player.getUUID())) {
+            PacketDistributor.sendToPlayer(player, FatigueDebugPayload.HIDDEN);
+            return false;
+        }
+        DEBUG_VIEWERS.add(player.getUUID());
+        sendDebug(player);
+        return true;
+    }
+
+    public static boolean isDebugging(ServerPlayer player) {
+        return DEBUG_VIEWERS.contains(player.getUUID());
+    }
+
+    /** What the panel shows right now. */
+    public static FatigueDebugPayload debugSnapshot(ServerPlayer player) {
+        FatigueBalance balance = FatigueBalance.current();
+        boolean satisfy = WorldSide.of(player.level()) == WorldSide.SATISFY;
+        Vec3 here = player.position();
+        Vec3 before = LAST_POSITION.get(player.getUUID());
+        Activity activity = FatigueRules.inCombat(player.server.getTickCount(), CombatClock.last(player)) ? Activity.COMBAT
+                : before != null && FatigueRules.isResting(here.distanceToSqr(before)) ? Activity.REST : Activity.NORMAL;
+        double drain = satisfy ? FatigueRules.drainPerSecond(balance, activity, SessionModifiers.NEUTRAL) : 0.0;
+        OptionalDouble minutes = satisfy ? FatigueRules.minutesLeft(balance, energy(player), activity, SessionModifiers.NEUTRAL) : OptionalDouble.empty();
+        var last = CombatClock.last(player);
+        int sinceCombat = last.isPresent() ? (int) Math.max(0, (player.server.getTickCount() - last.getAsLong()) / 20) : -1;
+        return new FatigueDebugPayload(true, energy(player), activity.ordinal(), (float) drain,
+                drain > 0 ? (int) Math.ceil(energy(player) / drain) : -1, graceLeft(player), sinceCombat, isProtected(player));
+    }
+
+    private static void sendDebug(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, debugSnapshot(player));
     }
 
     /** For tests: the wall clock the away time is measured with. */
@@ -112,11 +182,13 @@ public final class FatigueService {
     private static void onServerStopping(ServerStoppingEvent event) {
         LAST_POSITION.clear();
         PROTECTED_UNTIL.clear();
+        DEBUG_VIEWERS.clear();
     }
 
     private static void onServerStarting(ServerStartingEvent event) {
         LAST_POSITION.clear();
         PROTECTED_UNTIL.clear();
+        DEBUG_VIEWERS.clear();
     }
 
     /** During the grace period, and for a few seconds after reconnecting from it, nothing can hurt the player. */
@@ -199,6 +271,7 @@ public final class FatigueService {
         player.setData(ModAttachments.FATIGUE_AWAY_SINCE.get(), clock.getAsLong());
         LAST_POSITION.remove(player.getUUID());
         PROTECTED_UNTIL.remove(player.getUUID());
+        DEBUG_VIEWERS.remove(player.getUUID());
     }
 
     /**
@@ -227,6 +300,13 @@ public final class FatigueService {
      * disconnection.
      */
     public static void tickSecond(ServerPlayer player) {
+        update(player);
+        if (DEBUG_VIEWERS.contains(player.getUUID())) {
+            sendDebug(player);
+        }
+    }
+
+    private static void update(ServerPlayer player) {
         FatigueBalance balance = FatigueBalance.current();
         if (!balance.enabled() || !player.isAlive()) {
             endGrace(player);

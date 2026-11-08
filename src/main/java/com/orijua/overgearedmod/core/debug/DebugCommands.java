@@ -119,6 +119,15 @@ public final class DebugCommands {
                                                     ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
                                                     return 1;
                                                 }))))
+                        .then(Commands.literal("fatigue")
+                                .then(Commands.literal("overlay")
+                                        .executes(ctx -> {
+                                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                            boolean on = FatigueService.toggleDebug(player);
+                                            ctx.getSource().sendSuccess(() -> Component.translatable(
+                                                    on ? "message.overgearedmod.debug_fatigue_overlay_on" : "message.overgearedmod.debug_fatigue_overlay_off"), false);
+                                            return 1;
+                                        })))
                         .then(Commands.literal("give")
                                 .then(Commands.literal("xp")
                                         .then(Commands.argument("amount", IntegerArgumentType.integer(1))

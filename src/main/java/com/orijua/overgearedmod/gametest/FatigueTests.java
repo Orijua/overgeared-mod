@@ -32,10 +32,11 @@ public final class FatigueTests {
     private static final double SECOND_OF_PLAY = FatigueRules.drainPerSecond(FatigueBalance.DEFAULT, FatigueRules.Activity.NORMAL, FatigueRules.SessionModifiers.NEUTRAL);
     private static final double SECOND_OF_REST = FatigueRules.recoverPerSecond(FatigueBalance.DEFAULT, FatigueRules.SessionModifiers.NEUTRAL);
 
+    /** Runs {@code body} in Satisfy or the real world, with the default numbers (a world keeps the numbers of its saved config). */
     private static void in(GameTestHelper helper, boolean satisfy, Runnable body) {
         try {
             Satisfy.standIn(satisfy ? helper.getLevel() : null);
-            body.run();
+            FatigueBalance.withOverride(FatigueBalance.DEFAULT, body);
         } finally {
             Satisfy.restoreStandIn();
         }
@@ -124,11 +125,9 @@ public final class FatigueTests {
     public static void withTheFatigueOffNothingChanges(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         FatigueService.setEnergy(player, 0.5);
-        FatigueBalance off = new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.1, 15, List.of(0.25));
-        FatigueBalance.withOverride(off, () -> {
-            in(helper, true, () -> FatigueService.tickSecond(player));
-            in(helper, false, () -> FatigueService.tickSecond(player));
-        });
+        FatigueBalance off = new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.1, 15, List.of(0.25), 0.3);
+        in(helper, true, () -> FatigueBalance.withOverride(off, () -> FatigueService.tickSecond(player)));
+        in(helper, false, () -> FatigueBalance.withOverride(off, () -> FatigueService.tickSecond(player)));
         helper.assertTrue(near(FatigueService.energy(player), 0.5), "off: neither drains nor refills");
         helper.succeed();
     }
@@ -291,13 +290,15 @@ public final class FatigueTests {
         net.minecraft.core.BlockPos spot = helper.absolutePos(new net.minecraft.core.BlockPos(0, 1, 1));
         try {
             Satisfy.standIn(other);
-            FatigueService.setEnergy(player, 0.05);
-            helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.TOO_TIRED, "below the minimum: refused");
-            helper.assertFalse(CapsuleService.isConnecting(player), "and nothing started");
-            FatigueService.setEnergy(player, 0.10);
-            helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.STARTED, "exactly the minimum: allowed");
-            CapsuleService.cancel(player, false);
-            FatigueBalance.withOverride(new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.1, 15, List.of(0.25)), () -> {
+            FatigueBalance.withOverride(FatigueBalance.DEFAULT, () -> {
+                FatigueService.setEnergy(player, 0.20);
+                helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.TOO_TIRED, "below the minimum: refused");
+                helper.assertFalse(CapsuleService.isConnecting(player), "and nothing started");
+                FatigueService.setEnergy(player, 0.25);
+                helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.STARTED, "exactly the minimum: allowed");
+                CapsuleService.cancel(player, false);
+            });
+            FatigueBalance.withOverride(new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.1, 15, List.of(0.25), 0.3), () -> {
                 FatigueService.setEnergy(player, 0.0);
                 helper.assertTrue(CapsuleService.begin(player, spot) == CapsuleService.Begin.STARTED, "with the fatigue off nobody is refused");
                 CapsuleService.cancel(player, false);
@@ -314,9 +315,9 @@ public final class FatigueTests {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         in(helper, true, () -> {
             double drain = SECOND_OF_PLAY;
-            FatigueService.setEnergy(player, 0.25 + drain / 2);
+            FatigueService.setEnergy(player, 0.15 + drain / 2);
             FatigueService.tickSecond(player);
-            helper.assertTrue(FatigueService.energy(player) <= 0.25f && !FatigueService.isInGrace(player), "crossed 25 % and carried on");
+            helper.assertTrue(FatigueService.energy(player) <= 0.15f && !FatigueService.isInGrace(player), "crossed 15 % and carried on");
             FatigueService.setEnergy(player, 0.00001);
             FatigueService.tickSecond(player);
             helper.assertTrue(FatigueService.energy(player) == 0.0f, "reached zero");
@@ -330,7 +331,7 @@ public final class FatigueTests {
     public static void withNoGracePeriodTheDisconnectionIsImmediate(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         net.minecraft.core.BlockPos bairan = helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1));
-        FatigueBalance noGrace = new FatigueBalance(true, 40, 0.5, 2, 20, 10, 0.1, 0, List.of(0.25));
+        FatigueBalance noGrace = new FatigueBalance(true, 40, 0.5, 2, 20, 10, 0.1, 0, List.of(0.25), 0.3);
         CapsuleTests.inSatisfy(helper, bairan, () -> {
             helper.assertTrue(CapsuleService.connect(player, capsuleAt(helper)), "connected");
             FatigueService.setEnergy(player, 0.0);
@@ -522,6 +523,55 @@ public final class FatigueTests {
         } finally {
             FatigueService.restoreClock();
         }
+        helper.succeed();
+    }
+
+    // ---- Step 5: sleeping, the debug panel ----
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void sleepingThroughTheNightInTheRealWorldGivesBackAShare(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, false, () -> {
+            FatigueService.setEnergy(player, 0.2);
+            FatigueService.onSlept(player);
+            helper.assertTrue(near(FatigueService.energy(player), 0.5), "+30 % of the energy, not all of it");
+            FatigueService.setEnergy(player, 0.9);
+            FatigueService.onSlept(player);
+            helper.assertTrue(FatigueService.energy(player) == 1.0f, "never above full");
+        });
+        in(helper, true, () -> {
+            FatigueService.setEnergy(player, 0.2);
+            FatigueService.onSlept(player);
+            helper.assertTrue(near(FatigueService.energy(player), 0.2), "a bed in Satisfy rests nothing");
+        });
+        FatigueBalance off = new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.25, 15, List.of(0.15), 0.3);
+        in(helper, false, () -> FatigueBalance.withOverride(off, () -> {
+            FatigueService.setEnergy(player, 0.2);
+            FatigueService.onSlept(player);
+            helper.assertTrue(near(FatigueService.energy(player), 0.2), "with the fatigue off it does nothing");
+        }));
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theDebugPanelTurnsOnAndOffAndDescribesTheState(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        in(helper, true, () -> {
+            helper.assertFalse(FatigueService.isDebugging(player), "off to begin with");
+            helper.assertTrue(FatigueService.toggleDebug(player), "on");
+            helper.assertTrue(FatigueService.isDebugging(player), "listed");
+            FatigueService.setEnergy(player, 0.5);
+            var snapshot = FatigueService.debugSnapshot(player);
+            helper.assertTrue(snapshot.visible() && near(snapshot.energy(), 0.5), "it carries the energy");
+            helper.assertTrue(snapshot.drainPerSecond() > 0 && snapshot.secondsToEmpty() > 0, "and the drain, in Satisfy");
+            helper.assertTrue(snapshot.graceLeft() == -1 && !snapshot.protectedNow(), "no grace, not protected");
+            helper.assertFalse(FatigueService.toggleDebug(player), "off again");
+            helper.assertFalse(FatigueService.isDebugging(player), "no longer listed");
+        });
+        in(helper, false, () -> {
+            var snapshot = FatigueService.debugSnapshot(player);
+            helper.assertTrue(snapshot.drainPerSecond() == 0.0f && snapshot.secondsToEmpty() == -1, "in the real world nothing drains");
+        });
         helper.succeed();
     }
 }

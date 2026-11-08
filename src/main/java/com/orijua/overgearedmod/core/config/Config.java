@@ -143,6 +143,9 @@ public final class Config {
             .defineInRange("warnSecond", F.warnAt().get(1), 0.0, 1.0);
     private static final ModConfigSpec.DoubleValue FATIGUE_WARN_3 = BUILDER
             .defineInRange("warnThird", F.warnAt().get(2), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue FATIGUE_SLEEP_RECOVERY = BUILDER
+            .comment("Energy (0 to 1) that sleeping through the night in the real world gives back.")
+            .defineInRange("sleepRecovery", F.sleepRecovery(), 0.0, 1.0);
 
     static {
         BUILDER.pop();
@@ -163,7 +166,8 @@ public final class Config {
                 FATIGUE_FORGE_COST_SECONDS.get(), FATIGUE_RECOVERY_MINUTES.get(), FATIGUE_MIN_ENERGY_TO_CONNECT.get(),
                 FATIGUE_GRACE_SECONDS.get(),
                 java.util.stream.Stream.of(FATIGUE_WARN_1.get(), FATIGUE_WARN_2.get(), FATIGUE_WARN_3.get())
-                        .sorted(java.util.Comparator.reverseOrder()).toList());
+                        .sorted(java.util.Comparator.reverseOrder()).toList(),
+                FATIGUE_SLEEP_RECOVERY.get());
     }
 
     static Balance balance() {

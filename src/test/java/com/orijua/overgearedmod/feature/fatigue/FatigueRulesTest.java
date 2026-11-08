@@ -64,25 +64,25 @@ class FatigueRulesTest {
     @Test
     void eachWarningFiresOnceWhenCrossedDownwards() {
         List<Double> warn = B.warnAt();
-        assertEquals(OptionalDouble.of(0.25), FatigueRules.crossedWarning(0.26, 0.25, warn), "reaching it counts");
-        assertEquals(OptionalDouble.empty(), FatigueRules.crossedWarning(0.25, 0.24, warn), "already past: not again");
+        assertEquals(OptionalDouble.of(0.15), FatigueRules.crossedWarning(0.16, 0.15, warn), "reaching it counts");
+        assertEquals(OptionalDouble.empty(), FatigueRules.crossedWarning(0.15, 0.14, warn), "already past: not again");
         assertEquals(OptionalDouble.empty(), FatigueRules.crossedWarning(0.9, 0.8, warn), "nothing crossed");
         assertEquals(OptionalDouble.empty(), FatigueRules.crossedWarning(0.1, 0.5, warn), "going up crosses nothing");
-        assertEquals(OptionalDouble.of(0.10), FatigueRules.crossedWarning(0.11, 0.09, warn));
+        assertEquals(OptionalDouble.of(0.08), FatigueRules.crossedWarning(0.09, 0.07, warn));
         assertEquals(OptionalDouble.of(0.02), FatigueRules.crossedWarning(0.03, 0.0, warn));
     }
 
     @Test
     void aBigJumpReportsOnlyTheMostUrgentWarning() {
-        assertEquals(OptionalDouble.of(0.10), FatigueRules.crossedWarning(0.30, 0.05, B.warnAt()), "25 % and 10 % crossed: the 10 %");
+        assertEquals(OptionalDouble.of(0.08), FatigueRules.crossedWarning(0.30, 0.05, B.warnAt()), "15 % and 8 % crossed: the 8 %");
         assertEquals(OptionalDouble.of(0.02), FatigueRules.crossedWarning(0.30, 0.0, B.warnAt()));
     }
 
     @Test
     void theCapsuleNeedsTheMinimumEnergy() {
-        assertTrue(FatigueRules.canConnect(B, 0.10), "exactly the minimum");
+        assertTrue(FatigueRules.canConnect(B, 0.25), "exactly the minimum");
         assertTrue(FatigueRules.canConnect(B, 1.0));
-        assertFalse(FatigueRules.canConnect(B, 0.0999));
+        assertFalse(FatigueRules.canConnect(B, 0.2499));
         assertFalse(FatigueRules.canConnect(B, 0.0));
     }
 
@@ -97,7 +97,7 @@ class FatigueRulesTest {
 
     @Test
     void withTheFatigueOffNothingDrainsAndEveryoneMayConnect() {
-        FatigueBalance off = new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.1, 15, List.of(0.25));
+        FatigueBalance off = new FatigueBalance(false, 40, 0.5, 2, 20, 10, 0.1, 15, List.of(0.25), 0.3);
         assertEquals(0.0, FatigueRules.drainPerSecond(off, Activity.COMBAT, N));
         assertEquals(1.0, FatigueRules.afterForge(off, 1.0, N));
         assertTrue(FatigueRules.canConnect(off, 0.0));
@@ -106,7 +106,7 @@ class FatigueRulesTest {
 
     @Test
     void extremeConfigurationsDoNotDivideByZero() {
-        FatigueBalance silly = new FatigueBalance(true, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, List.of());
+        FatigueBalance silly = new FatigueBalance(true, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, List.of(), 0.3);
         assertTrue(Double.isFinite(FatigueRules.drainPerSecond(silly, Activity.NORMAL, N)));
         assertTrue(Double.isFinite(FatigueRules.recoverPerSecond(silly, N)));
         assertEquals(0.0, FatigueRules.drainPerSecond(silly, Activity.REST, N), "a zero multiplier is a free activity");
@@ -127,7 +127,7 @@ class FatigueRulesTest {
 
     @Test
     void thresholdsThatAreNotExactInAFloatStillCompareEqual() {
-        FatigueBalance b = new FatigueBalance(true, 40, 0.5, 2, 20, 10, 0.35, 15, List.of(0.35, 0.1));
+        FatigueBalance b = new FatigueBalance(true, 40, 0.5, 2, 20, 10, 0.35, 15, List.of(0.35, 0.1), 0.3);
         assertTrue(FatigueRules.canConnect(b, 0.35f), "35 % saved as a float meets a 35 % minimum");
         assertFalse(FatigueRules.canConnect(b, 0.34f));
         assertEquals(OptionalDouble.of(0.35), FatigueRules.crossedWarning(0.36f, 0.35f, b.warnAt()), "reaching 35 % warns");
