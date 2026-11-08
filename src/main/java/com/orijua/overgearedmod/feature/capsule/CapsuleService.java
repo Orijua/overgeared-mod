@@ -3,6 +3,8 @@ package com.orijua.overgearedmod.feature.capsule;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
+import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.world.WorldSites;
 import net.minecraft.core.BlockPos;
@@ -267,6 +269,12 @@ public final class CapsuleService {
             PacketDistributor.sendToPlayer(player, new CapsuleConnectingPayload(0));
             return false;
         }
+        if (!Characters.canCross(player, WorldSide.SATISFY)) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.character_unreadable"), true);
+            PacketDistributor.sendToPlayer(player, new CapsuleConnectingPayload(0));
+            Overgearedmod.LOGGER.error("{} cannot connect: the stored character cannot be read", player.getGameProfile().getName());
+            return false;
+        }
         GlobalPos exit = GlobalPos.of(player.level().dimension(), player.blockPosition());
         // The state is saved before the trip (the arrival events may need it) and put back if the trip does not happen.
         CapsuleState before = state(player);
@@ -274,7 +282,7 @@ public final class CapsuleService {
         BlockPos at = spawn.get().pos();
         Overgearedmod.LOGGER.info("{} connects to Satisfy at {} ({})", player.getGameProfile().getName(), at, spawn.get().source());
         BlockPos free = freeSpot(satisfy.get(), at, "connection", player);
-        WorldSeparation.crossing(() ->
+        WorldSeparation.cross(player, () ->
                 player.teleportTo(satisfy.get(), free.getX() + 0.5, free.getY(), free.getZ() + 0.5, player.getYRot(), 0.0f));
         if (!Satisfy.is(player.level())) {
             // Something (another mod) cancelled the trip: the player is still in the real world.
@@ -304,7 +312,7 @@ public final class CapsuleService {
         Destination destination = destination(player.server, before.exit(), player.getRespawnDimension(), player.getRespawnPosition());
         ServerLevel target = destination.level();
         BlockPos free = freeSpot(target, destination.pos(), "disconnection", player);
-        WorldSeparation.crossing(() ->
+        WorldSeparation.cross(player, () ->
                 player.teleportTo(target, free.getX() + 0.5, free.getY(), free.getZ() + 0.5, player.getYRot(), 0.0f));
         player.resetFallDistance();
         player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.disconnected"), true);

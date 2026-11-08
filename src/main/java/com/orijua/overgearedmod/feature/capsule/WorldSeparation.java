@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.feature.capsule;
 
+import com.orijua.overgearedmod.feature.character.Characters;
 import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,6 +24,17 @@ public final class WorldSeparation {
     public static void register(IEventBus gameBus) {
         gameBus.addListener(WorldSeparation::onTravel);
         gameBus.addListener(WorldSeparation::onSetSpawn);
+    }
+
+    /**
+     * The way a player changes world: closes their menu in the world they leave, teleports with crossing allowed, and
+     * then makes them carry the character of the world they are in ({@link Characters#settle}). If the trip did not
+     * happen (another mod cancelled it) the world is the same and nothing is swapped.
+     */
+    public static void cross(ServerPlayer player, Runnable teleport) {
+        Characters.prepareCrossing(player);
+        crossing(teleport);
+        Characters.settle(player);
     }
 
     /** Runs {@code teleport} with crossing between the two worlds allowed; always restored afterwards. */

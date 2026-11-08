@@ -9,6 +9,8 @@ import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
+import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
@@ -269,9 +271,12 @@ public final class DebugCommands {
                     case SEA -> "message.overgearedmod.debug_goto_sea";
                     default -> "message.overgearedmod.debug_goto_none";
                 }, site)).create());
+        if (!Characters.canCross(player, WorldSide.SATISFY)) {
+            throw new SimpleCommandExceptionType(Component.translatable("message.overgearedmod.capsule.character_unreadable")).create();
+        }
         // Facing the place: the landing is in front of it.
         // A debug crossing between the real world and Satisfy is allowed (operators only).
-        WorldSeparation.crossing(() ->
+        WorldSeparation.cross(player, () ->
                 player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, found.yaw(), 0.0f));
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
                 landing.getX(), landing.getY(), landing.getZ()), false);
