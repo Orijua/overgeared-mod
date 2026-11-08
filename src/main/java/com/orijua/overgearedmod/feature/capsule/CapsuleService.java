@@ -306,7 +306,7 @@ public final class CapsuleService {
 
     /**
      * Takes the player out of Satisfy and back beside their capsule (or, without a known one, to their respawn point).
-     * Where they were becomes where the next connection starts. Returns false if they were not in Satisfy.
+     * Where they were becomes where the next connection starts. Returns false if they were not in Satisfy, or if the trip did not happen (the state is then put back).
      */
     public static boolean disconnect(ServerPlayer player, Reason reason) {
         if (!Satisfy.is(player.level())) {
@@ -321,6 +321,12 @@ public final class CapsuleService {
         BlockPos free = freeSpot(target, destination.pos(), "disconnection", player);
         WorldSeparation.cross(player, () ->
                 player.teleportTo(target, free.getX() + 0.5, free.getY(), free.getZ() + 0.5, player.getYRot(), 0.0f));
+        if (player.level() != target) {
+            // Something (another mod) cancelled the trip: the player is still in Satisfy, so the body stays where it was.
+            player.setData(ModAttachments.CAPSULE.get(), before);
+            Overgearedmod.LOGGER.warn("{} did not leave Satisfy: the disconnection is undone", player.getGameProfile().getName());
+            return false;
+        }
         player.resetFallDistance();
         player.displayClientMessage(Component.translatable(reason == Reason.FATIGUE
                 ? "message.overgearedmod.capsule.disconnected_tired" : "message.overgearedmod.capsule.disconnected"), true);

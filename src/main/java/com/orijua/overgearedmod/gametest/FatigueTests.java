@@ -322,4 +322,40 @@ public final class FatigueTests {
         });
         helper.succeed();
     }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void withNoGracePeriodTheDisconnectionIsImmediate(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        net.minecraft.core.BlockPos bairan = helper.absolutePos(new net.minecraft.core.BlockPos(1, 1, 1));
+        FatigueBalance noGrace = new FatigueBalance(true, 40, 0.5, 2, 20, 10, 0.1, 0, List.of(0.25));
+        CapsuleTests.inSatisfy(helper, bairan, () -> {
+            helper.assertTrue(CapsuleService.connect(player, capsuleAt(helper)), "connected");
+            FatigueService.setEnergy(player, 0.0);
+            FatigueBalance.withOverride(noGrace, () -> FatigueService.tickSecond(player));
+            helper.assertFalse(CapsuleService.state(player).isConnected(), "out in the very second it ran out");
+            helper.assertFalse(FatigueService.isInGrace(player), "with nothing left over");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void changingToCreativeDuringTheGracePeriodEndsIt(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        FatigueService.setEnergy(player, 0.0);
+        try {
+            in(helper, true, () -> {
+                FatigueService.tickSecond(player);
+                helper.assertTrue(FatigueService.isInGrace(player), "in grace");
+                player.setGameMode(GameType.CREATIVE);
+                FatigueService.tickSecond(player);
+                helper.assertFalse(FatigueService.isInGrace(player), "creative ends it");
+                player.setGameMode(GameType.SURVIVAL);
+                FatigueService.tickSecond(player);
+                helper.assertTrue(FatigueService.graceLeft(player) == GRACE, "and back in survival it starts again from the full length");
+            });
+        } finally {
+            player.setGameMode(GameType.SURVIVAL);
+        }
+        helper.succeed();
+    }
 }

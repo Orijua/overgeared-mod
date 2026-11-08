@@ -158,8 +158,10 @@ public final class FatigueService {
         if (running == null) {
             left = balance.graceSeconds();
             GRACE.put(player.getUUID(), left);
-            NotificationEvents.send(player, Kind.FATIGUE_EXHAUSTED,
-                    List.of(Component.translatable("notification.overgearedmod.fatigue_exhausted.body")));
+            if (left > 0) {
+                NotificationEvents.send(player, Kind.FATIGUE_EXHAUSTED,
+                        List.of(Component.translatable("notification.overgearedmod.fatigue_exhausted.body")));
+            }
         } else {
             left = running - 1;
             GRACE.put(player.getUUID(), left);
@@ -176,7 +178,9 @@ public final class FatigueService {
         GRACE.remove(player.getUUID());
         LogoutService.cancel(player, false);
         Overgearedmod.LOGGER.info("{} ran out of energy: the capsule disconnects them", player.getGameProfile().getName());
-        CapsuleService.disconnect(player, CapsuleService.Reason.FATIGUE);
+        if (!CapsuleService.disconnect(player, CapsuleService.Reason.FATIGUE)) {
+            Overgearedmod.LOGGER.warn("The forced disconnection of {} did not happen: the grace period starts again", player.getGameProfile().getName());
+        }
     }
 
     /** What the player is doing. Step 4 tells rest and combat apart; for now every second is normal play. */

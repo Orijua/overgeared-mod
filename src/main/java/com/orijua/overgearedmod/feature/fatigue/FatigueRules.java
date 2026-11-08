@@ -28,7 +28,7 @@ public final class FatigueRules {
     }
 
     public static double clamp(double energy) {
-        return Math.max(0.0, Math.min(1.0, energy));
+        return Double.isNaN(energy) ? 0.0 : Math.max(0.0, Math.min(1.0, energy));
     }
 
     private static double activityMultiplier(FatigueBalance b, Activity activity) {
@@ -77,16 +77,18 @@ public final class FatigueRules {
     public static OptionalDouble crossedWarning(double before, double after, java.util.List<Double> warnAt) {
         double lowest = Double.NaN;
         for (double t : warnAt) {
-            if (before > t && after <= t && (Double.isNaN(lowest) || t < lowest)) {
+            // The energy is saved as a float, so the thresholds are compared as floats: 0.35 is the same number on both sides.
+            float threshold = (float) t;
+            if ((float) before > threshold && (float) after <= threshold && (Double.isNaN(lowest) || t < lowest)) {
                 lowest = t;
             }
         }
         return Double.isNaN(lowest) ? OptionalDouble.empty() : OptionalDouble.of(lowest);
     }
 
-    /** Whether the capsule lets the player connect. With the fatigue off, always. */
+    /** Whether the capsule lets the player connect (compared as floats, like the saved energy). With the fatigue off, always. */
     public static boolean canConnect(FatigueBalance b, double energy) {
-        return !b.enabled() || energy >= b.minEnergyToConnect();
+        return !b.enabled() || (float) energy >= (float) b.minEnergyToConnect();
     }
 
     /** Whole minutes of play left at this activity, rounded up; empty when nothing drains (off, or a zero multiplier). */

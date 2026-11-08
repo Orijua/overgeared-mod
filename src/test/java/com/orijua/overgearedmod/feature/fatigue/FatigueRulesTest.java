@@ -124,4 +124,18 @@ class FatigueRulesTest {
             }
         }
     }
+
+    @Test
+    void thresholdsThatAreNotExactInAFloatStillCompareEqual() {
+        FatigueBalance b = new FatigueBalance(true, 40, 0.5, 2, 20, 10, 0.35, 15, List.of(0.35, 0.1));
+        assertTrue(FatigueRules.canConnect(b, 0.35f), "35 % saved as a float meets a 35 % minimum");
+        assertFalse(FatigueRules.canConnect(b, 0.34f));
+        assertEquals(OptionalDouble.of(0.35), FatigueRules.crossedWarning(0.36f, 0.35f, b.warnAt()), "reaching 35 % warns");
+        assertEquals(OptionalDouble.empty(), FatigueRules.crossedWarning(0.35f, 0.349f, b.warnAt()), "already there: not again");
+    }
+
+    @Test
+    void anEnergyThatIsNotANumberCountsAsEmpty() {
+        assertEquals(0.0, FatigueRules.clamp(Double.NaN));
+    }
 }
