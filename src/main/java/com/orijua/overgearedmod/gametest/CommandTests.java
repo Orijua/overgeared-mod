@@ -6,6 +6,7 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.debug.SiteLanding;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.capsule.LogoutService;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
@@ -29,7 +30,6 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -98,13 +98,13 @@ public final class CommandTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void questCompleteMarksTheWholeChainDone(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        int emeralds = player.getInventory().countItem(Items.EMERALD);
+        int emeralds = player.getInventory().countItem(ModItems.SATISFY_EMERALD.get());
         run(helper, player, "satisfy debug quest complete overgearedmod:quality_test");
         PlayerQuests quests = QuestService.get(player);
         helper.assertTrue(quests.isCompleted(PagmaStory.SMITH_CHAIN_END), "the quest itself");
         helper.assertTrue(quests.isCompleted(Overgearedmod.id("first_commission")), "and the one before it");
         helper.assertTrue(quests.isCompleted(Overgearedmod.id("smith_firewood")), "back to the start of the chain");
-        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == emeralds, "no rewards");
+        helper.assertTrue(player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) == emeralds, "no rewards");
 
         run(helper, player, "satisfy debug quest complete overgearedmod:quality_test");
         helper.assertTrue(QuestService.get(player).timesCompleted(PagmaStory.SMITH_CHAIN_END) == 1, "done ones are not done twice");

@@ -30,6 +30,7 @@ class SatisfyOnlyTest {
         assertTrue(SatisfyOnly.isSatisfyItem(mod("apprentice_contract")));
         assertTrue(SatisfyOnly.isSatisfyItem(mod("jaffa_sword")));
         assertTrue(SatisfyOnly.isSatisfyItem(mod("respec_scroll")));
+        assertTrue(SatisfyOnly.isSatisfyItem(mod("satisfy_emerald")));
     }
 
     @Test

@@ -65,7 +65,8 @@ public final class PagmaStoryTests {
         helper.assertTrue(QuestService.deliver(player, PagmaStory.SECRET_REQUEST, ashur) == QuestService.Result.SUCCESS, "delivered");
         helper.assertTrue(QuestService.claim(player, PagmaStory.SECRET_REQUEST, ashur) == QuestService.Result.SUCCESS, "claimed");
         helper.assertTrue(player.getInventory().countItem(ModItems.UNAPPRAISED_BOOK.get()) == 0, "Ashur has the book");
-        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 48, "and paid for it");
+        helper.assertTrue(player.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) == 48, "and paid for it");
+        helper.assertTrue(player.getInventory().countItem(Items.EMERALD) == 0, "and not in vanilla emeralds");
         helper.assertFalse(PagmaStory.isAshursEnemy(player), "no anger");
         helper.succeed();
     }

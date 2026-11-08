@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.core.registry;
 import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.capsule.CapsuleState;
+import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.insight.LearnedToday;
 import com.orijua.overgearedmod.feature.mob.MobLevel;
 import com.orijua.overgearedmod.feature.npc.WorkshopEntry;
@@ -50,6 +51,13 @@ public final class ModAttachments {
      */
     public static final Supplier<AttachmentType<Float>> FATIGUE =
             playerData("fatigue", () -> 1.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, true);
+
+    /**
+     * The player's money in Satisfy (Won and debt; see economy.AccountService). One value for the player, not swapped
+     * with the characters and outside their vault; synced to its owner and kept on death.
+     */
+    public static final Supplier<AttachmentType<Account>> ACCOUNT =
+            playerData("account", () -> Account.EMPTY, Account.CODEC, Account.STREAM_CODEC, true);
 
     /** Seconds left of the grace period after running out of energy, or -1 when it is not running. Saved (quitting does not stretch it) and synced to its owner, for the countdown on screen. */
     public static final Supplier<AttachmentType<Integer>> FATIGUE_GRACE =
