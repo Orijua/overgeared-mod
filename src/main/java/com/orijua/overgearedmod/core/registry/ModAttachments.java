@@ -44,6 +44,13 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Float>> MANA =
             playerData("mana", () -> 20.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, false);
 
+    /**
+     * The energy of the player's body, 1 (rested) to 0 (spent): drains in Satisfy, refills in the real world (see
+     * fatigue.FatigueService). One value for the player, not swapped with the characters; kept on death.
+     */
+    public static final Supplier<AttachmentType<Float>> FATIGUE =
+            playerData("fatigue", () -> 1.0f, Codec.FLOAT, ByteBufCodecs.FLOAT, true);
+
     public static final Supplier<AttachmentType<PlayerIdentity>> PLAYER_IDENTITY =
             playerData("player_identity", () -> PlayerIdentity.DEFAULT, PlayerIdentity.CODEC, PlayerIdentity.STREAM_CODEC, true);
 

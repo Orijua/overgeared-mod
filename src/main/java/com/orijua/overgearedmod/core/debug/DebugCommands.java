@@ -10,6 +10,7 @@ import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
@@ -100,6 +101,15 @@ public final class DebugCommands {
                                                         Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
                                                 .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
                                                         .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value"))))))
+                                .then(Commands.literal("fatigue")
+                                        .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int percent = IntegerArgumentType.getInteger(ctx, "percent");
+                                                    FatigueService.setEnergy(player, percent / 100.0);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_fatigue", percent), false);
+                                                    return 1;
+                                                })))
                                 .then(Commands.literal("insight")
                                         .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
                                                 .executes(ctx -> {

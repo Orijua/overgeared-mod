@@ -544,6 +544,7 @@
   "message.overgearedmod.debug_level": "Nivel %s (+%s puntos de estadística)",
   "message.overgearedmod.debug_stat": "%s: %s puntos",
   "message.overgearedmod.debug_bad_stat": "Estadística desconocida: %s",
+  "message.overgearedmod.debug_fatigue": "Energía: %s %%",
   "message.overgearedmod.debug_insight": "Perspicacia: %s",
   "message.overgearedmod.debug_goto": "Teletransportado a %s en %s %s %s",
   "message.overgearedmod.debug_goto_none": "Este mundo no tiene %s (solo los mundos nuevos lo tienen)",

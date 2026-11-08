@@ -543,6 +543,7 @@
   "message.overgearedmod.debug_smithing": "Smithing set to level %s (effective, with the class: %s)",
   "message.overgearedmod.debug_level": "Level %s (+%s stat points)",
   "message.overgearedmod.debug_stat": "%s: %s points",
+  "message.overgearedmod.debug_fatigue": "Energy: %s %%",
   "message.overgearedmod.debug_insight": "Insight: %s",
   "message.overgearedmod.debug_goto": "Teleported to %s at %s %s %s",
   "message.overgearedmod.debug_goto_none": "This world has no %s (only new worlds have one)",
