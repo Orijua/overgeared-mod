@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TradeCategoryTest {
     @SafeVarargs
@@ -39,5 +40,24 @@ class TradeCategoryTest {
     void noTagIsOther() {
         assertEquals(TradeCategory.OTHER, of());
         assertEquals(TradeCategory.OTHER, of(ItemTags.HOES));
+    }
+
+    @Test
+    void streamCodecClampsBogusIds() {
+        TradeCategory[] all = TradeCategory.values();
+        io.netty.buffer.ByteBuf buffer = io.netty.buffer.Unpooled.buffer();
+        net.minecraft.network.VarInt.write(buffer, 99);
+        assertEquals(all[all.length - 1], TradeCategory.STREAM_CODEC.decode(buffer));
+        buffer = io.netty.buffer.Unpooled.buffer();
+        net.minecraft.network.VarInt.write(buffer, -1);
+        assertEquals(all[0], TradeCategory.STREAM_CODEC.decode(buffer));
+    }
+
+    @Test
+    void serializedNamesAreUnique() {
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (TradeCategory category : TradeCategory.values()) {
+            assertTrue(names.add(category.getSerializedName()), category.getSerializedName());
+        }
     }
 }

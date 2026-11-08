@@ -15,17 +15,23 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 /**
  * Selling and exporting equipment: the only place that writes the trade saturation and takes the pieces. Everything is
- * decided here, in the server: the client only says which slot and which way. The piece goes first and comes back
- * if the payment fails, so nothing is lost or paid twice.
+ * decided here, in the server: the client only says which slot, which way, and which piece at which price it saw.
+ * Checks come before anything moves (including that the piece and the price are the ones the player saw, and that the
+ * price can be paid). The piece goes first and the payment is delivered in parts, each all or nothing: if the first
+ * part fails the piece goes back without overwriting anything; if a later one fails the piece is NOT returned (part
+ * of the payment is already delivered, giving it back would duplicate value), the sale is counted and the failure is
+ * logged with what was paid and what is missing. Only {@link RuntimeException} is caught, as before: an {@link Error}
+ * brings the server thread down anyway.
  */
 public final class TradeService {
     private TradeService() {
     }
 
-    public enum Result { SOLD, OUTSIDE_SATISFY, INVALID_SLOT, EMPTY, REFUSED, FAILED }
+    public enum Result { SOLD, OUTSIDE_SATISFY, INVALID_SLOT, EMPTY, REFUSED, STALE, FAILED }
 
     public record Outcome(Result result, Optional<TradeRules.Refusal> refusal, long paid) {
         static Outcome of(Result result) {
@@ -33,14 +39,39 @@ public final class TradeService {
         }
     }
 
-    /** How the money reaches the player; a seam so a test can make it fail. */
+    /** The piece and the price the player saw when he decided; the sale only goes through if both still hold. */
+    public record Expected(ItemStack stack, long price) {
+    }
+
+    /**
+     * How one part of the money reaches the player; a seam so a test can make it fail. Each call is all or nothing:
+     * it delivers its whole part or throws without delivering anything.
+     */
     @FunctionalInterface
     public interface Payout {
-        void pay(ServerPlayer player, TradeMode mode, long amount);
+        void give(ServerPlayer player, TradeMode mode, long amount);
     }
 
     public static TradeSaturation saturation(Player player) {
         return player.getData(ModAttachments.TRADE_SATURATION.get());
+    }
+
+    /** The message for the player after a sale attempt; empty when the notification already says it. */
+    public static Optional<Component> message(Outcome outcome) {
+        return switch (outcome.result()) {
+            case SOLD -> Optional.empty();
+            case OUTSIDE_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.trade_outside"));
+            case REFUSED -> outcome.refusal().map(refusal ->
+                    (Component) Component.translatable("message.overgearedmod.trade_refused", refusal.message()));
+            case EMPTY, INVALID_SLOT, STALE -> Optional.of(Component.translatable("message.overgearedmod.trade_stale"));
+            case FAILED -> Optional.of(Component.translatable("message.overgearedmod.trade_failed"));
+        };
+    }
+
+    /** The order of the Trade tab: today is the server clock, and the piece and price must be the ones the player saw. */
+    public static Outcome sell(ServerPlayer player, TradeSellPayload payload) {
+        return sell(player, payload.slot(), payload.mode(), TradeRules.day(player.serverLevel().getGameTime()),
+                new Expected(payload.expected(), payload.expectedPrice()), TradeService::give);
     }
 
     public static Outcome sell(ServerPlayer player, int slot, TradeMode mode) {
@@ -48,10 +79,20 @@ public final class TradeService {
     }
 
     public static Outcome sell(ServerPlayer player, int slot, TradeMode mode, long today) {
-        return sell(player, slot, mode, today, TradeService::pay);
+        return sell(player, slot, mode, today, TradeService::give);
     }
 
+    /** Without the piece and price the player saw: only for tests and commands. */
     public static Outcome sell(ServerPlayer player, int slot, TradeMode mode, long today, Payout payout) {
+        return sell(player, slot, mode, today, null, payout);
+    }
+
+    /** With the piece and price the player saw and the real payment. */
+    public static Outcome sell(ServerPlayer player, int slot, TradeMode mode, long today, Expected expected) {
+        return sell(player, slot, mode, today, expected, TradeService::give);
+    }
+
+    public static Outcome sell(ServerPlayer player, int slot, TradeMode mode, long today, @Nullable Expected expected, Payout payout) {
         if (!Satisfy.is(player.level())) {
             return Outcome.of(Result.OUTSIDE_SATISFY);
         }
@@ -63,6 +104,9 @@ public final class TradeService {
         if (stack.isEmpty()) {
             return Outcome.of(Result.EMPTY);
         }
+        if (expected != null && !ItemStack.matches(stack, expected.stack())) {
+            return Outcome.of(Result.STALE);
+        }
         Optional<TradeRules.Refusal> refusal = TradeGoods.refusal(stack);
         if (refusal.isPresent()) {
             return new Outcome(Result.REFUSED, refusal, 0L);
@@ -71,18 +115,33 @@ public final class TradeService {
         TradeKey key = TradeGoods.key(stack);
         TradeSaturation saturation = saturation(player);
         long price = TradeGoods.price(stack, mode, saturation, today, balance);
-        // Checked before anything moves: the deposit throws on a negative amount, and a sale pays at least 1.
-        if (price < 0 || (mode == TradeMode.SELL && price < 1)) {
+        if (expected != null && price != expected.price()) {
+            return Outcome.of(Result.STALE);
+        }
+        // Checked before anything moves: a price must be at least 1 and a sale cannot pay above the cap.
+        if (!TradeRules.payable(mode, price, balance)) {
             return Outcome.of(Result.FAILED);
         }
+        long[] parts = TradeRules.payments(mode, price, ModItems.SATISFY_EMERALD.get().getDefaultMaxStackSize());
         ItemStack removed = stack.copy();
         inventory.setItem(slot, ItemStack.EMPTY);
-        try {
-            payout.pay(player, mode, price);
-        } catch (RuntimeException e) {
-            inventory.setItem(slot, removed);
-            Overgearedmod.LOGGER.error("The {} of {} failed; the piece goes back to its slot", mode, player.getGameProfile().getName(), e);
-            return Outcome.of(Result.FAILED);
+        long delivered = 0L;
+        for (long part : parts) {
+            try {
+                payout.give(player, mode, part);
+            } catch (RuntimeException e) {
+                if (delivered == 0L) {
+                    giveBack(player, slot, removed);
+                    Overgearedmod.LOGGER.error("The {} of {} failed before paying anything; the piece goes back", mode, player.getGameProfile().getName(), e);
+                    return Outcome.of(Result.FAILED);
+                }
+                player.setData(ModAttachments.TRADE_SATURATION.get(), saturation.recordSale(key, today, balance));
+                Overgearedmod.LOGGER.error("The {} of {} failed halfway: {} of {} paid, {} missing; the piece is not returned",
+                        mode, player.getGameProfile().getName(), delivered, price, price - delivered, e);
+                player.containerMenu.broadcastChanges();
+                return new Outcome(Result.FAILED, Optional.empty(), delivered);
+            }
+            delivered += part;
         }
         player.setData(ModAttachments.TRADE_SATURATION.get(), saturation.recordSale(key, today, balance));
         Component name = removed.getHoverName();
@@ -92,21 +151,29 @@ public final class TradeService {
         return new Outcome(Result.SOLD, Optional.empty(), price);
     }
 
-    /** Emeralds of Satisfy into the inventory, in stacks, and what does not fit on the ground; Won into the account. */
-    private static void pay(ServerPlayer player, TradeMode mode, long amount) {
+    /** Puts the piece back in its slot only if empty; otherwise in the inventory, and what does not fit on the ground. Never overwrites. */
+    private static void giveBack(ServerPlayer player, int slot, ItemStack piece) {
+        Inventory inventory = player.getInventory();
+        if (inventory.getItem(slot).isEmpty()) {
+            inventory.setItem(slot, piece);
+            return;
+        }
+        inventory.add(piece);
+        if (!piece.isEmpty()) {
+            player.drop(piece, false);
+        }
+    }
+
+    /** One part: emeralds of Satisfy into the inventory (what does not fit on the ground), or Won into the account. */
+    private static void give(ServerPlayer player, TradeMode mode, long amount) {
         if (mode == TradeMode.EXPORT) {
             AccountService.deposit(player, amount);
             return;
         }
-        long left = amount;
-        while (left > 0) {
-            int max = ModItems.SATISFY_EMERALD.get().getDefaultMaxStackSize();
-            ItemStack pile = new ItemStack(ModItems.SATISFY_EMERALD.get(), (int) Math.min(max, left));
-            left -= pile.getCount();
-            player.getInventory().add(pile);
-            if (!pile.isEmpty()) {
-                player.drop(pile, false);
-            }
+        ItemStack pile = new ItemStack(ModItems.SATISFY_EMERALD.get(), (int) amount);
+        player.getInventory().add(pile);
+        if (!pile.isEmpty()) {
+            player.drop(pile, false);
         }
     }
 }

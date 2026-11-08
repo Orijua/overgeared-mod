@@ -20,6 +20,7 @@ import java.util.Map;
  * @param saturationFloor    the price factor never goes below this
  * @param recoveryPerDay     points of pressure that go away each whole game day
  * @param pressureCap        pressure never grows beyond this
+ * @param maxSellEmeralds    a sale that would pay more Satisfy emeralds than this is refused before the piece is touched
  */
 public record TradeBalance(
         Map<ItemRating, Integer> basePrice,
@@ -32,14 +33,15 @@ public record TradeBalance(
         double saturationStep,
         double saturationFloor,
         int recoveryPerDay,
-        int pressureCap) {
+        int pressureCap,
+        long maxSellEmeralds) {
 
     public static final TradeBalance DEFAULT = new TradeBalance(
             Map.of(ItemRating.NORMAL, 3, ItemRating.RARE, 12, ItemRating.EPIC, 40,
                     ItemRating.UNIQUE, 150, ItemRating.LEGENDARY, 600, ItemRating.MYTH, 2500),
             Map.of("wood", 0.5, "gold", 0.5, "leather", 0.5, "stone", 1.0, "iron", 1.0, "chainmail", 1.0,
                     "diamond", 2.0, "netherite", 3.0),
-            1.0, 0.10, 0.40, 100, 0.05, 0.95, 0.15, 2, 37);
+            1.0, 0.10, 0.40, 100, 0.05, 0.95, 0.15, 2, 37, 10_000L);
 
     public TradeBalance {
         basePrice = Map.copyOf(basePrice);

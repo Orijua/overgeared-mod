@@ -2,13 +2,9 @@ package com.orijua.overgearedmod.lang;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,12 +16,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class LangKeysTest {
-    private static final String LANG_DIR = "/assets/overgearedmod/lang/";
 
     @Test
     void englishAndSpanishHaveTheSameKeys() {
@@ -92,13 +86,7 @@ class LangKeysTest {
     private static final Pattern PLACEHOLDER = Pattern.compile("%%|%(?:(\\d+)\\$)?([sd])");
 
     private static JsonObject load(String file) {
-        InputStream stream = LangKeysTest.class.getResourceAsStream(LANG_DIR + file);
-        assertNotNull(stream, "lang file not found: " + file);
-        try (Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-            return JsonParser.parseReader(reader).getAsJsonObject();
-        } catch (Exception e) {
-            throw new AssertionError("could not read " + file, e);
-        }
+        return LangFiles.load(file);
     }
 
     private static final Pattern LITERAL_KEY = Pattern.compile("translatable\\(\\s*\"([^\"]+)\"\\s*[,)]");

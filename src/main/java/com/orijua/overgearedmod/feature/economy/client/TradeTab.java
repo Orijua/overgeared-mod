@@ -95,10 +95,14 @@ public class TradeTab extends SatisfyTab {
         shownStack = selected < 0 ? ItemStack.EMPTY : player().getInventory().getItem(selected).copy();
         shownSaturation = TradeService.saturation(player());
         boolean active = sellableSelection();
+        TradeBalance balance = TradeBalance.current();
+        // A price that cannot be paid (an export for 0, a sale above the cap) leaves the button off; the row still shows the number.
+        boolean canSell = active && TradeRules.payable(TradeMode.SELL, TradeGoods.price(shownStack, TradeMode.SELL, shownSaturation, today(), balance), balance);
+        boolean canExport = active && TradeRules.payable(TradeMode.EXPORT, TradeGoods.price(shownStack, TradeMode.EXPORT, shownSaturation, today(), balance), balance);
         int buttonWidth = (width - BAR_SPACE - 4) / 2;
         int y = top + height - BUTTON_HEIGHT;
-        addWidget.accept(button("screen.overgearedmod.trade.sell", TradeMode.SELL, left, y, buttonWidth, active));
-        addWidget.accept(button("screen.overgearedmod.trade.export", TradeMode.EXPORT, left + buttonWidth + 4, y, buttonWidth, active));
+        addWidget.accept(button("screen.overgearedmod.trade.sell", TradeMode.SELL, left, y, buttonWidth, canSell));
+        addWidget.accept(button("screen.overgearedmod.trade.export", TradeMode.EXPORT, left + buttonWidth + 4, y, buttonWidth, canExport));
     }
 
     private Button button(String key, TradeMode mode, int x, int y, int buttonWidth, boolean active) {
@@ -115,8 +119,15 @@ public class TradeTab extends SatisfyTab {
         }
         int slot = selected;
         ItemStack stack = player().getInventory().getItem(slot);
+        // The price of this moment (live saturation), not the one the tab was built with: the server rejects any other.
+        TradeBalance balance = TradeBalance.current();
+        long price = TradeGoods.price(stack, mode, TradeService.saturation(player()), today(), balance);
+        if (!TradeRules.payable(mode, price, balance)) {
+            return;
+        }
+        ItemStack seen = stack.copy();
         Runnable send = () -> {
-            PacketDistributor.sendToServer(new TradeSellPayload(slot, mode));
+            PacketDistributor.sendToServer(new TradeSellPayload(slot, mode, seen, price));
             selected = -1;
         };
         ItemRating rating = stack.get(ModDataComponents.ITEM_RATING);
@@ -124,9 +135,9 @@ public class TradeTab extends SatisfyTab {
             send.run();
             return;
         }
-        long price = TradeGoods.price(stack, mode, shownSaturation, today(), TradeBalance.current());
-        Component message = Component.translatable(mode == TradeMode.SELL
-                ? "screen.overgearedmod.trade.confirm_sell" : "screen.overgearedmod.trade.confirm_export", price);
+        Component message = mode == TradeMode.SELL
+                ? Component.translatable("screen.overgearedmod.trade.confirm_sell", price)
+                : Component.translatable("screen.overgearedmod.trade.confirm_export", price, TradeRules.commissionPercent(balance));
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.setScreen(new SatisfyConfirmScreen(minecraft.screen,
                 Component.translatable("screen.overgearedmod.trade.confirm_title", stack.getHoverName()), message, send));
@@ -221,9 +232,8 @@ public class TradeTab extends SatisfyTab {
                 .append(Component.literal(" · "))
                 .append(Component.translatable("screen.overgearedmod.trade.export_price", export));
         graphics.drawString(font(), prices, textX, y + 13, UiStyle.TEXT);
-        double factor = TradeRules.saturation(saturation.pressure(TradeGoods.key(stack), today, balance), balance);
-        if (factor < 1.0) {
-            int percent = (int) Math.round(factor * 100.0);
+        int percent = TradeRules.saturationPercent(saturation.pressure(TradeGoods.key(stack), today, balance), balance);
+        if (percent < 100) {
             graphics.drawString(font(), Component.translatable("screen.overgearedmod.trade.saturation", percent),
                     textX + font().width(prices) + 4, y + 13, UiStyle.BAD);
             return List.of(Component.translatable("screen.overgearedmod.trade.tip.saturation"));

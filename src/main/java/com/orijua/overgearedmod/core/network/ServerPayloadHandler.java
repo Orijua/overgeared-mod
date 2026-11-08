@@ -137,17 +137,12 @@ final class ServerPayloadHandler {
         }
     }
 
-    /** From the Trade tab: sells or exports a piece of the sender, in Satisfy only. */
+    /** From the Trade tab: sells or exports a piece of the sender. The Satisfy gate (BUG-050) is in {@code TradeService.sell}. */
     static void tradeSell(TradeSellPayload payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) {
             return;
         }
-        if (!Satisfy.is(player.level())) {
-            player.displayClientMessage(Component.translatable("message.overgearedmod.trade_outside"), true);
-            return;
-        }
-        TradeService.sell(player, payload.slot(), payload.mode()).refusal().ifPresent(refusal ->
-                player.displayClientMessage(Component.translatable("message.overgearedmod.trade_refused", refusal.message()), true));
+        TradeService.message(TradeService.sell(player, payload)).ifPresent(message -> player.displayClientMessage(message, true));
     }
 
     /** From an apprentice's window: only his master, standing near him. */

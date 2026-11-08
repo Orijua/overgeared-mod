@@ -5,9 +5,14 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TradeSaturationTest {
@@ -84,5 +89,86 @@ class TradeSaturationTest {
         object.addProperty("pressure", pressure);
         object.addProperty("day", day);
         return object;
+    }
+
+    @Test
+    void recordSaleAtMaxIntDoesNotOverflow() {
+        JsonArray array = new JsonArray();
+        array.add(line("sword/epic", Integer.MAX_VALUE, 0));
+        TradeSaturation read = TradeSaturation.CODEC.parse(JsonOps.INSTANCE, array).getOrThrow();
+        assertEquals(37, read.pressure(SWORD, 0, B));
+        TradeSaturation after = read.recordSale(SWORD, 0, B);
+        assertEquals(37, after.pressure(SWORD, 0, B));
+        assertTrue(after.entries().get(SWORD).pressure() >= 0);
+    }
+
+    @Test
+    void aLoweredCapAppliesOnRead() {
+        JsonArray array = new JsonArray();
+        array.add(line("sword/epic", 30, 0));
+        TradeSaturation read = TradeSaturation.CODEC.parse(JsonOps.INSTANCE, array).getOrThrow();
+        assertEquals(10, read.pressure(SWORD, 0, TradeBalancesForTests.withPressureCap(10)));
+    }
+
+    @Test
+    void recordSaleWithEarlierDay() {
+        TradeSaturation saturation = TradeSaturation.EMPTY.recordSale(SWORD, 10, B).recordSale(SWORD, 5, B);
+        assertEquals(new TradeSaturation.Entry(2, 10), saturation.entries().get(SWORD));
+        assertEquals(0, saturation.pressure(SWORD, 11, B));
+    }
+
+    @Test
+    void extremeDaysOnRead() {
+        TradeSaturation saturation = TradeSaturation.EMPTY.recordSale(SWORD, 0, B);
+        for (long day : new long[]{Long.MIN_VALUE, Long.MAX_VALUE}) {
+            int pressure = saturation.pressure(SWORD, day, B);
+            assertTrue(pressure >= 0 && pressure <= 37, "day " + day + ": " + pressure);
+        }
+    }
+
+    @Test
+    void codecClampsNegativePressureAndDefaultsMissingFields() {
+        JsonArray array = new JsonArray();
+        array.add(line("sword/epic", -3, 2));
+        JsonObject bare = new JsonObject();
+        bare.addProperty("key", "helmet/epic");
+        array.add(bare);
+        TradeSaturation read = TradeSaturation.CODEC.parse(JsonOps.INSTANCE, array).getOrThrow();
+        assertEquals(new TradeSaturation.Entry(0, 2), read.entries().get(SWORD));
+        assertEquals(new TradeSaturation.Entry(0, 0), read.entries().get(HELMET));
+    }
+
+    @Test
+    void codecDuplicateKeysLastWins() {
+        JsonArray array = new JsonArray();
+        array.add(line("sword/epic", 4, 1));
+        array.add(line("sword/epic", 7, 2));
+        TradeSaturation read = TradeSaturation.CODEC.parse(JsonOps.INSTANCE, array).getOrThrow();
+        assertEquals(new TradeSaturation.Entry(7, 2), read.entries().get(SWORD));
+    }
+
+    @Test
+    void codecKeepsExtremeDays() {
+        for (long day : new long[]{Long.MIN_VALUE, Long.MAX_VALUE}) {
+            TradeSaturation saturation = new TradeSaturation(Map.of(SWORD, new TradeSaturation.Entry(3, day)));
+            var json = TradeSaturation.CODEC.encodeStart(JsonOps.INSTANCE, saturation).getOrThrow();
+            assertEquals(saturation, TradeSaturation.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow());
+        }
+    }
+
+    @Test
+    void streamCodecRoundTrips() {
+        TradeSaturation two = TradeSaturation.EMPTY.recordSale(SWORD, 3, B).recordSale(HELMET, 4, B);
+        for (TradeSaturation saturation : new TradeSaturation[]{TradeSaturation.EMPTY, two}) {
+            ByteBuf buffer = Unpooled.buffer();
+            TradeSaturation.STREAM_CODEC.encode(buffer, saturation);
+            assertEquals(saturation, TradeSaturation.STREAM_CODEC.decode(buffer));
+        }
+    }
+
+    @Test
+    void entriesAreImmutable() {
+        TradeSaturation saturation = TradeSaturation.EMPTY.recordSale(SWORD, 0, B);
+        assertThrows(UnsupportedOperationException.class, () -> saturation.entries().put(HELMET, new TradeSaturation.Entry(1, 0)));
     }
 }

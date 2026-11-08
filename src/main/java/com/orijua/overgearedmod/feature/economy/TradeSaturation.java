@@ -57,14 +57,17 @@ public record TradeSaturation(Map<TradeKey, Entry> entries) {
     /** The pressure of {@code key} on game day {@code today}, with the recovery of the days gone by. */
     public int pressure(TradeKey key, long today, TradeBalance balance) {
         Entry entry = entries.get(key);
-        return entry == null ? 0 : TradeRules.recovered(entry.pressure(), entry.lastDay(), today, balance);
+        return entry == null ? 0 : Math.min(Math.max(0, balance.pressureCap()), TradeRules.recovered(entry.pressure(), entry.lastDay(), today, balance));
     }
 
     /** One more piece sold or exported: recovers first, then adds 1 (up to the cap) and stamps the day. */
     public TradeSaturation recordSale(TradeKey key, long today, TradeBalance balance) {
-        int next = Math.min(balance.pressureCap(), pressure(key, today, balance) + 1);
+        Entry entry = entries.get(key);
+        int next = (int) Math.min(Math.max(0, balance.pressureCap()), (long) pressure(key, today, balance) + 1);
+        // The stamp never goes back: a clock that moves backwards must not give days of recovery that did not pass.
+        long stamp = entry == null ? today : Math.max(entry.lastDay(), today);
         Map<TradeKey, Entry> copy = new HashMap<>(entries);
-        copy.put(key, new Entry(next, today));
+        copy.put(key, new Entry(next, stamp));
         return new TradeSaturation(copy);
     }
 }

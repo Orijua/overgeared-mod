@@ -207,8 +207,8 @@ public final class Config {
             .comment("Share of the reference price added per enhancement level (weapons only).")
             .defineInRange("enhancementBonus", T.enhancementBonus(), 0.0, 10.0);
     private static final ModConfigSpec.DoubleValue TRADE_SELL_SHARE = BUILDER
-            .comment("Share of the reference price paid in Satisfy emeralds when selling.")
-            .defineInRange("sellShare", T.sellShare(), 0.0, 100.0);
+            .comment("Share of the reference price paid in Satisfy emeralds when selling (0 to 1: selling never pays more than the reference).")
+            .defineInRange("sellShare", T.sellShare(), 0.0, 1.0);
     private static final ModConfigSpec.IntValue TRADE_WON_PER_REFERENCE = BUILDER
             .comment("Won that one point of reference price is worth when exporting.")
             .defineInRange("wonPerReference", T.wonPerReference(), 0, 1_000_000);
@@ -227,6 +227,9 @@ public final class Config {
     private static final ModConfigSpec.IntValue TRADE_PRESSURE_CAP = BUILDER
             .comment("Pressure never grows beyond this.")
             .defineInRange("pressureCap", T.pressureCap(), 1, 10_000);
+    private static final ModConfigSpec.LongValue TRADE_MAX_SELL_EMERALDS = BUILDER
+            .comment("A sale that would pay more Satisfy emeralds than this is refused without touching the piece.")
+            .defineInRange("maxSellEmeralds", T.maxSellEmeralds(), 64L, 100_000L);
 
     static {
         BUILDER.pop();
@@ -270,7 +273,7 @@ public final class Config {
         materials.put("chainmail", TRADE_MATERIAL_CHAINMAIL.get());
         return new TradeBalance(prices, materials, TRADE_OTHER_MATERIAL.get(), TRADE_ENHANCEMENT_BONUS.get(), TRADE_SELL_SHARE.get(),
                 TRADE_WON_PER_REFERENCE.get(), TRADE_EXPORT_COMMISSION.get(), TRADE_SATURATION_STEP.get(), TRADE_SATURATION_FLOOR.get(),
-                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get());
+                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get());
     }
 
     static Balance balance() {

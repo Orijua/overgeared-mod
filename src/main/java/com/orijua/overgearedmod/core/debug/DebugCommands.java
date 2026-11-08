@@ -158,7 +158,7 @@ public final class DebugCommands {
                                     ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_trade"), false);
                                     saturation.entries().keySet().stream().sorted(Comparator.comparing(TradeKey::asString)).forEach(key -> {
                                         int pressure = saturation.pressure(key, today, balance);
-                                        long percent = Math.round(TradeRules.saturation(pressure, balance) * 100.0);
+                                        long percent = TradeRules.saturationPercent(pressure, balance);
                                         ctx.getSource().sendSuccess(() -> Component.translatable(
                                                 "message.overgearedmod.debug_trade_entry", key.asString(), pressure, percent), false);
                                     });

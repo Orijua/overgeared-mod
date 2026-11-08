@@ -4,6 +4,8 @@ import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import net.minecraft.network.chat.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Optional;
 
 /**
@@ -71,11 +73,51 @@ public final class TradeRules {
         return mode == TradeMode.SELL ? sellPrice(reference, pressure, balance) : exportPrice(reference, pressure, balance);
     }
 
-    /** The pressure left after the days that went by since {@code lastDay}; days that go back count as none, and it never drops below 0. */
+    /**
+     * The pressure left after the days that went by since {@code lastDay}; days that go back count as none, a recovery of
+     * 0 or less is none, and it never drops below 0 (nor overflows with extreme days).
+     */
     public static int recovered(int pressure, long lastDay, long today, TradeBalance balance) {
-        long days = Math.max(0L, today - lastDay);
-        long left = pressure - Math.min(days, Integer.MAX_VALUE) * balance.recoveryPerDay();
-        return (int) Math.max(0L, left);
+        if (pressure <= 0) {
+            return 0;
+        }
+        long days = today <= lastDay ? 0L : today - lastDay;
+        if (days < 0) {
+            days = Long.MAX_VALUE; // today > lastDay but the subtraction overflowed: a huge number of days
+        }
+        long perDay = Math.max(0, balance.recoveryPerDay());
+        long drop = Math.min(days, Integer.MAX_VALUE) * perDay;
+        return (int) Math.max(0L, pressure - drop);
+    }
+
+    /** Whether the price can be paid: at least 1, and a sale (emeralds) not above the cap of the balance. */
+    public static boolean payable(TradeMode mode, long price, TradeBalance balance) {
+        return price >= 1 && (mode != TradeMode.SELL || price <= balance.maxSellEmeralds());
+    }
+
+    /** The parts a payment is delivered in: one for an export, stacks of {@code maxStack} and the rest for a sale. Only for payable prices. */
+    public static long[] payments(TradeMode mode, long price, int maxStack) {
+        if (mode == TradeMode.EXPORT) {
+            return new long[]{price};
+        }
+        int stacks = (int) ((price + maxStack - 1) / maxStack);
+        long[] parts = new long[stacks];
+        long left = price;
+        for (int i = 0; i < stacks; i++) {
+            parts[i] = Math.min(maxStack, left);
+            left -= parts[i];
+        }
+        return parts;
+    }
+
+    /** The export commission as text for the player: "5" for 0.05, "2.5" for 0.025. */
+    public static String commissionPercent(TradeBalance balance) {
+        return BigDecimal.valueOf(balance.exportCommission() * 100).setScale(1, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
+    }
+
+    /** The saturation factor as a whole percent, the number the player sees. */
+    public static int saturationPercent(int pressure, TradeBalance balance) {
+        return (int) Math.round(saturation(pressure, balance) * 100.0);
     }
 
     public static long day(long gameTime) {
