@@ -36,4 +36,25 @@ class DebtBalanceTest {
         DebtBalance.withOverride(custom, () -> assertEquals(custom, DebtBalance.current()));
         assertEquals(DebtBalance.DEFAULT, DebtBalance.current());
     }
+
+    @Test
+    void anOverrideIsRestoredEvenIfTheActionThrows() {
+        DebtBalance custom = new DebtBalance(100, 50);
+        assertThrows(IllegalStateException.class, () -> DebtBalance.withOverride(custom, () -> {
+            assertEquals(custom, DebtBalance.current());
+            throw new IllegalStateException("boom");
+        }));
+        assertEquals(DebtBalance.DEFAULT, DebtBalance.current());
+    }
+
+    @Test
+    void nestedOverridesRestoreEachOtherInOrder() {
+        DebtBalance outer = new DebtBalance(100, 50);
+        DebtBalance inner = new DebtBalance(200, 10);
+        DebtBalance.withOverride(outer, () -> {
+            DebtBalance.withOverride(inner, () -> assertEquals(inner, DebtBalance.current()));
+            assertEquals(outer, DebtBalance.current());
+        });
+        assertEquals(DebtBalance.DEFAULT, DebtBalance.current());
+    }
 }

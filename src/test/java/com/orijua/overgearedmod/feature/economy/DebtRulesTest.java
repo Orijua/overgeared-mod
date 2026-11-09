@@ -2,6 +2,8 @@ package com.orijua.overgearedmod.feature.economy;
 
 import org.junit.jupiter.api.Test;
 
+import java.math.BigInteger;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -18,14 +20,18 @@ class DebtRulesTest {
         assertEquals(0, AccountRules.percentOf(12345, 0));
         assertEquals(12345, AccountRules.percentOf(12345, 100));
         assertEquals(0, AccountRules.percentOf(0, 25));
+        assertEquals(0, AccountRules.percentOf(99, 1));
+        assertEquals(1, AccountRules.percentOf(100, 1));
     }
 
     @Test
     void percentNeverOverflows() {
         assertEquals(Long.MAX_VALUE, AccountRules.percentOf(Long.MAX_VALUE, 100));
-        assertEquals(Long.MAX_VALUE / 100 * 99 + Long.MAX_VALUE % 100 * 99 / 100, AccountRules.percentOf(Long.MAX_VALUE, 99));
-        assertTrue(AccountRules.percentOf(Long.MAX_VALUE / 100, 100) >= 0);
         assertEquals(Long.MAX_VALUE / 100, AccountRules.percentOf(Long.MAX_VALUE / 100, 100));
+        for (int percent : new int[]{1, 25, 33, 99}) {
+            BigInteger exact = BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(percent)).divide(BigInteger.valueOf(100));
+            assertEquals(exact.longValueExact(), AccountRules.percentOf(Long.MAX_VALUE, percent), percent + "%");
+        }
     }
 
     @Test
@@ -50,6 +56,13 @@ class DebtRulesTest {
     }
 
     @Test
+    void quotaAtTheLimitsOfThePercent() {
+        assertEquals(0, AccountRules.quota(ACTIVE, 1000, 0));
+        assertEquals(1000, AccountRules.quota(ACTIVE, 1000, 100));
+        assertEquals(6400, AccountRules.quota(ACTIVE, 10_000, 100));
+    }
+
+    @Test
     void aShiftSplitsThePay() {
         Account after = AccountRules.afterWork(ACTIVE, 1000, 25);
         assertEquals(750, after.won());
@@ -60,20 +73,28 @@ class DebtRulesTest {
     @Test
     void twentySixShiftsPayOffTheStarterDebt() {
         Account account = ACTIVE;
-        long total = 0;
         for (int shift = 1; shift <= 26; shift++) {
-            long quota = AccountRules.quota(account, 1000, 25);
-            if (shift == 26) {
-                assertEquals(150, quota);
-                assertEquals(850, 1000 - quota);
-            }
+            Account before = account;
             account = AccountRules.afterWork(account, 1000, 25);
-            total += 1000;
+            if (shift == 25) {
+                assertEquals(DebtState.ACTIVE, account.debtState());
+                assertEquals(150, account.debt());
+            }
+            if (shift == 26) {
+                assertEquals(850, account.won() - before.won());
+                assertEquals(DebtState.SETTLED, account.debtState());
+                assertTrue(AccountRules.justSettled(before, account));
+            }
         }
         assertEquals(0, account.debt());
-        assertEquals(DebtState.SETTLED, account.debtState());
-        assertEquals(19_600, account.won());
-        assertEquals(26_000, total);
+    }
+
+    @Test
+    void aShiftPayingNothingChangesNothingAndANegativeOneIsRefused() {
+        assertEquals(ACTIVE, AccountRules.afterWork(ACTIVE, 0, 25));
+        assertEquals(Account.EMPTY, AccountRules.afterWork(Account.EMPTY, 0, 25));
+        assertThrows(IllegalArgumentException.class, () -> AccountRules.afterWork(ACTIVE, -1, 25));
+        assertThrows(IllegalArgumentException.class, () -> AccountRules.afterWork(Account.EMPTY, -1, 25));
     }
 
     @Test
@@ -100,12 +121,22 @@ class DebtRulesTest {
     }
 
     @Test
+    void theBalanceSaturatesAlsoWhenTheShiftSettlesTheDebt() {
+        Account rich = new Account(Long.MAX_VALUE - 10, 100, DebtState.ACTIVE);
+        Account after = AccountRules.afterWork(rich, 1000, 25);
+        assertEquals(new Account(Long.MAX_VALUE, 0, DebtState.SETTLED), after);
+        assertTrue(AccountRules.justSettled(rich, after));
+    }
+
+    @Test
     void maxDebtPaymentIsTheLeastOfBalanceAndDebt() {
         assertEquals(300, AccountRules.maxDebtPayment(new Account(300, 6400, DebtState.ACTIVE)));
         assertEquals(50, AccountRules.maxDebtPayment(new Account(300, 50, DebtState.ACTIVE)));
         assertEquals(0, AccountRules.maxDebtPayment(new Account(0, 50, DebtState.ACTIVE)));
         assertEquals(0, AccountRules.maxDebtPayment(new Account(300, 0, DebtState.SETTLED)));
         assertEquals(0, AccountRules.maxDebtPayment(new Account(300, 0, DebtState.UNASSIGNED)));
+        assertEquals(50, AccountRules.maxDebtPayment(new Account(Long.MAX_VALUE, 50, DebtState.ACTIVE)));
+        assertEquals(Long.MAX_VALUE, AccountRules.maxDebtPayment(new Account(Long.MAX_VALUE, Long.MAX_VALUE, DebtState.ACTIVE)));
     }
 
     @Test
@@ -123,6 +154,22 @@ class DebtRulesTest {
         assertTrue(AccountRules.justSettled(before, after));
         assertTrue(AccountRules.isDebtSettled(after));
         assertFalse(AccountRules.isDebtSettled(before));
+    }
+
+    @Test
+    void payingAllTheBalanceBelowTheDebtKeepsTheDebtActive() {
+        Account before = new Account(300, 400, DebtState.ACTIVE);
+        Account after = AccountRules.afterDebtPayment(before, 300);
+        assertEquals(new Account(0, 100, DebtState.ACTIVE), after);
+        assertFalse(AccountRules.justSettled(before, after));
+    }
+
+    @Test
+    void payingExactlyTheDebtWithExactlyTheBalanceSettlesIt() {
+        Account before = new Account(400, 400, DebtState.ACTIVE);
+        Account after = AccountRules.afterDebtPayment(before, 400);
+        assertEquals(new Account(0, 0, DebtState.SETTLED), after);
+        assertTrue(AccountRules.justSettled(before, after));
     }
 
     @Test
@@ -146,20 +193,21 @@ class DebtRulesTest {
     }
 
     @Test
+    void theSmallestStarterDebtIsOne() {
+        assertEquals(new Account(0, 1, DebtState.ACTIVE), AccountRules.withStarterDebt(Account.EMPTY, 1));
+    }
+
+    @Test
+    void anActiveDebtIsNotReplacedByTheStarterDebt() {
+        assertSame(ACTIVE, AccountRules.withStarterDebt(ACTIVE, 1));
+        assertSame(ACTIVE, AccountRules.withStarterDebt(ACTIVE, 0));
+    }
+
+    @Test
     void justSettledNeedsTheTransition() {
         Account settled = new Account(0, 0, DebtState.SETTLED);
         assertFalse(AccountRules.justSettled(settled, settled));
         assertFalse(AccountRules.justSettled(Account.EMPTY, settled));
         assertFalse(AccountRules.justSettled(ACTIVE, ACTIVE));
-    }
-
-    @Test
-    void debtSelectionStaysInsideTheRange() {
-        assertEquals(0, TerminalRules.debtSelection(500, 0));
-        assertEquals(0, TerminalRules.debtSelection(0, -3));
-        assertEquals(300, TerminalRules.debtSelection(900, 300));
-        assertEquals(1, TerminalRules.debtSelection(-50, 300));
-        assertEquals(1, TerminalRules.debtSelection(0, 1));
-        assertEquals(200, TerminalRules.debtSelection(200, 300));
     }
 }
