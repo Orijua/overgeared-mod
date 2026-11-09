@@ -31,7 +31,7 @@ public record FatigueBalance(
         double sleepRecovery) {
 
     public static final FatigueBalance DEFAULT = new FatigueBalance(
-            true, 40.0, 0.5, 2.0, 20.0, 10.0, 0.25, 15, List.of(0.15, 0.08, 0.02), 0.30);
+            true, 40.0, 0.8, 2.0, 20.0, 10.0, 0.25, 15, List.of(0.15, 0.08, 0.02), 0.30);
 
     public FatigueBalance {
         warnAt = List.copyOf(warnAt);

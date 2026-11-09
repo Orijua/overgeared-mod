@@ -5,6 +5,8 @@ import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.capsule.CombatClock;
+import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
+import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
 import com.orijua.overgearedmod.feature.capsule.LogoutService;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.fatigue.FatigueRules.Activity;
@@ -20,6 +22,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.SleepFinishedTimeEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.server.level.ServerLevel;
@@ -49,6 +52,8 @@ public final class FatigueService {
 
     /** Where each player was a second ago, to tell resting from moving. Only in memory. */
     private static final Map<UUID, Vec3> LAST_POSITION = new ConcurrentHashMap<>();
+    /** Server tick of the last block each player broke in Satisfy: mining is work, not rest. */
+    private static final Map<UUID, Long> LAST_BREAK = new ConcurrentHashMap<>();
     /** Server tick until which each player is protected after a forced disconnection. Only in memory (10 seconds). */
     private static final Map<UUID, Long> PROTECTED_UNTIL = new ConcurrentHashMap<>();
 
@@ -72,6 +77,7 @@ public final class FatigueService {
         gameBus.addListener(FatigueService::onIncomingDamage);
         gameBus.addListener(FatigueService::onForged);
         gameBus.addListener(FatigueService::onSleepFinished);
+        gameBus.addListener(FatigueService::onBlockBroken);
     }
 
     /** Everyone who slept through the night in the real world rests a bit. */
@@ -122,8 +128,7 @@ public final class FatigueService {
         boolean satisfy = WorldSide.of(player.level()) == WorldSide.SATISFY;
         Vec3 here = player.position();
         Vec3 before = LAST_POSITION.get(player.getUUID());
-        Activity activity = FatigueRules.inCombat(player.server.getTickCount(), CombatClock.last(player)) ? Activity.COMBAT
-                : before != null && FatigueRules.isResting(here.distanceToSqr(before)) ? Activity.REST : Activity.NORMAL;
+        Activity activity = activity(player, here, before);
         double drain = satisfy ? FatigueRules.drainPerSecond(balance, activity, SessionModifiers.NEUTRAL) : 0.0;
         OptionalDouble minutes = satisfy ? FatigueRules.minutesLeft(balance, energy(player), activity, SessionModifiers.NEUTRAL) : OptionalDouble.empty();
         var last = CombatClock.last(player);
@@ -181,12 +186,14 @@ public final class FatigueService {
 
     private static void onServerStopping(ServerStoppingEvent event) {
         LAST_POSITION.clear();
+        LAST_BREAK.clear();
         PROTECTED_UNTIL.clear();
         DEBUG_VIEWERS.clear();
     }
 
     private static void onServerStarting(ServerStartingEvent event) {
         LAST_POSITION.clear();
+        LAST_BREAK.clear();
         PROTECTED_UNTIL.clear();
         DEBUG_VIEWERS.clear();
     }
@@ -196,6 +203,13 @@ public final class FatigueService {
         if (event.getEntity() instanceof ServerPlayer player && isProtected(player)
                 && !event.getSource().is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
             event.setCanceled(true);
+        }
+    }
+
+    /** A block broken in Satisfy marks the player as working for a few seconds (see FatigueRules.activity). */
+    private static void onBlockBroken(BlockEvent.BreakEvent event) {
+        if (event.getPlayer() instanceof ServerPlayer player && WorldSide.of(player.level()) == WorldSide.SATISFY) {
+            LAST_BREAK.put(player.getUUID(), (long) player.server.getTickCount());
         }
     }
 
@@ -270,6 +284,7 @@ public final class FatigueService {
     public static void onLogout(ServerPlayer player) {
         player.setData(ModAttachments.FATIGUE_AWAY_SINCE.get(), clock.getAsLong());
         LAST_POSITION.remove(player.getUUID());
+        LAST_BREAK.remove(player.getUUID());
         PROTECTED_UNTIL.remove(player.getUUID());
         DEBUG_VIEWERS.remove(player.getUUID());
     }
@@ -338,10 +353,21 @@ public final class FatigueService {
     static Activity activityOf(ServerPlayer player) {
         Vec3 now = player.position();
         Vec3 before = LAST_POSITION.put(player.getUUID(), now);
-        if (FatigueRules.inCombat(player.server.getTickCount(), CombatClock.last(player))) {
-            return Activity.COMBAT;
-        }
-        return before != null && FatigueRules.isResting(now.distanceToSqr(before)) ? Activity.REST : Activity.NORMAL;
+        return activity(player, now, before);
+    }
+
+    /** The rule fed with the player's state; reads only, so the debug panel can call it too. */
+    private static Activity activity(ServerPlayer player, Vec3 now, Vec3 before) {
+        long tick = player.server.getTickCount();
+        Long lastBreak = LAST_BREAK.get(player.getUUID());
+        return FatigueRules.activity(FatigueRules.inCombat(tick, CombatClock.last(player)), atWorkstation(player), tick,
+                lastBreak == null ? java.util.OptionalLong.empty() : java.util.OptionalLong.of(lastBreak),
+                before != null, before == null ? 0.0 : now.distanceToSqr(before));
+    }
+
+    /** Working at an anvil or a smelter: the window is open. */
+    static boolean atWorkstation(ServerPlayer player) {
+        return player.containerMenu instanceof SmithingAnvilMenu || player.containerMenu instanceof SmelterMenu;
     }
 
     private static void warnIfCrossed(ServerPlayer player, List<Double> warnAt, double before, double after) {
