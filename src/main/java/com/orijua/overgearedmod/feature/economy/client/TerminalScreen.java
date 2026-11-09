@@ -373,7 +373,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // Work
         WorkOrder order = state.order();
         ItemStack icon = state.icon();
-        UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.work", state.workPay()), x + RIGHT_X, y + 60);
+        long quota = AccountRules.quota(account, state.workPay(), state.debtQuotaPercent());
+        UiStyle.heading(graphics, font, quota > 0
+                ? Component.translatable("screen.overgearedmod.terminal.work_debt", state.workPay())
+                : Component.translatable("screen.overgearedmod.terminal.work", state.workPay()), x + RIGHT_X, y + 60);
         graphics.renderItem(icon, x + RIGHT_X, y + 72);
         String key = "screen.overgearedmod.terminal.order." + order.id().toLanguageKey().replace('/', '.');
         Component name = Component.translatableWithFallback(key, icon.getHoverName().getString());
@@ -381,7 +384,6 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 x + RIGHT_X + 22, y + 76, UiStyle.TEXT);
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.have", have, order.count()), x + RIGHT_X, y + 96,
                 have >= order.count() ? UiStyle.GOOD : UiStyle.MUTED);
-        long quota = AccountRules.quota(account, state.workPay(), state.debtQuotaPercent());
         if (quota > 0) {
             UiStyle.text(graphics, font, UiStyle.ellipsize(font, Component.translatable("screen.overgearedmod.terminal.work_split",
                     state.workPay() - quota, quota), 134), x + RIGHT_X, y + 138, UiStyle.MUTED);

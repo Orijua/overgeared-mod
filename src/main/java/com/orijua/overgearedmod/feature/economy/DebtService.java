@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundSource;
 import com.orijua.overgearedmod.feature.world.Satisfy;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * Paying the starter debt by hand from the terminal. Everything is decided here: the client says what it saw and every
@@ -37,7 +38,8 @@ public final class DebtService {
     /** The message for the player after an attempt; empty when there is nothing to say. */
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
-            case OK -> Optional.of(outcome.settled() ? settledMessage()
+            case OK -> Optional.of(outcome.settled()
+                    ? Component.translatable("message.overgearedmod.terminal.debt_paid_off", outcome.paid())
                     : Component.translatable("message.overgearedmod.terminal.debt_paid", outcome.paid(), outcome.left()));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));
@@ -88,11 +90,30 @@ public final class DebtService {
         return new Outcome(Result.OK, amount, account.debt() - amount, settled);
     }
 
-    /**
-     * The moment the debt is paid off: a chat line, a title and its subtitle, and the sound of an achievement. Not a
-     * {@code SystemNotification}: that layer only exists in Satisfy and the debt is paid outside it.
-     */
+    /** What announces the milestone; game tests swap it to see whether and for whom it was announced. */
+    private static Consumer<ServerPlayer> announcer = DebtService::sendSettledAnnouncement;
+
+    /** For game tests: {@link #announceSettled} calls {@code replacement} instead of messaging the player while {@code action} runs. */
+    public static void withAnnouncer(Consumer<ServerPlayer> replacement, Runnable action) {
+        Consumer<ServerPlayer> previous = announcer;
+        announcer = replacement;
+        try {
+            action.run();
+        } finally {
+            announcer = previous;
+        }
+    }
+
+    /** The moment the debt is paid off, announced once by whoever paid it (the terminal's line only adds the amount). */
     public static void announceSettled(ServerPlayer player) {
+        announcer.accept(player);
+    }
+
+    /**
+     * A chat line, a title and its subtitle, and the sound of an achievement. Not a {@code SystemNotification}: that
+     * layer only exists in Satisfy and the debt is paid outside it.
+     */
+    private static void sendSettledAnnouncement(ServerPlayer player) {
         player.sendSystemMessage(settledMessage());
         player.connection.send(new ClientboundSetTitlesAnimationPacket(10, 70, 20));
         player.connection.send(new ClientboundSetTitleTextPacket(Component.translatable("title.overgearedmod.debt.settled")));

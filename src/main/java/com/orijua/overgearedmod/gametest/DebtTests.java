@@ -162,7 +162,7 @@ public final class DebtTests {
             TerminalService.Outcome outcome = TerminalService.work(player, COAL_32, 5L, COAL_ONLY, DEBT);
             helper.assertTrue(outcome.won() == 900L && outcome.toDebt() == 100L && outcome.settled(), "the outcome: " + outcome);
             helper.assertTrue(AccountService.get(player).equals(new Account(900, 0, DebtState.SETTLED)), "settled: " + AccountService.get(player));
-            helper.assertTrue(key(TerminalService.message(outcome)).equals("message.overgearedmod.debt.settled"), "the milestone text");
+            helper.assertTrue(key(TerminalService.message(outcome)).equals("message.overgearedmod.terminal.worked_settled"), "the line carries the amount of the shift");
         });
         helper.succeed();
     }
@@ -250,7 +250,7 @@ public final class DebtTests {
             DebtService.Outcome outcome = DebtService.payDebt(player, new TerminalPayDebtPayload(7, 400, 400));
             helper.assertTrue(outcome.result() == DebtService.Result.OK && outcome.settled() && outcome.left() == 0, "the outcome: " + outcome);
             helper.assertTrue(AccountService.get(player).equals(new Account(100, 0, DebtState.SETTLED)), "settled: " + AccountService.get(player));
-            helper.assertTrue(key(DebtService.message(outcome)).equals("message.overgearedmod.debt.settled"), "the milestone text");
+            helper.assertTrue(key(DebtService.message(outcome)).equals("message.overgearedmod.terminal.debt_paid_off"), "the short line");
             helper.assertTrue(DebtService.payDebt(player, new TerminalPayDebtPayload(7, 1, 0)).result() == DebtService.Result.NO_DEBT, "then no debt");
         }));
         helper.succeed();

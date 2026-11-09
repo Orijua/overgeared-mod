@@ -49,7 +49,7 @@ public final class TerminalService {
     /**
      * The result of a work shift.
      *
-     * @param won     the Won that went into the account (the pay minus what went to the debt)
+     * @param won     the Won that went into the account (the pay minus the quota, which {@link AccountRules#quota} decides)
      * @param toDebt  the Won that went to the debt
      * @param settled whether that paid the debt off
      */
@@ -62,7 +62,8 @@ public final class TerminalService {
     /** The message for the player after an attempt; empty when there is nothing to say. */
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
-            case OK -> Optional.of(outcome.settled() ? DebtService.settledMessage()
+            case OK -> Optional.of(outcome.settled()
+                    ? Component.translatable("message.overgearedmod.terminal.worked_settled", outcome.won())
                     : outcome.toDebt() > 0
                     ? Component.translatable("message.overgearedmod.terminal.worked_debt", outcome.won(), outcome.toDebt())
                     : Component.translatable("message.overgearedmod.terminal.worked", outcome.won()));
