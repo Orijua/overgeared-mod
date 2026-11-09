@@ -116,6 +116,33 @@ public final class DebugCommands {
                                                         Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
                                                 .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
                                                         .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value"))))))
+                                .then(Commands.literal("fatigue")
+                                        .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int percent = IntegerArgumentType.getInteger(ctx, "percent");
+                                                    FatigueService.setEnergy(player, percent / 100.0);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_fatigue", percent), false);
+                                                    return 1;
+                                                })))
+                                .then(Commands.literal("won")
+                                        .then(Commands.argument("amount", LongArgumentType.longArg(0))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    long amount = LongArgumentType.getLong(ctx, "amount");
+                                                    AccountService.setWon(player, amount);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_won", amount), false);
+                                                    return 1;
+                                                })))
+                                .then(Commands.literal("insight")
+                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
+                                                    player.setData(ModAttachments.INSIGHT, value);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
+                                                    return 1;
+                                                }))))
                         .then(Commands.literal("terminal")
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -143,33 +170,6 @@ public final class DebugCommands {
                                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                                     player.removeData(ModAttachments.OFFER_BOUGHT.get());
                                                     ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_offer_reset"), false);
-                                                    return 1;
-                                                }))))
-                                .then(Commands.literal("fatigue")
-                                        .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                                    int percent = IntegerArgumentType.getInteger(ctx, "percent");
-                                                    FatigueService.setEnergy(player, percent / 100.0);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_fatigue", percent), false);
-                                                    return 1;
-                                                })))
-                                .then(Commands.literal("won")
-                                        .then(Commands.argument("amount", LongArgumentType.longArg(0))
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                                    long amount = LongArgumentType.getLong(ctx, "amount");
-                                                    AccountService.setWon(player, amount);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_won", amount), false);
-                                                    return 1;
-                                                })))
-                                .then(Commands.literal("insight")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
-                                                    player.setData(ModAttachments.INSIGHT, value);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
                                                     return 1;
                                                 }))))
                         .then(Commands.literal("account")
