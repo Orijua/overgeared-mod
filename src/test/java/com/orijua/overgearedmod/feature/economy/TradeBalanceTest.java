@@ -23,7 +23,6 @@ class TradeBalanceTest {
         assertEquals(1.0, b.otherMaterial());
         assertEquals(0.10, b.enhancementBonus());
         assertEquals(0.40, b.sellShare());
-        assertEquals(0.05, b.commission());
         assertEquals(0.95, b.saturationStep());
         assertEquals(0.15, b.saturationFloor());
         assertEquals(2, b.recoveryPerDay());
@@ -39,7 +38,7 @@ class TradeBalanceTest {
     @Test
     void anOverrideAppliesOnlyWhileTheActionRuns() {
         TradeBalance changed = new TradeBalance(TradeBalance.DEFAULT.basePrice(), TradeBalance.DEFAULT.materialMultiplier(),
-                1.0, 0.10, 0.5, 0.05, 0.95, 0.15, 2, 37, 10_000L);
+                1.0, 0.10, 0.5, 0.95, 0.15, 2, 37, 10_000L);
         TradeBalance[] seen = new TradeBalance[1];
         TradeBalance.withOverride(changed, () -> seen[0] = TradeBalance.current());
         assertEquals(changed, seen[0]);

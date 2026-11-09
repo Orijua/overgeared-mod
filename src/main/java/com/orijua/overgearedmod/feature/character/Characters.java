@@ -16,8 +16,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  * ({@link CharacterVault#live()}) with the world they stand in, and swaps if they differ. Because it works from that
  * state and not from "a crossing happened", it is idempotent (a second call does nothing), and every way of changing
  * world (capsule, logout, debug goto, and the ones that skip any event, like respawning after dying in Satisfy) only
- * has to call it. Rule: nothing else may move items between the characters; the only documented exception is
- * {@code TerminalService.convert}, which only takes Satisfy emerald entries out of the stored inventory.
+ * has to call it. Rule: nothing else may move items between the characters; the only documented exception is the
+ * purchases of {@code TerminalShop}, which only add entries to the stored inventory.
  *
  * <p>The swap happens on the server thread in one call, so the autosave (which runs between ticks) never sees half of it.
  */

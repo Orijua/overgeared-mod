@@ -65,94 +65,6 @@ class TerminalRulesTest {
         assertEquals(1, TerminalRules.countEmeralds(list(noCount)));
     }
 
-    // ---- Removing ----
-
-    @Test
-    void takesAcrossEntriesInOrderAndDropsTheOnesThatReachZero() {
-        ListTag inventory = list(entry(TerminalRules.EMERALD_ID, 10), entry("minecraft:iron_sword", 1), entry(TerminalRules.EMERALD_ID, 5));
-        ListTag result = TerminalRules.removeEmeralds(inventory, 12);
-        assertEquals(2, result.size());
-        assertEquals(entry("minecraft:iron_sword", 1), result.getCompound(0));
-        assertEquals(entry(TerminalRules.EMERALD_ID, 3), result.getCompound(1));
-        assertEquals(3, TerminalRules.countEmeralds(result));
-    }
-
-    @Test
-    void takingAnEntryExactlyRemovesIt() {
-        ListTag result = TerminalRules.removeEmeralds(list(entry(TerminalRules.EMERALD_ID, 4), entry("minecraft:stick", 2)), 4);
-        assertEquals(1, result.size());
-        assertEquals(entry("minecraft:stick", 2), result.getCompound(0));
-    }
-
-    @Test
-    void theRestStaysEqualAndTheArgumentIsNotMutated() {
-        CompoundTag sword = entry("minecraft:iron_sword", 1);
-        CompoundTag components = new CompoundTag();
-        components.putInt("minecraft:damage", 5);
-        sword.put("components", components);
-        ListTag inventory = list(entry(TerminalRules.EMERALD_ID, 10), sword);
-        ListTag before = inventory.copy();
-        ListTag result = TerminalRules.removeEmeralds(inventory, 4);
-        assertEquals(before, inventory);
-        assertEquals(sword, result.getCompound(1));
-        assertEquals(6, result.getCompound(0).getInt("count"));
-    }
-
-    @Test
-    void anInvalidAmountIsRejected() {
-        ListTag inventory = list(entry(TerminalRules.EMERALD_ID, 10));
-        assertThrows(IllegalArgumentException.class, () -> TerminalRules.removeEmeralds(inventory, 0));
-        assertThrows(IllegalArgumentException.class, () -> TerminalRules.removeEmeralds(inventory, 11));
-        assertThrows(IllegalArgumentException.class, () -> TerminalRules.removeEmeralds(inventory, -1));
-    }
-
-    // ---- Conversion ----
-
-    @Test
-    void theNetIsRoundedDownAfterTheCommission() {
-        assertEquals(95L, TerminalRules.net(1, 100, 0.05));
-        assertEquals(285L, TerminalRules.net(3, 100, 0.05));
-        assertEquals(1140L, TerminalRules.net(12, 100, 0.05));
-        assertEquals(85L, TerminalRules.net(1, 90, 0.05));
-        assertEquals(0L, TerminalRules.net(1, 1, 0.05));
-        assertEquals(94L, TerminalRules.net(3, 33, 0.05), "94.05 rounds down");
-    }
-
-    @Test
-    void commissionOfZeroAndOne() {
-        assertEquals(1200L, TerminalRules.net(12, 100, 0.0));
-        assertEquals(0L, TerminalRules.net(12, 100, 1.0));
-    }
-
-    @Test
-    void aHugeAmountDoesNotOverflow() {
-        long gross = TerminalRules.gross(Integer.MAX_VALUE, 1_000_000);
-        assertEquals(2_147_483_647_000_000L, gross);
-        long net = TerminalRules.net(Integer.MAX_VALUE, 1_000_000, 0.05);
-        assertEquals(2_040_109_464_650_000L, net);
-        long other = TerminalRules.net(Integer.MAX_VALUE, 999_999, 0.07);
-        long expected = new java.math.BigDecimal(Integer.MAX_VALUE).multiply(new java.math.BigDecimal(999_999))
-                .multiply(new java.math.BigDecimal("0.93")).setScale(0, java.math.RoundingMode.FLOOR).longValueExact();
-        assertEquals(expected, other);
-    }
-
-    @Test
-    void grossMinusNetIsTheCommission() {
-        assertEquals(60L, TerminalRules.gross(12, 100) - TerminalRules.net(12, 100, 0.05));
-        assertEquals(5L, TerminalRules.gross(1, 100) - TerminalRules.net(1, 100, 0.05));
-        assertEquals(15L, TerminalRules.gross(3, 100) - TerminalRules.net(3, 100, 0.05));
-    }
-
-    @Test
-    void theDebtSplitTakesAtMostHalf() {
-        assertEquals(new TerminalRules.Split(0L, 1000L), TerminalRules.split(1000L, 0L));
-        assertEquals(new TerminalRules.Split(500L, 500L), TerminalRules.split(1000L, 1_000_000L));
-        assertEquals(new TerminalRules.Split(120L, 880L), TerminalRules.split(1000L, 120L));
-        assertEquals(new TerminalRules.Split(500L, 501L), TerminalRules.split(1001L, 1_000_000L));
-        assertEquals(new TerminalRules.Split(0L, 1000L), TerminalRules.split(1000L, -5L));
-        assertEquals(new TerminalRules.Split(0L, 0L), TerminalRules.split(0L, 100L));
-    }
-
     // ---- Work ----
 
     @Test
@@ -203,5 +115,146 @@ class TerminalRulesTest {
         for (WorkOrder order : TerminalBalance.DEFAULT.workOrders()) {
             assertEquals(Optional.of(order), TerminalRules.parseOrder(order.asString()));
         }
+    }
+
+    // ---- Buying: writing into a saved inventory ----
+
+    private static CompoundTag slotted(int slot, String id, int count) {
+        CompoundTag tag = entry(id, count);
+        tag.putByte("Slot", (byte) slot);
+        return tag;
+    }
+
+    /** Stone in the slots 0 to 35 except the ones given. */
+    private static ListTag fullExcept(int... free) {
+        ListTag list = new ListTag();
+        for (int slot = 0; slot < 36; slot++) {
+            boolean skip = false;
+            for (int f : free) {
+                skip |= f == slot;
+            }
+            if (!skip) {
+                list.add(slotted(slot, "minecraft:stone", 64));
+            }
+        }
+        return list;
+    }
+
+    @Test
+    void anEmptyInventoryHasRoomForEverySlot() {
+        ListTag empty = new ListTag();
+        assertEquals(36 * 64, TerminalRules.emeraldRoom(empty, 64));
+        assertEquals(java.util.OptionalInt.of(0), TerminalRules.firstFreeSlot(empty));
+        assertEquals(36, TerminalRules.freeSlots(empty));
+    }
+
+    @Test
+    void roomCountsTheStackToCompleteAndThenNothing() {
+        ListTag inv = fullExcept(0);
+        inv.add(slotted(0, TerminalRules.EMERALD_ID, 60));
+        assertEquals(4, TerminalRules.emeraldRoom(inv, 64));
+        assertEquals(java.util.OptionalInt.empty(), TerminalRules.firstFreeSlot(inv));
+        ListTag added = TerminalRules.addEmeralds(inv, 4, 64);
+        assertEquals(64, TerminalRules.countEmeralds(added));
+        assertThrows(IllegalArgumentException.class, () -> TerminalRules.addEmeralds(inv, 5, 64));
+    }
+
+    @Test
+    void anEmeraldWithComponentsIsNeverCompleted() {
+        ListTag inv = fullExcept(0);
+        CompoundTag special = slotted(0, TerminalRules.EMERALD_ID, 10);
+        special.put("components", new CompoundTag());
+        inv.add(special);
+        assertEquals(0, TerminalRules.emeraldRoom(inv, 64));
+    }
+
+    @Test
+    void armorAndOffhandSlotsAreNotRoom() {
+        ListTag inv = fullExcept();
+        inv.add(slotted(100, "minecraft:iron_helmet", 1));
+        inv.add(slotted(103, "minecraft:iron_boots", 1));
+        inv.add(slotted(150, "minecraft:shield", 1));
+        assertEquals(0, TerminalRules.emeraldRoom(inv, 64));
+        assertEquals(0, TerminalRules.freeSlots(inv));
+        assertEquals(java.util.OptionalInt.empty(), TerminalRules.firstFreeSlot(inv));
+        assertThrows(IllegalArgumentException.class, () -> TerminalRules.withEntryAt(inv, 100, entry("minecraft:stone", 1)));
+    }
+
+    @Test
+    void emeraldsCompleteStacksBySlotOrderThenFillFreeSlots() {
+        ListTag inv = new ListTag();
+        inv.add(slotted(5, TerminalRules.EMERALD_ID, 60));
+        inv.add(slotted(1, TerminalRules.EMERALD_ID, 62));
+        inv.add(slotted(0, "minecraft:stone", 3));
+        ListTag before = inv.copy();
+        ListTag result = TerminalRules.addEmeralds(inv, 100, 64);
+        assertEquals(before, inv, "the argument does not change");
+        assertEquals(122 + 100, TerminalRules.countEmeralds(result));
+        // Slot 1 first (2), then slot 5 (4), then the free slots 2 and 3 (64 + 30).
+        assertEquals(64, result.getCompound(0).getInt("count"));
+        assertEquals(64, result.getCompound(1).getInt("count"));
+        assertEquals(3, result.getCompound(2).getInt("count"), "what is not an emerald stays equal");
+        assertEquals(5, result.size());
+        CompoundTag a = result.getCompound(3);
+        CompoundTag b = result.getCompound(4);
+        assertEquals(2, a.getByte("Slot"));
+        assertEquals(64, a.getInt("count"));
+        assertEquals(TerminalRules.EMERALD_ID, a.getString("id"));
+        assertEquals(3, b.getByte("Slot"));
+        assertEquals(30, b.getInt("count"));
+    }
+
+    @Test
+    void addingNothingOrTooMuchThrows() {
+        assertThrows(IllegalArgumentException.class, () -> TerminalRules.addEmeralds(new ListTag(), 0, 64));
+        assertThrows(IllegalArgumentException.class, () -> TerminalRules.addEmeralds(new ListTag(), 36 * 64 + 1, 64));
+    }
+
+    @Test
+    void withEntryAtNeedsAFreeMainSlot() {
+        ListTag inv = list(slotted(3, "minecraft:stone", 1));
+        assertThrows(IllegalArgumentException.class, () -> TerminalRules.withEntryAt(inv, 3, entry("minecraft:dirt", 1)));
+        assertThrows(IllegalArgumentException.class, () -> TerminalRules.withEntryAt(inv, 36, entry("minecraft:dirt", 1)));
+        assertThrows(IllegalArgumentException.class, () -> TerminalRules.withEntryAt(inv, -1, entry("minecraft:dirt", 1)));
+        ListTag result = TerminalRules.withEntryAt(inv, 4, entry("minecraft:dirt", 2));
+        assertEquals(1, inv.size(), "the argument does not change");
+        assertEquals(2, result.size());
+        assertEquals(4, result.getCompound(1).getByte("Slot"));
+        assertEquals("minecraft:dirt", result.getCompound(1).getString("id"));
+    }
+
+    @Test
+    void whatCanBeBoughtIsTheSmallerOfRoomAndMoney() {
+        assertEquals(9, TerminalRules.maxBuyable(10, 3999, 400));
+        assertEquals(2, TerminalRules.maxBuyable(2, 1_000_000_000L, 400));
+        assertEquals(0, TerminalRules.maxBuyable(10, 0, 400));
+        assertEquals(0, TerminalRules.maxBuyable(0, 5000, 400));
+        assertEquals(0, TerminalRules.maxBuyable(10, -5, 400));
+    }
+
+    @Test
+    void borderCasesOfBuyingAreFixed() {
+        assertEquals(0, TerminalRules.maxBuyable(10, 1000, 0));
+        assertEquals(0, TerminalRules.maxBuyable(10, 1000, -5));
+        assertEquals(0L, TerminalRules.buyCost(0, 400));
+        assertEquals(-400L, TerminalRules.buyCost(-1, 400), "only called after n >= 1");
+    }
+
+    @Test
+    void aFullStackOfEmeraldsLeavesNoRoomAndOtherSlotsDoNotCount() {
+        ListTag inv = fullExcept(0);
+        inv.add(slotted(0, TerminalRules.EMERALD_ID, 64));
+        assertEquals(0, TerminalRules.emeraldRoom(inv, 64));
+        ListTag odd = fullExcept(0);
+        odd.add(slotted(40, "minecraft:stone", 1));
+        odd.add(slotted(100, "minecraft:iron_helmet", 1));
+        assertEquals(1, TerminalRules.freeSlots(odd));
+        assertEquals(java.util.OptionalInt.of(0), TerminalRules.firstFreeSlot(odd));
+    }
+
+    @Test
+    void theCostOfAFullInventoryDoesNotOverflow() {
+        assertEquals(2304L * 1_000_000L, TerminalRules.buyCost(2304, 1_000_000));
+        assertEquals(3_000_000_000L, TerminalRules.buyCost(3000, 1_000_000));
     }
 }

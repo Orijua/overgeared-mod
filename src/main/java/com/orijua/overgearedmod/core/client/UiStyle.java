@@ -1,8 +1,11 @@
 package com.orijua.overgearedmod.core.client;
 
+import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 
 /**
  * Shared look of every Satisfy screen and HUD element, modeled on the novel's system windows: a translucent
@@ -19,6 +22,16 @@ public final class UiStyle {
     public static final int MANA = 0xFF3F8CFF;
     public static final int XP = 0xFF55CC55;
     public static final int COOLDOWN = 0xFFFFC23F;
+
+    /** The color of the name of a rated piece (its rating color, opaque); {@link #MUTED} when it has no rating. */
+    public static int ratingNameColor(ItemStack stack) {
+        ItemRating rating = stack.get(ModDataComponents.ITEM_RATING);
+        if (rating == null) {
+            return MUTED;
+        }
+        Integer color = rating.color().getColor();
+        return color == null ? TEXT : 0xFF000000 | color;
+    }
 
     /** Window background, lighter at the top like the reference window. */
     public static final int WINDOW_TOP = 0xD27D97B8;

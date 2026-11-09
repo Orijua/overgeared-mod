@@ -269,8 +269,7 @@ public class TradeTab extends SatisfyTab {
         UiStyle.checkbox(graphics, left + 3, y + (ROW - 2 - 9) / 2, isChosen);
         graphics.renderItem(stack, left + 15, y + 3);
 
-        ItemRating rating = stack.get(ModDataComponents.ITEM_RATING);
-        int nameColor = rating == null ? UiStyle.MUTED : 0xFF000000 | colorOf(rating);
+        int nameColor = UiStyle.ratingNameColor(stack);
         int textX = left + 35;
         int maxWidth = rowWidth - 35 - 4;
         graphics.drawString(font(), UiStyle.ellipsize(font(), stack.getHoverName().copy().withColor(nameColor), maxWidth),
@@ -286,10 +285,5 @@ public class TradeTab extends SatisfyTab {
             return List.of(Component.translatable("screen.overgearedmod.trade.tip.saturation"));
         }
         return null;
-    }
-
-    private static int colorOf(ItemRating rating) {
-        Integer color = rating.color().getColor();
-        return color == null ? UiStyle.TEXT : color;
     }
 }

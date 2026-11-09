@@ -11,7 +11,7 @@ final class TradeBalances {
 
     private static TradeBalance copy(double other, double step, double floor, int recovery, int cap, long maxSell) {
         return new TradeBalance(D.basePrice(), D.materialMultiplier(), other, D.enhancementBonus(), D.sellShare(),
-                D.commission(), step, floor, recovery, cap, maxSell);
+                step, floor, recovery, cap, maxSell);
     }
 
     static TradeBalance withOtherMaterial(double value) {
