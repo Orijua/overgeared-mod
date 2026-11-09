@@ -9,6 +9,8 @@ import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.economy.Account;
+import com.orijua.overgearedmod.feature.economy.DebtState;
 import com.orijua.overgearedmod.feature.economy.TradeGoods;
 import com.orijua.overgearedmod.feature.economy.TradeRules;
 import com.orijua.overgearedmod.feature.economy.TradeSaturation;
@@ -229,9 +231,12 @@ public class TradeTab extends SatisfyTab {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY) {
-        long won = player().getData(ModAttachments.ACCOUNT.get()).won();
+        Account account = player().getData(ModAttachments.ACCOUNT.get());
+        long won = account.won();
         int emeralds = player().getInventory().countItem(ModItems.SATISFY_EMERALD.get());
-        UiStyle.heading(graphics, font(), Component.translatable("screen.overgearedmod.trade.balance", won, emeralds), left, top);
+        UiStyle.heading(graphics, font(), account.debtState() == DebtState.ACTIVE
+                ? Component.translatable("screen.overgearedmod.trade.balance_debt", won, emeralds, account.debt())
+                : Component.translatable("screen.overgearedmod.trade.balance", won, emeralds), left, top);
 
         List<Integer> slots = slots();
         if (slots.isEmpty()) {
