@@ -102,12 +102,37 @@ public final class EquipmentService {
     }
 
     /**
+     * Rates a piece as if forged at exactly {@code rating} (no extra options): rating, rolled options and name. With the same
+     * seed in {@code random} it gives the same options for as long as the datapack does not change (the terminal's daily
+     * offer relies on that).
+     */
+    public static void rateAs(Level level, ItemStack stack, ItemRating rating, RandomSource random) {
+        applyRating(Definitions.all(level, ModDatapackRegistries.ITEM_OPTION), stack, rating, 0, random);
+    }
+
+    /** As above, with the item_option pool already read ({@link #itemOptions}): lets a caller rating many pieces read it once. */
+    public static void rateAs(ItemStack stack, ItemRating rating, RandomSource random,
+                              List<Definitions.Entry<ItemOptionDefinition>> all) {
+        applyRating(all, stack, rating, 0, random);
+    }
+
+    /** The item_option pool, in the order {@link #rateAs} rolls from. */
+    public static List<Definitions.Entry<ItemOptionDefinition>> itemOptions(Level level) {
+        return Definitions.all(level, ModDatapackRegistries.ITEM_OPTION);
+    }
+
+    private static void applyRating(Level level, ItemStack stack, ItemRating rating, int extraOptions, RandomSource random) {
+        applyRating(Definitions.all(level, ModDatapackRegistries.ITEM_OPTION), stack, rating, extraOptions, random);
+    }
+
+    /**
      * Stamps {@code rating}, rolls the options it allows (plus {@code extraOptions}) from the item_option pool,
      * and renames the item.
      */
-    private static void applyRating(Level level, ItemStack stack, ItemRating rating, int extraOptions, RandomSource random) {
+    private static void applyRating(List<Definitions.Entry<ItemOptionDefinition>> all, ItemStack stack, ItemRating rating,
+                                    int extraOptions, RandomSource random) {
         stack.set(ModDataComponents.ITEM_RATING, rating);
-        List<Definitions.Entry<ItemOptionDefinition>> pool = Definitions.all(level, ModDatapackRegistries.ITEM_OPTION).stream()
+        List<Definitions.Entry<ItemOptionDefinition>> pool = all.stream()
                 .filter(e -> e.value().weight() > 0 && e.value().canRollOn(stack))
                 .toList();
         int count = EquipmentRules.optionCount(rating) + extraOptions;

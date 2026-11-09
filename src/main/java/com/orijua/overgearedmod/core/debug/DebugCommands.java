@@ -135,6 +135,15 @@ public final class DebugCommands {
                                                     player.removeData(ModAttachments.WORK_DAY.get());
                                                     ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_work_reset"), false);
                                                     return 1;
+                                                })))
+                                .then(Commands.literal("offer")
+                                        .executes(DebugCommands::terminalOffer)
+                                        .then(Commands.literal("reset")
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    player.removeData(ModAttachments.OFFER_BOUGHT.get());
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_offer_reset"), false);
+                                                    return 1;
                                                 }))))
                                 .then(Commands.literal("fatigue")
                                         .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
@@ -291,6 +300,22 @@ public final class DebugCommands {
         }
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.simulated_forges", amount, rating.displayName()), false);
         return amount;
+    }
+
+    /** Lists today's offer of the terminal: position, item, rating, price and whether this player bought it. */
+    private static int terminalOffer(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        TerminalState state = TerminalService.state(player, java.util.Optional.empty());
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_offer", state.today(), state.offer().size()), false);
+        for (com.orijua.overgearedmod.feature.economy.OfferEntry entry : state.offer()) {
+            ItemRating rating = entry.stack().get(com.orijua.overgearedmod.core.registry.ModDataComponents.ITEM_RATING);
+            Component bought = Component.translatable(state.boughtToday().contains(entry.position())
+                    ? "message.overgearedmod.debug_terminal_offer_yes" : "message.overgearedmod.debug_terminal_offer_no");
+            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_offer_entry", entry.position(),
+                    net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(entry.stack().getItem()).toString(),
+                    rating == null ? "?" : rating.getSerializedName(), entry.price(), bought), false);
+        }
+        return 1;
     }
 
     private static int setSmithing(CommandContext<CommandSourceStack> ctx, int level) throws CommandSyntaxException {

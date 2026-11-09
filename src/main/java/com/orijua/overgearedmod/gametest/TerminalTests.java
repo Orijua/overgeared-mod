@@ -11,7 +11,6 @@ import com.orijua.overgearedmod.feature.character.CharacterVault;
 import com.orijua.overgearedmod.feature.character.Characters;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.economy.AccountService;
-import com.orijua.overgearedmod.feature.economy.TerminalConvertPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalMenu;
 import com.orijua.overgearedmod.feature.economy.TerminalRules;
 import com.orijua.overgearedmod.feature.economy.TerminalService;
@@ -41,7 +40,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * The account terminal and the phone (economy, step 3): converting the Satisfy emeralds of the stored character into Won,
+ * The account terminal and the phone (economy, step 3): the window,
  * the daily work, when the window stays open, and who gets the phone and when. The services are called directly with the
  * balance of the test; the window is built by hand because a fake player has no real connection to open one.
  */
@@ -98,106 +97,6 @@ public final class TerminalTests {
         return message.map(component -> ((TranslatableContents) component.getContents()).getKey()).orElse("");
     }
 
-    // ---- Converting ----
-
-    @GameTest(template = TestSupport.EMPTY)
-    public static void convertingTakesTheEmeraldsOfTheStoredCharacterAndPaysTheNet(GameTestHelper helper) {
-        ServerPlayer player = TestSupport.fakePlayer(helper);
-        CompoundTag snapshot = withStoredCharacter(player);
-        ListTag before = CharacterSnapshot.inventory(snapshot).copy();
-        player.getInventory().setItem(0, new ItemStack(emerald(), 4));
-        real(helper, () -> {
-            TerminalService.Outcome outcome = TerminalService.convert(player, 12, 15, TerminalBalance.DEFAULT);
-            helper.assertTrue(outcome.result() == TerminalService.Result.OK, "converted: " + outcome.result());
-            helper.assertTrue(outcome.won() == 1140L && outcome.amount() == 12, "12 emeralds are worth 1140 Won: " + outcome);
-            helper.assertTrue(AccountService.won(player) == 1140L, "the account got them: " + AccountService.won(player));
-            helper.assertTrue(storedEmeralds(player) == 3, "3 are left in the stored character: " + storedEmeralds(player));
-            CharacterVault vault = player.getData(ModAttachments.CHARACTER_VAULT.get());
-            helper.assertTrue(vault.live().equals(Optional.of(WorldSide.REAL)), "the live world did not change");
-            ListTag after = CharacterSnapshot.inventory(vault.stored().orElseThrow());
-            helper.assertTrue(after.equals(TerminalRules.removeEmeralds(before, 12)), "the rest of the stored character is identical, only 12 emeralds fewer");
-            helper.assertTrue(player.getInventory().countItem(emerald()) == 4, "the live inventory (4 emeralds of Satisfy) was not touched");
-            helper.assertTrue(key(TerminalService.message(outcome)).equals("message.overgearedmod.terminal.converted"), "and says so");
-        });
-        helper.succeed();
-    }
-
-    @GameTest(template = TestSupport.EMPTY)
-    public static void withoutAReadableSatisfyCharacterNothingIsConverted(GameTestHelper helper) {
-        ServerPlayer player = TestSupport.fakePlayer(helper);
-        CompoundTag snapshot = withStoredCharacter(player);
-        real(helper, () -> {
-            CharacterVault live = CharacterVault.of(WorldSide.SATISFY, snapshot);
-            player.setData(ModAttachments.CHARACTER_VAULT.get(), live);
-            helper.assertTrue(TerminalService.convert(player, 1, 15, TerminalBalance.DEFAULT).result() == TerminalService.Result.NO_CHARACTER,
-                    "the player carries Satisfy's things: the stored one is the real world's");
-            helper.assertTrue(player.getData(ModAttachments.CHARACTER_VAULT.get()).equals(live), "the vault is the same");
-
-            CharacterVault empty = new CharacterVault(Optional.of(WorldSide.REAL), Optional.empty());
-            player.setData(ModAttachments.CHARACTER_VAULT.get(), empty);
-            helper.assertTrue(TerminalService.convert(player, 1, 0, TerminalBalance.DEFAULT).result() == TerminalService.Result.NO_CHARACTER, "nothing stored");
-
-            CharacterVault unreadable = CharacterVault.of(WorldSide.REAL, new CompoundTag());
-            player.setData(ModAttachments.CHARACTER_VAULT.get(), unreadable);
-            helper.assertTrue(TerminalService.convert(player, 1, 0, TerminalBalance.DEFAULT).result() == TerminalService.Result.NO_CHARACTER, "an unreadable snapshot");
-            helper.assertTrue(player.getData(ModAttachments.CHARACTER_VAULT.get()).equals(unreadable), "and it is left as it was");
-            helper.assertTrue(AccountService.won(player) == 0L, "nothing was paid");
-        });
-        helper.succeed();
-    }
-
-    @GameTest(template = TestSupport.EMPTY)
-    public static void aStaleOrInvalidAmountChangesNothing(GameTestHelper helper) {
-        ServerPlayer player = TestSupport.fakePlayer(helper);
-        CompoundTag snapshot = withStoredCharacter(player);
-        real(helper, () -> {
-            CharacterVault vault = player.getData(ModAttachments.CHARACTER_VAULT.get());
-            helper.assertTrue(TerminalService.convert(player, 5, 14, TerminalBalance.DEFAULT).result() == TerminalService.Result.STALE, "the player saw 14, there are 15");
-            helper.assertTrue(TerminalService.convert(player, 0, 15, TerminalBalance.DEFAULT).result() == TerminalService.Result.INVALID_AMOUNT, "0");
-            helper.assertTrue(TerminalService.convert(player, 16, 15, TerminalBalance.DEFAULT).result() == TerminalService.Result.INVALID_AMOUNT, "16 of 15");
-            helper.assertTrue(player.getData(ModAttachments.CHARACTER_VAULT.get()).equals(vault), "the vault did not change");
-            helper.assertTrue(AccountService.won(player) == 0L, "nothing was paid");
-            helper.assertTrue(CharacterSnapshot.inventory(snapshot).size() == 3, "sanity: the snapshot had 3 entries");
-        });
-        helper.succeed();
-    }
-
-    @GameTest(template = TestSupport.EMPTY)
-    public static void convertingAllLeavesNoEmeraldEntry(GameTestHelper helper) {
-        ServerPlayer player = TestSupport.fakePlayer(helper);
-        withStoredCharacter(player);
-        real(helper, () -> {
-            TerminalService.Outcome outcome = TerminalService.convert(player, 15, 15, TerminalBalance.DEFAULT);
-            helper.assertTrue(outcome.result() == TerminalService.Result.OK, "converted: " + outcome.result());
-            helper.assertTrue(AccountService.won(player) == 1425L, "15 emeralds: " + AccountService.won(player));
-            ListTag after = CharacterSnapshot.inventory(player.getData(ModAttachments.CHARACTER_VAULT.get()).stored().orElseThrow());
-            helper.assertTrue(after.size() == 1 && after.getCompound(0).getString("id").equals("minecraft:diamond_sword"),
-                    "only the sword is left in the list: " + after);
-        });
-        helper.succeed();
-    }
-
-    /** BUG-063: an amount that pays no whole Won is refused before the vault is touched. */
-    @GameTest(template = TestSupport.EMPTY)
-    public static void anAmountThatPaysNothingIsRefusedAndChangesNothing(GameTestHelper helper) {
-        ServerPlayer player = TestSupport.fakePlayer(helper);
-        withStoredCharacter(player);
-        real(helper, () -> {
-            CharacterVault vault = player.getData(ModAttachments.CHARACTER_VAULT.get());
-            TerminalBalance cheap = new TerminalBalance(1, 1000L, List.of(COAL_32));
-            TerminalService.Outcome low = TerminalService.convert(player, 1, 15, cheap);
-            helper.assertTrue(low.result() == TerminalService.Result.NOTHING_TO_PAY, "1 Won gross, 0 net: " + low.result());
-            helper.assertTrue(key(TerminalService.message(low)).equals("message.overgearedmod.terminal.nothing_to_pay"), "says so");
-            TerminalBalance free = new TerminalBalance(100, 1000L, List.of(COAL_32));
-            helper.assertTrue(TerminalService.convert(player, 15, 15, free, 1.0).result() == TerminalService.Result.NOTHING_TO_PAY, "commission 100 %");
-            helper.assertTrue(player.getData(ModAttachments.CHARACTER_VAULT.get()).equals(vault), "the vault is the same");
-            helper.assertTrue(AccountService.won(player) == 0L, "nothing was paid");
-            TerminalService.Outcome ok = TerminalService.convert(player, 15, 15, cheap);
-            helper.assertTrue(ok.result() == TerminalService.Result.OK && ok.won() == 14L, "15 emeralds at 1 Won pay 14: " + ok);
-        });
-        helper.succeed();
-    }
-
     /** BUG-065: the server pushes the new state when the game day changes while the window is open. */
     @GameTest(template = TestSupport.EMPTY)
     public static void theOpenWindowGetsANewStateWhenTheDayChanges(GameTestHelper helper) {
@@ -223,11 +122,10 @@ public final class TerminalTests {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         withStoredCharacter(player);
         satisfy(helper, () -> {
-            TerminalService.Outcome convert = TerminalService.convert(player, 1, 15, TerminalBalance.DEFAULT);
-            helper.assertTrue(convert.result() == TerminalService.Result.IN_SATISFY, "convert: " + convert.result());
-            helper.assertTrue(TerminalService.work(player, COAL_32, 5L, COAL_ONLY).result() == TerminalService.Result.IN_SATISFY, "work");
+            TerminalService.Outcome work = TerminalService.work(player, COAL_32, 5L, COAL_ONLY);
+            helper.assertTrue(work.result() == TerminalService.Result.IN_SATISFY, "work");
             helper.assertTrue(TerminalService.open(player, Optional.empty()) == TerminalService.Result.IN_SATISFY, "open");
-            helper.assertTrue(key(TerminalService.message(convert)).equals("message.overgearedmod.terminal.no_signal"), "the message is No signal");
+            helper.assertTrue(key(TerminalService.message(work)).equals("message.overgearedmod.terminal.no_signal"), "the message is No signal");
             helper.assertTrue(AccountService.won(player) == 0L, "nothing was paid");
         });
         helper.succeed();
@@ -365,17 +263,14 @@ public final class TerminalTests {
         withStoredCharacter(player);
         player.getInventory().setItem(0, new ItemStack(ModItems.PHONE.get()));
         TerminalBalance.withOverride(COAL_ONLY, () -> real(helper, () -> {
-            TerminalConvertPayload convert = new TerminalConvertPayload(7, 1, 15);
-            helper.assertTrue(TerminalService.convert(player, convert).result() == TerminalService.Result.NO_TERMINAL, "no window open");
-            helper.assertTrue(TerminalService.work(player, new TerminalWorkPayload(7, COAL_32)).result() == TerminalService.Result.NO_TERMINAL, "nor for work");
+            helper.assertTrue(TerminalService.work(player, new TerminalWorkPayload(7, COAL_32)).result() == TerminalService.Result.NO_TERMINAL, "no window open");
 
             player.containerMenu = new TerminalMenu(7, player.getInventory(), Optional.empty());
             try {
-                helper.assertTrue(TerminalService.convert(player, new TerminalConvertPayload(8, 1, 15)).result() == TerminalService.Result.NO_TERMINAL,
+                helper.assertTrue(TerminalService.work(player, new TerminalWorkPayload(8, COAL_32)).result() == TerminalService.Result.NO_TERMINAL,
                         "another container id");
                 helper.assertTrue(storedEmeralds(player) == 15, "nothing was taken");
-                TerminalService.Outcome ok = TerminalService.convert(player, convert);
-                helper.assertTrue(ok.result() == TerminalService.Result.OK && ok.won() == 95L, "the right id works: " + ok);
+                helper.assertTrue(AccountService.won(player) == 0L, "nothing was paid");
                 player.getInventory().setItem(1, new ItemStack(Items.COAL, 40));
                 TerminalService.Outcome worked = TerminalService.work(player, new TerminalWorkPayload(7, COAL_32));
                 helper.assertTrue(worked.result() == TerminalService.Result.OK && worked.won() == 1000L, "work by payload: " + worked);
@@ -511,6 +406,9 @@ public final class TerminalTests {
         player.setData(ModAttachments.WORK_DAY.get(), 5L);
         ModAttachments.resetAll(player);
         helper.assertTrue(player.getData(ModAttachments.WORK_DAY.get()) == Long.MIN_VALUE, "reset all clears the work day");
+        player.setData(ModAttachments.OFFER_BOUGHT.get(), com.orijua.overgearedmod.feature.economy.OfferBought.EMPTY.with(2, 5L));
+        ModAttachments.resetAll(player);
+        helper.assertTrue(player.getData(ModAttachments.OFFER_BOUGHT.get()).equals(com.orijua.overgearedmod.feature.economy.OfferBought.EMPTY), "reset all clears the bought offer");
         helper.assertFalse(player.getData(ModAttachments.PHONE_GIVEN.get()), "and the phone flag");
         helper.succeed();
     }

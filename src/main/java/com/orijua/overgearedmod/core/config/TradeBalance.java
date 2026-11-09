@@ -14,7 +14,6 @@ import java.util.Map;
  * @param otherMaterial      multiplier of any material that is not in the map
  * @param enhancementBonus   share of the reference added per enhancement level (weapons only)
  * @param sellShare          share of the reference paid in Satisfy emeralds when selling
- * @param commission         the trading site's commission when converting Satisfy emeralds at the terminal (0.05: the player gets 95 %)
  * @param saturationStep     price factor for each point of pressure
  * @param saturationFloor    the price factor never goes below this
  * @param recoveryPerDay     points of pressure that go away each whole game day
@@ -27,7 +26,6 @@ public record TradeBalance(
         double otherMaterial,
         double enhancementBonus,
         double sellShare,
-        double commission,
         double saturationStep,
         double saturationFloor,
         int recoveryPerDay,
@@ -39,7 +37,7 @@ public record TradeBalance(
                     ItemRating.UNIQUE, 150, ItemRating.LEGENDARY, 600, ItemRating.MYTH, 2500),
             Map.of("wood", 0.5, "gold", 0.5, "leather", 0.5, "stone", 1.0, "iron", 1.0, "chainmail", 1.0,
                     "diamond", 2.0, "netherite", 3.0),
-            1.0, 0.10, 0.40, 0.05, 0.95, 0.15, 2, 37, 10_000L);
+            1.0, 0.10, 0.40, 0.95, 0.15, 2, 37, 10_000L);
 
     public TradeBalance {
         basePrice = Map.copyOf(basePrice);

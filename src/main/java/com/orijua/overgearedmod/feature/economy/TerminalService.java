@@ -30,11 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 /**
- * The account terminal and the phone: opens the window (never in Satisfy: there they show "No signal"), converts the
- * Satisfy emeralds of the stored character into Won and does the daily work. Everything is decided here, in the
- * server: the client only says how many and what it saw, and the checks come before anything moves. The conversion
- * writes the vault before it pays, so a failure cannot duplicate value. This is the ONLY exception to "nothing else
- * moves items between the characters": it only takes Satisfy emerald entries out of the stored inventory.
+ * The account terminal and the phone: opens the window (never in Satisfy: there they show "No signal") and does the
+ * daily work. Satisfy emeralds are only for spending in Satisfy, so nothing converts them to Won. Everything is decided
+ * here, in the server: the client says what it saw and the checks come before anything moves. The only thing that
+ * touches the stored character is {@link TerminalShop}, an exception to "nothing else moves items between the
+ * characters": it only ADDS entries (emeralds and the pieces of the offer).
  */
 public final class TerminalService {
     /** Orders already warned about (no known item or tag): the warning is logged once, not at every state. */
@@ -43,27 +43,22 @@ public final class TerminalService {
     private TerminalService() {
     }
 
-    public enum Result { OK, NO_TERMINAL, IN_SATISFY, NO_CHARACTER, STALE, INVALID_AMOUNT, NOTHING_TO_PAY, NOT_ENOUGH, ALREADY_WORKED }
+    public enum Result { OK, NO_TERMINAL, IN_SATISFY, STALE, NOT_ENOUGH, ALREADY_WORKED }
 
-    /** {@code won} paid and, for a conversion, the {@code amount} of emeralds taken (0 for a work shift). */
-    public record Outcome(Result result, long won, int amount) {
+    /** {@code won} paid by a work shift. */
+    public record Outcome(Result result, long won) {
         static Outcome of(Result result) {
-            return new Outcome(result, 0L, 0);
+            return new Outcome(result, 0L);
         }
     }
 
     /** The message for the player after an attempt; empty when there is nothing to say. */
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
-            case OK -> Optional.of(outcome.amount() > 0
-                    ? Component.translatable("message.overgearedmod.terminal.converted", outcome.amount(), outcome.won())
-                    : Component.translatable("message.overgearedmod.terminal.worked", outcome.won()));
+            case OK -> Optional.of(Component.translatable("message.overgearedmod.terminal.worked", outcome.won()));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));
-            case NO_CHARACTER -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_character"));
             case STALE -> Optional.of(Component.translatable("message.overgearedmod.terminal.stale"));
-            case INVALID_AMOUNT -> Optional.of(Component.translatable("message.overgearedmod.terminal.invalid_amount"));
-            case NOTHING_TO_PAY -> Optional.of(Component.translatable("message.overgearedmod.terminal.nothing_to_pay"));
             case NOT_ENOUGH -> Optional.of(Component.translatable("message.overgearedmod.terminal.not_enough"));
             case ALREADY_WORKED -> Optional.of(Component.translatable("message.overgearedmod.terminal.already_worked"));
         };
@@ -134,12 +129,12 @@ public final class TerminalService {
      * Whether the player is outside Satisfy AND carries the real world's things (vault live REAL). After a failed
      * settle they can be in the real world still carrying Satisfy's inventory: there the terminal must not touch it.
      */
-    private static boolean carriesRealWorld(ServerPlayer player) {
+    static boolean carriesRealWorld(ServerPlayer player) {
         return !Satisfy.is(player.level()) && vault(player).live().equals(Optional.of(WorldSide.REAL));
     }
 
     /** The stored Satisfy character, only while the player carries the real world's things and the snapshot can be read. */
-    private static Optional<CompoundTag> storedCharacter(ServerPlayer player) {
+    static Optional<CompoundTag> storedCharacter(ServerPlayer player) {
         CharacterVault vault = vault(player);
         if (!vault.live().equals(Optional.of(WorldSide.REAL))) {
             return Optional.empty();
@@ -161,8 +156,19 @@ public final class TerminalService {
         if (icon.is(Items.BARRIER) && WARNED_ORDERS.add(order.asString())) {
             Overgearedmod.LOGGER.warn("The work order {} has no known item or tag; it is shown with a barrier", order.asString());
         }
-        return new TerminalState(stored.isPresent(), emeralds, balance.wonPerEmerald(), TradeBalance.current().commission(),
-                balance.workPay(), today, order, icon, player.getData(ModAttachments.WORK_DAY.get()), message);
+        // Without a character nothing can be bought, but the offer is still shown.
+        int room = 0;
+        int free = 0;
+        if (stored.isPresent()) {
+            ListTag inventory = CharacterSnapshot.inventory(stored.get());
+            room = TerminalRules.emeraldRoom(inventory, new ItemStack(ModItems.SATISFY_EMERALD.get()).getMaxStackSize());
+            free = TerminalRules.freeSlots(inventory);
+        }
+        TradeBalance trade = TradeBalance.current();
+        return new TerminalState(stored.isPresent(), emeralds, balance.workPay(), today, order, icon,
+                player.getData(ModAttachments.WORK_DAY.get()), balance.buyWonPerEmerald(), room, free,
+                TerminalShop.offer(player.serverLevel(), today, balance, trade),
+                player.getData(ModAttachments.OFFER_BOUGHT.get()).positionsOn(today), message);
     }
 
     /** Sends the open menu a fresh state with the message of the last action. */
@@ -172,57 +178,8 @@ public final class TerminalService {
         PacketDistributor.sendToPlayer(player, new TerminalStatePayload(menu.containerId, state));
     }
 
-    private static boolean menuOpen(ServerPlayer player, int containerId) {
+    static boolean menuOpen(ServerPlayer player, int containerId) {
         return player.containerMenu instanceof TerminalMenu menu && menu.containerId == containerId && menu.stillValid(player);
-    }
-
-    // ---- Converting ----
-
-    /** The order of the terminal's window: it must be the open menu of the sender. */
-    public static Outcome convert(ServerPlayer player, TerminalConvertPayload payload) {
-        if (Satisfy.is(player.level())) {
-            return Outcome.of(Result.IN_SATISFY);
-        }
-        if (!menuOpen(player, payload.containerId())) {
-            return Outcome.of(Result.NO_TERMINAL);
-        }
-        return convert(player, payload.amount(), payload.seenStored(), TerminalBalance.current());
-    }
-
-    /** Takes {@code n} Satisfy emeralds from the stored character and pays their Won, minus the trading site's commission. */
-    public static Outcome convert(ServerPlayer player, int n, int seen, TerminalBalance balance) {
-        return convert(player, n, seen, balance, TradeBalance.current().commission());
-    }
-
-    /** As above with an explicit commission; {@code seen} is the count the player saw. */
-    public static Outcome convert(ServerPlayer player, int n, int seen, TerminalBalance balance, double commission) {
-        if (Satisfy.is(player.level())) {
-            return Outcome.of(Result.IN_SATISFY);
-        }
-        CharacterVault vault = vault(player);
-        Optional<CompoundTag> stored = vault.stored();
-        if (!vault.live().equals(Optional.of(WorldSide.REAL)) || stored.isEmpty() || !CharacterSnapshot.isReadable(stored.get())) {
-            return Outcome.of(Result.NO_CHARACTER);
-        }
-        ListTag inventory = CharacterSnapshot.inventory(stored.get());
-        int count = TerminalRules.countEmeralds(inventory);
-        if (count != seen) {
-            return Outcome.of(Result.STALE);
-        }
-        if (n < 1 || n > count) {
-            return Outcome.of(Result.INVALID_AMOUNT);
-        }
-        long net = TerminalRules.net(n, balance.wonPerEmerald(), commission);
-        if (net < 1) {
-            return Outcome.of(Result.NOTHING_TO_PAY);
-        }
-        // Step 5 (debt): the real debt goes here; for now there is none.
-        TerminalRules.Split split = TerminalRules.split(net, 0L);
-        // The vault is written before the payment: if the payment failed the emeralds would be lost, never duplicated.
-        player.setData(ModAttachments.CHARACTER_VAULT.get(), new CharacterVault(vault.live(),
-                Optional.of(CharacterSnapshot.withInventory(stored.get(), TerminalRules.removeEmeralds(inventory, n)))));
-        AccountService.deposit(player, split.toAccount());
-        return new Outcome(Result.OK, split.toAccount(), n);
     }
 
     // ---- Working ----
@@ -259,7 +216,7 @@ public final class TerminalService {
         AccountService.deposit(player, balance.workPay());
         // The terminal window has no slots: send the whole inventory menu so the "have" count updates.
         player.inventoryMenu.sendAllDataToRemote();
-        return new Outcome(Result.OK, balance.workPay(), 0);
+        return new Outcome(Result.OK, balance.workPay());
     }
 
     /** How many items of the order the inventory (main slots and offhand, not armor) holds. */

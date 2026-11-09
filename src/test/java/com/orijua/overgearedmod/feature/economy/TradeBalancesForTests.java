@@ -9,29 +9,25 @@ final class TradeBalancesForTests {
     private TradeBalancesForTests() {
     }
 
-    static TradeBalance of(double otherMaterial, double sellShare, double commission, double saturationStep,
+    static TradeBalance of(double otherMaterial, double sellShare, double saturationStep,
                            double saturationFloor, int recoveryPerDay, int pressureCap, long maxSellEmeralds) {
         return new TradeBalance(D.basePrice(), D.materialMultiplier(), otherMaterial, D.enhancementBonus(), sellShare,
-                commission, saturationStep, saturationFloor, recoveryPerDay, pressureCap, maxSellEmeralds);
+                saturationStep, saturationFloor, recoveryPerDay, pressureCap, maxSellEmeralds);
     }
 
     static TradeBalance withRecoveryPerDay(int value) {
-        return of(D.otherMaterial(), D.sellShare(), D.commission(), D.saturationStep(), D.saturationFloor(), value, D.pressureCap(), D.maxSellEmeralds());
+        return of(D.otherMaterial(), D.sellShare(), D.saturationStep(), D.saturationFloor(), value, D.pressureCap(), D.maxSellEmeralds());
     }
 
     static TradeBalance withPressureCap(int value) {
-        return of(D.otherMaterial(), D.sellShare(), D.commission(), D.saturationStep(), D.saturationFloor(), D.recoveryPerDay(), value, D.maxSellEmeralds());
-    }
-
-    static TradeBalance withCommission(double value) {
-        return of(D.otherMaterial(), D.sellShare(), value, D.saturationStep(), D.saturationFloor(), D.recoveryPerDay(), D.pressureCap(), D.maxSellEmeralds());
+        return of(D.otherMaterial(), D.sellShare(), D.saturationStep(), D.saturationFloor(), D.recoveryPerDay(), value, D.maxSellEmeralds());
     }
 
     static TradeBalance withSaturationStep(double value) {
-        return of(D.otherMaterial(), D.sellShare(), D.commission(), value, D.saturationFloor(), D.recoveryPerDay(), D.pressureCap(), D.maxSellEmeralds());
+        return of(D.otherMaterial(), D.sellShare(), value, D.saturationFloor(), D.recoveryPerDay(), D.pressureCap(), D.maxSellEmeralds());
     }
 
     static TradeBalance withSaturationFloor(double value) {
-        return of(D.otherMaterial(), D.sellShare(), D.commission(), D.saturationStep(), value, D.recoveryPerDay(), D.pressureCap(), D.maxSellEmeralds());
+        return of(D.otherMaterial(), D.sellShare(), D.saturationStep(), value, D.recoveryPerDay(), D.pressureCap(), D.maxSellEmeralds());
     }
 }

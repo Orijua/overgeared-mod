@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.capsule.CapsuleState;
 import com.orijua.overgearedmod.feature.economy.Account;
+import com.orijua.overgearedmod.feature.economy.OfferBought;
 import com.orijua.overgearedmod.feature.economy.TradeSaturation;
 import com.orijua.overgearedmod.feature.insight.LearnedToday;
 import com.orijua.overgearedmod.feature.mob.MobLevel;
@@ -131,6 +132,14 @@ public final class ModAttachments {
      */
     public static final Supplier<AttachmentType<Long>> WORK_DAY =
             serverData("work_day", () -> Long.MIN_VALUE, Codec.LONG);
+
+    /**
+     * The pieces of the terminal's daily offer the player already bought today (see economy.TerminalShop): one unit per
+     * piece, player and day. Server-only (the terminal's state carries it to the screen), outside the character vault,
+     * kept on death and cleared by {@link #resetAll}.
+     */
+    public static final Supplier<AttachmentType<OfferBought>> OFFER_BOUGHT =
+            serverData("offer_bought", () -> OfferBought.EMPTY, OfferBought.CODEC);
 
     /**
      * Whether the player already got their phone (see economy.TerminalService#giveIfMissing). Server-only, kept on death

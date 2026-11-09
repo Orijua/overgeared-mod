@@ -2,7 +2,8 @@ package com.orijua.overgearedmod.core.network;
 
 import com.orijua.overgearedmod.feature.capsule.CapsuleConnectingPayload;
 import com.orijua.overgearedmod.feature.economy.ClientTerminal;
-import com.orijua.overgearedmod.feature.economy.TerminalConvertPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalBuyEmeraldsPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalBuyOfferPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalStatePayload;
 import com.orijua.overgearedmod.feature.economy.TerminalWorkPayload;
 import com.orijua.overgearedmod.feature.economy.TradeSellPayload;
@@ -54,8 +55,9 @@ public final class ModNetwork {
         registrar.playToServer(ApprenticeActionPayload.TYPE, ApprenticeActionPayload.STREAM_CODEC, ServerPayloadHandler::apprenticeAction);
         registrar.playToServer(TradeSellPayload.TYPE, TradeSellPayload.STREAM_CODEC, ServerPayloadHandler::tradeSell);
         registrar.playToServer(StartContestPayload.TYPE, StartContestPayload.STREAM_CODEC, ServerPayloadHandler::startContest);
-        registrar.playToServer(TerminalConvertPayload.TYPE, TerminalConvertPayload.STREAM_CODEC, ServerPayloadHandler::terminalConvert);
         registrar.playToServer(TerminalWorkPayload.TYPE, TerminalWorkPayload.STREAM_CODEC, ServerPayloadHandler::terminalWork);
+        registrar.playToServer(TerminalBuyEmeraldsPayload.TYPE, TerminalBuyEmeraldsPayload.STREAM_CODEC, ServerPayloadHandler::terminalBuyEmeralds);
+        registrar.playToServer(TerminalBuyOfferPayload.TYPE, TerminalBuyOfferPayload.STREAM_CODEC, ServerPayloadHandler::terminalBuyOffer);
         // Like the one below, the handler only touches a client-state class with no client imports.
         registrar.playToClient(CapsuleConnectingPayload.TYPE, CapsuleConnectingPayload.STREAM_CODEC,
                 (payload, context) -> ClientCapsule.connecting(payload.ticks(), Util.getMillis()));
