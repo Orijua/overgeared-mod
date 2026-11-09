@@ -24,6 +24,15 @@ class SatisfyOnlyTest {
     }
 
     @Test
+    void theTerminalAndThePhoneAreNotSatisfyItemsAndOnlyTheTerminalCanBePlaced() {
+        assertFalse(SatisfyOnly.isSatisfyItem(mod("account_terminal")));
+        assertFalse(SatisfyOnly.isSatisfyItem(mod("phone")));
+        assertFalse(SatisfyOnly.blocksPlacement(mod("account_terminal")));
+        // The phone is only an item: it is not in the list of blocks that can be placed in the real world.
+        assertTrue(SatisfyOnly.blocksPlacement(mod("phone")));
+    }
+
+    @Test
     void theModsToolsAndStationsAreSatisfyItems() {
         assertTrue(SatisfyOnly.isSatisfyItem(mod("smithing_anvil")));
         assertTrue(SatisfyOnly.isSatisfyItem(mod("smelter")));

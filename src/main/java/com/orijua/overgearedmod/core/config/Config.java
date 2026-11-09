@@ -158,7 +158,7 @@ public final class Config {
 
     private static final TradeBalance T = TradeBalance.DEFAULT;
     private static final ModConfigSpec.IntValue TRADE_BASE_NORMAL = BUILDER
-            .comment("Trade: selling equipment for Satisfy emeralds or exporting it for Won. These numbers are the mod's own design, not the canon's.",
+            .comment("Trade: selling equipment for Satisfy emeralds. These numbers are the mod's own design, not the canon's.",
                     "Reference price of a piece of each rating, before material and enhancement (this one: normal).")
             .defineInRange("basePriceNormal", T.basePrice().get(ItemRating.NORMAL), 1, 1_000_000);
     private static final ModConfigSpec.IntValue TRADE_BASE_RARE = BUILDER
@@ -209,14 +209,11 @@ public final class Config {
     private static final ModConfigSpec.DoubleValue TRADE_SELL_SHARE = BUILDER
             .comment("Share of the reference price paid in Satisfy emeralds when selling (0 to 1: selling never pays more than the reference).")
             .defineInRange("sellShare", T.sellShare(), 0.0, 1.0);
-    private static final ModConfigSpec.IntValue TRADE_WON_PER_REFERENCE = BUILDER
-            .comment("Won that one point of reference price is worth when exporting.")
-            .defineInRange("wonPerReference", T.wonPerReference(), 0, 1_000_000);
-    private static final ModConfigSpec.DoubleValue TRADE_EXPORT_COMMISSION = BUILDER
-            .comment("Share of the export that is kept as commission (0.05 = the player gets 95 %).")
-            .defineInRange("exportCommission", T.exportCommission(), 0.0, 1.0);
+    private static final ModConfigSpec.DoubleValue TRADE_COMMISSION = BUILDER
+            .comment("The trading site's commission (0.05 = the player gets 95 %). Charged when converting Satisfy emeralds to Won at the terminal or the phone.")
+            .defineInRange("commission", T.commission(), 0.0, 1.0);
     private static final ModConfigSpec.DoubleValue TRADE_SATURATION_STEP = BUILDER
-            .comment("Price factor for each point of pressure (each piece sold or exported of the same category and rating).")
+            .comment("Price factor for each point of pressure (each piece sold of the same category and rating).")
             .defineInRange("saturationStep", T.saturationStep(), 0.0, 1.0);
     private static final ModConfigSpec.DoubleValue TRADE_SATURATION_FLOOR = BUILDER
             .comment("The saturation factor never goes below this.")
@@ -230,6 +227,29 @@ public final class Config {
     private static final ModConfigSpec.LongValue TRADE_MAX_SELL_EMERALDS = BUILDER
             .comment("A sale that would pay more Satisfy emeralds than this is refused without touching the piece.")
             .defineInRange("maxSellEmeralds", T.maxSellEmeralds(), 64L, 100_000L);
+
+    static {
+        BUILDER.pop();
+    }
+
+    static {
+        BUILDER.push("terminal");
+    }
+
+    private static final TerminalBalance TERMINAL = TerminalBalance.DEFAULT;
+    private static final ModConfigSpec.IntValue TERMINAL_WON_PER_EMERALD = BUILDER
+            .comment("Account terminal: converting Satisfy emeralds to Won and the daily work. These numbers are the mod's own design, not the canon's.",
+                    "Won that one Satisfy emerald is worth.")
+            .defineInRange("wonPerEmerald", TERMINAL.wonPerEmerald(), 1, 1_000_000);
+    private static final ModConfigSpec.LongValue TERMINAL_WORK_PAY = BUILDER
+            .comment("Won paid for one work shift (one per game day).")
+            .defineInRange("workPay", TERMINAL.workPay(), 0L, 1_000_000L);
+    private static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> TERMINAL_WORK_ORDERS = BUILDER
+            .comment("The daily work orders, taken in turn by game day. \"#ns:path=N\" asks for N items of an item tag, \"ns:path=N\" for N of an item.",
+                    "N goes from 1 to 2368 (36 slots and the offhand of 64); items that stack less can still ask for more than fits.")
+            .defineList("workOrders", TERMINAL.workOrders().stream().map(com.orijua.overgearedmod.feature.economy.WorkOrder::asString).toList(),
+                    () -> "minecraft:wheat=64",
+                    value -> value instanceof String text && com.orijua.overgearedmod.feature.economy.TerminalRules.parseOrder(text).isPresent());
 
     static {
         BUILDER.pop();
@@ -272,8 +292,19 @@ public final class Config {
         materials.put("leather", TRADE_MATERIAL_LEATHER.get());
         materials.put("chainmail", TRADE_MATERIAL_CHAINMAIL.get());
         return new TradeBalance(prices, materials, TRADE_OTHER_MATERIAL.get(), TRADE_ENHANCEMENT_BONUS.get(), TRADE_SELL_SHARE.get(),
-                TRADE_WON_PER_REFERENCE.get(), TRADE_EXPORT_COMMISSION.get(), TRADE_SATURATION_STEP.get(), TRADE_SATURATION_FLOOR.get(),
+                TRADE_COMMISSION.get(), TRADE_SATURATION_STEP.get(), TRADE_SATURATION_FLOOR.get(),
                 TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get());
+    }
+
+    static TerminalBalance terminalBalance() {
+        java.util.List<com.orijua.overgearedmod.feature.economy.WorkOrder> orders = TERMINAL_WORK_ORDERS.get().stream()
+                .map(com.orijua.overgearedmod.feature.economy.TerminalRules::parseOrder)
+                .flatMap(java.util.Optional::stream)
+                .toList();
+        if (orders.isEmpty()) {
+            orders = TerminalBalance.DEFAULT.workOrders();
+        }
+        return new TerminalBalance(TERMINAL_WON_PER_EMERALD.get(), TERMINAL_WORK_PAY.get(), orders);
     }
 
     static Balance balance() {

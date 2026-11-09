@@ -7,7 +7,6 @@ import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModItems;
-import com.orijua.overgearedmod.feature.economy.TradeMode;
 import com.orijua.overgearedmod.feature.economy.TradeSaturation;
 import com.orijua.overgearedmod.feature.economy.TradeSellPayload;
 import com.orijua.overgearedmod.feature.economy.TradeService;
@@ -412,27 +411,27 @@ public final class SatisfyOnlyTests {
     }
 
     /**
-     * The only exception of {@link SatisfyOnly} is a string (the capsule); here it is checked against what is really
+     * The exceptions of {@link SatisfyOnly} are strings (capsule, account_terminal, phone); here they are checked against what is really
      * registered. Catches a renamed exception and any mod object that would escape the restriction (ores included).
      */
     @GameTest(template = TestSupport.EMPTY)
-    public static void onlyTheCapsuleWorksInTheRealWorld(GameTestHelper helper) {
-        Set<ResourceLocation> expected = new TreeSet<>();
-        expected.add(ModBlocks.CAPSULE.getId());
+    public static void onlyTheRealWorldDevicesWorkThere(GameTestHelper helper) {
+        Set<ResourceLocation> expectedItems = new TreeSet<>(List.of(ModBlocks.CAPSULE.getId(), ModBlocks.ACCOUNT_TERMINAL.getId(), com.orijua.overgearedmod.core.registry.ModItems.PHONE.getId()));
+        Set<ResourceLocation> expectedBlocks = new TreeSet<>(List.of(ModBlocks.CAPSULE.getId(), ModBlocks.ACCOUNT_TERMINAL.getId()));
         Set<ResourceLocation> actualItems = new TreeSet<>();
         for (ResourceLocation id : BuiltInRegistries.ITEM.keySet()) {
             if (id.getNamespace().equals(Overgearedmod.MODID) && !SatisfyOnly.isSatisfyItem(id)) {
                 actualItems.add(id);
             }
         }
-        helper.assertTrue(actualItems.equals(expected), "items that work in the real world: " + actualItems + ", expected " + expected);
+        helper.assertTrue(actualItems.equals(expectedItems), "items that work in the real world: " + actualItems + ", expected " + expectedItems);
         Set<ResourceLocation> actualBlocks = new TreeSet<>();
         for (ResourceLocation id : BuiltInRegistries.BLOCK.keySet()) {
             if (id.getNamespace().equals(Overgearedmod.MODID) && !SatisfyOnly.blocksPlacement(id)) {
                 actualBlocks.add(id);
             }
         }
-        helper.assertTrue(actualBlocks.equals(expected), "blocks that can be placed in the real world: " + actualBlocks + ", expected " + expected);
+        helper.assertTrue(actualBlocks.equals(expectedBlocks), "blocks that can be placed in the real world: " + actualBlocks + ", expected " + expectedBlocks);
         helper.succeed();
     }
 
@@ -735,7 +734,7 @@ public final class SatisfyOnlyTests {
         ItemStack sword = new ItemStack(Items.IRON_SWORD);
         sword.set(ModDataComponents.ITEM_RATING, ItemRating.EPIC);
         player.getInventory().setItem(3, sword.copy());
-        TradeSellPayload payload = new TradeSellPayload(3, TradeMode.SELL, sword.copy(), 16);
+        TradeSellPayload payload = new TradeSellPayload(java.util.List.of(new TradeSellPayload.Entry(3, sword.copy(), 16)));
         realWorld(helper, () -> {
             invokeHandler("tradeSell", TradeSellPayload.class, payload, player);
             helper.assertTrue(ItemStack.matches(player.getInventory().getItem(3), sword), "the sword stays in the real world");

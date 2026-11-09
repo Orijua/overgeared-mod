@@ -1,6 +1,10 @@
 package com.orijua.overgearedmod.core.network;
 
 import com.orijua.overgearedmod.feature.capsule.CapsuleConnectingPayload;
+import com.orijua.overgearedmod.feature.economy.ClientTerminal;
+import com.orijua.overgearedmod.feature.economy.TerminalConvertPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalStatePayload;
+import com.orijua.overgearedmod.feature.economy.TerminalWorkPayload;
 import com.orijua.overgearedmod.feature.economy.TradeSellPayload;
 import com.orijua.overgearedmod.feature.fatigue.ClientFatigue;
 import com.orijua.overgearedmod.feature.fatigue.FatigueDebugPayload;
@@ -50,11 +54,16 @@ public final class ModNetwork {
         registrar.playToServer(ApprenticeActionPayload.TYPE, ApprenticeActionPayload.STREAM_CODEC, ServerPayloadHandler::apprenticeAction);
         registrar.playToServer(TradeSellPayload.TYPE, TradeSellPayload.STREAM_CODEC, ServerPayloadHandler::tradeSell);
         registrar.playToServer(StartContestPayload.TYPE, StartContestPayload.STREAM_CODEC, ServerPayloadHandler::startContest);
+        registrar.playToServer(TerminalConvertPayload.TYPE, TerminalConvertPayload.STREAM_CODEC, ServerPayloadHandler::terminalConvert);
+        registrar.playToServer(TerminalWorkPayload.TYPE, TerminalWorkPayload.STREAM_CODEC, ServerPayloadHandler::terminalWork);
         // Like the one below, the handler only touches a client-state class with no client imports.
         registrar.playToClient(CapsuleConnectingPayload.TYPE, CapsuleConnectingPayload.STREAM_CODEC,
                 (payload, context) -> ClientCapsule.connecting(payload.ticks(), Util.getMillis()));
         registrar.playToClient(FatigueDebugPayload.TYPE, FatigueDebugPayload.STREAM_CODEC,
                 (payload, context) -> ClientFatigue.debug(payload));
+        // The handler only touches ClientTerminal (no client classes), so this is safe on a dedicated server.
+        registrar.playToClient(TerminalStatePayload.TYPE, TerminalStatePayload.STREAM_CODEC,
+                (payload, context) -> ClientTerminal.update(payload.containerId(), payload.state()));
         // The handler only touches ClientNotifications (no client classes), so this is safe on a dedicated server.
         registrar.playToClient(SystemNotificationPayload.TYPE, SystemNotificationPayload.STREAM_CODEC,
                 (payload, context) -> ClientNotifications.QUEUE.push(payload.notification()));

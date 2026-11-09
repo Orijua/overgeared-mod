@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.core.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.capsule.CapsuleBlock;
+import com.orijua.overgearedmod.feature.economy.AccountTerminalBlock;
 import com.orijua.overgearedmod.feature.pagma.GoldenTableBlock;
 import com.orijua.overgearedmod.feature.smelting.SmelterBlock;
 import com.orijua.overgearedmod.feature.smithing.SmithingAnvilBlock;
@@ -43,6 +44,15 @@ public final class ModBlocks {
                     .requiresCorrectToolForDrops()
                     .sound(SoundType.METAL)
                     .noOcclusion());
+
+    // The account terminal: shows the account and the work (feature/economy); works in the real world, like the capsule.
+    public static final DeferredBlock<AccountTerminalBlock> ACCOUNT_TERMINAL = BLOCKS.registerBlock("account_terminal",
+            AccountTerminalBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(3.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.METAL));
 
     // Jaffa ore (canon: the ore Smith teaches Grid to smelt in Bairan). Iron tier: around iron height, a bit rarer, plus
     // guaranteed veins in Bairan's mine (worldgen/placed_feature/ore_jaffa.json + neoforge/biome_modifier).

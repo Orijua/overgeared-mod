@@ -78,6 +78,7 @@ public class OvergearedmodClient {
         NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(SatisfyTooltips::onTooltipColor);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientNotifications.QUEUE.clear());
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> com.orijua.overgearedmod.feature.economy.ClientTerminal.clear());
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientFatigue.debug(com.orijua.overgearedmod.feature.fatigue.FatigueDebugPayload.HIDDEN));
         // A "Connecting…" wait must not outlive the world it started in.
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientCapsule.connecting(0, 0));
@@ -99,6 +100,7 @@ public class OvergearedmodClient {
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.SMITHING_ANVIL.get(), SmithingAnvilScreen::new);
         event.register(ModMenus.SMELTER.get(), SmelterScreen::new);
+        event.register(ModMenus.TERMINAL.get(), com.orijua.overgearedmod.feature.economy.client.TerminalScreen::new);
     }
 
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {

@@ -84,6 +84,18 @@ final class ModRecipeProvider extends RecipeProvider {
                 .define('G', Items.GLASS).define('B', ItemTags.BEDS).define('I', Items.IRON_INGOT).define('R', Items.REDSTONE)
                 .unlockedBy("has_redstone", has(Items.REDSTONE))
                 .save(output, Overgearedmod.id("capsule"));
+        // The account terminal and the phone (own design): glass panes for the screen, iron and redstone for the circuits.
+        // Not satisfyOnly: they are crafted in the real world, where they work.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.ACCOUNT_TERMINAL.get())
+                .pattern("GGG").pattern("IRI").pattern("III")
+                .define('G', Items.GLASS_PANE).define('I', Items.IRON_INGOT).define('R', Items.REDSTONE)
+                .unlockedBy("has_redstone", has(Items.REDSTONE))
+                .save(output, Overgearedmod.id("account_terminal"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PHONE.get())
+                .pattern("G").pattern("R").pattern("I")
+                .define('G', Items.GLASS_PANE).define('I', Items.IRON_INGOT).define('R', Items.REDSTONE)
+                .unlockedBy("has_redstone", has(Items.REDSTONE))
+                .save(output, Overgearedmod.id("phone"));
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SMITHING_ANVIL.get())
                 .pattern("III").pattern(" i ").pattern("iii")
                 .define('I', Items.IRON_BLOCK).define('i', ModItems.MITHRIL_INGOT.get())

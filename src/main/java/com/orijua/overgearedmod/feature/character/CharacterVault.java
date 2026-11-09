@@ -12,6 +12,9 @@ import java.util.Optional;
  * world's character. Saved with the player and kept on death, never synced.
  *
  * <p>The tag is mutable, so every way in and out copies it: nobody shares the vault's tag.
+ *
+ * <p>Nothing but {@link Characters#settle} moves items between the characters. The only documented exception is
+ * {@code TerminalService.convert}, which only takes {@code satisfy_emerald} entries out of the stored inventory.
  */
 public record CharacterVault(Optional<WorldSide> live, Optional<CompoundTag> stored) {
     public static final CharacterVault EMPTY = new CharacterVault(Optional.empty(), Optional.empty());

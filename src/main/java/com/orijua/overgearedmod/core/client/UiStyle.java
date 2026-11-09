@@ -30,6 +30,15 @@ public final class UiStyle {
     private static final int CREST_FILL = 0xFFCFE9FF;
     private static final int CREST_OUTLINE = 0xFF4F7CB0;
 
+    /** The colors of a window: background (top and bottom), the bright and soft lines of the top and bottom edges, and the side lines. */
+    public record Palette(int top, int bottom, int bright, int soft, int side) {
+    }
+
+    /** The Satisfy windows: steel blue with light-blue lines. */
+    public static final Palette SATISFY = new Palette(WINDOW_TOP, WINDOW_BOTTOM, LINE_BRIGHT, LINE_SOFT, SIDE_LINE);
+    /** The real-world devices (terminal, phone): dark grey with cyan lines. */
+    public static final Palette DEVICE = new Palette(0xE02A2F35, 0xE015181C, 0xFF4FE3EC, 0xFF2A9BA3, 0x904FE3EC);
+
     private static final int BAR_BORDER = 0xC09DC4EA;
     private static final int BAR_EMPTY = 0xC01B2A40;
 
@@ -72,11 +81,21 @@ public final class UiStyle {
 
     /** The window without the crest, for small boxes such as buttons. */
     public static void frame(GuiGraphics graphics, int x, int y, int width, int height, float alpha) {
-        graphics.fillGradient(x, y, x + width, y + height, withAlpha(WINDOW_TOP, alpha), withAlpha(WINDOW_BOTTOM, alpha));
-        graphics.fill(x, y, x + 1, y + height, withAlpha(SIDE_LINE, alpha));
-        graphics.fill(x + width - 1, y, x + width, y + height, withAlpha(SIDE_LINE, alpha));
-        int bright = withAlpha(LINE_BRIGHT, alpha);
-        int soft = withAlpha(LINE_SOFT, alpha);
+        frame(graphics, x, y, width, height, alpha, SATISFY);
+    }
+
+    /** A window of a device (no crest), in the {@link #DEVICE} colors. */
+    public static void devicePanel(GuiGraphics graphics, int x, int y, int width, int height) {
+        frame(graphics, x, y, width, height, 1.0f, DEVICE);
+    }
+
+    /** A window without the crest in the colors of {@code palette}. */
+    public static void frame(GuiGraphics graphics, int x, int y, int width, int height, float alpha, Palette palette) {
+        graphics.fillGradient(x, y, x + width, y + height, withAlpha(palette.top(), alpha), withAlpha(palette.bottom(), alpha));
+        graphics.fill(x, y, x + 1, y + height, withAlpha(palette.side(), alpha));
+        graphics.fill(x + width - 1, y, x + width, y + height, withAlpha(palette.side(), alpha));
+        int bright = withAlpha(palette.bright(), alpha);
+        int soft = withAlpha(palette.soft(), alpha);
         graphics.fill(x, y, x + width, y + 1, bright);
         graphics.fill(x + 2, y + 2, x + width - 2, y + 3, soft);
         graphics.fill(x, y + height - 1, x + width, y + height, bright);
@@ -130,6 +149,15 @@ public final class UiStyle {
         graphics.fill(x, y, x + width, y + height, withAlpha(BAR_EMPTY, alpha));
         int filled = Math.round(width * Math.clamp(fraction, 0, 1));
         graphics.fillGradient(x, y, x + filled, y + height, withAlpha(lighter(color), alpha), withAlpha(color, alpha));
+    }
+
+    /** A 9x9 check box in the Satisfy style: soft border, dark translucent inside, a bright square when checked. */
+    public static void checkbox(GuiGraphics graphics, int x, int y, boolean checked) {
+        graphics.fill(x, y, x + 9, y + 9, LINE_SOFT);
+        graphics.fill(x + 1, y + 1, x + 8, y + 8, withAlpha(0xFF1B2A40, 0.75f));
+        if (checked) {
+            graphics.fill(x + 2, y + 2, x + 7, y + 7, LINE_BRIGHT);
+        }
     }
 
     /** {@code color} blended a third of the way to white, keeping its alpha. */

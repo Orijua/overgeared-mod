@@ -8,6 +8,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.config.TradeBalance;
+import com.orijua.overgearedmod.feature.economy.TerminalService;
+import com.orijua.overgearedmod.feature.economy.TerminalState;
 import com.orijua.overgearedmod.feature.economy.TradeKey;
 import com.orijua.overgearedmod.feature.economy.TradeRules;
 import com.orijua.overgearedmod.feature.economy.TradeSaturation;
@@ -114,6 +116,26 @@ public final class DebugCommands {
                                                         Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
                                                 .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
                                                         .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value"))))))
+                        .then(Commands.literal("terminal")
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    TerminalState state = TerminalService.state(player, java.util.Optional.empty());
+                                    Component stored = state.characterAvailable() ? Component.literal(Integer.toString(state.storedEmeralds()))
+                                            : Component.translatable("message.overgearedmod.debug_terminal_no_character");
+                                    Component workDay = state.workDay() == Long.MIN_VALUE
+                                            ? Component.translatable("message.overgearedmod.debug_terminal_never") : Component.literal(Long.toString(state.workDay()));
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal",
+                                            stored, state.order().id() + " x" + state.order().count(), workDay, state.today()), false);
+                                    return 1;
+                                })
+                                .then(Commands.literal("work")
+                                        .then(Commands.literal("reset")
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    player.removeData(ModAttachments.WORK_DAY.get());
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_work_reset"), false);
+                                                    return 1;
+                                                }))))
                                 .then(Commands.literal("fatigue")
                                         .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
                                                 .executes(ctx -> {

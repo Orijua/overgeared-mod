@@ -1,4 +1,5 @@
-// 1.21.1	2026-11-07T16:08:41.983359	Block States: overgearedmod
+// 1.21.1	2026-11-08T22:12:49.6319232	Block States: overgearedmod
+538c1f3ed72bcc022129788cd5a8a147f6cb2906 assets/overgearedmod/blockstates/account_terminal.json
 9db3a670d2026c3b473d88d78183749bf5e33532 assets/overgearedmod/blockstates/blue_orichalcum_ore.json
 66efa6d32f600ef20eeb14c7c01a3e3f35ea2b3d assets/overgearedmod/blockstates/capsule.json
 5fa23022c8e57702e51d4462564fc2639ce409a0 assets/overgearedmod/blockstates/deepslate_blue_orichalcum_ore.json
@@ -9,6 +10,7 @@ e42d3a808545f418705a4544447312a4fe7f9a6e assets/overgearedmod/blockstates/golden
 73704d795b067a750b2b22a31276a36221e7cfeb assets/overgearedmod/blockstates/mithril_ore.json
 179646d0e4211197d325ab29f6dea642b54bfe75 assets/overgearedmod/blockstates/smelter.json
 347a2ed3431a0567068253cced66a77d4a79d6f9 assets/overgearedmod/blockstates/smithing_anvil.json
+3bf61e8b7d1d68d800bd8b0a13ad9e621fec48dd assets/overgearedmod/models/block/account_terminal.json
 1d938b45f396b9165a2832c5458bc6d1bbb007a0 assets/overgearedmod/models/block/blue_orichalcum_ore.json
 5745323fbab5043775ba5d00beca0fd7b262d165 assets/overgearedmod/models/block/capsule.json
 9c952adf5792bd45a9ffe1093afd3e0bce96b376 assets/overgearedmod/models/block/deepslate_blue_orichalcum_ore.json
@@ -20,6 +22,7 @@ dbd4c229a41ed1550ed7f4476af62748a14b6200 assets/overgearedmod/models/block/jaffa
 dcbf36788ff291c6eba3535fb68b7f4d29371687 assets/overgearedmod/models/block/mithril_ore.json
 879edc434194c8bd52733c4256095c8a8abd4661 assets/overgearedmod/models/block/smelter.json
 ba4c7a62b0bd6a092f95228c46510d195b6b9266 assets/overgearedmod/models/block/smelter_on.json
+7e1201d06616f05152f4f121837eb9e07d6ddee9 assets/overgearedmod/models/item/account_terminal.json
 5c7c90f5be5859feeb11be4bed27b137afb328d8 assets/overgearedmod/models/item/blue_orichalcum_ore.json
 39fb0fd94f3539bef400cc3cc85ef693e479a925 assets/overgearedmod/models/item/capsule.json
 4f897fa0621a690325c836be2db6dba4592b0dbe assets/overgearedmod/models/item/deepslate_blue_orichalcum_ore.json

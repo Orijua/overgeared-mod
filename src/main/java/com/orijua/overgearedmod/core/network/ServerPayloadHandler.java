@@ -1,5 +1,9 @@
 package com.orijua.overgearedmod.core.network;
 
+import com.orijua.overgearedmod.feature.economy.TerminalConvertPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalMenu;
+import com.orijua.overgearedmod.feature.economy.TerminalService;
+import com.orijua.overgearedmod.feature.economy.TerminalWorkPayload;
 import com.orijua.overgearedmod.feature.economy.TradeSellPayload;
 import com.orijua.overgearedmod.feature.economy.TradeService;
 import com.orijua.overgearedmod.feature.npc.ApprenticeActionPayload;
@@ -137,12 +141,34 @@ final class ServerPayloadHandler {
         }
     }
 
-    /** From the Trade tab: sells or exports a piece of the sender. The Satisfy gate (BUG-050) is in {@code TradeService.sell}. */
+    /** From the Trade tab: sells the pieces the sender chose, in one batch. The Satisfy gate (BUG-050) is in {@code TradeService.sell}. */
     static void tradeSell(TradeSellPayload payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) {
             return;
         }
         TradeService.message(TradeService.sell(player, payload)).ifPresent(message -> player.displayClientMessage(message, true));
+    }
+
+    /** From the terminal's window: converts stored emeralds. The window gets a fresh state with the result, also when it is refused. */
+    static void terminalConvert(TerminalConvertPayload payload, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        TerminalService.Outcome outcome = TerminalService.convert(player, payload);
+        if (player.containerMenu instanceof TerminalMenu menu && menu.containerId == payload.containerId() && menu.stillValid(player)) {
+            TerminalService.sendState(player, menu, TerminalService.message(outcome));
+        }
+    }
+
+    /** From the terminal's window: does today's shift. */
+    static void terminalWork(TerminalWorkPayload payload, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        TerminalService.Outcome outcome = TerminalService.work(player, payload);
+        if (player.containerMenu instanceof TerminalMenu menu && menu.containerId == payload.containerId() && menu.stillValid(player)) {
+            TerminalService.sendState(player, menu, TerminalService.message(outcome));
+        }
     }
 
     /** From an apprentice's window: only his master, standing near him. */

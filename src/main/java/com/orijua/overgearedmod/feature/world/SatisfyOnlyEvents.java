@@ -18,7 +18,8 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 /**
  * Keeps the mod's objects inert in the real world (see {@link SatisfyOnly}): they can't be placed or used with right
- * click (nor can its entities), and the passive bonuses are refreshed when the player changes dimension. Also tells the game-test server
+ * click (nor can its entities; the capsule, terminal and phone are the exceptions), and the passive bonuses are refreshed when
+ * the player changes dimension. Also tells the game-test server
  * which level plays Satisfy by default.
  */
 public final class SatisfyOnlyEvents {

@@ -49,6 +49,11 @@ final class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.CAPSULE.get(), capsule);
         simpleBlockItem(ModBlocks.CAPSULE.get(), capsule);
 
+        // The account terminal: an iron box with a glass front, until it has its own art.
+        ModelFile terminal = models().orientable("account_terminal", mcLoc("block/iron_block"), mcLoc("block/light_blue_stained_glass"), mcLoc("block/iron_block"));
+        horizontalBlock(ModBlocks.ACCOUNT_TERMINAL.get(), terminal);
+        simpleBlockItem(ModBlocks.ACCOUNT_TERMINAL.get(), terminal);
+
         // The golden table: a gold-block table, with Pagma's book lying on it until taken.
         ModelFile table = goldenTable("golden_table", false);
         ModelFile tableWithBook = goldenTable("golden_table_book", true);

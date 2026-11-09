@@ -126,6 +126,20 @@ public final class ModAttachments {
             serverData("starter_capsule_given", () -> false, Codec.BOOL);
 
     /**
+     * The game day of the terminal's last work shift ({@link Long#MIN_VALUE}: never). Server-only (the terminal's state
+     * carries it to the screen), kept on death and cleared by {@link #resetAll}.
+     */
+    public static final Supplier<AttachmentType<Long>> WORK_DAY =
+            serverData("work_day", () -> Long.MIN_VALUE, Codec.LONG);
+
+    /**
+     * Whether the player already got their phone (see economy.TerminalService#giveIfMissing). Server-only, kept on death
+     * and cleared by {@link #resetAll}.
+     */
+    public static final Supplier<AttachmentType<Boolean>> PHONE_GIVEN =
+            serverData("phone_given", () -> false, Codec.BOOL);
+
+    /**
      * The two characters: which world's things the player carries and the snapshot of the other's (see
      * character.CharacterVault). Server-only, kept on death, and NOT cleared by {@link #resetAll}: they are the
      * player's belongings, not progress.
