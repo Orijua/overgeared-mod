@@ -118,11 +118,12 @@ public class OvergearedmodClient {
         event.registerAbove(Overgearedmod.id("mana"), Overgearedmod.id("xp"), satisfyOnly(new XpHudLayer()));
         // The energy bar also shows in the real world, where it refills.
         event.registerAbove(Overgearedmod.id("xp"), Overgearedmod.id("fatigue"), new FatigueHudLayer());
-        event.registerAbove(Overgearedmod.id("system_notification"), Overgearedmod.id("fatigue_grace"), new FatigueGraceLayer());
         event.registerAboveAll(Overgearedmod.id("fatigue_debug"), new FatigueDebugLayer());
         event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), satisfyOnly(new SkillSlotsHudLayer()));
         event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), satisfyOnly(new QuestTrackerHudLayer()));
         event.registerAbove(Overgearedmod.id("quest_tracker"), Overgearedmod.id("system_notification"), satisfyOnly(new SystemNotificationHudLayer()));
+        // A layer can only be ordered against one already registered: this one must come after system_notification.
+        event.registerAbove(Overgearedmod.id("system_notification"), Overgearedmod.id("fatigue_grace"), new FatigueGraceLayer());
         event.registerAboveAll(Overgearedmod.id("capsule_connecting"), new CapsuleConnectingLayer());
     }
 

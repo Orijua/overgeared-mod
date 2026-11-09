@@ -123,7 +123,7 @@ public final class Config {
             .comment("Share of the normal drain paid while standing still.")
             .defineInRange("restMultiplier", F.restMultiplier(), 0.0, 10.0);
     private static final ModConfigSpec.DoubleValue FATIGUE_COMBAT_MULTIPLIER = BUILDER
-            .comment("Multiplier of the normal drain while fighting (damage given or taken in the last 10 seconds).")
+            .comment("Multiplier of the normal drain while fighting (damage given or taken in the last 10 seconds). Working at an anvil or a smelter costs the same.")
             .defineInRange("combatMultiplier", F.combatMultiplier(), 0.0, 10.0);
     private static final ModConfigSpec.DoubleValue FATIGUE_FORGE_COST_SECONDS = BUILDER
             .comment("Seconds of normal play that each forged item costs.")

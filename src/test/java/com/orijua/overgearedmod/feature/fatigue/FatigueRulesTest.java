@@ -27,7 +27,7 @@ class FatigueRulesTest {
 
     @Test
     void restingDoublesAndFightingHalvesTheSession() {
-        assertEquals(80 * 60, secondsToEmpty(Activity.REST), 1.0);
+        assertEquals(50 * 60, secondsToEmpty(Activity.REST), 1.0, "40 min / 0.8");
         assertEquals(20 * 60, secondsToEmpty(Activity.COMBAT), 1.0);
     }
 
@@ -154,5 +154,30 @@ class FatigueRulesTest {
         assertTrue(FatigueRules.isResting(0.2499));
         assertFalse(FatigueRules.isResting(0.25), "exactly half a block squared is already moving");
         assertFalse(FatigueRules.isResting(9.0));
+    }
+
+    @Test
+    void standingStillCostsMostOfTheNormalDrain() {
+        assertEquals(0.8, FatigueBalance.DEFAULT.restMultiplier(), 1e-9);
+    }
+
+    @Test
+    void workingAtAnAnvilOrSmelterCostsAsCombatEvenStandingStill() {
+        assertEquals(Activity.COMBAT, FatigueRules.activity(false, true, 1000, java.util.OptionalLong.empty(), true, 0.0));
+        assertEquals(Activity.COMBAT, FatigueRules.activity(true, false, 1000, java.util.OptionalLong.empty(), true, 0.0));
+    }
+
+    @Test
+    void miningIsWorkNotRestForTheWorkWindow() {
+        java.util.OptionalLong broke = java.util.OptionalLong.of(1000);
+        assertEquals(Activity.NORMAL, FatigueRules.activity(false, false, 1000 + FatigueRules.WORK_WINDOW_TICKS - 1, broke, true, 0.0));
+        assertEquals(Activity.REST, FatigueRules.activity(false, false, 1000 + FatigueRules.WORK_WINDOW_TICKS, broke, true, 0.0));
+    }
+
+    @Test
+    void stillIsRestMovingIsNormalAndTheFirstSecondIsNormal() {
+        assertEquals(Activity.REST, FatigueRules.activity(false, false, 0, java.util.OptionalLong.empty(), true, 0.1));
+        assertEquals(Activity.NORMAL, FatigueRules.activity(false, false, 0, java.util.OptionalLong.empty(), true, 1.0));
+        assertEquals(Activity.NORMAL, FatigueRules.activity(false, false, 0, java.util.OptionalLong.empty(), false, 0.0));
     }
 }

@@ -19,6 +19,8 @@ public final class FatigueRules {
     public static final int COMBAT_WINDOW_TICKS = 200;
     public static final int PROTECTION_TICKS = 200;
     public static final double REST_MAX_MOVE_SQUARED = 0.25;
+    /** Breaking a block counts as normal play (not rest) for this long, even standing still: mining is work. */
+    public static final int WORK_WINDOW_TICKS = 60;
 
     private FatigueRules() {
     }
@@ -37,6 +39,20 @@ public final class FatigueRules {
     /** Whether damage was dealt or taken within the combat window. A tick in the future counts as combat. */
     public static boolean inCombat(long nowTick, java.util.OptionalLong lastCombatTick) {
         return lastCombatTick.isPresent() && nowTick - lastCombatTick.getAsLong() < COMBAT_WINDOW_TICKS;
+    }
+
+    /**
+     * What the player is doing: fighting, or working at an anvil or a smelter, costs as combat (forging is hard physical work);
+     * standing still is rest unless they broke a block within the work window (mining is work); anything else is normal.
+     * A tick in the future counts as recent.
+     */
+    public static Activity activity(boolean inCombat, boolean atWorkstation, long nowTick, java.util.OptionalLong lastBreakTick,
+                                    boolean measured, double distanceSquared) {
+        if (inCombat || atWorkstation) {
+            return Activity.COMBAT;
+        }
+        boolean mining = lastBreakTick.isPresent() && nowTick - lastBreakTick.getAsLong() < WORK_WINDOW_TICKS;
+        return measured && isResting(distanceSquared) && !mining ? Activity.REST : Activity.NORMAL;
     }
 
     /** Whether a player who moved {@code distanceSquared} blocks (squared) in the last second counts as resting. */
