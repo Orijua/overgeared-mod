@@ -234,9 +234,10 @@ public class TradeTab extends SatisfyTab {
         Account account = player().getData(ModAttachments.ACCOUNT.get());
         long won = account.won();
         int emeralds = player().getInventory().countItem(ModItems.SATISFY_EMERALD.get());
-        UiStyle.heading(graphics, font(), account.debtState() == DebtState.ACTIVE
+        Component title = account.debtState() == DebtState.ACTIVE
                 ? Component.translatable("screen.overgearedmod.trade.balance_debt", won, emeralds, account.debt())
-                : Component.translatable("screen.overgearedmod.trade.balance", won, emeralds), left, top);
+                : Component.translatable("screen.overgearedmod.trade.balance", won, emeralds);
+        UiStyle.heading(graphics, font(), UiStyle.ellipsize(font(), title, width), left, top);
 
         List<Integer> slots = slots();
         if (slots.isEmpty()) {

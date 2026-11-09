@@ -188,7 +188,8 @@ public final class DebugCommands {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                     Account account = AccountService.get(player);
                                     ctx.getSource().sendSuccess(() -> Component.translatable(
-                                            "message.overgearedmod.debug_account", account.won(), account.debt()), false);
+                                            "message.overgearedmod.debug_account", account.won(), account.debt(),
+                                            Component.translatable("message.overgearedmod.debug_debt_state." + account.debtState().getSerializedName())), false);
                                     return 1;
                                 }))
                         .then(Commands.literal("debt")

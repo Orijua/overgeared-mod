@@ -16,7 +16,7 @@ public record Account(long won, long debt, DebtState debtState) {
     public static final Codec<Account> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.LONG.optionalFieldOf("won", 0L).forGetter(Account::won),
             Codec.LONG.optionalFieldOf("debt", 0L).forGetter(Account::debt),
-            DebtState.CODEC.optionalFieldOf("debt_state", DebtState.UNASSIGNED).forGetter(Account::debtState)
+            DebtState.CODEC.lenientOptionalFieldOf("debt_state", DebtState.UNASSIGNED).forGetter(Account::debtState)
     ).apply(instance, Account::new));
 
     public static final StreamCodec<ByteBuf, Account> STREAM_CODEC = ByteBufCodecs.fromCodec(CODEC);

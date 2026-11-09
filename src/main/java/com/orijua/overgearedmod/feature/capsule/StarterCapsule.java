@@ -41,8 +41,11 @@ public final class StarterCapsule {
             player.drop(capsule, false);
         }
         long debt = DebtBalance.current().starterDebt();
-        AccountService.assignStarterDebt(player, debt);
-        player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter", debt));
+        if (AccountService.assignStarterDebt(player, debt)) {
+            player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter", debt));
+        } else {
+            player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter_free"));
+        }
         return true;
     }
 }

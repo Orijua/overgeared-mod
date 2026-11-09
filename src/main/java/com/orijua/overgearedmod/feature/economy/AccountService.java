@@ -28,9 +28,11 @@ public final class AccountService {
         write(player, get(player).withWon(won));
     }
 
-    /** Takes the starter debt, only if it was never assigned (any other state stays); one write. */
-    public static void assignStarterDebt(ServerPlayer player, long amount) {
-        write(player, AccountRules.withStarterDebt(get(player), amount));
+    /** Takes the starter debt, only if it was never assigned (any other state stays); one write. Returns whether it was taken now. */
+    public static boolean assignStarterDebt(ServerPlayer player, long amount) {
+        Account before = get(player);
+        write(player, AccountRules.withStarterDebt(before, amount));
+        return before.debtState() == DebtState.UNASSIGNED;
     }
 
     /**
