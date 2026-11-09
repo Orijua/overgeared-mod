@@ -24,6 +24,8 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.SMITHING_ANVIL);
                         output.accept(ModItems.SMELTER);
                         output.accept(ModItems.CAPSULE);
+                        output.accept(ModItems.ACCOUNT_TERMINAL);
+                        output.accept(ModItems.PHONE);
                         output.accept(ModItems.JAFFA_ORE);
                         output.accept(ModItems.DEEPSLATE_JAFFA_ORE);
                         output.accept(ModItems.RAW_JAFFA);
@@ -97,6 +99,8 @@ public final class ModCreativeTabs {
             event.accept(ModItems.SMITHING_ANVIL);
             event.accept(ModItems.SMELTER);
             event.accept(ModItems.CAPSULE);
+            event.accept(ModItems.ACCOUNT_TERMINAL);
+            event.accept(ModItems.PHONE);
             event.accept(ModItems.GOLDEN_TABLE);
         }
     }

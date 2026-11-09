@@ -46,6 +46,9 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
         vanillaTexture(ModItems.BLUE_ORICHALCUM_INGOT.get(), "prismarine_shard");
 
+        // The phone borrows a dark glass block as its texture until it has its own art.
+        withExistingParent("phone", mcLoc("item/generated")).texture("layer0", mcLoc("block/black_stained_glass"));
+
         withExistingParent(ModItems.BLACKSMITH_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.VILLAGE_CHIEF_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.BONE_LORD_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));

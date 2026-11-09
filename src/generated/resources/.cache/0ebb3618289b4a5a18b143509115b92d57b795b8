@@ -1,4 +1,4 @@
-// 1.21.1	2026-11-08T15:43:17.615911769	Item Models: overgearedmod
+// 1.21.1	2026-11-08T22:12:49.6329675	Item Models: overgearedmod
 9186aec3aa11a45a2b24103e84126c200f2ac5c2 assets/overgearedmod/models/item/apprentice_contract.json
 63ec6c618a3a23eab4cab9c52d7d3250de9b516e assets/overgearedmod/models/item/blacksmith_spawn_egg.json
 66063b17cb93c7336607cef31749a6f0ec6dd344 assets/overgearedmod/models/item/blue_orichalcum_ingot.json
@@ -17,6 +17,7 @@ b9f9b08cd7830606c872f51d4ae3b57b931ed6e7 assets/overgearedmod/models/item/iron_s
 3ad6d1692d38e6f080de1c0f9e4b2c0a568a3803 assets/overgearedmod/models/item/mithril_ingot.json
 fe0f6ac0785fed36a419ca2049808d9559d6b9db assets/overgearedmod/models/item/mithril_smithing_hammer.json
 720c0fe90cdc0bd24ae2f2756d2dfadf64463274 assets/overgearedmod/models/item/pagma_rare_book.json
+03056a82207725e1d1488f0fb2c2f67a83ebf82b assets/overgearedmod/models/item/phone.json
 e6714200cb967290f51d4a480150fdcd7fd165a9 assets/overgearedmod/models/item/raw_blue_orichalcum.json
 3c6e848570952e236e3f0c7b64e4adcba243d661 assets/overgearedmod/models/item/raw_jaffa.json
 9432ed90011c59cc0d6d4dbf3ef836509e4c2f15 assets/overgearedmod/models/item/raw_mithril.json

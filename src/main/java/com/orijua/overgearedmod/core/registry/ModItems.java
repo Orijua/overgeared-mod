@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.core.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.feature.economy.PhoneItem;
 import com.orijua.overgearedmod.feature.insight.InsightSwordItem;
 import com.orijua.overgearedmod.feature.npc.ApprenticeContractItem;
 import com.orijua.overgearedmod.feature.npc.WorkshopLedgerItem;
@@ -95,6 +96,9 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
     public static final DeferredItem<BlockItem> SMELTER = ITEMS.registerSimpleBlockItem(ModBlocks.SMELTER);
     public static final DeferredItem<BlockItem> CAPSULE = ITEMS.registerSimpleBlockItem(ModBlocks.CAPSULE);
+    public static final DeferredItem<BlockItem> ACCOUNT_TERMINAL = ITEMS.registerSimpleBlockItem(ModBlocks.ACCOUNT_TERMINAL);
+    // The phone: reaches the account and the work from anywhere in the real world (feature/economy).
+    public static final DeferredItem<PhoneItem> PHONE = ITEMS.registerItem("phone", PhoneItem::new, new Item.Properties().stacksTo(1));
 
     public static final DeferredItem<Item> ENHANCEMENT_STONE = ITEMS.registerSimpleItem("enhancement_stone");
 

@@ -35,6 +35,18 @@ public final class CharacterSnapshot {
     private CharacterSnapshot() {
     }
 
+    /** The saved inventory list of a snapshot (empty if it has none); the tag is shared, so copy before changing. */
+    public static ListTag inventory(CompoundTag snapshot) {
+        return snapshot.getList(INVENTORY, Tag.TAG_COMPOUND);
+    }
+
+    /** A copy of the snapshot with its inventory list replaced by {@code inventory}; everything else is the same. */
+    public static CompoundTag withInventory(CompoundTag snapshot, ListTag inventory) {
+        CompoundTag copy = snapshot.copy();
+        copy.put(INVENTORY, inventory.copy());
+        return copy;
+    }
+
     /** Reads the player; changes nothing. */
     public static CompoundTag capture(ServerPlayer player) {
         HolderLookup.Provider provider = player.registryAccess();

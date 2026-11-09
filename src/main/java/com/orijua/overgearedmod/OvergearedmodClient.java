@@ -78,6 +78,7 @@ public class OvergearedmodClient {
         NeoForge.EVENT_BUS.addListener(MobLevelNameTags::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(SatisfyTooltips::onTooltipColor);
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientNotifications.QUEUE.clear());
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> com.orijua.overgearedmod.feature.economy.ClientTerminal.clear());
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientFatigue.debug(com.orijua.overgearedmod.feature.fatigue.FatigueDebugPayload.HIDDEN));
         // A "Connecting…" wait must not outlive the world it started in.
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> ClientCapsule.connecting(0, 0));
@@ -99,6 +100,7 @@ public class OvergearedmodClient {
     private static void onRegisterScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.SMITHING_ANVIL.get(), SmithingAnvilScreen::new);
         event.register(ModMenus.SMELTER.get(), SmelterScreen::new);
+        event.register(ModMenus.TERMINAL.get(), com.orijua.overgearedmod.feature.economy.client.TerminalScreen::new);
     }
 
     private static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
@@ -118,11 +120,12 @@ public class OvergearedmodClient {
         event.registerAbove(Overgearedmod.id("mana"), Overgearedmod.id("xp"), satisfyOnly(new XpHudLayer()));
         // The energy bar also shows in the real world, where it refills.
         event.registerAbove(Overgearedmod.id("xp"), Overgearedmod.id("fatigue"), new FatigueHudLayer());
-        event.registerAbove(Overgearedmod.id("system_notification"), Overgearedmod.id("fatigue_grace"), new FatigueGraceLayer());
         event.registerAboveAll(Overgearedmod.id("fatigue_debug"), new FatigueDebugLayer());
         event.registerAbove(VanillaGuiLayers.HOTBAR, Overgearedmod.id("skill_slots"), satisfyOnly(new SkillSlotsHudLayer()));
         event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, Overgearedmod.id("quest_tracker"), satisfyOnly(new QuestTrackerHudLayer()));
         event.registerAbove(Overgearedmod.id("quest_tracker"), Overgearedmod.id("system_notification"), satisfyOnly(new SystemNotificationHudLayer()));
+        // A layer can only be ordered against one already registered: this one must come after system_notification.
+        event.registerAbove(Overgearedmod.id("system_notification"), Overgearedmod.id("fatigue_grace"), new FatigueGraceLayer());
         event.registerAboveAll(Overgearedmod.id("capsule_connecting"), new CapsuleConnectingLayer());
     }
 

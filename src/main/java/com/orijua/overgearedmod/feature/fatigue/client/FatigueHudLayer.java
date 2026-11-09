@@ -6,6 +6,7 @@ import com.orijua.overgearedmod.core.config.ClientConfig;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.fatigue.ClientFatigue;
+import com.orijua.overgearedmod.feature.fatigue.FatigueRules;
 import net.minecraft.Util;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -28,6 +29,25 @@ public final class FatigueHudLayer implements LayeredDraw.Layer {
     private static final int LOW = UiStyle.COOLDOWN;
     private static final int CRITICAL = 0xFFFF6B6B;
 
+    /** The color of the bars for a level; the terminal uses it too, so both warn the same. */
+    public static int colorFor(FatigueRules.Level level) {
+        return switch (level) {
+            case CRITICAL -> CRITICAL;
+            case LOW -> LOW;
+            case NORMAL -> COLOR;
+        };
+    }
+
+    /** The color of the bars for an energy against the configured thresholds. */
+    public static int colorFor(float energy, FatigueBalance balance) {
+        return colorFor(FatigueRules.level(energy, balance.warnAt()));
+    }
+
+    /** The energy as the player reads it ("80 %"), shared by the HUD and the terminal. */
+    public static Component energyText(float energy) {
+        return Component.translatable("hud.overgearedmod.fatigue", Math.round(energy * 100));
+    }
+
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -42,11 +62,10 @@ public final class FatigueHudLayer implements LayeredDraw.Layer {
         if (mode == ClientFatigue.Display.HIDDEN || (mode == ClientFatigue.Display.AUTO && percent >= 100)) {
             return;
         }
-        double low = balance.warnAt().isEmpty() ? 0.25 : balance.warnAt().get(0);
-        double critical = balance.warnAt().size() < 2 ? 0.10 : balance.warnAt().get(1);
-        int color = energy <= critical ? CRITICAL : energy <= low ? LOW : COLOR;
+        FatigueRules.Level level = FatigueRules.level(energy, balance.warnAt());
+        int color = colorFor(level);
         // Flashes when about to run out.
-        float alpha = energy <= critical && energy > 0 && (Util.getMillis() / 300) % 2 == 0 ? 0.45f : 1.0f;
+        float alpha = level == FatigueRules.Level.CRITICAL && energy > 0 && (Util.getMillis() / 300) % 2 == 0 ? 0.45f : 1.0f;
 
         Gui gui = minecraft.gui;
         int left = graphics.guiWidth() / 2 + 91 - WIDTH;
@@ -54,7 +73,7 @@ public final class FatigueHudLayer implements LayeredDraw.Layer {
         gui.rightHeight += ROW_HEIGHT;
 
         UiStyle.bar(graphics, left, top, WIDTH, 5, energy, color, alpha);
-        Component text = Component.translatable("hud.overgearedmod.fatigue", percent);
+        Component text = energyText(energy);
         UiStyle.text(graphics, minecraft.font, text, left - 4 - minecraft.font.width(text), top - 2, UiStyle.withAlpha(color, alpha));
     }
 }

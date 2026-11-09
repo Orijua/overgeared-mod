@@ -4,11 +4,14 @@ import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.feature.equipment.EquipmentBonuses;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.item.Tiers;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,9 +53,27 @@ public final class TradeGoods {
                 EquipmentBonuses.isWeapon(stack), balance);
     }
 
-    /** What the stack pays in {@code mode} today, with the pressure the saturation has on its key. */
-    public static long price(ItemStack stack, TradeMode mode, TradeSaturation saturation, long today, TradeBalance balance) {
+    /** What the stack pays today in Satisfy emeralds, with the pressure the saturation has on its key. */
+    public static long price(ItemStack stack, TradeSaturation saturation, long today, TradeBalance balance) {
         int pressure = saturation.pressure(key(stack), today, balance);
-        return TradeRules.price(mode, reference(stack, balance), pressure, balance);
+        return TradeRules.sellPrice(reference(stack, balance), pressure, balance);
+    }
+
+    /**
+     * The price of each stack of a batch sold in this order, each with the pressure the previous ones leave. The only source
+     * of the price and the total, for the client and for the server. Every stack must be tradable ({@link #refusal} empty).
+     */
+    public static long[] salePrices(List<ItemStack> stacks, TradeSaturation saturation, long today, TradeBalance balance) {
+        List<TradeRules.Piece> pieces = new ArrayList<>(stacks.size());
+        for (ItemStack stack : stacks) {
+            pieces.add(new TradeRules.Piece(key(stack), reference(stack, balance)));
+        }
+        return TradeRules.sellPrices(pieces, saturation, today, balance);
+    }
+
+    /** The slots of the main inventory (hotbar included) with a piece that can be sold, ascending. */
+    public static List<Integer> sellableSlots(Inventory inventory) {
+        return TradeRules.sellableSlots(Inventory.INVENTORY_SIZE, slot -> inventory.getItem(slot).isEmpty(),
+                slot -> refusal(inventory.getItem(slot)));
     }
 }

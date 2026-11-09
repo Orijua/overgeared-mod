@@ -21,6 +21,7 @@ import com.orijua.overgearedmod.core.validation.ContentValidationEvents;
 import com.orijua.overgearedmod.datagen.ModDataGenerators;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.economy.TerminalService;
 import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.capsule.StarterCapsule;
 import com.orijua.overgearedmod.feature.capsule.LogoutService;
@@ -115,6 +116,7 @@ public class Overgearedmod {
         StarterCapsule.register(NeoForge.EVENT_BUS);
         WorldSeparation.register(NeoForge.EVENT_BUS);
         Characters.register(NeoForge.EVENT_BUS);
+        TerminalService.register(NeoForge.EVENT_BUS);
         FatigueService.register(NeoForge.EVENT_BUS);
         SatisfyOnlyEvents.register(NeoForge.EVENT_BUS);
         LogoutService.register(NeoForge.EVENT_BUS);

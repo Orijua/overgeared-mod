@@ -103,6 +103,19 @@ public final class FatigueRules {
         return Double.isNaN(lowest) ? OptionalDouble.empty() : OptionalDouble.of(lowest);
     }
 
+    /** How worrying the energy is, for the colour of the bars (HUD and terminal). */
+    public enum Level { NORMAL, LOW, CRITICAL }
+
+    /**
+     * The level of an energy against the warning thresholds, as {@link FatigueBalance#warnAt()} gives them (descending:
+     * the first is "low", the second "critical"; 0.25 and 0.10 when missing). A threshold counts when the energy is at or below it.
+     */
+    public static Level level(double energy, java.util.List<Double> warnAt) {
+        double low = warnAt.isEmpty() ? 0.25 : warnAt.get(0);
+        double critical = warnAt.size() < 2 ? 0.10 : warnAt.get(1);
+        return energy <= critical ? Level.CRITICAL : energy <= low ? Level.LOW : Level.NORMAL;
+    }
+
     /** Whether the capsule lets the player connect (compared as floats, like the saved energy). With the fatigue off, always. */
     public static boolean canConnect(FatigueBalance b, double energy) {
         return !b.enabled() || (float) energy >= (float) b.minEnergyToConnect();

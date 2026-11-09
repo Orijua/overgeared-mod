@@ -21,6 +21,17 @@ class FatigueRulesTest {
     }
 
     @Test
+    void theLevelFollowsTheWarningThresholds() {
+        List<Double> warn = List.of(0.25, 0.10, 0.05);
+        assertEquals(FatigueRules.Level.NORMAL, FatigueRules.level(0.5, warn));
+        assertEquals(FatigueRules.Level.LOW, FatigueRules.level(0.25, warn), "the border is included");
+        assertEquals(FatigueRules.Level.CRITICAL, FatigueRules.level(0.10, warn));
+        assertEquals(FatigueRules.Level.NORMAL, FatigueRules.level(0.3, List.of()), "default thresholds");
+        assertEquals(FatigueRules.Level.LOW, FatigueRules.level(0.2, List.of()));
+        assertEquals(FatigueRules.Level.CRITICAL, FatigueRules.level(0.05, List.of(0.25)), "default critical 0.10 when only one is given");
+    }
+
+    @Test
     void aNormalSessionLastsFortyMinutes() {
         assertEquals(40 * 60, secondsToEmpty(Activity.NORMAL), 1.0);
     }

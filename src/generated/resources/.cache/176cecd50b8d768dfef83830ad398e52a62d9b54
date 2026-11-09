@@ -1,6 +1,6 @@
-// 1.21.1	2026-11-07T16:08:41.9805696	Tags for minecraft:block mod id overgearedmod
+// 1.21.1	2026-11-08T22:12:49.6309241	Tags for minecraft:block mod id overgearedmod
 798ab0955570a33342e1301ecb419814fffe0248 data/c/tags/block/ores.json
-6d831cf95bead97f9fd3dce1687a9e4109ac9fe1 data/minecraft/tags/block/mineable/pickaxe.json
+a4e31a147facdc4cf43e0701e800a1c4f307764f data/minecraft/tags/block/mineable/pickaxe.json
 645a93a204b8ddfa3bfd3bfb998f30b56f439124 data/minecraft/tags/block/needs_diamond_tool.json
 6348cb2592b5e338f59aff6a279c174c72dc502a data/minecraft/tags/block/needs_iron_tool.json
 4281cfa389526ad01be8dfca462e84c8dcc4a6d0 data/minecraft/tags/block/needs_stone_tool.json

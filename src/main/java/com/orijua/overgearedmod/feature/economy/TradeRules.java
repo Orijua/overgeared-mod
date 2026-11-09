@@ -4,19 +4,21 @@ import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import net.minecraft.network.chat.Component;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 
 /**
  * The numbers of the trade, pure. Prices round down (the 1e-9 only absorbs floating point noise, so 3800.0000000001 or
- * 3799.9999999999 both mean 3800). The saturation is shared by selling and exporting.
+ * 3799.9999999999 both mean 3800).
  */
 public final class TradeRules {
     /** Ticks in a game day. */
     public static final long DAY_TICKS = 24000L;
-    private static final double EPSILON = 1e-9;
-
     private TradeRules() {
     }
 
@@ -46,7 +48,7 @@ public final class TradeRules {
     public static long reference(ItemRating rating, double material, int enhancement, boolean weapon, TradeBalance balance) {
         double levels = weapon ? Math.max(0, enhancement) : 0;
         double value = balance.basePrice().getOrDefault(rating, 1) * material * (1.0 + balance.enhancementBonus() * levels);
-        return Math.max(1L, (long) Math.floor(value + EPSILON));
+        return Math.max(1L, Money.floor(value));
     }
 
     /** The price factor for a pressure: one step per point, never below the floor; a negative pressure is none. */
@@ -60,17 +62,7 @@ public final class TradeRules {
     /** Satisfy emeralds for a piece, at least 1. */
     public static long sellPrice(long reference, int pressure, TradeBalance balance) {
         double value = reference * balance.sellShare() * saturation(pressure, balance);
-        return Math.max(1L, (long) Math.floor(value + EPSILON));
-    }
-
-    /** Won for a piece, after the commission. */
-    public static long exportPrice(long reference, int pressure, TradeBalance balance) {
-        double value = reference * (double) balance.wonPerReference() * (1.0 - balance.exportCommission()) * saturation(pressure, balance);
-        return Math.max(0L, (long) Math.floor(value + EPSILON));
-    }
-
-    public static long price(TradeMode mode, long reference, int pressure, TradeBalance balance) {
-        return mode == TradeMode.SELL ? sellPrice(reference, pressure, balance) : exportPrice(reference, pressure, balance);
+        return Math.max(1L, Money.floor(value));
     }
 
     /**
@@ -90,16 +82,13 @@ public final class TradeRules {
         return (int) Math.max(0L, pressure - drop);
     }
 
-    /** Whether the price can be paid: at least 1, and a sale (emeralds) not above the cap of the balance. */
-    public static boolean payable(TradeMode mode, long price, TradeBalance balance) {
-        return price >= 1 && (mode != TradeMode.SELL || price <= balance.maxSellEmeralds());
+    /** Whether the price can be paid: at least 1 and not above the cap of the balance. */
+    public static boolean payable(long price, TradeBalance balance) {
+        return price >= 1 && price <= balance.maxSellEmeralds();
     }
 
-    /** The parts a payment is delivered in: one for an export, stacks of {@code maxStack} and the rest for a sale. Only for payable prices. */
-    public static long[] payments(TradeMode mode, long price, int maxStack) {
-        if (mode == TradeMode.EXPORT) {
-            return new long[]{price};
-        }
+    /** The parts a payment is delivered in: stacks of {@code maxStack} and the rest. Only for payable prices. */
+    public static long[] payments(long price, int maxStack) {
         int stacks = (int) ((price + maxStack - 1) / maxStack);
         long[] parts = new long[stacks];
         long left = price;
@@ -110,9 +99,59 @@ public final class TradeRules {
         return parts;
     }
 
-    /** The export commission as text for the player: "5" for 0.05, "2.5" for 0.025. */
-    public static String commissionPercent(TradeBalance balance) {
-        return BigDecimal.valueOf(balance.exportCommission() * 100).setScale(1, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
+    /** A piece of a batch as the price sees it: its saturation key and its reference price. */
+    public record Piece(TradeKey key, long reference) {
+    }
+
+    /**
+     * The price of each piece of a batch sold in order: every piece is priced with the pressure left by the ones before it
+     * (same key = lower price). Pure: the saturation it receives is not changed.
+     */
+    public static long[] sellPrices(List<Piece> pieces, TradeSaturation saturation, long today, TradeBalance balance) {
+        long[] prices = new long[pieces.size()];
+        TradeSaturation current = saturation;
+        for (int i = 0; i < prices.length; i++) {
+            Piece piece = pieces.get(i);
+            prices[i] = sellPrice(piece.reference(), current.pressure(piece.key(), today, balance), balance);
+            current = current.recordSale(piece.key(), today, balance);
+        }
+        return prices;
+    }
+
+    public static long total(long[] prices) {
+        long sum = 0L;
+        for (long price : prices) {
+            sum += price;
+        }
+        return sum;
+    }
+
+    /** Most pieces one order can carry. It matches the size of the inventory on purpose (pinned by a test). */
+    public static final int MAX_BATCH = 36;
+
+    /** Whether the slots of an order make sense: 1 to {@link #MAX_BATCH} entries, each below {@code inventorySize} and none twice. */
+    public static boolean validBatch(List<Integer> slots, int inventorySize) {
+        if (slots.isEmpty() || slots.size() > MAX_BATCH) {
+            return false;
+        }
+        Set<Integer> seen = new HashSet<>();
+        for (int slot : slots) {
+            if (slot < 0 || slot >= inventorySize || !seen.add(slot)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** The slots (ascending) with a piece that can be sold: not empty and with no refusal. */
+    public static List<Integer> sellableSlots(int size, IntPredicate empty, IntFunction<Optional<Refusal>> refusal) {
+        List<Integer> slots = new ArrayList<>();
+        for (int slot = 0; slot < size; slot++) {
+            if (!empty.test(slot) && refusal.apply(slot).isEmpty()) {
+                slots.add(slot);
+            }
+        }
+        return slots;
     }
 
     /** The saturation factor as a whole percent, the number the player sees. */

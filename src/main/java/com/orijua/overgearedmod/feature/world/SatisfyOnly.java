@@ -6,16 +6,22 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.Set;
+
 /**
  * What only works in Satisfy. The real world is any dimension that is not Satisfy ({@link Satisfy#is}); there the mod's
- * objects are inert (they can't be placed or used). The only exception is the capsule, which is how you get to Satisfy.
+ * objects are inert (they can't be placed or used). The exceptions are the capsule (how you get to Satisfy) and the
+ * account terminal and the phone (how you reach the account and the work from the real world).
  * The ores (jaffa, mithril, blue orichalcum) don't generate in the real world either ({@link SatisfyOnlyPlacement}).
  */
 public final class SatisfyOnly {
     /** The action-bar message shown when something that only works in Satisfy is tried in the real world. */
     public static final String WARNING_KEY = "message.overgearedmod.satisfy_only";
 
-    private static final String CAPSULE = "capsule";
+    /** The items that work in the real world: the capsule, the account terminal and the phone. */
+    private static final Set<String> REAL_WORLD_ITEMS = Set.of("capsule", "account_terminal", "phone");
+    /** The blocks that can be placed in the real world: the capsule and the account terminal. */
+    private static final Set<String> REAL_WORLD_BLOCKS = Set.of("capsule", "account_terminal");
 
     private SatisfyOnly() {
     }
@@ -25,14 +31,14 @@ public final class SatisfyOnly {
         return !Satisfy.is(entity.level());
     }
 
-    /** An item of the mod that is inert in the real world: everything but the capsule. */
+    /** An item of the mod that is inert in the real world: everything but the capsule, the terminal and the phone. */
     public static boolean isSatisfyItem(ResourceLocation item) {
-        return Overgearedmod.MODID.equals(item.getNamespace()) && !CAPSULE.equals(item.getPath());
+        return Overgearedmod.MODID.equals(item.getNamespace()) && !REAL_WORLD_ITEMS.contains(item.getPath());
     }
 
-    /** A block of the mod that can't be placed in the real world: all of them but the capsule. */
+    /** A block of the mod that can't be placed in the real world: all of them but the capsule and the terminal. */
     public static boolean blocksPlacement(ResourceLocation block) {
-        return Overgearedmod.MODID.equals(block.getNamespace()) && !CAPSULE.equals(block.getPath());
+        return Overgearedmod.MODID.equals(block.getNamespace()) && !REAL_WORLD_BLOCKS.contains(block.getPath());
     }
 
     /** An entity type of the mod: its right-click interaction is refused in the real world. */

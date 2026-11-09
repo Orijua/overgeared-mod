@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * How saturated each market of the player is: the pressure (pieces sold or exported of a category and rating) and the
+ * How saturated each market of the player is: the pressure (pieces sold of a category and rating) and the
  * game day of the last sale. The pressure goes away with the days, applied when it is read, so nothing ticks.
  * A future shared market (MMO) would key by item and rating instead; not implemented.
  */
@@ -60,7 +60,7 @@ public record TradeSaturation(Map<TradeKey, Entry> entries) {
         return entry == null ? 0 : Math.min(Math.max(0, balance.pressureCap()), TradeRules.recovered(entry.pressure(), entry.lastDay(), today, balance));
     }
 
-    /** One more piece sold or exported: recovers first, then adds 1 (up to the cap) and stamps the day. */
+    /** One more piece sold: recovers first, then adds 1 (up to the cap) and stamps the day. */
     public TradeSaturation recordSale(TradeKey key, long today, TradeBalance balance) {
         Entry entry = entries.get(key);
         int next = (int) Math.min(Math.max(0, balance.pressureCap()), (long) pressure(key, today, balance) + 1);
