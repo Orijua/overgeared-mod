@@ -222,6 +222,11 @@ public final class TradeRules {
         return slots;
     }
 
+    /** The durability factor as a whole percent, the number the player sees. */
+    public static int durabilityPercent(double factor) {
+        return (int) Math.round(factor * 100.0);
+    }
+
     /** The saturation factor as a whole percent, the number the player sees. */
     public static int saturationPercent(int pressure, TradeBalance balance) {
         return (int) Math.round(saturation(pressure, balance) * 100.0);

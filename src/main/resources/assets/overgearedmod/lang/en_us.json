@@ -687,6 +687,7 @@
   "screen.overgearedmod.trade.confirm_title": "Confirm the sale?",
   "screen.overgearedmod.trade.confirm_sell": "Pieces: %s · You will receive %s Satisfy emeralds.",
   "screen.overgearedmod.trade.tip.saturation": "You sold many pieces like this: the price drops and recovers over the days.",
+  "screen.overgearedmod.trade.tip.durability": "Wear: pays %s %% of the price",
   "trade.overgearedmod.refusal.loaned": "Lent by a quest",
   "trade.overgearedmod.refusal.stacked": "Only sold one at a time",
   "trade.overgearedmod.refusal.no_value": "It has no trade value",

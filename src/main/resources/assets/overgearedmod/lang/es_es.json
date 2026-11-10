@@ -687,6 +687,7 @@
   "screen.overgearedmod.trade.confirm_title": "¿Confirmar la venta?",
   "screen.overgearedmod.trade.confirm_sell": "Piezas: %s · Recibirás %s esmeraldas de Satisfy.",
   "screen.overgearedmod.trade.tip.saturation": "Vendiste muchas piezas así: el precio baja y se recupera con los días.",
+  "screen.overgearedmod.trade.tip.durability": "Desgaste: se paga el %s %% del precio",
   "trade.overgearedmod.refusal.loaned": "Prestado por una misión",
   "trade.overgearedmod.refusal.stacked": "Solo se vende de uno en uno",
   "trade.overgearedmod.refusal.no_value": "No tiene valor de comercio",

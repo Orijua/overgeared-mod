@@ -286,11 +286,16 @@ public class TradeTab extends SatisfyTab {
         Component price = Component.translatable("screen.overgearedmod.trade.sell_price", Money.format(sell));
         graphics.drawString(font(), price, textX, y + 13, UiStyle.TEXT);
         int percent = TradeRules.saturationPercent(saturation.pressure(TradeGoods.key(stack), today, balance), balance);
+        List<Component> tip = new ArrayList<>();
         if (percent < 100) {
             graphics.drawString(font(), Component.translatable("screen.overgearedmod.trade.saturation", percent),
                     textX + font().width(price) + 4, y + 13, UiStyle.BAD);
-            return List.of(Component.translatable("screen.overgearedmod.trade.tip.saturation"));
+            tip.add(Component.translatable("screen.overgearedmod.trade.tip.saturation"));
         }
-        return null;
+        int wear = TradeRules.durabilityPercent(TradeGoods.durability(stack, balance));
+        if (wear < 100) {
+            tip.add(Component.translatable("screen.overgearedmod.trade.tip.durability", wear));
+        }
+        return tip.isEmpty() ? null : tip;
     }
 }

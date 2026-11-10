@@ -296,6 +296,14 @@ class TradeRulesTest {
     }
 
     @Test
+    void durabilityPercentIsTheRoundedFactor() {
+        assertEquals(100, TradeRules.durabilityPercent(1.0));
+        assertEquals(63, TradeRules.durabilityPercent(0.625));
+        assertEquals(25, TradeRules.durabilityPercent(0.25));
+        assertEquals(0, TradeRules.durabilityPercent(0.0));
+    }
+
+    @Test
     void durabilityFactorIsLinearBetweenTheMinimumAndOne() {
         assertEquals(1.0, TradeRules.durabilityFactor(0, 100, 0.25));
         assertEquals(0.25, TradeRules.durabilityFactor(100, 100, 0.25));
