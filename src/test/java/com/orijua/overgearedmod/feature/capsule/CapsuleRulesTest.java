@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -201,5 +202,80 @@ class CapsuleRulesTest {
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.BASIC, F, C), 1.0, C));
         CapsuleBalance off = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.90);
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, off), 1.0, off));
+    }
+
+    private static CapsuleBalance withRested(int restedMinutes, double minEnergy) {
+        return new CapsuleBalance(55, 8, 75, 6, 3000, 15000, restedMinutes, 10, minEnergy);
+    }
+
+    @Test
+    void theMultipliersAreExactlyTheRatiosOfTheDesign() {
+        SessionModifiers advanced = CapsuleRules.modifiers(CapsuleTier.ADVANCED, F, C);
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C);
+        assertAll(
+                () -> assertEquals(55.0 / 40.0, advanced.durationMul()),
+                () -> assertEquals(10.0 / 8.0, advanced.recoveryMul()),
+                () -> assertEquals(75.0 / 40.0, diamond.durationMul()),
+                () -> assertEquals(10.0 / 6.0, diamond.recoveryMul()));
+    }
+
+    @Test
+    void theTiersKeepTheirMinutesWhateverTheFatigueBalanceIs() {
+        FatigueBalance other = new FatigueBalance(true, 20.0, 0.8, 2.0, 20.0, 5.0, 0.25, 15, java.util.List.of(0.15, 0.08, 0.02), 0.30);
+        for (CapsuleTier tier : new CapsuleTier[]{CapsuleTier.ADVANCED, CapsuleTier.DIAMOND}) {
+            SessionModifiers m = CapsuleRules.modifiers(tier, other, C);
+            double session = 1.0 / FatigueRules.drainPerSecond(other, FatigueRules.Activity.NORMAL, m) / 60.0;
+            double recovery = 1.0 / FatigueRules.recoverPerSecond(other, m) / 60.0;
+            assertAll(tier.toString(),
+                    () -> assertEquals(C.sessionMinutes(tier, other), session, 1e-9, "session"),
+                    () -> assertEquals(C.recoveryMinutes(tier, other), recovery, 1e-9, "recovery"));
+        }
+        assertEquals(55.0, 1.0 / FatigueRules.drainPerSecond(other, FatigueRules.Activity.NORMAL, CapsuleRules.modifiers(CapsuleTier.ADVANCED, other, C)) / 60.0, 1e-9);
+        assertEquals(8.0, 1.0 / FatigueRules.recoverPerSecond(other, CapsuleRules.modifiers(CapsuleTier.ADVANCED, other, C)) / 60.0, 1e-9);
+    }
+
+    @Test
+    void restedJustBelowTheMinimumIsStillTheMinimumAsAFloat() {
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C);
+        assertEquals(600, CapsuleRules.restedOnConnect(diamond, 0.9 - 1e-9, C), "the same float as 0.9");
+        assertEquals(0, CapsuleRules.restedOnConnect(diamond, 0.9 - 1e-6, C), "a visible difference as a float");
+    }
+
+    @Test
+    void restedMinEnergyAtTheEdges() {
+        CapsuleBalance zero = withRested(10, 0.0);
+        SessionModifiers diamondZero = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, zero);
+        CapsuleBalance one = withRested(10, 1.0);
+        SessionModifiers diamondOne = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, one);
+        assertAll(
+                () -> assertEquals(600, CapsuleRules.restedOnConnect(diamondZero, 0.0, zero), "minimum 0, energy 0"),
+                () -> assertEquals(600, CapsuleRules.restedOnConnect(diamondZero, 0.5, zero), "minimum 0, energy .5"),
+                () -> assertEquals(600, CapsuleRules.restedOnConnect(diamondOne, 1.0, one), "minimum 1, energy 1"),
+                () -> assertEquals(0, CapsuleRules.restedOnConnect(diamondOne, 0.999, one), "minimum 1, energy .999"));
+    }
+
+    @Test
+    void aNonsenseEnergyGivesNothing() {
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C);
+        CapsuleBalance zero = withRested(10, 0.0);
+        assertAll(
+                () -> assertEquals(0, CapsuleRules.restedOnConnect(diamond, Double.NaN, C), "NaN"),
+                () -> assertEquals(0, CapsuleRules.restedOnConnect(diamond, -0.5, C), "negative"),
+                () -> assertEquals(0, CapsuleRules.restedOnConnect(diamond, Double.NaN, zero), "NaN, minimum 0"),
+                () -> assertEquals(0, CapsuleRules.restedOnConnect(diamond, -0.5, zero), "negative, minimum 0"));
+    }
+
+    @Test
+    void theLongestRestedIsADayOfSeconds() {
+        CapsuleBalance longest = withRested(1440, 0.9);
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, longest);
+        assertEquals(86_400, diamond.restedSeconds());
+        assertEquals(86_400, CapsuleRules.restedOnConnect(diamond, 1.0, longest));
+    }
+
+    @Test
+    void noRestedSecondsInTheModifiersMeansNoneEvenAtFullEnergy() {
+        SessionModifiers none = new SessionModifiers(1.4, 1.2, 0);
+        assertEquals(0, CapsuleRules.restedOnConnect(none, 1.0, C));
     }
 }
