@@ -333,6 +333,9 @@ public final class Config {
     private static final ModConfigSpec.DoubleValue CAPSULE_RESTED_MIN_ENERGY = BUILDER
             .comment("The energy (0 to 1) needed when connecting with the diamond capsule to get the rested bonus.")
             .defineInRange("restedMinEnergy", CAPSULE.restedMinEnergy(), 0.0, 1.0);
+    private static final ModConfigSpec.IntValue CAPSULE_RESTED_COOLDOWN_MINUTES = BUILDER
+            .comment("Minutes spent inside Satisfy after a rested bonus is granted before connecting grants another. 0 = no wait.")
+            .defineInRange("restedCooldownMinutes", CAPSULE.restedCooldownMinutes(), 0, CapsuleBalance.MAX_RESTED_COOLDOWN_MINUTES);
 
     static {
         BUILDER.pop();
@@ -401,7 +404,8 @@ public final class Config {
                 CAPSULE_ADVANCED_SESSION_MINUTES.get(), CAPSULE_ADVANCED_RECOVERY_MINUTES.get(),
                 CAPSULE_DIAMOND_SESSION_MINUTES.get(), CAPSULE_DIAMOND_RECOVERY_MINUTES.get(),
                 CAPSULE_ADVANCED_LICENSE_WON.get(), CAPSULE_DIAMOND_LICENSE_WON.get(),
-                CAPSULE_RESTED_MINUTES.get(), CAPSULE_RESTED_XP_PERCENT.get(), CAPSULE_RESTED_MIN_ENERGY.get());
+                CAPSULE_RESTED_MINUTES.get(), CAPSULE_RESTED_XP_PERCENT.get(), CAPSULE_RESTED_MIN_ENERGY.get(),
+                CAPSULE_RESTED_COOLDOWN_MINUTES.get());
     }
 
     static DebtBalance debtBalance() {

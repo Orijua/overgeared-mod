@@ -160,7 +160,7 @@ class CapsuleRulesTest {
     @Test
     void theBasicCapsuleIsExactlyNeutral() {
         assertEquals(SessionModifiers.NEUTRAL, CapsuleRules.modifiers(CapsuleTier.BASIC, F, C));
-        CapsuleBalance odd = new CapsuleBalance(30, 5, 60, 3, 100, 200, 5, 20, 0.5);
+        CapsuleBalance odd = new CapsuleBalance(30, 5, 60, 3, 100, 200, 5, 20, 0.5, 30);
         assertEquals(SessionModifiers.NEUTRAL, CapsuleRules.modifiers(CapsuleTier.BASIC, F, odd));
     }
 
@@ -200,12 +200,12 @@ class CapsuleRulesTest {
     void otherTiersAndAZeroDurationGiveNoRested() {
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.ADVANCED, F, C), 1.0, C));
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.BASIC, F, C), 1.0, C));
-        CapsuleBalance off = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.90);
+        CapsuleBalance off = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.90, 30);
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, off), 1.0, off));
     }
 
     private static CapsuleBalance withRested(int restedMinutes, double minEnergy) {
-        return new CapsuleBalance(55, 8, 75, 6, 3000, 15000, restedMinutes, 10, minEnergy);
+        return new CapsuleBalance(55, 8, 75, 6, 3000, 15000, restedMinutes, 10, minEnergy, 30);
     }
 
     @Test

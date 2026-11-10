@@ -13,7 +13,11 @@ class CapsuleBalanceTest {
     private static final FatigueBalance F = FatigueBalance.DEFAULT;
 
     private static CapsuleBalance with(double aS, double aR, double dS, double dR, long aL, long dL, int rm, int rx, double re) {
-        return new CapsuleBalance(aS, aR, dS, dR, aL, dL, rm, rx, re);
+        return new CapsuleBalance(aS, aR, dS, dR, aL, dL, rm, rx, re, 30);
+    }
+
+    private static CapsuleBalance withCooldown(int minutes) {
+        return new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.9, minutes);
     }
 
     @Test
@@ -27,6 +31,7 @@ class CapsuleBalanceTest {
         assertEquals(10, D.restedMinutes());
         assertEquals(10, D.restedXpPercent());
         assertEquals(0.90, D.restedMinEnergy());
+        assertEquals(30, D.restedCooldownMinutes());
         assertEquals(D, CapsuleBalance.current());
     }
 
@@ -68,6 +73,15 @@ class CapsuleBalanceTest {
         assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 0, 15000, 10, 10, 0.9));
         assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 1_000_000_001L, 10, 10, 0.9));
         assertEquals(1L, with(55, 8, 75, 6, 1, 15000, 10, 10, 0.9).advancedLicenseWon());
+    }
+
+    @Test
+    void theRestedCooldownHasItsRange() {
+        assertThrows(IllegalArgumentException.class, () -> withCooldown(-1));
+        assertThrows(IllegalArgumentException.class, () -> withCooldown(1441));
+        assertEquals(0, withCooldown(0).restedCooldownMinutes());
+        assertEquals(1440, withCooldown(1440).restedCooldownMinutes());
+        assertEquals(1440, CapsuleBalance.MAX_RESTED_COOLDOWN_MINUTES);
     }
 
     @Test

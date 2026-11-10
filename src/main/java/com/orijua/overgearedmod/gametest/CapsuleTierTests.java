@@ -388,7 +388,7 @@ public final class CapsuleTierTests {
     @GameTest(template = TestSupport.EMPTY)
     public static void restedXpFollowsTheConfiguredPercentAndSkipsSmithingXp(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
-        CapsuleBalance half = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 50, 0.9);
+        CapsuleBalance half = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 50, 0.9, 30);
         CapsuleTests.inSatisfy(helper, helper.absolutePos(new BlockPos(1, 1, 1)), () -> CapsuleBalance.withOverride(half, () -> {
             player.setData(ModAttachments.RESTED_SECONDS.get(), 60);
             int xp = ProgressionService.get(player).xp();
@@ -414,7 +414,7 @@ public final class CapsuleTierTests {
 
     @GameTest(template = TestSupport.EMPTY)
     public static void zeroRestedMinutesGrantsNothingEvenToTheDiamondCapsule(GameTestHelper helper) {
-        CapsuleBalance none = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.9);
+        CapsuleBalance none = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.9, 30);
         inSatisfy(helper, () -> CapsuleBalance.withOverride(none, () ->
                 helper.assertTrue(rested(connected(helper, CapsuleTier.DIAMOND, 1.0)) == 0, "restedMinutes 0: no rested")));
         helper.succeed();
