@@ -316,7 +316,7 @@ public final class CapsuleService {
         }
         player.resetFallDistance();
         player.setData(ModAttachments.CAPSULE_TIER.get(), tier);
-        FatigueService.onConnected(player, tier);
+        FatigueService.onConnected(player);
         player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.connected"), true);
         return true;
     }

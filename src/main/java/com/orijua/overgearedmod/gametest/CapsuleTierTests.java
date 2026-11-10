@@ -302,7 +302,7 @@ public final class CapsuleTierTests {
         inSatisfy(helper, () -> {
             ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 1.0);
             player.setData(ModAttachments.RESTED_SECONDS.get(), 300);
-            FatigueService.onConnected(player, CapsuleTier.DIAMOND);
+            FatigueService.onConnected(player);
             helper.assertTrue(rested(player) == 600, "it is set, not added: " + rested(player));
         });
         helper.succeed();

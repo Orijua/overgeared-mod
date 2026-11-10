@@ -6,7 +6,6 @@ import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.capsule.CapsuleRules;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
-import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.capsule.CombatClock;
 import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
 import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
@@ -300,10 +299,12 @@ public final class FatigueService {
         }
     }
 
-    /** The player has just connected to Satisfy with a capsule of this tier: the rested bonus is set and, after a forced disconnection, they start protected. */
-    public static void onConnected(ServerPlayer player, CapsuleTier tier) {
-        setRested(player, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(tier, FatigueBalance.current(), CapsuleBalance.current()),
-                energy(player), CapsuleBalance.current()));
+    /**
+     * The player has just connected to Satisfy: the rested bonus is set (from the tier already stored on the player)
+     * and, after a forced disconnection, they start protected.
+     */
+    public static void onConnected(ServerPlayer player) {
+        setRested(player, CapsuleRules.restedOnConnect(modifiers(player), energy(player), CapsuleBalance.current()));
         if (player.getData(ModAttachments.FATIGUE_FORCED_OUT.get())) {
             player.setData(ModAttachments.FATIGUE_FORCED_OUT.get(), false);
             PROTECTED_UNTIL.put(player.getUUID(), player.server.getTickCount() + (long) FatigueRules.PROTECTION_TICKS);
