@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.core.network;
 import com.orijua.overgearedmod.feature.capsule.CapsuleConnectingPayload;
 import com.orijua.overgearedmod.feature.economy.ClientTerminal;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyEmeraldsPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyOfferPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalPayDebtPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalStatePayload;
@@ -60,6 +61,7 @@ public final class ModNetwork {
         registrar.playToServer(TerminalBuyEmeraldsPayload.TYPE, TerminalBuyEmeraldsPayload.STREAM_CODEC, ServerPayloadHandler::terminalBuyEmeralds);
         registrar.playToServer(TerminalPayDebtPayload.TYPE, TerminalPayDebtPayload.STREAM_CODEC, ServerPayloadHandler::terminalPayDebt);
         registrar.playToServer(TerminalBuyOfferPayload.TYPE, TerminalBuyOfferPayload.STREAM_CODEC, ServerPayloadHandler::terminalBuyOffer);
+        registrar.playToServer(TerminalBuyLicensePayload.TYPE, TerminalBuyLicensePayload.STREAM_CODEC, ServerPayloadHandler::terminalBuyLicense);
         // Like the one below, the handler only touches a client-state class with no client imports.
         registrar.playToClient(CapsuleConnectingPayload.TYPE, CapsuleConnectingPayload.STREAM_CODEC,
                 (payload, context) -> ClientCapsule.connecting(payload.ticks(), Util.getMillis()));

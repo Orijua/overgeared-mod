@@ -1,5 +1,6 @@
 package com.orijua.overgearedmod.feature.economy;
 
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
@@ -31,11 +32,14 @@ import java.util.TreeSet;
  * @param offer              today's offer, in position order (empty: no offer)
  * @param boughtToday        the positions of the offer this player already bought today
  * @param debtQuotaPercent   percent of a shift that goes to the debt while it is active (the debt itself is read from the synced account)
+ * @param sessionTier        the tier of the capsule of the player's last connection
+ * @param licenses           the capsule licenses on sale, with their price and lock
  * @param message            the result of the last action, if any
  */
 public record TerminalState(boolean characterAvailable, int storedEmeralds, long workPay,
                             long today, WorkOrder order, ItemStack icon, long workDay, int buyWonPerEmerald, int emeraldRoom,
-                            int freeSlots, List<OfferEntry> offer, Set<Integer> boughtToday, int debtQuotaPercent, Optional<Component> message) {
+                            int freeSlots, List<OfferEntry> offer, Set<Integer> boughtToday, int debtQuotaPercent, CapsuleTier sessionTier,
+                            List<LicenseOffer> licenses, Optional<Component> message) {
     public static final StreamCodec<RegistryFriendlyByteBuf, TerminalState> STREAM_CODEC = StreamCodec.of(TerminalState::write, TerminalState::read);
 
     private static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> MESSAGE = ByteBufCodecs.optional(ComponentSerialization.STREAM_CODEC);
@@ -60,6 +64,11 @@ public record TerminalState(boolean characterAvailable, int storedEmeralds, long
             buf.writeVarInt(position);
         }
         buf.writeVarInt(state.debtQuotaPercent);
+        CapsuleTier.STREAM_CODEC.encode(buf, state.sessionTier);
+        buf.writeVarInt(state.licenses.size());
+        for (LicenseOffer offer : state.licenses) {
+            LicenseOffer.STREAM_CODEC.encode(buf, offer);
+        }
         MESSAGE.encode(buf, state.message);
     }
 
@@ -91,13 +100,22 @@ public record TerminalState(boolean characterAvailable, int storedEmeralds, long
             bought.add(buf.readVarInt());
         }
         int quotaPercent = buf.readVarInt();
+        CapsuleTier sessionTier = CapsuleTier.STREAM_CODEC.decode(buf);
+        int licenseCount = buf.readVarInt();
+        if (licenseCount < 0 || licenseCount > CapsuleTier.values().length) {
+            throw new IllegalArgumentException("the terminal has " + licenseCount + " licenses");
+        }
+        List<LicenseOffer> licenses = new ArrayList<>(licenseCount);
+        for (int i = 0; i < licenseCount; i++) {
+            licenses.add(LicenseOffer.STREAM_CODEC.decode(buf));
+        }
         Optional<Component> message = MESSAGE.decode(buf);
         return new TerminalState(available, stored, workPay, today, order, icon, workDay, buyWon, room, free,
-                List.copyOf(offer), Set.copyOf(bought), quotaPercent, message);
+                List.copyOf(offer), Set.copyOf(bought), quotaPercent, sessionTier, List.copyOf(licenses), message);
     }
 
     public TerminalState withMessage(Optional<Component> message) {
         return new TerminalState(characterAvailable, storedEmeralds, workPay, today, order, icon, workDay,
-                buyWonPerEmerald, emeraldRoom, freeSlots, offer, boughtToday, debtQuotaPercent, message);
+                buyWonPerEmerald, emeraldRoom, freeSlots, offer, boughtToday, debtQuotaPercent, sessionTier, licenses, message);
     }
 }

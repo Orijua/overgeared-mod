@@ -1,6 +1,8 @@
 package com.orijua.overgearedmod.core.network;
 
+import com.orijua.overgearedmod.feature.economy.LicenseShop;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyEmeraldsPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload;
 import com.orijua.overgearedmod.feature.economy.DebtService;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyOfferPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalPayDebtPayload;
@@ -172,6 +174,17 @@ final class ServerPayloadHandler {
         TerminalShop.Outcome outcome = TerminalShop.buyEmeralds(player, payload);
         if (player.containerMenu instanceof TerminalMenu menu && menu.containerId == payload.containerId() && menu.stillValid(player)) {
             TerminalService.sendState(player, menu, TerminalShop.message(outcome));
+        }
+    }
+
+    /** From the terminal's window: buys a capsule license into the inventory. */
+    static void terminalBuyLicense(TerminalBuyLicensePayload payload, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        LicenseShop.Outcome outcome = LicenseShop.buy(player, payload);
+        if (player.containerMenu instanceof TerminalMenu menu && menu.containerId == payload.containerId() && menu.stillValid(player)) {
+            TerminalService.sendState(player, menu, LicenseShop.message(outcome));
         }
     }
 

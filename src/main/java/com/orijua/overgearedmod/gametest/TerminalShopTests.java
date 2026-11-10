@@ -532,6 +532,7 @@ public final class TerminalShopTests {
             helper.assertTrue(bought.result() == TerminalShop.Result.OK, "bought: " + bought.result());
             helper.assertTrue(OfferBought.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, bought(player)).result().isPresent(), "the mark persists");
 
+            player.setData(ModAttachments.CAPSULE_TIER.get(), com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED);
             TerminalState state = TerminalService.state(player, Optional.empty());
             RegistryFriendlyByteBuf buf3 = new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess());
             TerminalState.STREAM_CODEC.encode(buf3, state);
@@ -543,6 +544,15 @@ public final class TerminalShopTests {
             }
             helper.assertTrue(back.boughtToday().equals(java.util.Set.of(7)), "what was bought today: " + back.boughtToday());
             helper.assertTrue(back.emeraldRoom() == state.emeraldRoom() && back.freeSlots() == state.freeSlots() && back.freeSlots() > 0, "room and slots");
+            helper.assertTrue(back.sessionTier() == com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED, "the tier of the session");
+            helper.assertTrue(back.licenses().size() == 2 && back.licenses().equals(state.licenses()), "the licenses on sale: " + back.licenses());
+
+            RegistryFriendlyByteBuf buf4 = new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess());
+            com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload.STREAM_CODEC.encode(buf4,
+                    new com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload(5, com.orijua.overgearedmod.feature.capsule.CapsuleTier.DIAMOND, 15000L));
+            var license = com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload.STREAM_CODEC.decode(buf4);
+            helper.assertTrue(license.containerId() == 5 && license.tier() == com.orijua.overgearedmod.feature.capsule.CapsuleTier.DIAMOND
+                    && license.seenPrice() == 15000L, "the license payload");
         });
         helper.succeed();
     }
