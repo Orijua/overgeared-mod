@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.feature.economy;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.core.config.DebtBalance;
 import com.orijua.overgearedmod.core.config.TerminalBalance;
 import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
@@ -45,17 +46,27 @@ public final class TerminalService {
 
     public enum Result { OK, NO_TERMINAL, IN_SATISFY, STALE, NOT_ENOUGH, ALREADY_WORKED }
 
-    /** {@code won} paid by a work shift. */
-    public record Outcome(Result result, long won) {
+    /**
+     * The result of a work shift.
+     *
+     * @param won     the Won that went into the account (the pay minus the quota, which {@link AccountRules#quota} decides)
+     * @param toDebt  the Won that went to the debt
+     * @param settled whether that paid the debt off
+     */
+    public record Outcome(Result result, long won, long toDebt, boolean settled) {
         static Outcome of(Result result) {
-            return new Outcome(result, 0L);
+            return new Outcome(result, 0L, 0L, false);
         }
     }
 
     /** The message for the player after an attempt; empty when there is nothing to say. */
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
-            case OK -> Optional.of(Component.translatable("message.overgearedmod.terminal.worked", outcome.won()));
+            case OK -> Optional.of(outcome.settled()
+                    ? Component.translatable("message.overgearedmod.terminal.worked_settled", outcome.won())
+                    : outcome.toDebt() > 0
+                    ? Component.translatable("message.overgearedmod.terminal.worked_debt", outcome.won(), outcome.toDebt())
+                    : Component.translatable("message.overgearedmod.terminal.worked", outcome.won()));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));
             case STALE -> Optional.of(Component.translatable("message.overgearedmod.terminal.stale"));
@@ -168,7 +179,7 @@ public final class TerminalService {
         return new TerminalState(stored.isPresent(), emeralds, balance.workPay(), today, order, icon,
                 player.getData(ModAttachments.WORK_DAY.get()), balance.buyWonPerEmerald(), room, free,
                 TerminalShop.offer(player.serverLevel(), today, balance, trade),
-                player.getData(ModAttachments.OFFER_BOUGHT.get()).positionsOn(today), message);
+                player.getData(ModAttachments.OFFER_BOUGHT.get()).positionsOn(today), DebtBalance.current().quotaPercent(), message);
     }
 
     /** Sends the open menu a fresh state with the message of the last action. */
@@ -195,8 +206,16 @@ public final class TerminalService {
         return work(player, payload.seen(), today(player), TerminalBalance.current());
     }
 
-    /** Does the shift of {@code today}: hands over today's order (inventory and offhand, never armor) and pays. */
+    /** Does the shift of {@code today} with the configured debt quota; see the other overload. */
     public static Outcome work(ServerPlayer player, WorkOrder seen, long today, TerminalBalance balance) {
+        return work(player, seen, today, balance, DebtBalance.current());
+    }
+
+    /**
+     * Does the shift of {@code today}: hands over today's order (inventory and offhand, never armor) and pays. While the
+     * debt is active, its quota share of the pay goes to the debt and the rest to the balance.
+     */
+    public static Outcome work(ServerPlayer player, WorkOrder seen, long today, TerminalBalance balance, DebtBalance debt) {
         if (!carriesRealWorld(player)) {
             return Outcome.of(Result.IN_SATISFY);
         }
@@ -213,10 +232,13 @@ public final class TerminalService {
         }
         take(inventory, order);
         player.setData(ModAttachments.WORK_DAY.get(), today);
-        AccountService.deposit(player, balance.workPay());
+        AccountService.WorkPay pay = AccountService.payWork(player, balance.workPay(), debt.quotaPercent());
+        if (pay.settled()) {
+            DebtService.announceSettled(player);
+        }
         // The terminal window has no slots: send the whole inventory menu so the "have" count updates.
         player.inventoryMenu.sendAllDataToRemote();
-        return new Outcome(Result.OK, balance.workPay());
+        return new Outcome(Result.OK, pay.paid() - pay.toDebt(), pay.toDebt(), pay.settled());
     }
 
     /** How many items of the order the inventory (main slots and offhand, not armor) holds. */

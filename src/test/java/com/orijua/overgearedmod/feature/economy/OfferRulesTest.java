@@ -86,7 +86,7 @@ class OfferRulesTest {
     private static final long GOLDEN_SEED = -3336707969042032636L;
 
     @Test
-    void buyingIsAlwaysDearerThanSellingAndConvertingBack() {
+    void buyingIsAlwaysDearerThanSellingTheSameThingBack() {
         TradeBalance trade = TradeBalance.DEFAULT;
         for (long reference = 1; reference <= 5000; reference++) {
             double back = TradeRules.sellPrice(reference, 0, trade) * 100 * 0.95;

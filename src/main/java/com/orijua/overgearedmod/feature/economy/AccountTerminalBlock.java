@@ -18,7 +18,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import java.util.Optional;
 
 /**
- * The account terminal: right-click to see the account, convert Satisfy emeralds and do the daily work. It only works in
+ * The account terminal: right-click to see the account, buy Satisfy emeralds with Won and do the daily work. It only works in
  * the real world (in Satisfy it shows "No signal"). Faces the player who places it.
  */
 public class AccountTerminalBlock extends HorizontalDirectionalBlock {

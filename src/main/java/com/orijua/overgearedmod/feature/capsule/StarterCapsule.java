@@ -1,7 +1,9 @@
 package com.orijua.overgearedmod.feature.capsule;
 
+import com.orijua.overgearedmod.core.config.DebtBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.economy.AccountService;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -10,8 +12,9 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
  * The first time a player joins a world they get one basic capsule, so the start takes minutes and not a vanilla
- * mining trip. In the canon Grid bought his capsule in debt (ch. 1); here the debt is only flavor text. The flag is
- * saved with the player and survives death, so it is given once. The recipe stays for extra capsules.
+ * mining trip. In the canon Grid bought his capsule in debt (ch. 1): the same moment the account takes the starter
+ * debt (see {@link AccountService#assignStarterDebt}). The flag is saved with the player and survives death, so it is given
+ * once. The recipe stays for extra capsules.
  */
 public final class StarterCapsule {
     private StarterCapsule() {
@@ -37,7 +40,12 @@ public final class StarterCapsule {
         if (!player.getInventory().add(capsule)) {
             player.drop(capsule, false);
         }
-        player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter"));
+        long debt = DebtBalance.current().starterDebt();
+        if (AccountService.assignStarterDebt(player, debt)) {
+            player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter", debt));
+        } else {
+            player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter_free"));
+        }
         return true;
     }
 }

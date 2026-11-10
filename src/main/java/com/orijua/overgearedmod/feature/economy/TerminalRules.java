@@ -181,6 +181,17 @@ public final class TerminalRules {
         return (int) Math.max(0L, Math.min(room, Math.max(0L, won) / unit));
     }
 
+    /** How much the debt selector moves with each press of its buttons. */
+    public static final long DEBT_STEP = 100L;
+
+    /** The amount chosen to pay of the debt, kept within 1 and {@code max} (the most that can be paid); 0 when nothing can be paid. */
+    public static long debtSelection(long selected, long max) {
+        if (max < 1L) {
+            return 0L;
+        }
+        return Math.clamp(selected, 1L, max);
+    }
+
     /** Which order of a list of {@code size} belongs to a day. */
     public static int orderIndex(long day, int size) {
         return (int) Math.floorMod(day, (long) size);

@@ -1,7 +1,9 @@
 package com.orijua.overgearedmod.core.network;
 
 import com.orijua.overgearedmod.feature.economy.TerminalBuyEmeraldsPayload;
+import com.orijua.overgearedmod.feature.economy.DebtService;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyOfferPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalPayDebtPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalMenu;
 import com.orijua.overgearedmod.feature.economy.TerminalService;
 import com.orijua.overgearedmod.feature.economy.TerminalShop;
@@ -170,6 +172,17 @@ final class ServerPayloadHandler {
         TerminalShop.Outcome outcome = TerminalShop.buyEmeralds(player, payload);
         if (player.containerMenu instanceof TerminalMenu menu && menu.containerId == payload.containerId() && menu.stillValid(player)) {
             TerminalService.sendState(player, menu, TerminalShop.message(outcome));
+        }
+    }
+
+    /** From the terminal's window: pays part of the debt. */
+    static void terminalPayDebt(TerminalPayDebtPayload payload, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        DebtService.Outcome outcome = DebtService.payDebt(player, payload);
+        if (player.containerMenu instanceof TerminalMenu menu && menu.containerId == payload.containerId() && menu.stillValid(player)) {
+            TerminalService.sendState(player, menu, DebtService.message(outcome));
         }
     }
 

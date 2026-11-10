@@ -257,4 +257,14 @@ class TerminalRulesTest {
         assertEquals(2304L * 1_000_000L, TerminalRules.buyCost(2304, 1_000_000));
         assertEquals(3_000_000_000L, TerminalRules.buyCost(3000, 1_000_000));
     }
+
+    @Test
+    void debtSelectionStaysInsideTheRange() {
+        assertEquals(0, TerminalRules.debtSelection(500, 0));
+        assertEquals(0, TerminalRules.debtSelection(0, -3));
+        assertEquals(300, TerminalRules.debtSelection(900, 300));
+        assertEquals(1, TerminalRules.debtSelection(-50, 300));
+        assertEquals(1, TerminalRules.debtSelection(0, 1));
+        assertEquals(200, TerminalRules.debtSelection(200, 300));
+    }
 }

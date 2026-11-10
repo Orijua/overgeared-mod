@@ -77,7 +77,9 @@ import java.util.Optional;
  *   <li>{@code /satisfy debug set stat <stat> <value>}: sets the points spent in a stat.</li>
  *   <li>{@code /satisfy debug set insight <value>}: sets Insight.</li>
  *   <li>{@code /satisfy debug set won <amount>}: sets the Won balance of the account.</li>
+ *   <li>{@code /satisfy debug set debt <amount>}: sets the debt (0 over an active debt settles it, without the announcement).</li>
  *   <li>{@code /satisfy debug account}: shows the Won and the debt of the account.</li>
+ *   <li>{@code /satisfy debug debt}: shows the debt and its state; {@code clear} leaves it unassigned again, keeping the Won.</li>
  *   <li>{@code /satisfy debug trade}: lists the pressure and the price percentage of each trade key; {@code reset} clears them.</li>
  *   <li>{@code /satisfy debug spawn apprentice <grade> [level]}: hires an apprentice of that grade where the player stands.</li>
  *   <li>{@code /satisfy debug goto <place>}: to the surface in front of a structure (bairan, north_end_cave, ashur_manor,
@@ -116,6 +118,42 @@ public final class DebugCommands {
                                                         Arrays.stream(StatType.values()).map(StatType::getSerializedName), builder))
                                                 .then(Commands.argument("value", IntegerArgumentType.integer(0, 100_000))
                                                         .executes(ctx -> setStat(ctx, IntegerArgumentType.getInteger(ctx, "value"))))))
+                                .then(Commands.literal("debt")
+                                        .then(Commands.argument("amount", LongArgumentType.longArg(0))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    long amount = LongArgumentType.getLong(ctx, "amount");
+                                                    AccountService.setDebt(player, amount);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_set_debt", amount), false);
+                                                    return 1;
+                                                })))
+                                .then(Commands.literal("fatigue")
+                                        .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int percent = IntegerArgumentType.getInteger(ctx, "percent");
+                                                    FatigueService.setEnergy(player, percent / 100.0);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_fatigue", percent), false);
+                                                    return 1;
+                                                })))
+                                .then(Commands.literal("won")
+                                        .then(Commands.argument("amount", LongArgumentType.longArg(0))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    long amount = LongArgumentType.getLong(ctx, "amount");
+                                                    AccountService.setWon(player, amount);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_won", amount), false);
+                                                    return 1;
+                                                })))
+                                .then(Commands.literal("insight")
+                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
+                                                    player.setData(ModAttachments.INSIGHT, value);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
+                                                    return 1;
+                                                }))))
                         .then(Commands.literal("terminal")
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -145,41 +183,30 @@ public final class DebugCommands {
                                                     ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_offer_reset"), false);
                                                     return 1;
                                                 }))))
-                                .then(Commands.literal("fatigue")
-                                        .then(Commands.argument("percent", IntegerArgumentType.integer(0, 100))
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                                    int percent = IntegerArgumentType.getInteger(ctx, "percent");
-                                                    FatigueService.setEnergy(player, percent / 100.0);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_fatigue", percent), false);
-                                                    return 1;
-                                                })))
-                                .then(Commands.literal("won")
-                                        .then(Commands.argument("amount", LongArgumentType.longArg(0))
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                                    long amount = LongArgumentType.getLong(ctx, "amount");
-                                                    AccountService.setWon(player, amount);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_won", amount), false);
-                                                    return 1;
-                                                })))
-                                .then(Commands.literal("insight")
-                                        .then(Commands.argument("value", IntegerArgumentType.integer(0, 10_000))
-                                                .executes(ctx -> {
-                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
-                                                    int value = IntegerArgumentType.getInteger(ctx, "value");
-                                                    player.setData(ModAttachments.INSIGHT, value);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_insight", value), false);
-                                                    return 1;
-                                                }))))
                         .then(Commands.literal("account")
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                     Account account = AccountService.get(player);
                                     ctx.getSource().sendSuccess(() -> Component.translatable(
-                                            "message.overgearedmod.debug_account", account.won(), account.debt()), false);
+                                            "message.overgearedmod.debug_account", account.won(), account.debt(),
+                                            Component.translatable("message.overgearedmod.debug_debt_state." + account.debtState().getSerializedName())), false);
                                     return 1;
                                 }))
+                        .then(Commands.literal("debt")
+                                .executes(ctx -> {
+                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                    Account account = AccountService.get(player);
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_debt", account.debt(),
+                                            Component.translatable("message.overgearedmod.debug_debt_state." + account.debtState().getSerializedName())), false);
+                                    return 1;
+                                })
+                                .then(Commands.literal("clear")
+                                        .executes(ctx -> {
+                                            ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                            AccountService.clearDebt(player);
+                                            ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_debt_clear"), false);
+                                            return 1;
+                                        })))
                         .then(Commands.literal("trade")
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();

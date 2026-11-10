@@ -30,11 +30,12 @@ import java.util.TreeSet;
  * @param freeSlots          free main slots of the stored character (0 without character)
  * @param offer              today's offer, in position order (empty: no offer)
  * @param boughtToday        the positions of the offer this player already bought today
+ * @param debtQuotaPercent   percent of a shift that goes to the debt while it is active (the debt itself is read from the synced account)
  * @param message            the result of the last action, if any
  */
 public record TerminalState(boolean characterAvailable, int storedEmeralds, long workPay,
                             long today, WorkOrder order, ItemStack icon, long workDay, int buyWonPerEmerald, int emeraldRoom,
-                            int freeSlots, List<OfferEntry> offer, Set<Integer> boughtToday, Optional<Component> message) {
+                            int freeSlots, List<OfferEntry> offer, Set<Integer> boughtToday, int debtQuotaPercent, Optional<Component> message) {
     public static final StreamCodec<RegistryFriendlyByteBuf, TerminalState> STREAM_CODEC = StreamCodec.of(TerminalState::write, TerminalState::read);
 
     private static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> MESSAGE = ByteBufCodecs.optional(ComponentSerialization.STREAM_CODEC);
@@ -58,6 +59,7 @@ public record TerminalState(boolean characterAvailable, int storedEmeralds, long
         for (int position : state.boughtToday) {
             buf.writeVarInt(position);
         }
+        buf.writeVarInt(state.debtQuotaPercent);
         MESSAGE.encode(buf, state.message);
     }
 
@@ -88,13 +90,14 @@ public record TerminalState(boolean characterAvailable, int storedEmeralds, long
         for (int i = 0; i < boughtSize; i++) {
             bought.add(buf.readVarInt());
         }
+        int quotaPercent = buf.readVarInt();
         Optional<Component> message = MESSAGE.decode(buf);
         return new TerminalState(available, stored, workPay, today, order, icon, workDay, buyWon, room, free,
-                List.copyOf(offer), Set.copyOf(bought), message);
+                List.copyOf(offer), Set.copyOf(bought), quotaPercent, message);
     }
 
     public TerminalState withMessage(Optional<Component> message) {
         return new TerminalState(characterAvailable, storedEmeralds, workPay, today, order, icon, workDay,
-                buyWonPerEmerald, emeraldRoom, freeSlots, offer, boughtToday, message);
+                buyWonPerEmerald, emeraldRoom, freeSlots, offer, boughtToday, debtQuotaPercent, message);
     }
 }

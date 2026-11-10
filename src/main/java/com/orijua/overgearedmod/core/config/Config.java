@@ -270,6 +270,22 @@ public final class Config {
         BUILDER.pop();
     }
 
+    static {
+        BUILDER.push("debt");
+    }
+
+    private static final DebtBalance DEBT = DebtBalance.DEFAULT;
+    private static final ModConfigSpec.LongValue DEBT_STARTER_DEBT = BUILDER
+            .comment("The starter debt (the mod's own design, not the canon's). Won owed for the starter capsule, taken when it is given.")
+            .defineInRange("starterDebt", DEBT.starterDebt(), 1L, DebtBalance.MAX_STARTER_DEBT);
+    private static final ModConfigSpec.IntValue DEBT_QUOTA_PERCENT = BUILDER
+            .comment("Percent of every work shift that goes to the debt while it is active. 0 means the debt is only paid by hand.")
+            .defineInRange("debtQuotaPercent", DEBT.quotaPercent(), 0, 100);
+
+    static {
+        BUILDER.pop();
+    }
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config() {
@@ -325,6 +341,10 @@ public final class Config {
                 .toList();
         return new TerminalBalance(TERMINAL_WON_PER_EMERALD.get(), TERMINAL_WORK_PAY.get(), orders, TERMINAL_BUY_WON_PER_EMERALD.get(),
                 TERMINAL_BUY_MULTIPLIER.get(), TERMINAL_OFFER_PER_RANK.get(), TERMINAL_OFFER_MAX_RATING.get(), offerItems);
+    }
+
+    static DebtBalance debtBalance() {
+        return new DebtBalance(DEBT_STARTER_DEBT.get(), DEBT_QUOTA_PERCENT.get());
     }
 
     static Balance balance() {

@@ -5,11 +5,15 @@ import com.orijua.overgearedmod.core.client.ScrollList;
 import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.economy.Account;
+import com.orijua.overgearedmod.feature.economy.AccountRules;
 import com.orijua.overgearedmod.feature.economy.ClientTerminal;
+import com.orijua.overgearedmod.feature.economy.DebtState;
 import com.orijua.overgearedmod.feature.economy.OfferEntry;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyEmeraldsPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyOfferPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalMenu;
+import com.orijua.overgearedmod.feature.economy.TerminalPayDebtPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalRules;
 import com.orijua.overgearedmod.feature.economy.TerminalService;
 import com.orijua.overgearedmod.feature.economy.TerminalState;
@@ -53,6 +57,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     private int page = PAGE_ACCOUNT;
     private int buySelected = 1;
+    private long debtSelected = TerminalRules.DEBT_STEP;
     private final ScrollList offerScroll = new ScrollList(OFFER_ROWS);
     private Button pageAccount;
     private Button pageShop;
@@ -61,6 +66,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private Button buyPlus;
     private Button buyMax;
     private Button buyEmeralds;
+    private Button debtMinus;
+    private Button debtPlus;
+    private Button debtMax;
+    private Button debtPay;
     private final Button[] rowButtons = new Button[OFFER_ROWS];
 
     public TerminalScreen(TerminalMenu menu, Inventory inventory, Component title) {
@@ -81,6 +90,13 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         buyMax = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.shop.max"), 96, 62, 46,
                 () -> buySelected = maxBuyable(state().orElse(null))));
         buyEmeralds = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.shop.buy"), MARGIN, 112, 130, this::sendBuyEmeralds));
+        debtMinus = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.minus"), MARGIN, 118, 18,
+                () -> debtSelected -= TerminalRules.DEBT_STEP));
+        debtPlus = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.plus"), 74, 118, 18,
+                () -> debtSelected += TerminalRules.DEBT_STEP));
+        debtMax = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.shop.max"), 96, 118, 46,
+                () -> debtSelected = AccountRules.maxDebtPayment(account())));
+        debtPay = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.debt_pay"), MARGIN, 138, 130, this::sendPayDebt));
         for (int i = 0; i < OFFER_ROWS; i++) {
             int row = i;
             rowButtons[i] = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.shop.buy"),
@@ -103,6 +119,18 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 PacketDistributor.sendToServer(new TerminalBuyEmeraldsPayload(menu.containerId, buySelected, state.buyWonPerEmerald()));
             }
         });
+    }
+
+    private static Account account() {
+        return Minecraft.getInstance().player == null ? Account.EMPTY : Minecraft.getInstance().player.getData(ModAttachments.ACCOUNT.get());
+    }
+
+    private void sendPayDebt() {
+        Account account = account();
+        long max = AccountRules.maxDebtPayment(account);
+        if (state().isPresent() && debtSelected >= 1 && debtSelected <= max) {
+            PacketDistributor.sendToServer(new TerminalPayDebtPayload(menu.containerId, debtSelected, account.debt()));
+        }
     }
 
     private void sendBuyOffer(int position) {
@@ -157,6 +185,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         for (Button widget : List.of(buyMinus, buyPlus, buyMax, buyEmeralds)) {
             widget.visible = !account;
         }
+        for (Button widget : List.of(debtMinus, debtPlus, debtMax, debtPay)) {
+            widget.visible = false;
+        }
         pageAccount.active = !account;
         pageShop.active = account;
         for (Button rowButton : rowButtons) {
@@ -181,9 +212,25 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         boolean worked = TerminalRules.workedOn(state.workDay(), today);
         int have = TerminalService.countOrder(player.getInventory(), state.order());
         work.active = !stateIsOld && !worked && have >= state.order().count();
+        updateDebt(player, stateIsOld);
 
         super.render(graphics, mouseX, mouseY, partialTick);
         drawContent(graphics, state, player, stored, worked, have, stateIsOld);
+    }
+
+    /** The debt buttons of the account page: shown only while the debt is active. */
+    private void updateDebt(LocalPlayer player, boolean stateIsOld) {
+        Account account = player.getData(ModAttachments.ACCOUNT.get());
+        boolean active = account.debtState() == DebtState.ACTIVE;
+        long max = AccountRules.maxDebtPayment(account);
+        debtSelected = TerminalRules.debtSelection(debtSelected, max);
+        for (Button widget : List.of(debtMinus, debtPlus, debtMax, debtPay)) {
+            widget.visible = active;
+        }
+        debtMinus.active = debtSelected > 1;
+        debtPlus.active = debtSelected < max;
+        debtMax.active = debtSelected < max;
+        debtPay.active = !stateIsOld && max >= 1 && debtSelected >= 1 && debtSelected <= max;
     }
 
     /** The shop page buttons: the emerald selector and the buy button of each visible row. */
@@ -308,10 +355,28 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         UiStyle.text(graphics, font, UiStyle.ellipsize(font, storedText, LEFT_WIDTH), x + MARGIN, y + 84,
                 state.characterAvailable() ? UiStyle.TEXT : NO_CHARACTER_COLOR);
 
+        // Debt
+        Account account = player.getData(ModAttachments.ACCOUNT.get());
+        if (account.debtState() == DebtState.ACTIVE) {
+            UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt"), x + MARGIN, y + 95);
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_left", account.debt()), x + MARGIN, y + 106,
+                    UiStyle.BAD);
+            Component number = Component.literal(Long.toString(debtSelected));
+            UiStyle.text(graphics, font, number, x + 33 + (40 - font.width(number)) / 2, y + 123, UiStyle.TEXT);
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_total", debtSelected), x + MARGIN, y + 160,
+                    UiStyle.MUTED);
+        } else if (account.debtState() == DebtState.SETTLED) {
+            UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt"), x + MARGIN, y + 95);
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_settled"), x + MARGIN, y + 106, UiStyle.GOOD);
+        }
+
         // Work
         WorkOrder order = state.order();
         ItemStack icon = state.icon();
-        UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.work", state.workPay()), x + RIGHT_X, y + 60);
+        long quota = AccountRules.quota(account, state.workPay(), state.debtQuotaPercent());
+        UiStyle.heading(graphics, font, quota > 0
+                ? Component.translatable("screen.overgearedmod.terminal.work_debt", state.workPay())
+                : Component.translatable("screen.overgearedmod.terminal.work", state.workPay()), x + RIGHT_X, y + 60);
         graphics.renderItem(icon, x + RIGHT_X, y + 72);
         String key = "screen.overgearedmod.terminal.order." + order.id().toLanguageKey().replace('/', '.');
         Component name = Component.translatableWithFallback(key, icon.getHoverName().getString());
@@ -319,6 +384,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 x + RIGHT_X + 22, y + 76, UiStyle.TEXT);
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.have", have, order.count()), x + RIGHT_X, y + 96,
                 have >= order.count() ? UiStyle.GOOD : UiStyle.MUTED);
+        if (quota > 0) {
+            UiStyle.text(graphics, font, UiStyle.ellipsize(font, Component.translatable("screen.overgearedmod.terminal.work_split",
+                    state.workPay() - quota, quota), 134), x + RIGHT_X, y + 138, UiStyle.MUTED);
+        }
         if (worked) {
             UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.done"), x + RIGHT_X, y + 110, UiStyle.GOOD);
             UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.next_shift",
