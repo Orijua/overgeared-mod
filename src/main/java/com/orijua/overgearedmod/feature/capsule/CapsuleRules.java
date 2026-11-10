@@ -110,8 +110,8 @@ public final class CapsuleRules {
         return Math.max(0, Math.min(saved, capsule.restedCooldownMinutes() * 60));
     }
 
-    /** One second of the wait goes by; it never drops below 0. */
+    /** One second of the wait goes by; it never drops below 0 (nor wraps around for the smallest int). */
     public static int tickDown(int seconds) {
-        return Math.max(0, seconds - 1);
+        return seconds <= 0 ? 0 : seconds - 1;
     }
 }

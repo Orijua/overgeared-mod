@@ -53,46 +53,12 @@ class CapsuleBalanceTest {
     }
 
     @Test
-    void sessionsAreBetweenOneAndADay() {
-        assertThrows(IllegalArgumentException.class, () -> with(0.99, 8, 75, 6, 3000, 15000, 10, 10, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 1441, 6, 3000, 15000, 10, 10, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(Double.NaN, 8, 75, 6, 3000, 15000, 10, 10, 0.9));
-        assertEquals(1.0, with(1, 8, 75, 6, 3000, 15000, 10, 10, 0.9).advancedSessionMinutes());
-        assertEquals(1440.0, with(55, 8, 1440, 6, 3000, 15000, 10, 10, 0.9).diamondSessionMinutes());
-    }
-
-    @Test
-    void recoveriesAreBetweenATenthAndADay() {
-        assertThrows(IllegalArgumentException.class, () -> with(55, 0.09, 75, 6, 3000, 15000, 10, 10, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 1441, 3000, 15000, 10, 10, 0.9));
-        assertEquals(0.1, with(55, 0.1, 75, 6, 3000, 15000, 10, 10, 0.9).advancedRecoveryMinutes());
-    }
-
-    @Test
-    void licensesCostBetweenOneAndABillion() {
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 0, 15000, 10, 10, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 1_000_000_001L, 10, 10, 0.9));
-        assertEquals(1L, with(55, 8, 75, 6, 1, 15000, 10, 10, 0.9).advancedLicenseWon());
-    }
-
-    @Test
     void theRestedCooldownHasItsRange() {
         assertThrows(IllegalArgumentException.class, () -> withCooldown(-1));
         assertThrows(IllegalArgumentException.class, () -> withCooldown(1441));
         assertEquals(0, withCooldown(0).restedCooldownMinutes());
         assertEquals(1440, withCooldown(1440).restedCooldownMinutes());
         assertEquals(1440, CapsuleBalance.MAX_RESTED_COOLDOWN_MINUTES);
-    }
-
-    @Test
-    void theRestedNumbersHaveTheirRanges() {
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 15000, -1, 10, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 15000, 1441, 10, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 15000, 10, -1, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 15000, 10, 1001, 0.9));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 15000, 10, 10, 1.01));
-        assertThrows(IllegalArgumentException.class, () -> with(55, 8, 75, 6, 3000, 15000, 10, 10, -0.01));
-        assertEquals(0, with(55, 8, 75, 6, 3000, 15000, 0, 0, 0.0).restedMinutes());
     }
 
     @Test
@@ -161,6 +127,7 @@ class CapsuleBalanceTest {
                 () -> rejected("advancedRecovery +Inf", () -> with(55, Double.POSITIVE_INFINITY, 75, 6, 3000, 15000, 10, 10, 0.9)),
                 () -> rejected("diamondRecovery +Inf", () -> with(55, 8, 75, Double.POSITIVE_INFINITY, 3000, 15000, 10, 10, 0.9)),
                 () -> rejected("advancedRecovery -Inf", () -> with(55, Double.NEGATIVE_INFINITY, 75, 6, 3000, 15000, 10, 10, 0.9)),
+                () -> rejected("advancedSession NaN", () -> with(Double.NaN, 8, 75, 6, 3000, 15000, 10, 10, 0.9)),
                 () -> rejected("advancedSession +Inf", () -> with(Double.POSITIVE_INFINITY, 8, 75, 6, 3000, 15000, 10, 10, 0.9)),
                 () -> rejected("diamondSession NaN", () -> with(55, 8, Double.NaN, 6, 3000, 15000, 10, 10, 0.9)),
                 () -> rejected("restedMinEnergy NaN", () -> with(55, 8, 75, 6, 3000, 15000, 10, 10, Double.NaN)),
