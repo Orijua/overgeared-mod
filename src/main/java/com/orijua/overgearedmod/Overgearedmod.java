@@ -23,6 +23,7 @@ import com.orijua.overgearedmod.feature.capsule.CapsuleService;
 import com.orijua.overgearedmod.feature.character.Characters;
 import com.orijua.overgearedmod.feature.economy.TerminalService;
 import com.orijua.overgearedmod.feature.fatigue.FatigueService;
+import com.orijua.overgearedmod.core.save.SaveMigrations;
 import com.orijua.overgearedmod.feature.capsule.StarterCapsule;
 import com.orijua.overgearedmod.feature.capsule.LogoutService;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
@@ -91,6 +92,8 @@ public class Overgearedmod {
         modEventBus.addListener(ModDataGenerators::gatherData);
 
         // Game bus events (gameplay: kills, ticks, item attributes...).
+        // First: it brings old saved data up to date before the other systems read it.
+        SaveMigrations.register(NeoForge.EVENT_BUS);
         EquipmentEvents.register(NeoForge.EVENT_BUS);
         ProgressionEvents.register(NeoForge.EVENT_BUS);
         SkillEvents.register(NeoForge.EVENT_BUS);

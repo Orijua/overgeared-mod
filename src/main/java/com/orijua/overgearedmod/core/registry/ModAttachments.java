@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.core.registry;
 
 import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.core.save.SaveMigrations;
 import com.orijua.overgearedmod.feature.capsule.CapsuleState;
 import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.Account;
@@ -171,6 +172,13 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<CharacterVault>> CHARACTER_VAULT =
             serverData("character_vault", () -> CharacterVault.EMPTY, CharacterVault.CODEC);
 
+    /**
+     * The version of the mod's saved data this player was last saved with (see save.SaveMigrations). Server-only, kept
+     * on death and NOT cleared by {@link #resetAll}: after a reset the data is the current version's defaults.
+     */
+    public static final Supplier<AttachmentType<Integer>> SAVE_VERSION =
+            serverData("save_version", () -> SaveMigrations.BASELINE, Codec.INT);
+
     /** On mobs (not players): true if it came from a spawner. Saved with the mob, never synced. */
     public static final Supplier<AttachmentType<Boolean>> FROM_SPAWNER = ATTACHMENT_TYPES.register("from_spawner",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
@@ -185,7 +193,7 @@ public final class ModAttachments {
     /** Back to defaults for every system (used by /satisfy debug reset all). */
     public static void resetAll(Player player) {
         ATTACHMENT_TYPES.getEntries().stream()
-                .filter(type -> type.get() != CHARACTER_VAULT.get())
+                .filter(type -> type.get() != CHARACTER_VAULT.get() && type.get() != SAVE_VERSION.get())
                 .forEach(type -> player.removeData(type.get()));
     }
 
