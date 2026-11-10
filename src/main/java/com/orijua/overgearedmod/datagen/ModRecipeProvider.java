@@ -78,12 +78,26 @@ final class ModRecipeProvider extends RecipeProvider {
                 .define('B', Items.BRICKS).define('F', Items.BLAST_FURNACE).define('i', Items.IRON_INGOT)
                 .unlockedBy("has_blast_furnace", has(Items.BLAST_FURNACE))
                 .save(satisfyOnly(output), Overgearedmod.id("smelter"));
-        // The basic capsule (own design; tiers come later): glass, a bed to lie on, iron and redstone for the circuits.
+        // The basic capsule (own design): glass, a bed to lie on, iron and redstone for the circuits.
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CAPSULE.get())
                 .pattern("GGG").pattern("IBI").pattern("IRI")
                 .define('G', Items.GLASS).define('B', ItemTags.BEDS).define('I', Items.IRON_INGOT).define('R', Items.REDSTONE)
                 .unlockedBy("has_redstone", has(Items.REDSTONE))
                 .save(output, Overgearedmod.id("capsule"));
+        // The upgrades (own design): the license bought at the terminal, the capsule of the tier below and materials. Not
+        // satisfyOnly (they are made in the real world); everything is used up, the license leaves nothing behind.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.ADVANCED_CAPSULE.get())
+                .pattern("DLD").pattern("GCG").pattern("D D")
+                .define('D', Items.DIAMOND).define('L', ModItems.ADVANCED_CAPSULE_LICENSE.get())
+                .define('G', Items.GOLD_BLOCK).define('C', ModItems.CAPSULE.get())
+                .unlockedBy("has_advanced_capsule_license", has(ModItems.ADVANCED_CAPSULE_LICENSE.get()))
+                .save(output, Overgearedmod.id("advanced_capsule"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DIAMOND_CAPSULE.get())
+                .pattern(" S ").pattern("LCN")
+                .define('S', Items.NETHER_STAR).define('L', ModItems.DIAMOND_CAPSULE_LICENSE.get())
+                .define('C', ModItems.ADVANCED_CAPSULE.get()).define('N', Items.NETHERITE_BLOCK)
+                .unlockedBy("has_diamond_capsule_license", has(ModItems.DIAMOND_CAPSULE_LICENSE.get()))
+                .save(output, Overgearedmod.id("diamond_capsule"));
         // The account terminal and the phone (own design): glass panes for the screen, iron and redstone for the circuits.
         // Not satisfyOnly: they are crafted in the real world, where they work.
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.ACCOUNT_TERMINAL.get())

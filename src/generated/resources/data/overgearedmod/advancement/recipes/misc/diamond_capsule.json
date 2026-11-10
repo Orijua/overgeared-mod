@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_diamond_capsule_license": {
+      "conditions": {
+        "items": [
+          {
+            "items": "overgearedmod:diamond_capsule_license"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "overgearedmod:diamond_capsule"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_diamond_capsule_license"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgearedmod:diamond_capsule"
+    ]
+  }
+}

@@ -411,12 +411,14 @@ public final class SatisfyOnlyTests {
     }
 
     /**
-     * The exceptions of {@link SatisfyOnly} are strings (capsule, advanced_capsule, diamond_capsule, account_terminal, phone); here they are checked against what is really
+     * The exceptions of {@link SatisfyOnly} are strings (capsules, their licenses, account_terminal, phone); here they are checked against what is really
      * registered. Catches a renamed exception and any mod object that would escape the restriction (ores included).
      */
     @GameTest(template = TestSupport.EMPTY)
     public static void onlyTheRealWorldDevicesWorkThere(GameTestHelper helper) {
-        Set<ResourceLocation> expectedItems = new TreeSet<>(List.of(ModBlocks.CAPSULE.getId(), ModBlocks.ADVANCED_CAPSULE.getId(), ModBlocks.DIAMOND_CAPSULE.getId(), ModBlocks.ACCOUNT_TERMINAL.getId(), com.orijua.overgearedmod.core.registry.ModItems.PHONE.getId()));
+        Set<ResourceLocation> expectedItems = new TreeSet<>(List.of(ModBlocks.CAPSULE.getId(), ModBlocks.ADVANCED_CAPSULE.getId(), ModBlocks.DIAMOND_CAPSULE.getId(),
+                com.orijua.overgearedmod.core.registry.ModItems.ADVANCED_CAPSULE_LICENSE.getId(), com.orijua.overgearedmod.core.registry.ModItems.DIAMOND_CAPSULE_LICENSE.getId(),
+                ModBlocks.ACCOUNT_TERMINAL.getId(), com.orijua.overgearedmod.core.registry.ModItems.PHONE.getId()));
         Set<ResourceLocation> expectedBlocks = new TreeSet<>(List.of(ModBlocks.CAPSULE.getId(), ModBlocks.ADVANCED_CAPSULE.getId(), ModBlocks.DIAMOND_CAPSULE.getId(), ModBlocks.ACCOUNT_TERMINAL.getId()));
         Set<ResourceLocation> actualItems = new TreeSet<>();
         for (ResourceLocation id : BuiltInRegistries.ITEM.keySet()) {

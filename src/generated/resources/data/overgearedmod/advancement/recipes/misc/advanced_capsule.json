@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_advanced_capsule_license": {
+      "conditions": {
+        "items": [
+          {
+            "items": "overgearedmod:advanced_capsule_license"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "overgearedmod:advanced_capsule"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_advanced_capsule_license"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "overgearedmod:advanced_capsule"
+    ]
+  }
+}

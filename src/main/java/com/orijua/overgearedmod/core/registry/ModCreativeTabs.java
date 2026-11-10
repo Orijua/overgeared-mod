@@ -26,6 +26,8 @@ public final class ModCreativeTabs {
                         output.accept(ModItems.CAPSULE);
                         output.accept(ModItems.ADVANCED_CAPSULE);
                         output.accept(ModItems.DIAMOND_CAPSULE);
+                        output.accept(ModItems.ADVANCED_CAPSULE_LICENSE);
+                        output.accept(ModItems.DIAMOND_CAPSULE_LICENSE);
                         output.accept(ModItems.ACCOUNT_TERMINAL);
                         output.accept(ModItems.PHONE);
                         output.accept(ModItems.JAFFA_ORE);

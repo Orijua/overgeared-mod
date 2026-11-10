@@ -18,8 +18,9 @@ public final class SatisfyOnly {
     /** The action-bar message shown when something that only works in Satisfy is tried in the real world. */
     public static final String WARNING_KEY = "message.overgearedmod.satisfy_only";
 
-    /** The items that work in the real world: the capsules (all tiers), the account terminal and the phone. */
-    private static final Set<String> REAL_WORLD_ITEMS = Set.of("capsule", "advanced_capsule", "diamond_capsule", "account_terminal", "phone");
+    /** The items that work in the real world: the capsules (all tiers) and their licenses, the account terminal and the phone. */
+    private static final Set<String> REAL_WORLD_ITEMS = Set.of("capsule", "advanced_capsule", "diamond_capsule",
+            "advanced_capsule_license", "diamond_capsule_license", "account_terminal", "phone");
     /** The blocks that can be placed in the real world: the capsules (all tiers) and the account terminal. */
     private static final Set<String> REAL_WORLD_BLOCKS = Set.of("capsule", "advanced_capsule", "diamond_capsule", "account_terminal");
 
@@ -31,7 +32,7 @@ public final class SatisfyOnly {
         return !Satisfy.is(entity.level());
     }
 
-    /** An item of the mod that is inert in the real world: everything but the capsules, the terminal and the phone. */
+    /** An item of the mod that is inert in the real world: everything but the capsules and their licenses, the terminal and the phone. */
     public static boolean isSatisfyItem(ResourceLocation item) {
         return Overgearedmod.MODID.equals(item.getNamespace()) && !REAL_WORLD_ITEMS.contains(item.getPath());
     }
