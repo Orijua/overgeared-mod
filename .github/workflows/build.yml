@@ -1,10 +1,10 @@
-# Compiles the mod and runs the unit tests and the game tests on every PR and every push to master.
+# Compiles the mod and runs the unit tests and the game tests on every PR and every push to main.
 name: Build
 
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [main]
 
 permissions:
   contents: read
