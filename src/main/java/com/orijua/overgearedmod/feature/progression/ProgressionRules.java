@@ -34,12 +34,15 @@ public final class ProgressionRules {
         return (int) Math.floor(Math.sqrt(Math.max(0, smithingXp) / 10.0));
     }
 
-    /** {@code amount} raised by a {@code bonus} fraction (0.1 = +10 %), rounded; a bonus never turns a gain into nothing. */
+    /**
+     * {@code amount} raised by a {@code bonus} fraction (0.1 = +10 %), rounded, never above {@link Integer#MAX_VALUE};
+     * a bonus never turns a gain into nothing, and one that is not a positive number changes nothing.
+     */
     public static int boostedSmithingXp(int amount, double bonus) {
-        if (amount <= 0 || bonus <= 0) {
+        if (amount <= 0 || !(bonus > 0)) {
             return amount;
         }
-        return (int) Math.round(amount * (1 + bonus));
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(amount * (1 + bonus)));
     }
 
     /**

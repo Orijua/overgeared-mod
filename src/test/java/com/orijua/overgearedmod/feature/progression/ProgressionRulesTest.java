@@ -198,6 +198,20 @@ class ProgressionRulesTest {
     }
 
     @Test
+    void aTitleBonusSaturatesInsteadOfOverflowing() {
+        assertEquals(Integer.MAX_VALUE, ProgressionRules.boostedSmithingXp(Integer.MAX_VALUE, 0.1));
+        assertEquals(Integer.MAX_VALUE, ProgressionRules.boostedSmithingXp(2_000_000_000, 0.5));
+        assertEquals(Integer.MAX_VALUE, ProgressionRules.boostedSmithingXp(10, Double.POSITIVE_INFINITY));
+    }
+
+    @Test
+    void aBonusThatIsNotAPositiveNumberChangesNothing() {
+        assertEquals(15, ProgressionRules.boostedSmithingXp(15, Double.NaN));
+        assertEquals(15, ProgressionRules.boostedSmithingXp(15, -0.5));
+        assertEquals(15, ProgressionRules.boostedSmithingXp(15, Double.NEGATIVE_INFINITY));
+    }
+
+    @Test
     void restedRaisesLevelXpByAPercent() {
         assertEquals(1, ProgressionRules.restedXp(1, 10));
         assertEquals(11, ProgressionRules.restedXp(10, 10));

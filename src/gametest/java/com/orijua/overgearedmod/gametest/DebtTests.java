@@ -511,7 +511,7 @@ public final class DebtTests {
         List<Component> shown = new ArrayList<>();
         helper.assertTrue(run(helper, player, "satisfy debug debt", 2, shown) == 1, "it answers");
         helper.assertTrue(shown.size() == 1 && shown.get(0).getContents() instanceof TranslatableContents contents
-                && contents.getKey().equals("message.overgearedmod.debug_debt") && contents.getArgs()[0] instanceof Number debt && debt.longValue() == 0,
+                && contents.getKey().equals("message.overgearedmod.debug_debt") && "0".equals(contents.getArgs()[0]),
                 "it shows the debt: " + shown);
 
         run(helper, player, "satisfy debug set debt 300", 2, new ArrayList<>());
@@ -519,6 +519,17 @@ public final class DebtTests {
         helper.assertTrue(refused(helper, player, "satisfy debug set debt 5", 1), "level 1 is refused");
         helper.assertTrue(refused(helper, player, "satisfy debug debt clear", 1), "clear needs level 2");
         assertAccount(helper, player, new Account(50, 300, DebtState.ACTIVE));
+
+        // A big debt is written with thousands separators, as every other amount.
+        shown.clear();
+        run(helper, player, "satisfy debug set debt 1234567", 2, shown);
+        helper.assertTrue(shown.size() == 1 && shown.get(0).getContents() instanceof TranslatableContents setDebt
+                && setDebt.getKey().equals("message.overgearedmod.debug_set_debt") && "1.234.567".equals(setDebt.getArgs()[0]),
+                "set debt confirms 1.234.567: " + shown);
+        shown.clear();
+        run(helper, player, "satisfy debug debt", 2, shown);
+        helper.assertTrue(shown.size() == 1 && shown.get(0).getContents() instanceof TranslatableContents bigDebt
+                && "1.234.567".equals(bigDebt.getArgs()[0]), "the debt command shows 1.234.567: " + shown);
 
         run(helper, player, "satisfy debug set debt 0", 2, new ArrayList<>());
         assertAccount(helper, player, new Account(50, 0, DebtState.SETTLED));

@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.core.config.DebtBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.economy.AccountService;
+import com.orijua.overgearedmod.feature.economy.Money;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -42,7 +43,7 @@ public final class StarterCapsule {
         }
         long debt = DebtBalance.current().starterDebt();
         if (AccountService.assignStarterDebt(player, debt)) {
-            player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter", debt));
+            player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter", Money.format(debt)));
         } else {
             player.sendSystemMessage(Component.translatable("message.overgearedmod.capsule.starter_free"));
         }

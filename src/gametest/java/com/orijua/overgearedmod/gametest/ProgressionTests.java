@@ -49,4 +49,17 @@ public final class ProgressionTests {
         helper.assertTrue(ProgressionService.get(player).xp() == after, "one he never hit is nobody's");
         helper.succeed();
     }
+
+    /** The smithing XP saturates at Integer.MAX_VALUE instead of overflowing into a negative number. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void smithingXpSaturatesInsteadOfOverflowing(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        ProgressionService.set(player, ProgressionService.get(player).withSmithingXp(Integer.MAX_VALUE - 5));
+        ProgressionService.addSmithingXp(player, 100);
+        helper.assertTrue(ProgressionService.get(player).smithingXp() == Integer.MAX_VALUE,
+                "MAX-5 plus 100 stays at MAX_VALUE: " + ProgressionService.get(player).smithingXp());
+        ProgressionService.addSmithingXp(player, 100);
+        helper.assertTrue(ProgressionService.get(player).smithingXp() == Integer.MAX_VALUE, "and keeps there");
+        helper.succeed();
+    }
 }

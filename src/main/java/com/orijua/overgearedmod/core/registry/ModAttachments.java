@@ -138,6 +138,15 @@ public final class ModAttachments {
     public static final Supplier<AttachmentType<Integer>> RESTED_SECONDS =
             playerData("rested_seconds", () -> 0, Codec.INT, ByteBufCodecs.VAR_INT, false);
 
+    /**
+     * Seconds left before connecting with the diamond capsule can grant the "rested" bonus again (the config's
+     * {@code restedCooldownMinutes} starts it when a connection grants the bonus). It only counts down inside Satisfy, like the
+     * bonus. Synced for the status tab. Unlike the bonus it is kept on death, on disconnecting and on login: otherwise
+     * dying or reconnecting would be a way around the wait. Only {@link #resetAll} clears it.
+     */
+    public static final Supplier<AttachmentType<Integer>> RESTED_COOLDOWN =
+            playerData("rested_cooldown", () -> 0, Codec.INT, ByteBufCodecs.VAR_INT, true);
+
     /** Whether the player already got their starter capsule (see capsule.StarterCapsule). Server-only, kept on death. */
     public static final Supplier<AttachmentType<Boolean>> STARTER_CAPSULE_GIVEN =
             serverData("starter_capsule_given", () -> false, Codec.BOOL);

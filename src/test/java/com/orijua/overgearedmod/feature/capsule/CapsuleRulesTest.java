@@ -57,11 +57,17 @@ class CapsuleRulesTest {
         GlobalPos exit = GlobalPos.of(Level.OVERWORLD, new BlockPos(1, 64, 3));
         CapsuleState connected = CapsuleState.EMPTY.connected(capsule, exit);
         assertEquals(connected, roundTrip(connected));
-        CapsuleState back = connected.disconnected(SAVED);
-        assertEquals(back, roundTrip(back));
+        assertEquals(connected.disconnected(SAVED), roundTrip(connected.disconnected(SAVED)));
+        assertEquals(CapsuleState.EMPTY, roundTrip(CapsuleState.EMPTY));
+    }
+
+    @Test
+    void disconnectingSavesTheSpotAndBringsTheBodyBack() {
+        GlobalPos capsule = GlobalPos.of(Level.OVERWORLD, new BlockPos(1, 64, 2));
+        GlobalPos exit = GlobalPos.of(Level.OVERWORLD, new BlockPos(1, 64, 3));
+        CapsuleState back = CapsuleState.EMPTY.connected(capsule, exit).disconnected(SAVED);
         assertEquals(Optional.of(SAVED), back.lastSave());
         assertTrue(back.capsule().isEmpty() && back.exit().isEmpty(), "the body is back in the real world");
-        assertEquals(CapsuleState.EMPTY, roundTrip(CapsuleState.EMPTY));
     }
 
     @Test
@@ -160,7 +166,7 @@ class CapsuleRulesTest {
     @Test
     void theBasicCapsuleIsExactlyNeutral() {
         assertEquals(SessionModifiers.NEUTRAL, CapsuleRules.modifiers(CapsuleTier.BASIC, F, C));
-        CapsuleBalance odd = new CapsuleBalance(30, 5, 60, 3, 100, 200, 5, 20, 0.5);
+        CapsuleBalance odd = new CapsuleBalance(30, 5, 60, 3, 100, 200, 5, 20, 0.5, 30);
         assertEquals(SessionModifiers.NEUTRAL, CapsuleRules.modifiers(CapsuleTier.BASIC, F, odd));
     }
 
@@ -200,12 +206,95 @@ class CapsuleRulesTest {
     void otherTiersAndAZeroDurationGiveNoRested() {
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.ADVANCED, F, C), 1.0, C));
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.BASIC, F, C), 1.0, C));
-        CapsuleBalance off = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.90);
+        CapsuleBalance off = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.90, 30);
         assertEquals(0, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, off), 1.0, off));
     }
 
+    @Test
+    void connectingGrantsTheRestedAndOpensTheWait() {
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C);
+        assertEquals(new CapsuleRules.RestedGrant(600, 1800), CapsuleRules.onConnect(diamond, 1.0, 0, C));
+        assertEquals(new CapsuleRules.RestedGrant(600, 1800), CapsuleRules.onConnect(diamond, 0.9, -5, C), "a negative wait is none");
+    }
+
+    @Test
+    void whileTheWaitRunsNothingIsGrantedAndTheWaitIsNotRestarted() {
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C);
+        assertEquals(new CapsuleRules.RestedGrant(0, 1234), CapsuleRules.onConnect(diamond, 1.0, 1234, C));
+        assertEquals(new CapsuleRules.RestedGrant(0, 1), CapsuleRules.onConnect(diamond, 1.0, 1, C));
+    }
+
+    @Test
+    void aConnectionThatGrantsNothingOpensNoWait() {
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C);
+        assertEquals(new CapsuleRules.RestedGrant(0, 0), CapsuleRules.onConnect(diamond, 0.85, 0, C), "low energy");
+        assertEquals(new CapsuleRules.RestedGrant(0, 0),
+                CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.ADVANCED, F, C), 1.0, 0, C), "advanced");
+        CapsuleBalance off = withRested(0, 0.9);
+        assertEquals(new CapsuleRules.RestedGrant(0, 0), CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, off), 1.0, 0, off),
+                "restedMinutes 0");
+    }
+
+    @Test
+    void aWaitOfZeroMinutesAlwaysGrants() {
+        CapsuleBalance noWait = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.90, 0);
+        SessionModifiers diamond = CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, noWait);
+        assertEquals(new CapsuleRules.RestedGrant(600, 0), CapsuleRules.onConnect(diamond, 1.0, 0, noWait));
+        assertEquals(new CapsuleRules.RestedGrant(600, 0), CapsuleRules.onConnect(diamond, 1.0, CapsuleRules.cooldownLeft(1800, noWait), noWait));
+    }
+
+    @Test
+    void theWaitLeftIsClampedToTheConfiguredWait() {
+        CapsuleBalance fiveMinutes = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.90, 5);
+        CapsuleBalance noWait = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.90, 0);
+        assertEquals(300, CapsuleRules.cooldownLeft(1800, fiveMinutes));
+        assertEquals(120, CapsuleRules.cooldownLeft(120, fiveMinutes));
+        assertEquals(0, CapsuleRules.cooldownLeft(-7, C));
+        assertEquals(0, CapsuleRules.cooldownLeft(1800, noWait));
+        assertEquals(1800, CapsuleRules.cooldownLeft(1800, C));
+    }
+
+    @Test
+    void theWaitCountsDownToZeroAndStops() {
+        assertEquals(1799, CapsuleRules.tickDown(1800));
+        assertEquals(0, CapsuleRules.tickDown(1));
+        assertEquals(0, CapsuleRules.tickDown(0));
+        assertEquals(0, CapsuleRules.tickDown(-3));
+    }
+
+    @Test
+    void theWaitRulesSurviveTheExtremesOfAnInt() {
+        assertEquals(1800, CapsuleRules.cooldownLeft(Integer.MAX_VALUE, C), "a huge saved wait is cut to the configured one");
+        assertEquals(0, CapsuleRules.cooldownLeft(Integer.MIN_VALUE, C), "a hugely negative one is none");
+        assertEquals(Integer.MAX_VALUE - 1, CapsuleRules.tickDown(Integer.MAX_VALUE));
+        assertEquals(0, CapsuleRules.tickDown(Integer.MIN_VALUE), "no wrap-around to a huge wait");
+        CapsuleBalance longest = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.90, CapsuleBalance.MAX_RESTED_COOLDOWN_MINUTES);
+        assertEquals(86_400, CapsuleRules.cooldownLeft(Integer.MAX_VALUE, longest), "the longest wait still fits an int");
+    }
+
+    @Test
+    void aRunningWaitIsKeptWhateverTheConnectionWouldHaveGranted() {
+        CapsuleBalance noRested = withRested(0, 0.9);
+        assertEquals(new CapsuleRules.RestedGrant(0, 500),
+                CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, noRested), 1.0, 500, noRested), "rested minutes 0");
+        assertEquals(new CapsuleRules.RestedGrant(0, 500),
+                CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.ADVANCED, F, C), 1.0, 500, C), "advanced tier");
+        assertEquals(new CapsuleRules.RestedGrant(0, 500),
+                CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.BASIC, F, C), 0.1, 500, C), "basic tier, low energy");
+    }
+
+    @Test
+    void anEnergyThatIsNotANumberGrantsNothingAndOpensNoWait() {
+        assertEquals(new CapsuleRules.RestedGrant(0, 0),
+                CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.ADVANCED, F, C), Double.NaN, 0, C), "advanced");
+        assertEquals(new CapsuleRules.RestedGrant(0, 0),
+                CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C), Double.NaN, 0, C), "diamond");
+        assertEquals(new CapsuleRules.RestedGrant(0, 700),
+                CapsuleRules.onConnect(CapsuleRules.modifiers(CapsuleTier.DIAMOND, F, C), Double.NaN, 700, C), "a running wait still goes on");
+    }
+
     private static CapsuleBalance withRested(int restedMinutes, double minEnergy) {
-        return new CapsuleBalance(55, 8, 75, 6, 3000, 15000, restedMinutes, 10, minEnergy);
+        return new CapsuleBalance(55, 8, 75, 6, 3000, 15000, restedMinutes, 10, minEnergy, 30);
     }
 
     @Test

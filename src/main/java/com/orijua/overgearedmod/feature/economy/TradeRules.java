@@ -3,10 +3,13 @@ package com.orijua.overgearedmod.feature.economy;
 import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
@@ -44,11 +47,80 @@ public final class TradeRules {
         }
     }
 
-    /** The reference price: base by rating, times the material, plus a share per enhancement level (weapons only); at least 1. */
+    /** A price multiplier of a single object, as the config writes it: {@code ns:path=N}. */
+    public record ItemMultiplier(ResourceLocation id, double multiplier) {
+        public String asString() {
+            return id + "=" + multiplier;
+        }
+    }
+
+    /** Reads {@code ns:path=N}; empty if the id is not a valid item id (a tag is not) or N is not a finite number from 0 to 100. */
+    public static Optional<ItemMultiplier> parseItemMultiplier(String text) {
+        if (text == null) {
+            return Optional.empty();
+        }
+        int equals = text.lastIndexOf('=');
+        if (equals < 1) {
+            return Optional.empty();
+        }
+        String idText = text.substring(0, equals).trim();
+        if (idText.startsWith("#")) {
+            return Optional.empty();
+        }
+        ResourceLocation id = ResourceLocation.tryParse(idText);
+        if (id == null || id.getPath().isEmpty()) {
+            return Optional.empty();
+        }
+        double multiplier;
+        try {
+            multiplier = Double.parseDouble(text.substring(equals + 1).trim());
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+        // "- 0" reads as -0.0, which passes the range check: "+ 0.0" turns it into plain 0.0 (and leaves everything else alone).
+        return Double.isFinite(multiplier) && multiplier >= 0.0 && multiplier <= 100.0
+                ? Optional.of(new ItemMultiplier(id, multiplier + 0.0)) : Optional.empty();
+    }
+
+    /**
+     * The multipliers of a config list: the invalid lines are skipped and, if an id repeats, the first one wins. (In the
+     * real config NeoForge already drops the wrong lines when it corrects the file; this stays as the second guard.)
+     */
+    public static Map<ResourceLocation, Double> itemMultipliers(List<? extends String> lines) {
+        Map<ResourceLocation, Double> multipliers = new LinkedHashMap<>();
+        for (String line : lines) {
+            parseItemMultiplier(line).ifPresent(entry -> multipliers.putIfAbsent(entry.id(), entry.multiplier()));
+        }
+        return multipliers;
+    }
+
+    /** The reference price of a piece with all its durability: see the six-argument form. */
     public static long reference(ItemRating rating, double material, int enhancement, boolean weapon, TradeBalance balance) {
+        return reference(rating, material, enhancement, weapon, 1.0, balance);
+    }
+
+    /**
+     * The reference price: base by rating, times the material, plus a share per enhancement level (weapons only), times the
+     * {@code durability} factor ({@link #durabilityFactor}) before the one rounding down; at least 1.
+     */
+    public static long reference(ItemRating rating, double material, int enhancement, boolean weapon, double durability, TradeBalance balance) {
         double levels = weapon ? Math.max(0, enhancement) : 0;
-        double value = balance.basePrice().getOrDefault(rating, 1) * material * (1.0 + balance.enhancementBonus() * levels);
+        double value = balance.basePrice().getOrDefault(rating, 1) * material * (1.0 + balance.enhancementBonus() * levels) * durability;
         return Math.max(1L, Money.floor(value));
+    }
+
+    /**
+     * The price factor of the durability left: {@code minFactor} with none left, 1 with all of it, linear in between. A piece
+     * with no durability ({@code maxDamage <= 0}) or a negative damage counts as new; more damage than the maximum, as broken.
+     */
+    public static double durabilityFactor(int damage, int maxDamage, double minFactor) {
+        if (maxDamage <= 0 || damage < 0) {
+            return 1.0;
+        }
+        if (damage > maxDamage) {
+            return minFactor;
+        }
+        return minFactor + (1.0 - minFactor) * ((double) (maxDamage - damage) / maxDamage);
     }
 
     /** The price factor for a pressure: one step per point, never below the floor; a negative pressure is none. */
@@ -152,6 +224,11 @@ public final class TradeRules {
             }
         }
         return slots;
+    }
+
+    /** The durability factor as a whole percent, the number the player sees. */
+    public static int durabilityPercent(double factor) {
+        return (int) Math.round(factor * 100.0);
     }
 
     /** The saturation factor as a whole percent, the number the player sees. */

@@ -15,6 +15,7 @@ import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
  * @param restedMinutes           minutes of "rested" bonus a diamond connection grants (0 turns it off)
  * @param restedXpPercent         extra level XP (percent) while rested
  * @param restedMinEnergy         the energy (0 to 1) needed when connecting to get the rested bonus
+ * @param restedCooldownMinutes   minutes spent inside Satisfy after a rested bonus is granted before connecting grants another (0 = no wait)
  */
 public record CapsuleBalance(
         double advancedSessionMinutes,
@@ -25,15 +26,17 @@ public record CapsuleBalance(
         long diamondLicenseWon,
         int restedMinutes,
         int restedXpPercent,
-        double restedMinEnergy) {
+        double restedMinEnergy,
+        int restedCooldownMinutes) {
 
     public static final double MAX_SESSION_MINUTES = 1440.0;
     public static final double MIN_RECOVERY_MINUTES = 0.1;
     public static final long MAX_LICENSE_WON = 1_000_000_000L;
     public static final int MAX_RESTED_MINUTES = 1440;
     public static final int MAX_RESTED_XP_PERCENT = 1000;
+    public static final int MAX_RESTED_COOLDOWN_MINUTES = 1440;
 
-    public static final CapsuleBalance DEFAULT = new CapsuleBalance(55.0, 8.0, 75.0, 6.0, 3000L, 15000L, 10, 10, 0.90);
+    public static final CapsuleBalance DEFAULT = new CapsuleBalance(55.0, 8.0, 75.0, 6.0, 3000L, 15000L, 10, 10, 0.90, 30);
 
     public CapsuleBalance {
         checkRange("advancedSessionMinutes", advancedSessionMinutes, 1.0, MAX_SESSION_MINUTES);
@@ -45,6 +48,7 @@ public record CapsuleBalance(
         checkRange("restedMinutes", restedMinutes, 0.0, MAX_RESTED_MINUTES);
         checkRange("restedXpPercent", restedXpPercent, 0.0, MAX_RESTED_XP_PERCENT);
         checkRange("restedMinEnergy", restedMinEnergy, 0.0, 1.0);
+        checkRange("restedCooldownMinutes", restedCooldownMinutes, 0.0, MAX_RESTED_COOLDOWN_MINUTES);
     }
 
     private static void checkRange(String name, double value, double min, double max) {
