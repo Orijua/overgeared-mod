@@ -49,4 +49,44 @@ class CapsuleTextTest {
                 () -> assertEquals("-", CapsuleText.minutes(Double.NaN)),
                 () -> assertEquals("-", CapsuleText.minutes(Double.POSITIVE_INFINITY)));
     }
+
+    @Test
+    void minutesWithNegativeValuesKeepTheSignAndTheRule() {
+        assertAll(
+                () -> assertEquals("-55", CapsuleText.minutes(-55.0)),
+                () -> assertEquals("-7.5", CapsuleText.minutes(-7.5)),
+                () -> assertEquals("-8", CapsuleText.minutes(-7.96)),
+                () -> assertEquals("0", CapsuleText.minutes(-0.04), "rounds to zero: no minus"),
+                () -> assertEquals("0", CapsuleText.minutes(-0.0)),
+                () -> assertEquals("-", CapsuleText.minutes(Double.NEGATIVE_INFINITY)));
+    }
+
+    @Test
+    void clockAndMinutesWriteLatinDigitsWhateverTheLocale() {
+        Locale previous = Locale.getDefault();
+        try {
+            for (Locale locale : new Locale[]{Locale.forLanguageTag("ar-EG"), Locale.forLanguageTag("hi-IN"), Locale.GERMANY}) {
+                Locale.setDefault(locale);
+                assertEquals("01:05", CapsuleText.clock(65), locale.toString());
+                assertEquals("1440:00", CapsuleText.clock(86_400), locale.toString());
+                assertEquals("7.5", CapsuleText.minutes(7.5), locale.toString());
+                assertEquals("-7.5", CapsuleText.minutes(-7.5), locale.toString());
+            }
+        } finally {
+            Locale.setDefault(previous);
+        }
+    }
+
+    @Test
+    void clockWritesMinutesAndSeconds() {
+        assertAll(
+                () -> assertEquals("00:00", CapsuleText.clock(0)),
+                () -> assertEquals("00:59", CapsuleText.clock(59)),
+                () -> assertEquals("01:00", CapsuleText.clock(60)),
+                () -> assertEquals("09:59", CapsuleText.clock(599)),
+                () -> assertEquals("30:00", CapsuleText.clock(1800)),
+                () -> assertEquals("1440:00", CapsuleText.clock(86_400)),
+                () -> assertEquals("00:00", CapsuleText.clock(-1)),
+                () -> assertEquals("00:00", CapsuleText.clock(Integer.MIN_VALUE)));
+    }
 }

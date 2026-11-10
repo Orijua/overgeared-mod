@@ -332,8 +332,8 @@ public final class TradeTests {
             category(helper, Items.CHAINMAIL_CHESTPLATE, TradeCategory.CHESTPLATE, 1.0);
             category(helper, Items.NETHERITE_LEGGINGS, TradeCategory.LEGGINGS, 3.0);
             category(helper, Items.IRON_HELMET, TradeCategory.HELMET, 1.0);
-            category(helper, ModItems.JAFFA_SWORD.get(), TradeCategory.SWORD, 1.0);
-            category(helper, ModItems.FRACASO_SWORD.get(), TradeCategory.SWORD, 3.0);
+            category(helper, ModItems.JAFFA_SWORD.get(), TradeCategory.SWORD, 2.0);
+            category(helper, ModItems.FRACASO_SWORD.get(), TradeCategory.SWORD, 0.25);
             category(helper, Items.IRON_HOE, TradeCategory.OTHER, 1.0);
             category(helper, Items.TRIDENT, TradeCategory.OTHER, 1.0);
             category(helper, ModItems.IRON_SMITHING_HAMMER.get(), TradeCategory.OTHER, 1.0);
@@ -914,6 +914,35 @@ public final class TradeTests {
             helper.assertTrue(sent.size() == 1 && firstLineKey(sent.get(0)).equals("notification.overgearedmod.trade.sold"), "a single sale still notifies once, got " + sent);
         });
         helper.succeed();
+    }
+
+    /** The notification writes an amount of 1000 or more with the thousands separator, as every other amount. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theSaleNotificationWritesBigAmountsWithTheSeparator(GameTestHelper helper) {
+        run(() -> {
+            ServerPlayer player = TestSupport.fakePlayer(helper);
+            List<SystemNotification> sent = recordNotifications(player);
+            // A myth iron sword: 2500 x 0,4 = 1000. Nothing is delivered (no stack of 1000 fits the test inventory).
+            player.getInventory().setItem(0, rated(Items.IRON_SWORD, ItemRating.MYTH));
+            TradeService.Outcome outcome = TradeService.sell(player, 0, 0, (p, amount) -> { });
+            helper.assertTrue(outcome.result() == Result.SOLD && outcome.paid() == 1000, "sold for 1000: " + outcome);
+            helper.assertTrue(sent.size() == 1 && firstLineArgs(sent.get(0))[1].equals("1.000"), "the single sale says 1.000: " + sent);
+
+            sent.clear();
+            player.getInventory().setItem(1, rated(Items.IRON_SWORD, ItemRating.MYTH));
+            player.getInventory().setItem(2, rated(Items.IRON_SWORD, ItemRating.MYTH));
+            TradeService.Batch batch = TradeService.sellAll(player, entriesFor(player, 1, 2), 0, (p, amount) -> { });
+            helper.assertTrue(batch.sold() == 2 && batch.paid() >= 1000, "two sold for a big total: " + batch);
+            helper.assertTrue(sent.size() == 1 && firstLineKey(sent.get(0)).equals("notification.overgearedmod.trade.sold_many")
+                            && firstLineArgs(sent.get(0))[1].equals(com.orijua.overgearedmod.feature.economy.Money.format(batch.paid()))
+                            && String.valueOf(firstLineArgs(sent.get(0))[1]).contains("."),
+                    "the batch says the total with the separator: " + sent);
+        });
+        helper.succeed();
+    }
+
+    private static Object[] firstLineArgs(SystemNotification notification) {
+        return ((net.minecraft.network.chat.contents.TranslatableContents) notification.lines().get(0).getContents()).getArgs();
     }
 
     @GameTest(template = TestSupport.EMPTY)

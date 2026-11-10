@@ -325,15 +325,19 @@ public final class EconomyTests {
         helper.assertTrue(answers.size() == 1, "one answer");
         helper.assertTrue(answers.get(0).getContents() instanceof TranslatableContents contents
                 && contents.getKey().equals("message.overgearedmod.debug_account")
-                && contents.getArgs().length == 3 && contents.getArgs()[0] instanceof Number won && won.longValue() == 1234
-                && contents.getArgs()[1] instanceof Number debt && debt.longValue() == 56
+                && contents.getArgs().length == 3 && "1.234".equals(contents.getArgs()[0])
+                && "56".equals(contents.getArgs()[1])
                 && contents.getArgs()[2] instanceof Component state && state.getContents() instanceof TranslatableContents stateKey
                 && stateKey.getKey().equals("message.overgearedmod.debug_debt_state.active"),
                 "it carries the Won, the debt and its state: " + answers.get(0));
         List<Component> set = run(helper, player, "satisfy debug set won 77", 2);
         helper.assertTrue(set.size() == 1 && set.get(0).getContents() instanceof TranslatableContents confirm
-                && confirm.getKey().equals("message.overgearedmod.debug_won") && Long.valueOf(77).equals(confirm.getArgs()[0]),
+                && confirm.getKey().equals("message.overgearedmod.debug_won") && "77".equals(confirm.getArgs()[0]),
                 "set won confirms the amount");
+        List<Component> big = run(helper, player, "satisfy debug set won 1234", 2);
+        helper.assertTrue(big.size() == 1 && big.get(0).getContents() instanceof TranslatableContents bigConfirm
+                && bigConfirm.getKey().equals("message.overgearedmod.debug_won") && "1.234".equals(bigConfirm.getArgs()[0]),
+                "set won writes 1.234 with the separator: " + big);
         helper.succeed();
     }
 

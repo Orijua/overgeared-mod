@@ -224,6 +224,19 @@ public final class Config {
     private static final ModConfigSpec.LongValue TRADE_MAX_SELL_EMERALDS = BUILDER
             .comment("A sale that would pay more Satisfy emeralds than this is refused without touching the piece.")
             .defineInRange("maxSellEmeralds", T.maxSellEmeralds(), 64L, 100_000L);
+    private static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> TRADE_ITEM_MULTIPLIERS = BUILDER
+            .comment("Price multiplier of single objects, \"ns:path=N\" (N from 0 to 100). It replaces the one of the material, so a unique object",
+                    "(Fracaso, the Jaffa sword, the smithing hammers) does not weigh as iron or netherite just for its tier. A wrong line is",
+                    "dropped when NeoForge corrects the file (and if no line is left, the default list comes back); if an item repeats, the first line wins.")
+            .defineListAllowEmpty("itemMultipliers",
+                    T.itemMultiplier().entrySet().stream().sorted(java.util.Map.Entry.comparingByKey())
+                            .map(entry -> new com.orijua.overgearedmod.feature.economy.TradeRules.ItemMultiplier(entry.getKey(), entry.getValue()).asString())
+                            .toList(),
+                    () -> "minecraft:iron_sword=1.0",
+                    value -> value instanceof String text && com.orijua.overgearedmod.feature.economy.TradeRules.parseItemMultiplier(text).isPresent());
+    private static final ModConfigSpec.DoubleValue TRADE_MIN_DURABILITY_FACTOR = BUILDER
+            .comment("Price factor of a piece with no durability left (0 to 1). A new piece pays the full price; in between it is linear.")
+            .defineInRange("minDurabilityFactor", T.minDurabilityFactor(), 0.0, 1.0);
 
     static {
         BUILDER.pop();
@@ -320,6 +333,9 @@ public final class Config {
     private static final ModConfigSpec.DoubleValue CAPSULE_RESTED_MIN_ENERGY = BUILDER
             .comment("The energy (0 to 1) needed when connecting with the diamond capsule to get the rested bonus.")
             .defineInRange("restedMinEnergy", CAPSULE.restedMinEnergy(), 0.0, 1.0);
+    private static final ModConfigSpec.IntValue CAPSULE_RESTED_COOLDOWN_MINUTES = BUILDER
+            .comment("Minutes spent inside Satisfy after a rested bonus is granted before connecting grants another. 0 = no wait.")
+            .defineInRange("restedCooldownMinutes", CAPSULE.restedCooldownMinutes(), 0, CapsuleBalance.MAX_RESTED_COOLDOWN_MINUTES);
 
     static {
         BUILDER.pop();
@@ -363,7 +379,8 @@ public final class Config {
         materials.put("chainmail", TRADE_MATERIAL_CHAINMAIL.get());
         return new TradeBalance(prices, materials, TRADE_OTHER_MATERIAL.get(), TRADE_ENHANCEMENT_BONUS.get(), TRADE_SELL_SHARE.get(),
                 TRADE_SATURATION_STEP.get(), TRADE_SATURATION_FLOOR.get(),
-                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get());
+                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get(), TRADE_MIN_DURABILITY_FACTOR.get(),
+                com.orijua.overgearedmod.feature.economy.TradeRules.itemMultipliers(TRADE_ITEM_MULTIPLIERS.get()));
     }
 
     static TerminalBalance terminalBalance() {
@@ -387,7 +404,8 @@ public final class Config {
                 CAPSULE_ADVANCED_SESSION_MINUTES.get(), CAPSULE_ADVANCED_RECOVERY_MINUTES.get(),
                 CAPSULE_DIAMOND_SESSION_MINUTES.get(), CAPSULE_DIAMOND_RECOVERY_MINUTES.get(),
                 CAPSULE_ADVANCED_LICENSE_WON.get(), CAPSULE_DIAMOND_LICENSE_WON.get(),
-                CAPSULE_RESTED_MINUTES.get(), CAPSULE_RESTED_XP_PERCENT.get(), CAPSULE_RESTED_MIN_ENERGY.get());
+                CAPSULE_RESTED_MINUTES.get(), CAPSULE_RESTED_XP_PERCENT.get(), CAPSULE_RESTED_MIN_ENERGY.get(),
+                CAPSULE_RESTED_COOLDOWN_MINUTES.get());
     }
 
     static DebtBalance debtBalance() {

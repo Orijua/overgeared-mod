@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModEntities;
 import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.economy.Money;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
 import com.orijua.overgearedmod.feature.quest.goal.GoalTracker;
 import com.orijua.overgearedmod.feature.world.Satisfy;
@@ -100,6 +101,6 @@ public class ApprenticeContractItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable(getDescriptionId() + ".desc", ApprenticeRules.DAILY_WAGE).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(getDescriptionId() + ".desc", Money.format(ApprenticeRules.DAILY_WAGE)).withStyle(ChatFormatting.GRAY));
     }
 }

@@ -28,6 +28,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -146,12 +147,17 @@ public class StatusTab extends SatisfyTab {
         FatigueBalance balance = FatigueBalance.current();
         float energy = player().getData(ModAttachments.FATIGUE);
         CapsuleTier tier = player().getData(ModAttachments.CAPSULE_TIER);
-        return Component.translatable("screen.overgearedmod.status.capsule_tier", tier.tierName()).append("\n")
+        MutableComponent tooltip = Component.translatable("screen.overgearedmod.status.capsule_tier", tier.tierName()).append("\n")
                 .append(Component.translatable("screen.overgearedmod.fatigue.tooltip",
                         minutesOrDash(balance, energy, FatigueRules.Activity.REST),
                         minutesOrDash(balance, energy, FatigueRules.Activity.NORMAL),
                         minutesOrDash(balance, energy, FatigueRules.Activity.COMBAT),
                         CapsuleText.minutes(CapsuleBalance.current().recoveryMinutes(tier, balance)), Math.round(balance.minEnergyToConnect() * 100)));
+        int wait = CapsuleRules.cooldownLeft(player().getData(ModAttachments.RESTED_COOLDOWN), CapsuleBalance.current());
+        if (wait > 0) {
+            tooltip.append("\n").append(Component.translatable("screen.overgearedmod.status.rested_cooldown", CapsuleText.clock(wait)));
+        }
+        return tooltip;
     }
 
     /** The session modifiers of the capsule tier the player last connected with (the client knows the synced tier and config). */

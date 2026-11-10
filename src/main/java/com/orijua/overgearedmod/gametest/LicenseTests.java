@@ -194,7 +194,7 @@ public final class LicenseTests {
         real(helper, () -> {
             ServerPlayer player = buyer(helper, SETTLED);
             assertRefused(helper, player, LicenseShop.buy(player, CapsuleTier.ADVANCED, 2000L, C), Result.STALE, SETTLED, 0, 0, "a wrong seen price");
-            CapsuleBalance dearer = new CapsuleBalance(55, 8, 75, 6, 4000L, 15000L, 10, 10, 0.9);
+            CapsuleBalance dearer = new CapsuleBalance(55, 8, 75, 6, 4000L, 15000L, 10, 10, 0.9, 30);
             CapsuleBalance.withOverride(dearer, () ->
                     assertRefused(helper, player, LicenseShop.buy(player, CapsuleTier.ADVANCED, 3000L, CapsuleBalance.current()), Result.STALE, SETTLED, 0, 0, "a price changed by the configuration"));
         });

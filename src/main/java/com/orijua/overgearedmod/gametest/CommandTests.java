@@ -315,7 +315,14 @@ public final class CommandTests {
         helper.assertTrue(execute(helper, player, "satisfy debug capsule tier advanced") == 1, "a valid tier is set");
         helper.assertTrue(player.getData(com.orijua.overgearedmod.core.registry.ModAttachments.CAPSULE_TIER.get())
                 == com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED, "the tier is written");
-        helper.assertTrue(execute(helper, player, "satisfy debug capsule tier platinum") == 0, "an unknown tier fails and changes nothing");
+        List<Component> bad = new java.util.ArrayList<>();
+        try {
+            helper.assertTrue(executeKeeping(helper, player, "satisfy debug capsule tier platinum", bad) == 0
+                            && key(helper, bad).equals("message.overgearedmod.debug_capsule_bad_tier"),
+                    "an unknown tier fails with its own message and changes nothing: " + bad);
+        } catch (CommandSyntaxException e) {
+            throw new AssertionError(e.getMessage(), e);
+        }
         helper.assertTrue(player.getData(com.orijua.overgearedmod.core.registry.ModAttachments.CAPSULE_TIER.get())
                 == com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED, "the tier is still advanced");
         helper.assertTrue(execute(helper, player, "satisfy debug capsule rested 120") == 120, "the rested seconds are set");
@@ -329,6 +336,103 @@ public final class CommandTests {
         helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedSeconds(player) == 86400, "and written");
         execute(helper, player, "satisfy debug capsule rested 0");
         helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedSeconds(player) == 0, "zero is accepted and clears it");
+        helper.succeed();
+    }
+
+    /** Runs a command as {@code player} with level 4 and keeps every message it sends; returns its result. */
+    private static int executeKeeping(GameTestHelper helper, ServerPlayer player, String command, List<Component> answers) throws CommandSyntaxException {
+        net.minecraft.commands.CommandSource sink = new net.minecraft.commands.CommandSource() {
+            @Override
+            public void sendSystemMessage(Component message) {
+                answers.add(message);
+            }
+
+            @Override
+            public boolean acceptsSuccess() {
+                return true;
+            }
+
+            @Override
+            public boolean acceptsFailure() {
+                return true;
+            }
+
+            @Override
+            public boolean shouldInformAdmins() {
+                return false;
+            }
+        };
+        return helper.getLevel().getServer().getCommands().getDispatcher()
+                .execute(command, player.createCommandSourceStack().withPermission(4).withSource(sink));
+    }
+
+    /** The translatable part of the only answer; a failure comes wrapped in a red empty component, a success does not. */
+    private static TranslatableContents only(GameTestHelper helper, List<Component> answers) {
+        helper.assertTrue(answers.size() == 1, "one answer: " + answers);
+        Component answer = answers.get(0);
+        if (!(answer.getContents() instanceof TranslatableContents) && answer.getSiblings().size() == 1) {
+            answer = answer.getSiblings().get(0);
+        }
+        helper.assertTrue(answer.getContents() instanceof TranslatableContents, "a translatable answer: " + answers);
+        return (TranslatableContents) answer.getContents();
+    }
+
+    private static String key(GameTestHelper helper, List<Component> answers) {
+        return only(helper, answers).getKey();
+    }
+
+    private static Object[] args(List<Component> answers) {
+        return ((TranslatableContents) answers.get(0).getContents()).getArgs();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void debugCapsuleCooldownIsSetAndShown(GameTestHelper helper) throws CommandSyntaxException {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        com.orijua.overgearedmod.feature.capsule.CapsuleTier tier = com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED;
+        player.setData(com.orijua.overgearedmod.core.registry.ModAttachments.CAPSULE_TIER.get(), tier);
+        player.setData(com.orijua.overgearedmod.core.registry.ModAttachments.RESTED_SECONDS.get(), 77);
+        List<Component> set = new java.util.ArrayList<>();
+        helper.assertTrue(executeKeeping(helper, player, "satisfy debug capsule cooldown 120", set) == 120, "the wait is set");
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedCooldown(player) == 120, "and written");
+        helper.assertTrue(key(helper, set).equals("message.overgearedmod.debug_capsule_cooldown") && args(set).length == 1 && "02:00".equals(args(set)[0]),
+                "it confirms the wait as a clock: " + set);
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedSeconds(player) == 77
+                && player.getData(com.orijua.overgearedmod.core.registry.ModAttachments.CAPSULE_TIER.get()) == tier, "the rested and the tier are not touched");
+
+        com.orijua.overgearedmod.core.config.CapsuleBalance.withOverride(com.orijua.overgearedmod.core.config.CapsuleBalance.DEFAULT, () -> {
+            try {
+                List<Component> info = new java.util.ArrayList<>();
+                helper.assertTrue(executeKeeping(helper, player, "satisfy debug capsule", info) == 1, "the info answers");
+                helper.assertTrue(key(helper, info).equals("message.overgearedmod.debug_capsule") && args(info).length == 6, "the info has its six arguments: " + info);
+                var capsule = com.orijua.overgearedmod.core.config.CapsuleBalance.DEFAULT;
+                var fatigue = com.orijua.overgearedmod.core.config.FatigueBalance.current();
+                helper.assertTrue(args(info)[0] instanceof Component name && name.getContents() instanceof TranslatableContents tierKey
+                        && tierKey.getKey().equals("capsule_tier.overgearedmod.advanced"), "the tier: " + args(info)[0]);
+                helper.assertTrue("01:17".equals(args(info)[1]), "the rested as a clock: " + args(info)[1]);
+                helper.assertTrue("02:00".equals(args(info)[2]), "the wait as a clock: " + args(info)[2]);
+                helper.assertTrue(com.orijua.overgearedmod.feature.capsule.CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue)).equals(args(info)[3])
+                        && com.orijua.overgearedmod.feature.capsule.CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue)).equals(args(info)[4]),
+                        "session and recovery: " + args(info)[3] + ", " + args(info)[4]);
+                helper.assertTrue(args(info)[5] instanceof String locks && locks.contains("advanced=") && locks.contains("diamond="), "the licenses: " + args(info)[5]);
+
+                // A stored wait longer than the configured one is shown cut to the config (30 minutes by default).
+                player.setData(com.orijua.overgearedmod.core.registry.ModAttachments.RESTED_COOLDOWN.get(), 86400);
+                info.clear();
+                executeKeeping(helper, player, "satisfy debug capsule", info);
+                helper.assertTrue("30:00".equals(args(info)[2]), "86400 s shows as the configured 1800 s: " + args(info)[2]);
+                helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedCooldown(player) == 86400, "showing it does not rewrite it");
+            } catch (CommandSyntaxException e) {
+                throw new AssertionError(e.getMessage(), e);
+            }
+        });
+
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule cooldown 86401"), "more than a day is refused");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule cooldown -1"), "negative is refused");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule cooldown"), "without seconds is not a command");
+        List<Component> zero = new java.util.ArrayList<>();
+        helper.assertTrue(executeKeeping(helper, player, "satisfy debug capsule cooldown 0", zero) == 0 && key(helper, zero).equals("message.overgearedmod.debug_capsule_cooldown")
+                && "00:00".equals(args(zero)[0]), "zero is accepted and says so: " + zero);
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedCooldown(player) == 0, "and clears it");
         helper.succeed();
     }
 
