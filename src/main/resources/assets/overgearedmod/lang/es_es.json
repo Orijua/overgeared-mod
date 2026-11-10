@@ -778,7 +778,7 @@
   "notification.overgearedmod.trade": "Comercio",
   "notification.overgearedmod.trade.sold": "Vendiste %s por %s esmeraldas de Satisfy.",
   "notification.overgearedmod.trade.sold_many": "Vendidas: %s · Total: %s esmeraldas de Satisfy.",
-  "message.overgearedmod.terminal.worked_debt": "Turno hecho: +%s Won a tu cuenta · %s a la deuda",
+  "message.overgearedmod.terminal.worked_debt": "Turno hecho: +%s Won a tu cuenta · %s Won a la deuda",
   "message.overgearedmod.terminal.worked_settled": "Turno hecho: +%s Won a tu cuenta · Deuda saldada",
   "message.overgearedmod.terminal.debt_paid_off": "Has pagado %s Won: deuda saldada.",
   "message.overgearedmod.terminal.debt_paid": "Has pagado %s Won de la deuda. Quedan %s Won.",

@@ -778,7 +778,7 @@
   "notification.overgearedmod.trade": "Trade",
   "notification.overgearedmod.trade.sold": "You sold %s for %s Satisfy emeralds.",
   "notification.overgearedmod.trade.sold_many": "Sold: %s · Total: %s Satisfy emeralds.",
-  "message.overgearedmod.terminal.worked_debt": "Shift done: +%s Won to your account · %s to the debt",
+  "message.overgearedmod.terminal.worked_debt": "Shift done: +%s Won to your account · %s Won to the debt",
   "message.overgearedmod.terminal.worked_settled": "Shift done: +%s Won to your account · Debt settled",
   "message.overgearedmod.terminal.debt_paid_off": "You paid %s Won: debt settled.",
   "message.overgearedmod.terminal.debt_paid": "You paid %s Won of the debt. %s Won left.",
