@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.core.config.Balance;
 import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.feature.capsule.CapsuleRules;
+import com.orijua.overgearedmod.feature.capsule.CapsuleText;
 import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.fatigue.FatigueRules;
 import com.orijua.overgearedmod.feature.fatigue.client.FatigueHudLayer;
@@ -132,7 +133,7 @@ public class StatusTab extends SatisfyTab {
         int percent = Math.round(energy * 100);
         var minutes = FatigueRules.minutesLeft(balance, energy, FatigueRules.Activity.NORMAL, modifiers(balance));
         Component text = minutes.isPresent()
-                ? Component.translatable("screen.overgearedmod.fatigue", percent, (int) minutes.getAsDouble())
+                ? Component.translatable("screen.overgearedmod.fatigue", percent, CapsuleText.minutes(minutes.getAsDouble()))
                 : Component.translatable("screen.overgearedmod.fatigue.plain", percent);
         int y = top + 42;
         UiStyle.text(graphics, font(), text, left, y, UiStyle.TEXT);
@@ -150,7 +151,7 @@ public class StatusTab extends SatisfyTab {
                         minutesOrDash(balance, energy, FatigueRules.Activity.REST),
                         minutesOrDash(balance, energy, FatigueRules.Activity.NORMAL),
                         minutesOrDash(balance, energy, FatigueRules.Activity.COMBAT),
-                        (int) Math.round(CapsuleBalance.current().recoveryMinutes(tier, balance)), Math.round(balance.minEnergyToConnect() * 100)));
+                        CapsuleText.minutes(CapsuleBalance.current().recoveryMinutes(tier, balance)), Math.round(balance.minEnergyToConnect() * 100)));
     }
 
     /** The session modifiers of the capsule tier the player last connected with (the client knows the synced tier and config). */
@@ -160,7 +161,7 @@ public class StatusTab extends SatisfyTab {
 
     private String minutesOrDash(FatigueBalance balance, float energy, FatigueRules.Activity activity) {
         var minutes = FatigueRules.minutesLeft(balance, energy, activity, modifiers(balance));
-        return minutes.isPresent() ? String.valueOf((int) minutes.getAsDouble()) : "-";
+        return minutes.isPresent() ? CapsuleText.minutes(minutes.getAsDouble()) : "-";
     }
 
     /** Control: 100 points, Shift: 10, plain click: 1. The server spends only what's left. */

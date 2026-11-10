@@ -23,6 +23,7 @@ import com.orijua.overgearedmod.feature.economy.AccountService;
 import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.CapsuleText;
 import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.LicenseOffer;
 import com.orijua.overgearedmod.feature.economy.LicenseShop;
@@ -334,7 +335,8 @@ public final class DebugCommands {
             locks.append(locks.length() == 0 ? "" : ", ").append(offer.tier().getSerializedName()).append("=").append(offer.lock().name().toLowerCase());
         }
         source.sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule", tier.tierName(),
-                FatigueService.restedSeconds(player), capsule.sessionMinutes(tier, fatigue), capsule.recoveryMinutes(tier, fatigue), locks.toString()), false);
+                FatigueService.restedSeconds(player), CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue)),
+                CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue)), locks.toString()), false);
         return 1;
     }
 

@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.capsule.CapsuleLicenseItem;
+import com.orijua.overgearedmod.feature.capsule.CapsuleText;
 import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.AccountRules;
@@ -311,11 +312,6 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         }
     }
 
-    /** A number of minutes without a useless decimal ("55", "7.5"). */
-    private static String minutes(double value) {
-        return value == Math.rint(value) ? Long.toString((long) value) : String.format("%.1f", value);
-    }
-
     private static Component lockText(LicenseLock lock) {
         return switch (lock) {
             case OPEN -> Component.translatable("screen.overgearedmod.terminal.capsules.available");
@@ -336,9 +332,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         FatigueBalance fatigue = FatigueBalance.current();
         CapsuleBalance capsule = CapsuleBalance.current();
         UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.current", tier.tierName()), x + MARGIN, y + 34);
-        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.session", minutes(capsule.sessionMinutes(tier, fatigue))),
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.session", CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue))),
                 x + MARGIN, y + 46, UiStyle.TEXT);
-        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.recovery", minutes(capsule.recoveryMinutes(tier, fatigue))),
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.recovery", CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue))),
                 x + MARGIN, y + 58, UiStyle.TEXT);
 
         // The licenses
