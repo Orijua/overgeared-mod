@@ -1,46 +1,61 @@
 # Overgeared Mod
 
-A Minecraft mod inspired by the themes and progression feel of Overgeared, built as an original project with custom mechanics, content, and gameplay ideas.
+An unofficial, fan-made Minecraft mod (NeoForge 1.21.1) based on the web novel and manhwa *Overgeared* (템빨) by Park Saenal. Free, open source and non-commercial.
 
-## About
-This project is a personal Minecraft modification created for experimentation, learning, and public sharing. It is not affiliated with, endorsed by, or sponsored by any official Minecraft or Overgeared entity.
+> **Unofficial fan project.** This mod is not affiliated with, endorsed by, sponsored by or approved by Park Saenal, the publishers or licensors of *Overgeared*, Mojang or Microsoft. *Overgeared*, its characters, places and names belong to their respective owners. See [Fan project notice](#fan-project-notice).
 
-## Features
-- Custom progression and gameplay systems
-- Original mechanics and ideas
-- Mod structure designed for experimentation and expansion
-- Open-source development workflow
+**Status: in development (0.x).** There is no public release yet; saves from development builds are not guaranteed to load in later ones.
+
+## What it is
+
+The overworld is the real world. With a VR capsule you connect to **Satisfy**, the game inside the story, which is its own dimension. You start where the novel starts: an ordinary player with a debt to pay, who becomes the successor of the legendary blacksmith Pagma.
+
+What the first public version aims to include (already built, being play-tested):
+
+- **Capsule and two worlds**: connect from a capsule, play in Satisfy with a separate character and inventory, log out safely. Three capsule tiers.
+- **Fatigue**: energy that drains while you are connected and recovers in the real world, to give sessions a rhythm.
+- **Levels, stats, titles and skills** with their own profile, quest and journal screens.
+- **Blacksmithing**: smelting and forging with minigames, hammers, new metals (jaffa, mithril, blue orichalcum) and equipment with ratings from Normal to Myth and rolled options.
+- **Bairan and its quests**: the starting village, Smith's quest chain, the North End Cave, Count Ashur and Pagma's Rare Book.
+- **Winston**: Khan's smithy and the production contest.
+- **Economy**: Won, the starter debt, a terminal and phone to work, sell equipment and buy, and apprentice blacksmiths.
+- **Leveled mobs and elites** with rated loot.
+
+More classes, the full continent of the novel and multiplayer features (parties, guilds, market) are planned for later versions.
 
 ## Requirements
-- Minecraft: 1.21.1
-- Mod Loader: NeoForge
+
+- Minecraft 1.21.1
+- NeoForge 21.1 or newer
 
 ## Installation
-1. Download the mod jar.
-2. Place it in your Minecraft `mods` folder.
-3. Launch the game with the compatible loader.
-4. Enjoy the mod.
 
-## AI Usage Notice
-This project was developed with the assistance of AI tools for code generation, documentation support, and ideation. The author remains responsible for the final review, direction, and publication of the project.
+1. Download the mod jar (no public release yet; build it with `./gradlew build`, the jar is in `build/libs`).
+2. Put it in the `mods` folder of a NeoForge 1.21.1 instance.
+3. Start a **new world**: the Satisfy dimension and its places are only generated in new worlds.
 
-AI-assisted work may include:
-- code generation
-- project structure suggestions
-- documentation drafting
-- design and balancing ideas
+## Building and testing
 
-The final project should be reviewed before use or distribution, and any third-party assets must be checked independently.
+- `./gradlew build`: compiles and runs the unit tests.
+- `./gradlew runGameTestServer`: runs the game tests on a headless server.
+- `./gradlew runClient`: starts the game with the mod.
+
+## Fan project notice
+
+- This is a fan work made out of appreciation for *Overgeared*. It is and will stay **free**: no paid downloads, no paid early access, no monetized content tied to the mod.
+- The code, textures and writing in this repository are the work of the project's authors; the names of characters, places, items and concepts come from *Overgeared* and belong to their owners.
+- If you are a rights holder and want something changed or removed, please open an issue in this repository.
+- Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
+
+## AI usage notice
+
+This project is developed with the assistance of AI tools (code, tests, documentation and design ideas). The author directs, reviews and is responsible for what is published.
 
 ## License
-This project is licensed under the MIT License unless otherwise stated.
 
-Code and original content in this repository are available under the MIT License, with the exception of any third-party assets, textures, sounds, music, code, or media not created by the project author. Those files must be reviewed separately and are not covered by this license unless explicitly stated.
-
-## Disclaimer
-This project is inspired by existing fantasy and progression themes, but it is not an official or affiliated project. All original work is created by the project author unless otherwise credited.
+The code and original content of this repository are under the [MIT License](LICENSE.md). The license does not cover, and grants no rights over, the *Overgeared* names, characters and setting, nor any third-party asset that may be credited separately.
 
 ## Credits
+
 - Project author: Orijua
-- AI assistance: disclosed above
-- Third-party assets: reviewed separately if included
+- *Overgeared* (템빨) was created by Park Saenal.
