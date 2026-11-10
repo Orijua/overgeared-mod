@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "overgearedmod:capsule"
+    },
+    "D": {
+      "item": "minecraft:diamond"
+    },
+    "G": {
+      "item": "minecraft:gold_block"
+    },
+    "L": {
+      "item": "overgearedmod:advanced_capsule_license"
+    }
+  },
+  "pattern": [
+    "DLD",
+    "GCG",
+    "D D"
+  ],
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:advanced_capsule"
+  }
+}

@@ -3,14 +3,21 @@ package com.orijua.overgearedmod.feature.economy.client;
 import com.orijua.overgearedmod.core.client.SatisfyButton;
 import com.orijua.overgearedmod.core.client.ScrollList;
 import com.orijua.overgearedmod.core.client.UiStyle;
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.capsule.CapsuleLicenseItem;
+import com.orijua.overgearedmod.feature.capsule.CapsuleText;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.AccountRules;
 import com.orijua.overgearedmod.feature.economy.ClientTerminal;
 import com.orijua.overgearedmod.feature.economy.DebtState;
+import com.orijua.overgearedmod.feature.economy.LicenseLock;
+import com.orijua.overgearedmod.feature.economy.LicenseOffer;
 import com.orijua.overgearedmod.feature.economy.OfferEntry;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyEmeraldsPayload;
+import com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyOfferPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalMenu;
 import com.orijua.overgearedmod.feature.economy.TerminalPayDebtPayload;
@@ -49,6 +56,10 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
 
     private static final int PAGE_ACCOUNT = 0;
     private static final int PAGE_SHOP = 1;
+    private static final int PAGE_CAPSULES = 2;
+    private static final int LICENSE_TOP = 78;
+    private static final int LICENSE_ROW = 30;
+    private static final int LICENSE_ROWS = 2;
     private static final int OFFER_X = 160;
     private static final int OFFER_WIDTH = 224;
     private static final int OFFER_TOP = 48;
@@ -61,6 +72,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private final ScrollList offerScroll = new ScrollList(OFFER_ROWS);
     private Button pageAccount;
     private Button pageShop;
+    private Button pageCapsules;
     private Button work;
     private Button buyMinus;
     private Button buyPlus;
@@ -71,6 +83,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
     private Button debtMax;
     private Button debtPay;
     private final Button[] rowButtons = new Button[OFFER_ROWS];
+    private final Button[] licenseButtons = new Button[LICENSE_ROWS];
 
     public TerminalScreen(TerminalMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -83,8 +96,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         super.init();
         work = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.work_button"), RIGHT_X, 156, 134, this::sendWork));
 
-        pageAccount = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.page.account"), 256, 6, 64, () -> page = PAGE_ACCOUNT));
-        pageShop = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.page.shop"), 324, 6, 64, () -> page = PAGE_SHOP));
+        pageAccount = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.page.account"), 188, 6, 64, () -> page = PAGE_ACCOUNT));
+        pageShop = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.page.shop"), 256, 6, 64, () -> page = PAGE_SHOP));
+        pageCapsules = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.page.capsules"), 324, 6, 64, () -> page = PAGE_CAPSULES));
         buyMinus = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.minus"), MARGIN, 62, 18, () -> buySelected--));
         buyPlus = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.plus"), 74, 62, 18, () -> buySelected++));
         buyMax = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.shop.max"), 96, 62, 46,
@@ -102,6 +116,12 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             rowButtons[i] = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.shop.buy"),
                     OFFER_X + OFFER_WIDTH - 58, OFFER_TOP, 54, () -> sendBuyOffer(offerScroll.first() + row)));
             rowButtons[i].setHeight(16);
+        }
+        for (int i = 0; i < LICENSE_ROWS; i++) {
+            int row = i;
+            licenseButtons[i] = addRenderableWidget(button(Component.translatable("screen.overgearedmod.terminal.shop.buy"),
+                    OFFER_X + OFFER_WIDTH - 58, LICENSE_TOP + i * LICENSE_ROW, 54, () -> sendBuyLicense(row)));
+            licenseButtons[i].setHeight(16);
         }
     }
 
@@ -138,6 +158,15 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             if (position >= 0 && position < state.offer().size() && !state.boughtToday().contains(position)) {
                 OfferEntry entry = state.offer().get(position);
                 PacketDistributor.sendToServer(new TerminalBuyOfferPayload(menu.containerId, entry.position(), entry.stack(), entry.price()));
+            }
+        });
+    }
+
+    private void sendBuyLicense(int index) {
+        state().ifPresent(state -> {
+            if (index >= 0 && index < state.licenses().size() && state.licenses().get(index).lock() == LicenseLock.OPEN) {
+                LicenseOffer offer = state.licenses().get(index);
+                PacketDistributor.sendToServer(new TerminalBuyLicensePayload(menu.containerId, offer.tier(), offer.price()));
             }
         });
     }
@@ -181,15 +210,20 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         Optional<TerminalState> current = state();
         LocalPlayer player = minecraft.player;
         boolean account = page == PAGE_ACCOUNT;
+        boolean capsules = page == PAGE_CAPSULES;
         work.visible = account;
         for (Button widget : List.of(buyMinus, buyPlus, buyMax, buyEmeralds)) {
-            widget.visible = !account;
+            widget.visible = page == PAGE_SHOP;
+        }
+        for (Button licenseButton : licenseButtons) {
+            licenseButton.visible = false;
         }
         for (Button widget : List.of(debtMinus, debtPlus, debtMax, debtPay)) {
             widget.visible = false;
         }
-        pageAccount.active = !account;
-        pageShop.active = account;
+        pageAccount.active = page != PAGE_ACCOUNT;
+        pageShop.active = page != PAGE_SHOP;
+        pageCapsules.active = !capsules;
         for (Button rowButton : rowButtons) {
             rowButton.visible = false;
         }
@@ -201,6 +235,12 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // The day is the server's; until its new state arrives after the client's clock changed day, work and buying stay disabled.
         long today = state.today();
         boolean stateIsOld = TradeRules.day(minecraft.level.getGameTime()) != today;
+        if (capsules) {
+            updateCapsules(state, player, stateIsOld);
+            super.render(graphics, mouseX, mouseY, partialTick);
+            drawCapsules(graphics, state, player, mouseX, mouseY);
+            return;
+        }
         if (!account) {
             updateShop(state, player, stateIsOld);
             super.render(graphics, mouseX, mouseY, partialTick);
@@ -255,6 +295,82 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 rowButton.setY(topPos + OFFER_TOP + i * OFFER_ROW + 3);
                 rowButton.active = !stateIsOld && state.characterAvailable() && state.freeSlots() > 0 && won >= offer.get(position).price();
             }
+        }
+    }
+
+    /** The buy button of each license row: active only while the server says the license is open and the Won are enough. */
+    private void updateCapsules(TerminalState state, LocalPlayer player, boolean stateIsOld) {
+        long won = player.getData(ModAttachments.ACCOUNT.get()).won();
+        for (int i = 0; i < LICENSE_ROWS; i++) {
+            boolean shown = i < state.licenses().size();
+            licenseButtons[i].visible = shown;
+            if (shown) {
+                LicenseOffer offer = state.licenses().get(i);
+                licenseButtons[i].setY(topPos + LICENSE_TOP + i * LICENSE_ROW + 4);
+                licenseButtons[i].active = !stateIsOld && offer.lock() == LicenseLock.OPEN && won >= offer.price();
+            }
+        }
+    }
+
+    private static Component lockText(LicenseLock lock) {
+        return switch (lock) {
+            case OPEN -> Component.translatable("screen.overgearedmod.terminal.capsules.available");
+            case DEBT_ACTIVE -> Component.translatable("screen.overgearedmod.terminal.capsules.locked_debt");
+            case NEEDS_ADVANCED -> Component.translatable("screen.overgearedmod.terminal.capsules.locked_advanced");
+            case ALREADY_HAVE -> Component.translatable("screen.overgearedmod.terminal.capsules.already_have");
+        };
+    }
+
+    private void drawCapsules(GuiGraphics graphics, TerminalState state, LocalPlayer player, int mouseX, int mouseY) {
+        int x = leftPos;
+        int y = topPos;
+        UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.title"), x + MARGIN, y + 8);
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.subtitle"), x + MARGIN, y + 20, UiStyle.MUTED);
+
+        // The capsule of the last connection and what it gives
+        CapsuleTier tier = state.sessionTier();
+        FatigueBalance fatigue = FatigueBalance.current();
+        CapsuleBalance capsule = CapsuleBalance.current();
+        long won = player.getData(ModAttachments.ACCOUNT.get()).won();
+        Component wonText = Component.translatable("screen.overgearedmod.terminal.won", won);
+        int wonX = x + OFFER_X + OFFER_WIDTH - 4 - font.width(wonText);
+        UiStyle.heading(graphics, font, UiStyle.ellipsize(font, Component.translatable("screen.overgearedmod.status.capsule_tier", tier.tierName()),
+                Math.max(40, wonX - 6 - (x + MARGIN))), x + MARGIN, y + 34);
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.session", CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue))),
+                x + MARGIN, y + 46, UiStyle.TEXT);
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.recovery", CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue))),
+                x + MARGIN, y + 58, UiStyle.TEXT);
+
+        // The licenses
+        UiStyle.text(graphics, font, wonText, wonX, y + 34, UiStyle.GOLD);
+        ItemStack hovered = ItemStack.EMPTY;
+        for (int i = 0; i < Math.min(LICENSE_ROWS, state.licenses().size()); i++) {
+            LicenseOffer offer = state.licenses().get(i);
+            int rowX = x + MARGIN;
+            int rowY = y + LICENSE_TOP + i * LICENSE_ROW;
+            int rowWidth = OFFER_X + OFFER_WIDTH - 4 - MARGIN - 62;
+            ItemStack stack = CapsuleLicenseItem.stackFor(offer.tier());
+            boolean hover = mouseX >= rowX && mouseX < rowX + rowWidth && mouseY >= rowY && mouseY < rowY + LICENSE_ROW - 2;
+            graphics.fill(rowX, rowY, x + OFFER_X + OFFER_WIDTH - 4, rowY + LICENSE_ROW - 2, hover ? 0x40FFFFFF : 0x20FFFFFF);
+            graphics.renderItem(stack, rowX + 3, rowY + 6);
+            graphics.drawString(font, UiStyle.ellipsize(font, stack.getHoverName(), rowWidth - 24), rowX + 24, rowY + 3, UiStyle.TEXT);
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.price", offer.price()), rowX + 24, rowY + 15, UiStyle.GOLD);
+            Component status = lockText(offer.lock());
+            int statusX = rowX + 24 + font.width(Component.translatable("screen.overgearedmod.terminal.capsules.price", offer.price())) + 8;
+            UiStyle.text(graphics, font, UiStyle.ellipsize(font, status, Math.max(20, rowX + rowWidth - statusX)), statusX, rowY + 15,
+                    offer.lock() == LicenseLock.OPEN ? UiStyle.GOOD : UiStyle.BAD);
+            if (hover) {
+                hovered = stack;
+            }
+        }
+        int noteY = y + LICENSE_TOP + LICENSE_ROWS * LICENSE_ROW + 8;
+        for (FormattedCharSequence line : font.split(Component.translatable("screen.overgearedmod.terminal.capsules.note"), OFFER_X + OFFER_WIDTH - 2 * MARGIN)) {
+            graphics.drawString(font, line, x + MARGIN, noteY, UiStyle.MUTED);
+            noteY += 10;
+        }
+        drawMessage(graphics, state);
+        if (!hovered.isEmpty()) {
+            graphics.renderTooltip(font, hovered, mouseX, mouseY);
         }
     }
 

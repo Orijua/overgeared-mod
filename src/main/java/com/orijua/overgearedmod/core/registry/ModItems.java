@@ -1,6 +1,8 @@
 package com.orijua.overgearedmod.core.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.feature.capsule.CapsuleLicenseItem;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.PhoneItem;
 import com.orijua.overgearedmod.feature.insight.InsightSwordItem;
 import com.orijua.overgearedmod.feature.npc.ApprenticeContractItem;
@@ -13,6 +15,7 @@ import com.orijua.overgearedmod.feature.skill.SkillBookItem;
 import com.orijua.overgearedmod.feature.smithing.BlueprintItem;
 import com.orijua.overgearedmod.feature.smithing.SmithingHammerItem;
 import com.orijua.overgearedmod.feature.winston.TransferContractItem;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
@@ -96,6 +99,14 @@ public final class ModItems {
     public static final DeferredItem<BlockItem> SMITHING_ANVIL = ITEMS.registerSimpleBlockItem(ModBlocks.SMITHING_ANVIL);
     public static final DeferredItem<BlockItem> SMELTER = ITEMS.registerSimpleBlockItem(ModBlocks.SMELTER);
     public static final DeferredItem<BlockItem> CAPSULE = ITEMS.registerSimpleBlockItem(ModBlocks.CAPSULE);
+    public static final DeferredItem<BlockItem> ADVANCED_CAPSULE = ITEMS.registerSimpleBlockItem(ModBlocks.ADVANCED_CAPSULE);
+    public static final DeferredItem<BlockItem> DIAMOND_CAPSULE = ITEMS.registerSimpleBlockItem(ModBlocks.DIAMOND_CAPSULE);
+    // The licenses to upgrade a capsule (feature/capsule): bought at the terminal, used up in a crafting table.
+    public static final DeferredItem<CapsuleLicenseItem> ADVANCED_CAPSULE_LICENSE = ITEMS.registerItem("advanced_capsule_license",
+            properties -> new CapsuleLicenseItem(CapsuleTier.ADVANCED, properties), new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<CapsuleLicenseItem> DIAMOND_CAPSULE_LICENSE = ITEMS.registerItem("diamond_capsule_license",
+            properties -> new CapsuleLicenseItem(CapsuleTier.DIAMOND, properties),
+            new Item.Properties().stacksTo(1).rarity(Rarity.RARE).component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true));
     public static final DeferredItem<BlockItem> ACCOUNT_TERMINAL = ITEMS.registerSimpleBlockItem(ModBlocks.ACCOUNT_TERMINAL);
     // The phone: reaches the account and the work from anywhere in the real world (feature/economy).
     public static final DeferredItem<PhoneItem> PHONE = ITEMS.registerItem("phone", PhoneItem::new, new Item.Properties().stacksTo(1));

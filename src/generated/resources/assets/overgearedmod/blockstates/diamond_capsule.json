@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "overgearedmod:block/diamond_capsule",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "overgearedmod:block/diamond_capsule"
+    },
+    "facing=south": {
+      "model": "overgearedmod:block/diamond_capsule",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "overgearedmod:block/diamond_capsule",
+      "y": 270
+    }
+  }
+}

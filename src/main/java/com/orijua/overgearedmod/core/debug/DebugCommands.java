@@ -23,6 +23,12 @@ import com.orijua.overgearedmod.feature.economy.AccountService;
 import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.CapsuleText;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
+import com.orijua.overgearedmod.feature.economy.LicenseOffer;
+import com.orijua.overgearedmod.feature.economy.LicenseShop;
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
+import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.mob.MobKilledEvent;
@@ -286,8 +292,23 @@ public final class DebugCommands {
                                         .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(SiteLanding.sites(), builder))
                                         .executes(DebugCommands::gotoSite)))
                         .then(Commands.literal("capsule")
+                                .executes(ctx -> capsuleInfo(ctx.getSource()))
                                 .then(Commands.literal("disconnect")
-                                        .executes(ctx -> disconnectFromSatisfy(ctx.getSource().getPlayerOrException()))))
+                                        .executes(ctx -> disconnectFromSatisfy(ctx.getSource().getPlayerOrException())))
+                                .then(Commands.literal("tier")
+                                        .then(Commands.argument("tier", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                        Arrays.stream(CapsuleTier.values()).map(CapsuleTier::getSerializedName), builder))
+                                                .executes(DebugCommands::setCapsuleTier)))
+                                .then(Commands.literal("rested")
+                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(0, 86400))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                                    player.setData(ModAttachments.RESTED_SECONDS.get(), seconds);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_rested", seconds), false);
+                                                    return seconds;
+                                                }))))
                         .then(Commands.literal("simulate")
                                 .then(Commands.literal("kill")
                                         .then(Commands.argument("entity", ResourceArgument.resource(event.getBuildContext(), Registries.ENTITY_TYPE))
@@ -301,6 +322,35 @@ public final class DebugCommands {
                                                 .executes(ctx -> simulateForges(ctx, 1))
                                                 .then(Commands.argument("amount", IntegerArgumentType.integer(1, 1000))
                                                         .executes(ctx -> simulateForges(ctx, IntegerArgumentType.getInteger(ctx, "amount")))))))));
+    }
+
+    /** The capsule tier of the player, what it gives (rested, session, recovery) and the lock of each license. */
+    private static int capsuleInfo(CommandSourceStack source) throws CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        CapsuleTier tier = player.getData(ModAttachments.CAPSULE_TIER.get());
+        FatigueBalance fatigue = FatigueBalance.current();
+        CapsuleBalance capsule = CapsuleBalance.current();
+        StringBuilder locks = new StringBuilder();
+        for (LicenseOffer offer : LicenseShop.offers(player, capsule)) {
+            locks.append(locks.length() == 0 ? "" : ", ").append(offer.tier().getSerializedName()).append("=").append(offer.lock().name().toLowerCase());
+        }
+        source.sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule", tier.tierName(),
+                FatigueService.restedSeconds(player), CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue)),
+                CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue)), locks.toString()), false);
+        return 1;
+    }
+
+    private static int setCapsuleTier(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        String name = StringArgumentType.getString(ctx, "tier");
+        Optional<CapsuleTier> tier = Arrays.stream(CapsuleTier.values()).filter(t -> t.getSerializedName().equals(name)).findFirst();
+        if (tier.isEmpty()) {
+            ctx.getSource().sendFailure(Component.translatable("message.overgearedmod.debug_capsule_bad_tier", name));
+            return 0;
+        }
+        player.setData(ModAttachments.CAPSULE_TIER.get(), tier.get());
+        ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_tier", tier.get().tierName()), false);
+        return 1;
     }
 
     private static int simulateKills(CommandContext<CommandSourceStack> ctx, int amount) throws CommandSyntaxException {

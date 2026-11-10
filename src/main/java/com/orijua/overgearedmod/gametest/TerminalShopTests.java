@@ -6,10 +6,15 @@ import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.character.CharacterSnapshot;
 import com.orijua.overgearedmod.feature.character.CharacterVault;
 import com.orijua.overgearedmod.feature.character.WorldSide;
+import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.AccountService;
+import com.orijua.overgearedmod.feature.economy.DebtState;
+import com.orijua.overgearedmod.feature.economy.LicenseLock;
+import com.orijua.overgearedmod.feature.economy.LicenseOffer;
 import com.orijua.overgearedmod.feature.economy.OfferBought;
 import com.orijua.overgearedmod.feature.economy.OfferEntry;
 import com.orijua.overgearedmod.feature.economy.OfferRules;
@@ -32,6 +37,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -532,6 +538,7 @@ public final class TerminalShopTests {
             helper.assertTrue(bought.result() == TerminalShop.Result.OK, "bought: " + bought.result());
             helper.assertTrue(OfferBought.CODEC.encodeStart(net.minecraft.nbt.NbtOps.INSTANCE, bought(player)).result().isPresent(), "the mark persists");
 
+            player.setData(ModAttachments.CAPSULE_TIER.get(), com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED);
             TerminalState state = TerminalService.state(player, Optional.empty());
             RegistryFriendlyByteBuf buf3 = new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess());
             TerminalState.STREAM_CODEC.encode(buf3, state);
@@ -543,6 +550,86 @@ public final class TerminalShopTests {
             }
             helper.assertTrue(back.boughtToday().equals(java.util.Set.of(7)), "what was bought today: " + back.boughtToday());
             helper.assertTrue(back.emeraldRoom() == state.emeraldRoom() && back.freeSlots() == state.freeSlots() && back.freeSlots() > 0, "room and slots");
+            helper.assertTrue(back.sessionTier() == com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED, "the tier of the session");
+            helper.assertTrue(back.licenses().size() == 2 && back.licenses().equals(state.licenses()), "the licenses on sale: " + back.licenses());
+
+            RegistryFriendlyByteBuf buf4 = new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess());
+            com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload.STREAM_CODEC.encode(buf4,
+                    new com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload(5, com.orijua.overgearedmod.feature.capsule.CapsuleTier.DIAMOND, 15000L));
+            var license = com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload.STREAM_CODEC.decode(buf4);
+            helper.assertTrue(license.containerId() == 5 && license.tier() == com.orijua.overgearedmod.feature.capsule.CapsuleTier.DIAMOND
+                    && license.seenPrice() == 15000L, "the license payload");
+        });
+        helper.succeed();
+    }
+
+    private static RegistryFriendlyByteBuf buffer(ServerPlayer player) {
+        return new RegistryFriendlyByteBuf(Unpooled.buffer(), player.registryAccess());
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theStateWithAnActiveDebtAndTheDiamondTierRoundTripsAndKeepsItsLicensesWithAMessage(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        withStored(player, inv -> inv.setItem(0, new ItemStack(emerald(), 5)));
+        player.setData(ModAttachments.ACCOUNT.get(), new Account(50_000L, 500L, DebtState.ACTIVE));
+        real(helper, () -> {
+            player.setData(ModAttachments.CAPSULE_TIER.get(), CapsuleTier.DIAMOND);
+            TerminalState state = TerminalService.state(player, Optional.empty());
+            helper.assertTrue(state.sessionTier() == CapsuleTier.DIAMOND, "the tier of the session: " + state.sessionTier());
+            helper.assertTrue(state.licenses().size() == 2 && state.licenses().get(0).lock() == LicenseLock.DEBT_ACTIVE
+                    && state.licenses().get(1).lock() == LicenseLock.OPEN, "an active debt closes only the advanced license: " + state.licenses());
+
+            RegistryFriendlyByteBuf buf = buffer(player);
+            TerminalState.STREAM_CODEC.encode(buf, state);
+            TerminalState back = TerminalState.STREAM_CODEC.decode(buf);
+            helper.assertTrue(back.sessionTier() == CapsuleTier.DIAMOND, "the tier survives the codec");
+            helper.assertTrue(back.licenses().equals(state.licenses()), "the licenses with their locks survive: " + back.licenses());
+
+            TerminalState told = state.withMessage(Optional.of(Component.literal("hello")));
+            helper.assertTrue(told.licenses().equals(state.licenses()) && told.sessionTier() == CapsuleTier.DIAMOND
+                    && told.message().isPresent(), "withMessage keeps the licenses and the tier");
+            RegistryFriendlyByteBuf buf2 = buffer(player);
+            TerminalState.STREAM_CODEC.encode(buf2, told);
+            TerminalState backTold = TerminalState.STREAM_CODEC.decode(buf2);
+            helper.assertTrue(backTold.licenses().equals(state.licenses()) && backTold.message().map(Component::getString).orElse("").equals("hello"),
+                    "and so does the codec with a message");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aStateWithAnImpossibleNumberOfLicensesIsRejected(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        withStored(player, inv -> inv.setItem(0, new ItemStack(emerald(), 5)));
+        real(helper, () -> {
+            TerminalState plain = TerminalService.state(player, Optional.empty()).withMessage(Optional.empty());
+            TerminalState empty = new TerminalState(plain.characterAvailable(), plain.storedEmeralds(), plain.workPay(), plain.today(), plain.order(),
+                    plain.icon(), plain.workDay(), plain.buyWonPerEmerald(), plain.emeraldRoom(), plain.freeSlots(), plain.offer(), plain.boughtToday(),
+                    plain.debtQuotaPercent(), plain.sessionTier(), List.of(), Optional.empty());
+            // The tail of the encoding is [license count][no message]: the count is rewritten by hand.
+            for (int count : new int[]{-1, CapsuleTier.values().length + 1, 1000}) {
+                RegistryFriendlyByteBuf buf = buffer(player);
+                TerminalState.STREAM_CODEC.encode(buf, empty);
+                buf.writerIndex(buf.writerIndex() - 2);
+                buf.writeVarInt(count);
+                buf.writeBoolean(false);
+                boolean rejected = false;
+                try {
+                    TerminalState.STREAM_CODEC.decode(buf);
+                } catch (IllegalArgumentException e) {
+                    rejected = true;
+                }
+                helper.assertTrue(rejected, count + " licenses must be rejected");
+            }
+            // The largest legal number (every tier) still goes through.
+            List<LicenseOffer> all = List.of(new LicenseOffer(CapsuleTier.BASIC, 1L, LicenseLock.OPEN),
+                    new LicenseOffer(CapsuleTier.ADVANCED, 3000L, LicenseLock.DEBT_ACTIVE), new LicenseOffer(CapsuleTier.DIAMOND, 15000L, LicenseLock.ALREADY_HAVE));
+            TerminalState full = new TerminalState(empty.characterAvailable(), empty.storedEmeralds(), empty.workPay(), empty.today(), empty.order(),
+                    empty.icon(), empty.workDay(), empty.buyWonPerEmerald(), empty.emeraldRoom(), empty.freeSlots(), empty.offer(), empty.boughtToday(),
+                    empty.debtQuotaPercent(), empty.sessionTier(), all, Optional.empty());
+            RegistryFriendlyByteBuf buf = buffer(player);
+            TerminalState.STREAM_CODEC.encode(buf, full);
+            helper.assertTrue(TerminalState.STREAM_CODEC.decode(buf).licenses().equals(all), "three licenses are accepted");
         });
         helper.succeed();
     }

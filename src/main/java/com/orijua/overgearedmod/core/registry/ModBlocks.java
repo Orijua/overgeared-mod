@@ -2,6 +2,7 @@ package com.orijua.overgearedmod.core.registry;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.capsule.CapsuleBlock;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.AccountTerminalBlock;
 import com.orijua.overgearedmod.feature.pagma.GoldenTableBlock;
 import com.orijua.overgearedmod.feature.smelting.SmelterBlock;
@@ -36,14 +37,22 @@ public final class ModBlocks {
                     .lightLevel(state -> state.getValue(SmelterBlock.LIT) ? 13 : 0));
 
     // The VR capsule (canon: how Satisfy is entered): right-click to lie down and connect (feature/capsule).
+    // The id "capsule" is the basic tier (kept so existing worlds keep their capsules); the better ones are upgrades.
     public static final DeferredBlock<CapsuleBlock> CAPSULE = BLOCKS.registerBlock("capsule",
-            CapsuleBlock::new,
-            BlockBehaviour.Properties.of()
-                    .mapColor(MapColor.METAL)
-                    .strength(3.0f, 6.0f)
-                    .requiresCorrectToolForDrops()
-                    .sound(SoundType.METAL)
-                    .noOcclusion());
+            properties -> new CapsuleBlock(CapsuleTier.BASIC, properties), capsuleProperties());
+    public static final DeferredBlock<CapsuleBlock> ADVANCED_CAPSULE = BLOCKS.registerBlock("advanced_capsule",
+            properties -> new CapsuleBlock(CapsuleTier.ADVANCED, properties), capsuleProperties());
+    public static final DeferredBlock<CapsuleBlock> DIAMOND_CAPSULE = BLOCKS.registerBlock("diamond_capsule",
+            properties -> new CapsuleBlock(CapsuleTier.DIAMOND, properties), capsuleProperties());
+
+    private static BlockBehaviour.Properties capsuleProperties() {
+        return BlockBehaviour.Properties.of()
+                .mapColor(MapColor.METAL)
+                .strength(3.0f, 6.0f)
+                .requiresCorrectToolForDrops()
+                .sound(SoundType.METAL)
+                .noOcclusion();
+    }
 
     // The account terminal: shows the account and the work (feature/economy); works in the real world, like the capsule.
     public static final DeferredBlock<AccountTerminalBlock> ACCOUNT_TERMINAL = BLOCKS.registerBlock("account_terminal",

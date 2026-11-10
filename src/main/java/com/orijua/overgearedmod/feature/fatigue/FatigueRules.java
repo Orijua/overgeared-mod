@@ -6,8 +6,8 @@ import java.util.OptionalDouble;
 
 /**
  * The rules of the fatigue as pure functions: no Minecraft, no clock. Energy goes from 1 (rested) to 0 (spent).
- * The game feeds them the {@link FatigueBalance} and what the player is doing; the capsule tiers will feed them
- * {@link SessionModifiers} (today always {@link SessionModifiers#NEUTRAL}).
+ * The game feeds them the {@link FatigueBalance} and what the player is doing; the capsule tiers feed them
+ * {@link SessionModifiers} ({@link SessionModifiers#NEUTRAL} for the basic capsule).
  */
 public final class FatigueRules {
     /** Never divide by less than this many seconds, however low the configuration is set. */
@@ -29,11 +29,11 @@ public final class FatigueRules {
     public enum Activity { REST, NORMAL, COMBAT }
 
     /**
-     * How a capsule changes the session. {@code durationMul} stretches the session (2 = twice as long), {@code drainMul}
-     * multiplies what activity costs, {@code recoveryMul} how fast the real world refills it.
+     * How a capsule changes the session. {@code durationMul} stretches the session (2 = twice as long), {@code recoveryMul}
+     * how fast the real world refills it, {@code restedSeconds} the seconds of "rested" bonus a connection grants (0 = none).
      */
-    public record SessionModifiers(double durationMul, double drainMul, double recoveryMul) {
-        public static final SessionModifiers NEUTRAL = new SessionModifiers(1.0, 1.0, 1.0);
+    public record SessionModifiers(double durationMul, double recoveryMul, int restedSeconds) {
+        public static final SessionModifiers NEUTRAL = new SessionModifiers(1.0, 1.0, 0);
     }
 
     /** Whether damage was dealt or taken within the combat window. A tick in the future counts as combat. */
@@ -78,7 +78,7 @@ public final class FatigueRules {
             return 0.0;
         }
         double seconds = Math.max(b.sessionMinutes() * 60.0, MIN_SECONDS);
-        return activityMultiplier(b, activity) * m.drainMul() / (seconds * Math.max(m.durationMul(), 1e-6));
+        return activityMultiplier(b, activity) / (seconds * Math.max(m.durationMul(), 1e-6));
     }
 
     /** Energy gained per real second while resting in the real world. */

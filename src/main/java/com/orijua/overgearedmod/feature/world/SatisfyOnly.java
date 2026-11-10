@@ -10,7 +10,7 @@ import java.util.Set;
 
 /**
  * What only works in Satisfy. The real world is any dimension that is not Satisfy ({@link Satisfy#is}); there the mod's
- * objects are inert (they can't be placed or used). The exceptions are the capsule (how you get to Satisfy) and the
+ * objects are inert (they can't be placed or used). The exceptions are the capsules (how you get to Satisfy) and the
  * account terminal and the phone (how you reach the account and the work from the real world).
  * The ores (jaffa, mithril, blue orichalcum) don't generate in the real world either ({@link SatisfyOnlyPlacement}).
  */
@@ -18,10 +18,11 @@ public final class SatisfyOnly {
     /** The action-bar message shown when something that only works in Satisfy is tried in the real world. */
     public static final String WARNING_KEY = "message.overgearedmod.satisfy_only";
 
-    /** The items that work in the real world: the capsule, the account terminal and the phone. */
-    private static final Set<String> REAL_WORLD_ITEMS = Set.of("capsule", "account_terminal", "phone");
-    /** The blocks that can be placed in the real world: the capsule and the account terminal. */
-    private static final Set<String> REAL_WORLD_BLOCKS = Set.of("capsule", "account_terminal");
+    /** The items that work in the real world: the capsules (all tiers) and their licenses, the account terminal and the phone. */
+    private static final Set<String> REAL_WORLD_ITEMS = Set.of("capsule", "advanced_capsule", "diamond_capsule",
+            "advanced_capsule_license", "diamond_capsule_license", "account_terminal", "phone");
+    /** The blocks that can be placed in the real world: the capsules (all tiers) and the account terminal. */
+    private static final Set<String> REAL_WORLD_BLOCKS = Set.of("capsule", "advanced_capsule", "diamond_capsule", "account_terminal");
 
     private SatisfyOnly() {
     }
@@ -31,12 +32,12 @@ public final class SatisfyOnly {
         return !Satisfy.is(entity.level());
     }
 
-    /** An item of the mod that is inert in the real world: everything but the capsule, the terminal and the phone. */
+    /** An item of the mod that is inert in the real world: everything but the capsules and their licenses, the terminal and the phone. */
     public static boolean isSatisfyItem(ResourceLocation item) {
         return Overgearedmod.MODID.equals(item.getNamespace()) && !REAL_WORLD_ITEMS.contains(item.getPath());
     }
 
-    /** A block of the mod that can't be placed in the real world: all of them but the capsule and the terminal. */
+    /** A block of the mod that can't be placed in the real world: all of them but the capsules and the terminal. */
     public static boolean blocksPlacement(ResourceLocation block) {
         return Overgearedmod.MODID.equals(block.getNamespace()) && !REAL_WORLD_BLOCKS.contains(block.getPath());
     }

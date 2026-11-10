@@ -306,7 +306,7 @@ public final class CapsuleTests {
         return null;
     }
 
-    private static void tickMany(ServerPlayer player, int ticks) {
+    static void tickMany(ServerPlayer player, int ticks) {
         TestSupport.tickMany(player, ticks, CapsuleService::tick);
     }
 

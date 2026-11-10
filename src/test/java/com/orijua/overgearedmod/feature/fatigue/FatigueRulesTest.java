@@ -66,10 +66,9 @@ class FatigueRulesTest {
     @Test
     void neutralModifiersChangeNothingAndOthersScale() {
         double base = FatigueRules.drainPerSecond(B, Activity.NORMAL, N);
-        assertEquals(base, FatigueRules.drainPerSecond(B, Activity.NORMAL, new SessionModifiers(1, 1, 1)));
-        assertEquals(base / 2, FatigueRules.drainPerSecond(B, Activity.NORMAL, new SessionModifiers(2, 1, 1)), 1e-12);
-        assertEquals(base * 1.5, FatigueRules.drainPerSecond(B, Activity.NORMAL, new SessionModifiers(1, 1.5, 1)), 1e-12);
-        assertEquals(FatigueRules.recoverPerSecond(B, N) * 2, FatigueRules.recoverPerSecond(B, new SessionModifiers(1, 1, 2)), 1e-12);
+        assertEquals(base, FatigueRules.drainPerSecond(B, Activity.NORMAL, new SessionModifiers(1, 1, 0)));
+        assertEquals(base / 2, FatigueRules.drainPerSecond(B, Activity.NORMAL, new SessionModifiers(2, 1, 0)), 1e-12);
+        assertEquals(FatigueRules.recoverPerSecond(B, N) * 2, FatigueRules.recoverPerSecond(B, new SessionModifiers(1, 2, 0)), 1e-12);
     }
 
     @Test
@@ -122,7 +121,7 @@ class FatigueRulesTest {
         assertTrue(Double.isFinite(FatigueRules.recoverPerSecond(silly, N)));
         assertEquals(0.0, FatigueRules.drainPerSecond(silly, Activity.REST, N), "a zero multiplier is a free activity");
         assertEquals(OptionalDouble.empty(), FatigueRules.minutesLeft(silly, 0.5, Activity.REST, N));
-        assertTrue(Double.isFinite(FatigueRules.drainPerSecond(B, Activity.NORMAL, new SessionModifiers(0, 1, 1))));
+        assertTrue(Double.isFinite(FatigueRules.drainPerSecond(B, Activity.NORMAL, new SessionModifiers(0, 1, 0))));
     }
 
     @Test

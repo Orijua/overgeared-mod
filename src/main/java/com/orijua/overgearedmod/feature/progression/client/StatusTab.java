@@ -4,7 +4,11 @@ import com.orijua.overgearedmod.core.client.SatisfyButton;
 import com.orijua.overgearedmod.core.client.SatisfyTab;
 import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.config.Balance;
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
+import com.orijua.overgearedmod.feature.capsule.CapsuleRules;
+import com.orijua.overgearedmod.feature.capsule.CapsuleText;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.fatigue.FatigueRules;
 import com.orijua.overgearedmod.feature.fatigue.client.FatigueHudLayer;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
@@ -127,9 +131,9 @@ public class StatusTab extends SatisfyTab {
         }
         float energy = player().getData(ModAttachments.FATIGUE);
         int percent = Math.round(energy * 100);
-        var minutes = FatigueRules.minutesLeft(balance, energy, FatigueRules.Activity.NORMAL, FatigueRules.SessionModifiers.NEUTRAL);
+        var minutes = FatigueRules.minutesLeft(balance, energy, FatigueRules.Activity.NORMAL, modifiers(balance));
         Component text = minutes.isPresent()
-                ? Component.translatable("screen.overgearedmod.fatigue", percent, (int) minutes.getAsDouble())
+                ? Component.translatable("screen.overgearedmod.fatigue", percent, CapsuleText.minutes(minutes.getAsDouble()))
                 : Component.translatable("screen.overgearedmod.fatigue.plain", percent);
         int y = top + 42;
         UiStyle.text(graphics, font(), text, left, y, UiStyle.TEXT);
@@ -141,16 +145,23 @@ public class StatusTab extends SatisfyTab {
     private Component energyTooltip() {
         FatigueBalance balance = FatigueBalance.current();
         float energy = player().getData(ModAttachments.FATIGUE);
-        return Component.translatable("screen.overgearedmod.fatigue.tooltip",
-                minutesOrDash(balance, energy, FatigueRules.Activity.REST),
-                minutesOrDash(balance, energy, FatigueRules.Activity.NORMAL),
-                minutesOrDash(balance, energy, FatigueRules.Activity.COMBAT),
-                (int) Math.round(balance.recoveryMinutes()), Math.round(balance.minEnergyToConnect() * 100));
+        CapsuleTier tier = player().getData(ModAttachments.CAPSULE_TIER);
+        return Component.translatable("screen.overgearedmod.status.capsule_tier", tier.tierName()).append("\n")
+                .append(Component.translatable("screen.overgearedmod.fatigue.tooltip",
+                        minutesOrDash(balance, energy, FatigueRules.Activity.REST),
+                        minutesOrDash(balance, energy, FatigueRules.Activity.NORMAL),
+                        minutesOrDash(balance, energy, FatigueRules.Activity.COMBAT),
+                        CapsuleText.minutes(CapsuleBalance.current().recoveryMinutes(tier, balance)), Math.round(balance.minEnergyToConnect() * 100)));
     }
 
-    private static String minutesOrDash(FatigueBalance balance, float energy, FatigueRules.Activity activity) {
-        var minutes = FatigueRules.minutesLeft(balance, energy, activity, FatigueRules.SessionModifiers.NEUTRAL);
-        return minutes.isPresent() ? String.valueOf((int) minutes.getAsDouble()) : "-";
+    /** The session modifiers of the capsule tier the player last connected with (the client knows the synced tier and config). */
+    private FatigueRules.SessionModifiers modifiers(FatigueBalance balance) {
+        return CapsuleRules.modifiers(player().getData(ModAttachments.CAPSULE_TIER), balance, CapsuleBalance.current());
+    }
+
+    private String minutesOrDash(FatigueBalance balance, float energy, FatigueRules.Activity activity) {
+        var minutes = FatigueRules.minutesLeft(balance, energy, activity, modifiers(balance));
+        return minutes.isPresent() ? CapsuleText.minutes(minutes.getAsDouble()) : "-";
     }
 
     /** Control: 100 points, Shift: 10, plain click: 1. The server spends only what's left. */

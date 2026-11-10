@@ -196,4 +196,24 @@ class ProgressionRulesTest {
         assertEquals(15, ProgressionRules.boostedSmithingXp(15, 0));
         assertEquals(0, ProgressionRules.boostedSmithingXp(0, 0.1));
     }
+
+    @Test
+    void restedRaisesLevelXpByAPercent() {
+        assertEquals(1, ProgressionRules.restedXp(1, 10));
+        assertEquals(11, ProgressionRules.restedXp(10, 10));
+        assertEquals(17, ProgressionRules.restedXp(15, 10));
+        assertEquals(0, ProgressionRules.restedXp(0, 10));
+        assertEquals(-5, ProgressionRules.restedXp(-5, 10));
+        assertEquals(100, ProgressionRules.restedXp(100, 0));
+        assertEquals(Integer.MAX_VALUE, ProgressionRules.restedXp(Integer.MAX_VALUE, 10));
+    }
+
+    @Test
+    void restedXpEdgeCases() {
+        org.junit.jupiter.api.Assertions.assertAll(
+                () -> assertEquals(6, ProgressionRules.restedXp(5, 10), "5 + 10 % = 5.5 rounds up"),
+                () -> assertEquals(10, ProgressionRules.restedXp(10, -5), "a negative percent changes nothing"),
+                () -> assertEquals(Integer.MAX_VALUE, ProgressionRules.restedXp(Integer.MAX_VALUE - 1, 10), "capped"),
+                () -> assertEquals(Integer.MAX_VALUE, ProgressionRules.restedXp(Integer.MAX_VALUE, 0), "no percent"));
+    }
 }

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "C": {
+      "item": "overgearedmod:advanced_capsule"
+    },
+    "L": {
+      "item": "overgearedmod:diamond_capsule_license"
+    },
+    "N": {
+      "item": "minecraft:netherite_block"
+    },
+    "S": {
+      "item": "minecraft:nether_star"
+    }
+  },
+  "pattern": [
+    " S ",
+    "LCN"
+  ],
+  "result": {
+    "count": 1,
+    "id": "overgearedmod:diamond_capsule"
+  }
+}

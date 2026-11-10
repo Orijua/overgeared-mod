@@ -3,6 +3,7 @@ package com.orijua.overgearedmod.core.registry;
 import com.mojang.serialization.Codec;
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.feature.capsule.CapsuleState;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.OfferBought;
 import com.orijua.overgearedmod.feature.economy.TradeSaturation;
@@ -121,6 +122,20 @@ public final class ModAttachments {
     /** The VR capsule: where the player's body is while they are in Satisfy and where they last disconnected there. Server-only. */
     public static final Supplier<AttachmentType<CapsuleState>> CAPSULE =
             serverData("capsule", () -> CapsuleState.EMPTY, CapsuleState.CODEC);
+
+    /**
+     * The tier of the capsule the player last connected with: it sets their session and recovery times (the recovery
+     * in the real world keeps using the last one). Synced for the status tab, kept on death.
+     */
+    public static final Supplier<AttachmentType<CapsuleTier>> CAPSULE_TIER =
+            playerData("capsule_tier", () -> CapsuleTier.BASIC, CapsuleTier.CODEC, CapsuleTier.STREAM_CODEC, true);
+
+    /**
+     * Seconds of the "rested" bonus left (diamond capsule): +XP of level while they last, counted down in Satisfy.
+     * Synced for the HUD; lost on death, on disconnecting and when the player turns up in the real world still connected.
+     */
+    public static final Supplier<AttachmentType<Integer>> RESTED_SECONDS =
+            playerData("rested_seconds", () -> 0, Codec.INT, ByteBufCodecs.VAR_INT, false);
 
     /** Whether the player already got their starter capsule (see capsule.StarterCapsule). Server-only, kept on death. */
     public static final Supplier<AttachmentType<Boolean>> STARTER_CAPSULE_GIVEN =

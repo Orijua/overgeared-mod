@@ -18,7 +18,8 @@ final class ModBlockTagsProvider extends BlockTagsProvider {
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
-        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.SMITHING_ANVIL.get(), ModBlocks.SMELTER.get(), ModBlocks.CAPSULE.get(), ModBlocks.ACCOUNT_TERMINAL.get(),
+        tag(BlockTags.MINEABLE_WITH_PICKAXE).add(ModBlocks.SMITHING_ANVIL.get(), ModBlocks.SMELTER.get(), ModBlocks.CAPSULE.get(), ModBlocks.ADVANCED_CAPSULE.get(),
+                ModBlocks.DIAMOND_CAPSULE.get(), ModBlocks.ACCOUNT_TERMINAL.get(),
                 ModBlocks.MITHRIL_ORE.get(), ModBlocks.DEEPSLATE_MITHRIL_ORE.get(),
                 ModBlocks.JAFFA_ORE.get(), ModBlocks.DEEPSLATE_JAFFA_ORE.get(), ModBlocks.BLUE_ORICHALCUM_ORE.get(),
                 ModBlocks.DEEPSLATE_BLUE_ORICHALCUM_ORE.get());

@@ -1,11 +1,13 @@
 package com.orijua.overgearedmod.feature.progression;
 
 import com.orijua.overgearedmod.core.config.Balance;
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.registry.Definitions;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.equipment.EquipRequirements;
+import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.equipment.EquipmentBonuses;
 import com.orijua.overgearedmod.feature.equipment.option.RolledOption;
 import com.orijua.overgearedmod.feature.world.Satisfy;
@@ -120,7 +122,10 @@ public final class ProgressionService {
         if (!Satisfy.is(player.level())) {
             return;
         }
-        ProgressionRules.XpResult result = ProgressionRules.addXp(Balance.current(), get(player), amount);
+        // Rested (diamond capsule): level XP only, not smithing XP.
+        int gained = FatigueService.restedSeconds(player) > 0
+                ? ProgressionRules.restedXp(amount, CapsuleBalance.current().restedXpPercent()) : amount;
+        ProgressionRules.XpResult result = ProgressionRules.addXp(Balance.current(), get(player), gained);
         set(player, result.stats());
         if (result.levelsGained() > 0) {
             player.displayClientMessage(Component.translatable("message.overgearedmod.level_up", result.stats().level()), true);

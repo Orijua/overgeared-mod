@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.feature.economy;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.config.DebtBalance;
 import com.orijua.overgearedmod.core.config.TerminalBalance;
 import com.orijua.overgearedmod.core.config.TradeBalance;
@@ -179,7 +180,8 @@ public final class TerminalService {
         return new TerminalState(stored.isPresent(), emeralds, balance.workPay(), today, order, icon,
                 player.getData(ModAttachments.WORK_DAY.get()), balance.buyWonPerEmerald(), room, free,
                 TerminalShop.offer(player.serverLevel(), today, balance, trade),
-                player.getData(ModAttachments.OFFER_BOUGHT.get()).positionsOn(today), DebtBalance.current().quotaPercent(), message);
+                player.getData(ModAttachments.OFFER_BOUGHT.get()).positionsOn(today), DebtBalance.current().quotaPercent(),
+                player.getData(ModAttachments.CAPSULE_TIER.get()), LicenseShop.offers(player, CapsuleBalance.current()), message);
     }
 
     /** Sends the open menu a fresh state with the message of the last action. */
