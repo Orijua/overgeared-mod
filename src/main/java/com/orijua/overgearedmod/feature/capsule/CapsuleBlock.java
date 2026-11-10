@@ -1,6 +1,7 @@
 package com.orijua.overgearedmod.feature.capsule;
 
 import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import net.minecraft.core.BlockPos;
@@ -18,15 +19,24 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * The VR capsule (canon: how a player enters Satisfy). Right-click to lie down: after a short "Connecting…" the player
+ * The VR capsule (canon: how a player enters Satisfy), in three tiers: basic, advanced and diamond. Right-click to lie down: after a short "Connecting…" the player
  * appears in Satisfy. Faces the player who places it.
  */
 public class CapsuleBlock extends HorizontalDirectionalBlock {
-    public static final MapCodec<CapsuleBlock> CODEC = simpleCodec(CapsuleBlock::new);
+    public static final MapCodec<CapsuleBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            CapsuleTier.CODEC.fieldOf("tier").forGetter(CapsuleBlock::tier),
+            propertiesCodec()).apply(instance, CapsuleBlock::new));
 
-    public CapsuleBlock(Properties properties) {
+    private final CapsuleTier tier;
+
+    public CapsuleBlock(CapsuleTier tier, Properties properties) {
         super(properties);
+        this.tier = tier;
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    public CapsuleTier tier() {
+        return tier;
     }
 
     @Override

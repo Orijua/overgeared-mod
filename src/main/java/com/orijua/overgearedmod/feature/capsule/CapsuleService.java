@@ -153,7 +153,7 @@ public final class CapsuleService {
         }
         BlockPos pos = pending.capsule().pos();
         boolean here = player.level().dimension() == pending.capsule().dimension();
-        boolean capsuleStillThere = here && player.level().getBlockState(pos).is(ModBlocks.CAPSULE.get());
+        boolean capsuleStillThere = here && player.level().getBlockState(pos).getBlock() instanceof CapsuleBlock;
         if (!capsuleStillThere || !CapsuleRules.inReach(player.distanceToSqr(pos.getCenter()))) {
             cancel(player, true);
             return;

@@ -1,10 +1,12 @@
-// 1.21.1	2026-11-08T22:12:49.6340628	Loot Tables
+// 1.21.1	2026-11-10T08:16:29.68580223	Loot Tables
 fe5d6b5f709097552289ed8e1ecbe6a3f9f6f254 data/overgearedmod/loot_table/blocks/account_terminal.json
+dcecc46a29aac2144e9b3c85190cb7b2d3936841 data/overgearedmod/loot_table/blocks/advanced_capsule.json
 e127692e2ebeb46eabe8e0b6aeea83a83c1724b0 data/overgearedmod/loot_table/blocks/blue_orichalcum_ore.json
 250a609ed239dca30b9d0d2535296cb886b1d884 data/overgearedmod/loot_table/blocks/capsule.json
 c7896b8130bbb87dd25986bcb32e31e27abaedeb data/overgearedmod/loot_table/blocks/deepslate_blue_orichalcum_ore.json
 daa1264b07ec5c06bebcbe4074142bcfd4c41ff5 data/overgearedmod/loot_table/blocks/deepslate_jaffa_ore.json
 095bb06ba714a29767e70d365c1c5cd15ca434c2 data/overgearedmod/loot_table/blocks/deepslate_mithril_ore.json
+c593ea33000bfe2abf9ce291095cf6b54b3053e3 data/overgearedmod/loot_table/blocks/diamond_capsule.json
 324912fbd617c156041a901d847078ec1d77315b data/overgearedmod/loot_table/blocks/jaffa_ore.json
 a109e87245e8b43e855026d657dec0f1c72c3ba8 data/overgearedmod/loot_table/blocks/mithril_ore.json
 51fbe3d91996ab012950c28a4eda403de7e0e592 data/overgearedmod/loot_table/blocks/smelter.json
