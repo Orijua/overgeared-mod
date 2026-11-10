@@ -180,7 +180,7 @@
   ],
   "render_type": "minecraft:cutout",
   "textures": {
-    "book": "overgearedmod:item/pagma_rare_book",
+    "book": "minecraft:item/enchanted_book",
     "gold": "minecraft:block/gold_block",
     "particle": "minecraft:block/gold_block"
   }

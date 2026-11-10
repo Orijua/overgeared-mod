@@ -43,7 +43,7 @@ More classes, the full continent of the novel and multiplayer features (parties,
 ## Fan project notice
 
 - This is a fan work made out of appreciation for *Overgeared*. It is and will stay **free**: no paid downloads, no paid early access, no monetized content tied to the mod.
-- The code and writing in this repository are the work of the project's authors. The textures are being reviewed before the first public release. The names of characters, places, items and concepts come from *Overgeared* and belong to their owners.
+- The code, textures and writing in this repository are the work of the project's authors, made by hand or with the help of AI tools (see the AI usage notice below). The names of characters, places, items and concepts come from *Overgeared* and belong to their owners.
 - If you are a rights holder and want something changed or removed, please open an issue in this repository.
 - Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
 

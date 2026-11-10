@@ -22,13 +22,6 @@ final class ModItemModelProvider extends ItemModelProvider {
         handheldItem(ModItems.JAFFA_SWORD.get());
         handheldItem(ModItems.GRID_LEGENDARY_SWORD.get());
         handheldItem(ModItems.FRACASO_SWORD.get()); // the user's 32x32 PNG
-        // From the user's art pack (docs/Recursos_Overgeared_MasterPack), 32x32.
-        basicItem(ModItems.RESPEC_SCROLL.get());
-        basicItem(ModItems.PAGMA_RARE_BOOK.get());
-        basicItem(ModItems.JAFFA_INGOT.get());
-        basicItem(ModItems.RAW_BLUE_ORICHALCUM.get());
-        handheldItem(ModItems.IRON_SMITHING_HAMMER.get());
-        handheldItem(ModItems.MITHRIL_SMITHING_HAMMER.get());
 
         // Placeholders that reuse a vanilla texture until there is an own PNG.
         vanillaTexture(ModItems.ENHANCEMENT_STONE.get(), "amethyst_shard");
@@ -43,6 +36,12 @@ final class ModItemModelProvider extends ItemModelProvider {
         vanillaTexture(ModItems.ADVANCED_CAPSULE_LICENSE.get(), "paper");
         vanillaTexture(ModItems.DIAMOND_CAPSULE_LICENSE.get(), "paper");
         vanillaTexture(ModItems.JAFFA_SMITHING_HAMMER.get(), "mace");
+        vanillaTexture(ModItems.IRON_SMITHING_HAMMER.get(), "mace");
+        vanillaTexture(ModItems.MITHRIL_SMITHING_HAMMER.get(), "mace");
+        vanillaTexture(ModItems.RESPEC_SCROLL.get(), "paper");
+        vanillaTexture(ModItems.PAGMA_RARE_BOOK.get(), "enchanted_book");
+        vanillaTexture(ModItems.JAFFA_INGOT.get(), "copper_ingot");
+        vanillaTexture(ModItems.RAW_BLUE_ORICHALCUM.get(), "prismarine_crystals");
         handheld(ModItems.COMMANDERS_SWORD.get(), "iron_sword");
         handheld(ModItems.RULERS_SWORD.get(), "golden_sword");
         vanillaTexture(ModItems.RAW_JAFFA.get(), "raw_copper");
