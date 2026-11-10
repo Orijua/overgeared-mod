@@ -93,7 +93,9 @@ public final class TradeValueTests {
             TradeService.Outcome outcome = TradeService.sell(player, 3, 0, new TradeService.Expected(worn, seen));
             helper.assertTrue(outcome.result() == Result.SOLD && outcome.paid() == seen, "paid the seen price " + seen + ": " + outcome);
             helper.assertTrue(emeralds(player) == seen, "the emeralds are the seen price, got " + emeralds(player));
-            helper.assertTrue(seen < 16, "a worn epic sword pays less than a new one (16), got " + seen);
+            // Epic iron sword, 125 of 250 damage: reference 40 x (0,25 + 0,75 x 0,5) = 25, sold at 40 % = 10.
+            helper.assertTrue(seen == 10, "a half-worn epic sword pays 10 (25 x 0,4), got " + seen);
+            helper.assertTrue(seen < 16, "and less than a new one (16)");
         });
         helper.succeed();
     }
@@ -122,11 +124,16 @@ public final class TradeValueTests {
             player.getInventory().setItem(1, rated(Items.IRON_SWORD, ItemRating.EPIC));
             List<ItemStack> stacks = List.of(player.getInventory().getItem(0).copy(), player.getInventory().getItem(1).copy());
             long[] prices = TradeGoods.salePrices(stacks, TradeService.saturation(player), 0, B);
+            // The worn one (200 of 250 damage): reference 40 x (0,25 + 0,75 x 0,2) = 16, sold at 40 % = 6 (6,4). It leaves pressure 1,
+            // so the new one of the same key pays 40 x 0,4 x 0,95 = 15 (15,2).
+            helper.assertTrue(TradeGoods.reference(stacks.get(0), B) == 16, "the worn sword is worth 16: " + TradeGoods.reference(stacks.get(0), B));
+            helper.assertTrue(prices.length == 2 && prices[0] == 6 && prices[1] == 15, "6 for the worn one, 15 for the new: " + java.util.Arrays.toString(prices));
             List<TradeSellPayload.Entry> entries = new ArrayList<>();
             for (int i = 0; i < 2; i++) {
                 entries.add(new TradeSellPayload.Entry(i, stacks.get(i), prices[i]));
             }
             long clientTotal = TradeRules.total(prices);
+            helper.assertTrue(clientTotal == 21, "the total is 21: " + clientTotal);
             TradeService.Batch batch = TradeService.sellAll(player, entries, 0, TradeValueTests::pay);
             helper.assertTrue(batch.sold() == 2 && batch.paid() == clientTotal, "the client total " + clientTotal + " is what is paid: " + batch);
             helper.assertTrue(emeralds(player) == clientTotal, "emeralds " + emeralds(player));
@@ -151,29 +158,92 @@ public final class TradeValueTests {
         helper.succeed();
     }
 
+    /** The durability left multiplies on top of the multiplier of a single object, and a piece without exception keeps its material. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theDurabilityMultipliesOnTopOfTheExceptionAndAPieceWithoutOneKeepsItsMaterial(GameTestHelper helper) {
+        TradeBalance.withOverride(B, () -> {
+            ItemStack brokenFracaso = rated(ModItems.FRACASO_SWORD.get(), ItemRating.LEGENDARY);
+            brokenFracaso.setDamageValue(brokenFracaso.getMaxDamage());
+            helper.assertTrue(brokenFracaso.getDamageValue() > 0, "the Fracaso has durability to lose");
+            long broken = TradeGoods.reference(brokenFracaso, B);
+            helper.assertTrue(broken == 37, "a broken legendary Fracaso: 600 x 0,25 x 0,25 = 37, got " + broken);
+            ItemStack worn = rated(ModItems.FRACASO_SWORD.get(), ItemRating.LEGENDARY);
+            worn.setDamageValue(worn.getMaxDamage() / 2);
+            long wornPrice = TradeGoods.reference(worn, B);
+            helper.assertTrue(wornPrice > broken && wornPrice < 150, "a half-worn one is between the broken (37) and the new (150): " + wornPrice);
+
+            ItemStack halfJaffa = damaged(ModItems.JAFFA_SWORD.get(), ItemRating.RARE, 125);
+            helper.assertTrue(halfJaffa.getMaxDamage() == 250, "the Jaffa sword is iron-sized: " + halfJaffa.getMaxDamage());
+            long jaffa = TradeGoods.reference(halfJaffa, B);
+            helper.assertTrue(jaffa == 15, "a half-worn rare Jaffa sword: 12 x 2 x 0,625 = 15, got " + jaffa);
+            ItemStack brokenJaffa = rated(ModItems.JAFFA_SWORD.get(), ItemRating.RARE);
+            brokenJaffa.setDamageValue(brokenJaffa.getMaxDamage());
+            helper.assertTrue(TradeGoods.reference(brokenJaffa, B) == 6, "a broken rare Jaffa sword: 12 x 2 x 0,25 = 6, got " + TradeGoods.reference(brokenJaffa, B));
+
+            // Grid's legendary sword has no exception: it is still weighed as diamond (x2) and the damage multiplies on it.
+            ItemStack grid = rated(ModItems.GRID_LEGENDARY_SWORD.get(), ItemRating.LEGENDARY);
+            helper.assertFalse(B.itemMultiplier().containsKey(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(grid.getItem())),
+                    "no exception for it");
+            helper.assertTrue(TradeGoods.material(grid, B) == 2.0, "it keeps the diamond multiplier: " + TradeGoods.material(grid, B));
+            helper.assertTrue(TradeGoods.reference(grid, B) == 1200, "new: 600 x 2 = 1200, got " + TradeGoods.reference(grid, B));
+            grid.setDamageValue(grid.getMaxDamage());
+            helper.assertTrue(TradeGoods.reference(grid, B) == 300, "broken: 1200 x 0,25 = 300, got " + TradeGoods.reference(grid, B));
+        });
+        helper.succeed();
+    }
+
     private static final Map<ResourceLocation, Double> DOUBLE_IRON_SWORD = Map.of(ResourceLocation.withDefaultNamespace("iron_sword"), 2.0);
 
-    @GameTest(template = TestSupport.EMPTY)
-    public static void anExceptionRegeneratesTheOfferAtTheNewPriceAndTheOldPriceIsStale(GameTestHelper helper) {
-        TerminalBalance ironSwords = TerminalBalance.DEFAULT.withOffer(6, ItemRating.RARE, List.of(ResourceLocation.withDefaultNamespace("iron_sword")));
-        TradeBalance exception = TradeBalances.withItemMultipliers(DOUBLE_IRON_SWORD);
+    /** The real world's player with a stored Satisfy character (one piece of dirt in its inventory) and a lot of Won. */
+    private static ServerPlayer playerWithStoredCharacter(GameTestHelper helper, long won) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         player.getInventory().clearContent();
         player.getInventory().setItem(0, new ItemStack(Items.DIRT));
         player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(WorldSide.REAL, CharacterSnapshot.capture(player)));
         player.getInventory().clearContent();
-        AccountService.setWon(player, 10_000_000L);
+        AccountService.setWon(player, won);
+        return player;
+    }
+
+    /** The position of the first piece of the offer that is an iron sword (the offer is built of nothing else). */
+    private static int ironSwordPosition(GameTestHelper helper, List<OfferEntry> offer) {
+        helper.assertFalse(offer.isEmpty(), "the offer is not empty");
+        for (int i = 0; i < offer.size(); i++) {
+            if (offer.get(i).stack().is(Items.IRON_SWORD)) {
+                return i;
+            }
+        }
+        helper.fail("no iron sword in the offer");
+        return -1;
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void anExceptionRegeneratesTheOfferAtTheNewPriceAndTheOldPriceIsStale(GameTestHelper helper) {
+        TerminalBalance ironSwords = TerminalBalance.DEFAULT.withOffer(6, ItemRating.RARE, List.of(ResourceLocation.withDefaultNamespace("iron_sword")));
+        TradeBalance exception = TradeBalances.withItemMultipliers(DOUBLE_IRON_SWORD);
+        long startingWon = 10_000_000L;
+        ServerPlayer player = playerWithStoredCharacter(helper, startingWon);
+        CharacterVault vaultBefore = player.getData(ModAttachments.CHARACTER_VAULT.get());
         CapsuleTests.outsideSatisfy(helper, () -> {
-            OfferEntry before = TerminalShop.offer(helper.getLevel(), 7L, ironSwords, B).get(8);
-            OfferEntry after = TerminalShop.offer(helper.getLevel(), 7L, ironSwords, exception).get(8);
+            List<OfferEntry> offerBefore = TerminalShop.offer(helper.getLevel(), 7L, ironSwords, B);
+            List<OfferEntry> offerAfter = TerminalShop.offer(helper.getLevel(), 7L, ironSwords, exception);
+            int position = ironSwordPosition(helper, offerBefore);
+            OfferEntry before = offerBefore.get(position);
+            OfferEntry after = offerAfter.get(position);
             helper.assertTrue(ItemStack.matches(before.stack(), after.stack()), "the same piece");
             helper.assertTrue(after.price() > before.price(), "the exception raises the price: " + before.price() + " -> " + after.price());
             helper.assertTrue(after.price() == OfferRules.price(TradeGoods.reference(after.stack(), exception),
                     ironSwords.buyMultiplier(), ironSwords.wonPerEmerald()), "the price comes from the one reference");
-            helper.assertTrue(TerminalShop.buyOffer(player, 8, before.stack(), before.price(), 7L, ironSwords, exception).result()
+
+            helper.assertTrue(TerminalShop.buyOffer(player, position, before.stack(), before.price(), 7L, ironSwords, exception).result()
                     == TerminalShop.Result.STALE, "the price seen before the change is stale");
-            helper.assertTrue(TerminalShop.buyOffer(player, 8, after.stack(), after.price(), 7L, ironSwords, exception).result()
-                    == TerminalShop.Result.OK, "the new price buys");
+            helper.assertTrue(AccountService.won(player) == startingWon, "the stale attempt charged nothing: " + AccountService.won(player));
+            helper.assertTrue(player.getData(ModAttachments.CHARACTER_VAULT.get()).equals(vaultBefore), "and the stored character is intact");
+
+            TerminalShop.Outcome bought = TerminalShop.buyOffer(player, position, after.stack(), after.price(), 7L, ironSwords, exception);
+            helper.assertTrue(bought.result() == TerminalShop.Result.OK, "the new price buys: " + bought);
+            helper.assertTrue(bought.won() == after.price() && AccountService.won(player) == startingWon - after.price(),
+                    "exactly the new price is charged: " + AccountService.won(player));
         });
         helper.succeed();
     }
