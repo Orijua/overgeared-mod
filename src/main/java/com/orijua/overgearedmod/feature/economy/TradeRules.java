@@ -77,8 +77,9 @@ public final class TradeRules {
         } catch (NumberFormatException e) {
             return Optional.empty();
         }
+        // "- 0" reads as -0.0, which passes the range check: "+ 0.0" turns it into plain 0.0 (and leaves everything else alone).
         return Double.isFinite(multiplier) && multiplier >= 0.0 && multiplier <= 100.0
-                ? Optional.of(new ItemMultiplier(id, multiplier)) : Optional.empty();
+                ? Optional.of(new ItemMultiplier(id, multiplier + 0.0)) : Optional.empty();
     }
 
     /**

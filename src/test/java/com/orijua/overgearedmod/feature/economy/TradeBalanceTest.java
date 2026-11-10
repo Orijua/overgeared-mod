@@ -36,16 +36,11 @@ class TradeBalanceTest {
     }
 
     private static TradeBalance withMinDurability(double value) {
-        TradeBalance d = TradeBalance.DEFAULT;
-        return new TradeBalance(d.basePrice(), d.materialMultiplier(), d.otherMaterial(), d.enhancementBonus(), d.sellShare(),
-                d.saturationStep(), d.saturationFloor(), d.recoveryPerDay(), d.pressureCap(), d.maxSellEmeralds(), value, d.itemMultiplier());
+        return TradeBalancesForTests.withMinDurabilityFactor(value);
     }
 
     private static TradeBalance withItemMultiplier(double value) {
-        TradeBalance d = TradeBalance.DEFAULT;
-        return new TradeBalance(d.basePrice(), d.materialMultiplier(), d.otherMaterial(), d.enhancementBonus(), d.sellShare(),
-                d.saturationStep(), d.saturationFloor(), d.recoveryPerDay(), d.pressureCap(), d.maxSellEmeralds(), d.minDurabilityFactor(),
-                Map.of(ResourceLocation.withDefaultNamespace("iron_sword"), value));
+        return TradeBalancesForTests.withItemMultipliers(Map.of(ResourceLocation.withDefaultNamespace("iron_sword"), value));
     }
 
     @Test
@@ -79,6 +74,7 @@ class TradeBalanceTest {
 
     @Test
     void theObjectMultipliersNeverShareAnItemWithTheTerminalOffer() {
+        assertFalse(TerminalBalance.DEFAULT.offerItems().isEmpty(), "the offer has items, so the check below checks something");
         for (ResourceLocation id : TradeBalance.DEFAULT.itemMultiplier().keySet()) {
             assertFalse(TerminalBalance.DEFAULT.offerItems().contains(id), id + " is in the daily offer");
         }
@@ -91,11 +87,48 @@ class TradeBalanceTest {
 
     @Test
     void anOverrideAppliesOnlyWhileTheActionRuns() {
-        TradeBalance changed = new TradeBalance(TradeBalance.DEFAULT.basePrice(), TradeBalance.DEFAULT.materialMultiplier(),
-                1.0, 0.10, 0.5, 0.95, 0.15, 2, 37, 10_000L, 0.25, TradeBalance.DEFAULT.itemMultiplier());
+        TradeBalance changed = TradeBalancesForTests.withSellShare(0.5);
         TradeBalance[] seen = new TradeBalance[1];
         TradeBalance.withOverride(changed, () -> seen[0] = TradeBalance.current());
         assertEquals(changed, seen[0]);
         assertEquals(TradeBalance.DEFAULT, TradeBalance.current());
+    }
+
+    @Test
+    void anOverrideIsRestoredEvenWhenTheActionThrows() {
+        TradeBalance changed = TradeBalancesForTests.withSellShare(0.5);
+        assertThrows(IllegalStateException.class, () -> TradeBalance.withOverride(changed, () -> {
+            assertEquals(changed, TradeBalance.current());
+            throw new IllegalStateException("boom");
+        }));
+        assertEquals(TradeBalance.DEFAULT, TradeBalance.current(), "the override did not leak");
+    }
+
+    @Test
+    void nestedOverridesRestoreTheOuterOne() {
+        TradeBalance outer = TradeBalancesForTests.withSellShare(0.5);
+        TradeBalance inner = TradeBalancesForTests.withSellShare(0.6);
+        TradeBalance.withOverride(outer, () -> {
+            TradeBalance.withOverride(inner, () -> assertEquals(inner, TradeBalance.current()));
+            assertEquals(outer, TradeBalance.current());
+        });
+        assertEquals(TradeBalance.DEFAULT, TradeBalance.current());
+    }
+
+    @Test
+    void theMapsAreImmutableAndCopiedFromTheOnesGiven() {
+        TradeBalance defaults = TradeBalance.DEFAULT;
+        ResourceLocation sword = ResourceLocation.withDefaultNamespace("iron_sword");
+        assertThrows(UnsupportedOperationException.class, () -> defaults.itemMultiplier().put(sword, 2.0));
+        assertThrows(UnsupportedOperationException.class, () -> defaults.itemMultiplier().clear());
+        assertThrows(UnsupportedOperationException.class, () -> defaults.materialMultiplier().put("wood", 9.0));
+        assertThrows(UnsupportedOperationException.class, () -> defaults.basePrice().put(ItemRating.NORMAL, 9));
+
+        Map<ResourceLocation, Double> source = new java.util.HashMap<>();
+        source.put(sword, 2.0);
+        TradeBalance balance = TradeBalancesForTests.withItemMultipliers(source);
+        source.put(ResourceLocation.withDefaultNamespace("bow"), 3.0);
+        source.put(sword, 50.0);
+        assertEquals(Map.of(sword, 2.0), balance.itemMultiplier(), "changing the source map afterwards does not change the balance");
     }
 }

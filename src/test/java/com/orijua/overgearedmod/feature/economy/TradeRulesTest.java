@@ -17,6 +17,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TradeRulesTest {
@@ -285,6 +286,62 @@ class TradeRulesTest {
         assertTrue(TradeRules.parseItemMultiplier(null).isEmpty());
     }
 
+    /** Java's number syntax is what the config accepts: a suffix "d" or an exponent are numbers, hex floats too. */
+    @Test
+    void parseItemMultiplierAcceptsWhatJavaReadsAsANumber() {
+        assertEquals(2.0, TradeRules.parseItemMultiplier("minecraft:iron_sword=2d").orElseThrow().multiplier());
+        assertEquals(10.0, TradeRules.parseItemMultiplier("minecraft:iron_sword=1e1").orElseThrow().multiplier());
+        assertEquals(2.0, TradeRules.parseItemMultiplier("minecraft:iron_sword=0x1p1").orElseThrow().multiplier());
+    }
+
+    @Test
+    void parseItemMultiplierTakesTheLastEqualsAndSoRejectsAnEqualsInTheId() {
+        assertTrue(TradeRules.parseItemMultiplier("a=b=2").isEmpty(), "the id would be a=b, which is not an id");
+        assertTrue(TradeRules.parseItemMultiplier("minecraft:iron_sword==2").isEmpty(), "the id would end in =");
+        assertTrue(TradeRules.parseItemMultiplier("minecraft:iron_sword=2=").isEmpty(), "nothing after the last =");
+    }
+
+    @Test
+    void parseItemMultiplierReadsMinusZeroAsPlainZero() {
+        TradeRules.ItemMultiplier zero = TradeRules.parseItemMultiplier("minecraft:iron_sword=-0").orElseThrow();
+        assertEquals(0.0, zero.multiplier(), "assertEquals on doubles tells -0.0 from 0.0");
+        assertEquals("minecraft:iron_sword=0.0", zero.asString());
+        assertEquals(0.0, TradeRules.parseItemMultiplier("minecraft:iron_sword=-0.0").orElseThrow().multiplier());
+    }
+
+    @Test
+    void parseItemMultiplierDoesNotAcceptUppercaseIds() {
+        assertTrue(TradeRules.parseItemMultiplier("Minecraft:Iron_Sword=2").isEmpty());
+        assertTrue(TradeRules.parseItemMultiplier("minecraft:Iron_Sword=2").isEmpty());
+    }
+
+    @Test
+    void asStringAndParseGoRoundTripEvenForTinyAndHugeNumbers() {
+        for (double value : new double[]{0.0, 1.0E-7, 0.25, 1.0, 2.5, 99.999999, 100.0}) {
+            TradeRules.ItemMultiplier original = new TradeRules.ItemMultiplier(net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron_sword"), value);
+            assertEquals(original, TradeRules.parseItemMultiplier(original.asString()).orElseThrow(), original.asString());
+        }
+        assertEquals("minecraft:iron_sword=1.0E-7", new TradeRules.ItemMultiplier(
+                net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron_sword"), 1.0E-7).asString());
+    }
+
+    @Test
+    void itemMultipliersToleratesNullElementsAndKeepsTheFirstOfEachId() {
+        List<String> lines = new ArrayList<>();
+        lines.add(null);
+        lines.add("minecraft:iron_sword=2");
+        lines.add(null);
+        lines.add("minecraft:iron_sword=3");
+        lines.add("minecraft:iron_sword=2");
+        lines.add("minecraft:bow=0");
+        lines.add("minecraft:bow=7");
+        Map<net.minecraft.resources.ResourceLocation, Double> m = TradeRules.itemMultipliers(lines);
+        assertEquals(2, m.size());
+        assertEquals(2.0, m.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron_sword")));
+        assertEquals(0.0, m.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace("bow")));
+        assertTrue(TradeRules.itemMultipliers(java.util.Collections.singletonList(null)).isEmpty());
+    }
+
     @Test
     void itemMultipliersSkipTheInvalidAndTheFirstRepeatedWins() {
         Map<net.minecraft.resources.ResourceLocation, Double> m = TradeRules.itemMultipliers(
@@ -318,6 +375,71 @@ class TradeRulesTest {
         assertEquals(1.0, TradeRules.durabilityFactor(-1, 100, 0.25), "negative damage counts as new");
         assertEquals(0.25, TradeRules.durabilityFactor(500, 100, 0.25), "more damage than the maximum is broken");
         assertEquals(1.0, TradeRules.durabilityFactor(77, 100, 1.0), "a minimum of 1 means wear never matters");
+    }
+
+    /** The rules do not clamp the minimum: TradeBalance is what keeps it in [0, 1]. Here only what comes out is pinned down. */
+    @Test
+    void durabilityFactorDoesNotClampAnOutOfRangeMinimum() {
+        assertTrue(Double.isNaN(TradeRules.durabilityFactor(50, 100, Double.NaN)));
+        assertTrue(Double.isNaN(TradeRules.durabilityFactor(0, 100, Double.NaN)), "even an untouched piece: the minimum takes part in the formula");
+        assertEquals(1.0, TradeRules.durabilityFactor(0, 0, Double.NaN), "only a piece with no durability skips it");
+        assertEquals(0.0, TradeRules.durabilityFactor(50, 100, -1.0), 1e-12, "-1 + 2 x 0,5");
+        assertEquals(1.5, TradeRules.durabilityFactor(50, 100, 2.0), 1e-12, "2 - 1 x 0,5");
+        assertEquals(-1.0, TradeRules.durabilityFactor(100, 100, -1.0), "broken gives the minimum as it comes");
+    }
+
+    @Test
+    void durabilityFactorWithTheBiggestMaxDamage() {
+        assertEquals(1.0, TradeRules.durabilityFactor(0, Integer.MAX_VALUE, 0.25));
+        assertEquals(0.25, TradeRules.durabilityFactor(Integer.MAX_VALUE, Integer.MAX_VALUE, 0.25));
+        assertEquals(0.625, TradeRules.durabilityFactor(Integer.MAX_VALUE / 2, Integer.MAX_VALUE, 0.25), 1e-9);
+        assertEquals(1.0, TradeRules.durabilityFactor(Integer.MIN_VALUE, Integer.MAX_VALUE, 0.25), "negative damage is new");
+        double almostNew = TradeRules.durabilityFactor(1, Integer.MAX_VALUE, 0.25);
+        assertTrue(almostNew < 1.0 && almostNew > 0.999999, "one point of damage: " + almostNew);
+    }
+
+    @Test
+    void theBalanceRefusesAMinimumOutOfRange() {
+        for (double bad : new double[]{Double.NaN, -0.1, 1.1, Double.POSITIVE_INFINITY}) {
+            assertThrows(IllegalArgumentException.class, () -> TradeBalancesForTests.withMinDurabilityFactor(bad), String.valueOf(bad));
+        }
+    }
+
+    /** The wear is a whole percent, rounded to the nearest (half up): 0,995 reads 100 %, so a piece that lost only 0,5 % shows no wear tooltip. */
+    @Test
+    void durabilityPercentRoundsToTheNearestAndTakesWhatItIsGiven() {
+        assertEquals(150, TradeRules.durabilityPercent(1.5), "a factor above 1 is not clamped here");
+        assertEquals(-50, TradeRules.durabilityPercent(-0.5), "nor a negative one");
+        assertEquals(0, TradeRules.durabilityPercent(Double.NaN), "NaN reads 0");
+        assertEquals(100, TradeRules.durabilityPercent(0.995), "decision: 0,995 shows as 100 %, so no wear is announced");
+        assertEquals(99, TradeRules.durabilityPercent(0.994));
+        assertEquals(99, TradeRules.durabilityPercent(0.99));
+        assertEquals(1, TradeRules.durabilityPercent(0.005), "0,005 rounds up to 1 %");
+        assertEquals(0, TradeRules.durabilityPercent(0.004));
+    }
+
+    /** Damage 0 to 250 on a 250-point piece: the reference never goes up with the damage, never below 1 nor above the new piece's. */
+    @Test
+    void theReferenceFallsWithTheDamageButNeverBelowOneNorAboveTheNewPiece() {
+        long newPiece = TradeRules.reference(ItemRating.EPIC, 1.0, 0, false, TradeRules.durabilityFactor(0, 250, B.minDurabilityFactor()), B);
+        assertEquals(40, newPiece);
+        long previous = newPiece;
+        for (int damage = 0; damage <= 250; damage++) {
+            double factor = TradeRules.durabilityFactor(damage, 250, B.minDurabilityFactor());
+            long reference = TradeRules.reference(ItemRating.EPIC, 1.0, 0, false, factor, B);
+            assertTrue(reference <= previous, "damage " + damage + ": " + reference + " after " + previous);
+            assertTrue(reference >= 1, "damage " + damage);
+            assertTrue(reference <= newPiece, "damage " + damage);
+            previous = reference;
+        }
+        assertEquals(10, previous, "a broken epic piece is worth 40 x 0,25");
+        long sellPrevious = TradeRules.sellPrice(newPiece, 0, B);
+        for (int damage = 0; damage <= 250; damage++) {
+            long reference = TradeRules.reference(ItemRating.EPIC, 1.0, 0, false, TradeRules.durabilityFactor(damage, 250, B.minDurabilityFactor()), B);
+            long price = TradeRules.sellPrice(reference, 0, B);
+            assertTrue(price <= sellPrevious && price >= 1, "sale price at damage " + damage + ": " + price);
+            sellPrevious = price;
+        }
     }
 
     @Test
@@ -420,7 +542,9 @@ class TradeRulesTest {
                 "screen.overgearedmod.trade.select_all", "screen.overgearedmod.trade.select_none",
                 "screen.overgearedmod.trade.sell_selected", "screen.overgearedmod.trade.sell_price", "screen.overgearedmod.trade.empty",
                 "message.overgearedmod.trade_refused", "message.overgearedmod.trade_outside",
-                "message.overgearedmod.trade_stale", "message.overgearedmod.trade_failed", "message.overgearedmod.trade_skipped"));
+                "message.overgearedmod.trade_stale", "message.overgearedmod.trade_failed", "message.overgearedmod.trade_skipped",
+                "screen.overgearedmod.trade.tip.durability", "screen.overgearedmod.status.rested_cooldown",
+                "message.overgearedmod.debug_capsule_cooldown", "message.overgearedmod.debug_capsule"));
         List<String> gone = List.of("screen.overgearedmod.trade.confirm_export", "notification.overgearedmod.trade.exported",
                 "screen.overgearedmod.trade.export", "screen.overgearedmod.trade.export_price");
         for (String file : List.of("en_us.json", "es_es.json")) {
@@ -436,6 +560,10 @@ class TradeRulesTest {
             assertEquals(0, placeholders(lang.get("screen.overgearedmod.trade.confirm_title").getAsString()), file + ": confirm_title");
             assertEquals(2, placeholders(lang.get("notification.overgearedmod.trade.sold_many").getAsString()), file + ": sold_many");
             assertEquals(1, placeholders(lang.get("message.overgearedmod.trade_skipped").getAsString()), file + ": trade_skipped");
+            assertEquals(1, placeholders(lang.get("screen.overgearedmod.trade.tip.durability").getAsString()), file + ": tip.durability");
+            assertEquals(1, placeholders(lang.get("screen.overgearedmod.status.rested_cooldown").getAsString()), file + ": rested_cooldown");
+            assertEquals(1, placeholders(lang.get("message.overgearedmod.debug_capsule_cooldown").getAsString()), file + ": debug_capsule_cooldown");
+            assertEquals(6, placeholders(lang.get("message.overgearedmod.debug_capsule").getAsString()), file + ": debug_capsule");
         }
     }
 }
