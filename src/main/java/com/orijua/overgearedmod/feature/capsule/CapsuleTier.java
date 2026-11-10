@@ -5,6 +5,7 @@ import io.netty.buffer.ByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.ByIdMap;
 import net.minecraft.util.StringRepresentable;
 
 import java.util.Optional;
@@ -16,7 +17,8 @@ public enum CapsuleTier implements StringRepresentable {
     DIAMOND("diamond");
 
     public static final Codec<CapsuleTier> CODEC = StringRepresentable.fromEnum(CapsuleTier::values);
-    public static final StreamCodec<ByteBuf, CapsuleTier> STREAM_CODEC = ByteBufCodecs.idMapper(i -> values()[i], CapsuleTier::ordinal);
+    public static final StreamCodec<ByteBuf, CapsuleTier> STREAM_CODEC = ByteBufCodecs.idMapper(
+            ByIdMap.continuous(CapsuleTier::ordinal, values(), ByIdMap.OutOfBoundsStrategy.ZERO), CapsuleTier::ordinal);
 
     private final String id;
 
