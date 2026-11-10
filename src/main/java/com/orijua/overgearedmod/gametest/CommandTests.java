@@ -308,6 +308,33 @@ public final class CommandTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestSupport.EMPTY)
+    public static void debugCapsuleCommandsShowAndSetTheTierAndTheRested(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule") == 1, "the info command answers");
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule tier advanced") == 1, "a valid tier is set");
+        helper.assertTrue(player.getData(com.orijua.overgearedmod.core.registry.ModAttachments.CAPSULE_TIER.get())
+                == com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED, "the tier is written");
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule tier platinum") == 0, "an unknown tier fails and changes nothing");
+        helper.assertTrue(player.getData(com.orijua.overgearedmod.core.registry.ModAttachments.CAPSULE_TIER.get())
+                == com.orijua.overgearedmod.feature.capsule.CapsuleTier.ADVANCED, "the tier is still advanced");
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule rested 120") == 120, "the rested seconds are set");
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedSeconds(player) == 120, "and written");
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule") == 1, "the info still answers");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule rested 86401"), "more than a day is refused");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule rested -1"), "negative is refused");
+        helper.succeed();
+    }
+
+    private static boolean executeFails(GameTestHelper helper, ServerPlayer player, String command) {
+        try {
+            helper.getLevel().getServer().getCommands().getDispatcher().execute(command, player.createCommandSourceStack().withPermission(4));
+            return false;
+        } catch (CommandSyntaxException e) {
+            return true;
+        }
+    }
+
     /** The debug goto is a permitted crossing: its flag is not left on, and it still goes (with the test level as Satisfy). */
     @GameTest(template = TestSupport.EMPTY)
     public static void gotoStillWorksAndLeavesNoCrossingFlag(GameTestHelper helper) {
