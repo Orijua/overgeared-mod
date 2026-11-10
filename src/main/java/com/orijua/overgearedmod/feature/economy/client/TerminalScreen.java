@@ -331,16 +331,18 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         CapsuleTier tier = state.sessionTier();
         FatigueBalance fatigue = FatigueBalance.current();
         CapsuleBalance capsule = CapsuleBalance.current();
-        UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.current", tier.tierName()), x + MARGIN, y + 34);
+        long won = player.getData(ModAttachments.ACCOUNT.get()).won();
+        Component wonText = Component.translatable("screen.overgearedmod.terminal.won", won);
+        int wonX = x + OFFER_X + OFFER_WIDTH - 4 - font.width(wonText);
+        UiStyle.heading(graphics, font, UiStyle.ellipsize(font, Component.translatable("screen.overgearedmod.status.capsule_tier", tier.tierName()),
+                Math.max(40, wonX - 6 - (x + MARGIN))), x + MARGIN, y + 34);
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.session", CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue))),
                 x + MARGIN, y + 46, UiStyle.TEXT);
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.recovery", CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue))),
                 x + MARGIN, y + 58, UiStyle.TEXT);
 
         // The licenses
-        long won = player.getData(ModAttachments.ACCOUNT.get()).won();
-        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.won", won), x + OFFER_X + OFFER_WIDTH - 4
-                - font.width(Component.translatable("screen.overgearedmod.terminal.won", won)), y + 34, UiStyle.GOLD);
+        UiStyle.text(graphics, font, wonText, wonX, y + 34, UiStyle.GOLD);
         ItemStack hovered = ItemStack.EMPTY;
         for (int i = 0; i < Math.min(LICENSE_ROWS, state.licenses().size()); i++) {
             LicenseOffer offer = state.licenses().get(i);
