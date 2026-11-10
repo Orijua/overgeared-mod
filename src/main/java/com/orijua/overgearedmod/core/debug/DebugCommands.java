@@ -308,7 +308,7 @@ public final class DebugCommands {
                                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                                     int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
                                                     player.setData(ModAttachments.RESTED_SECONDS.get(), seconds);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_rested", seconds), false);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_rested", CapsuleText.clock(seconds)), false);
                                                     return seconds;
                                                 })))
                                 .then(Commands.literal("cooldown")
@@ -317,7 +317,7 @@ public final class DebugCommands {
                                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                                     int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
                                                     player.setData(ModAttachments.RESTED_COOLDOWN.get(), seconds);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_cooldown", seconds), false);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_cooldown", CapsuleText.clock(seconds)), false);
                                                     return seconds;
                                                 }))))
                         .then(Commands.literal("simulate")
@@ -346,7 +346,8 @@ public final class DebugCommands {
             locks.append(locks.length() == 0 ? "" : ", ").append(offer.tier().getSerializedName()).append("=").append(offer.lock().name().toLowerCase());
         }
         source.sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule", tier.tierName(),
-                FatigueService.restedSeconds(player), CapsuleRules.cooldownLeft(FatigueService.restedCooldown(player), capsule),
+                CapsuleText.clock(FatigueService.restedSeconds(player)),
+                CapsuleText.clock(CapsuleRules.cooldownLeft(FatigueService.restedCooldown(player), capsule)),
                 CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue)),
                 CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue)), locks.toString()), false);
         return 1;
