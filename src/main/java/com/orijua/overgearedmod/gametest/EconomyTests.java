@@ -334,6 +334,10 @@ public final class EconomyTests {
         helper.assertTrue(set.size() == 1 && set.get(0).getContents() instanceof TranslatableContents confirm
                 && confirm.getKey().equals("message.overgearedmod.debug_won") && "77".equals(confirm.getArgs()[0]),
                 "set won confirms the amount");
+        List<Component> big = run(helper, player, "satisfy debug set won 1234", 2);
+        helper.assertTrue(big.size() == 1 && big.get(0).getContents() instanceof TranslatableContents bigConfirm
+                && bigConfirm.getKey().equals("message.overgearedmod.debug_won") && "1.234".equals(bigConfirm.getArgs()[0]),
+                "set won writes 1.234 with the separator: " + big);
         helper.succeed();
     }
 
