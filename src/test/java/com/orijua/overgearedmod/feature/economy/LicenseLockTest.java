@@ -18,8 +18,13 @@ class LicenseLockTest {
     }
 
     @Test
+    void openIsTheFirstLockBecauseItIsWhatAnOutOfRangeIdFallsBackTo() {
+        assertEquals(0, LicenseLock.OPEN.ordinal());
+    }
+
+    @Test
     void anIdOutOfRangeDecodesAsOpenInsteadOfThrowing() {
-        for (int id : new int[]{LicenseLock.values().length, 4, 100, -1, Integer.MAX_VALUE}) {
+        for (int id : new int[]{LicenseLock.values().length, LicenseLock.values().length + 1, 100, -1, Integer.MAX_VALUE}) {
             ByteBuf buf = Unpooled.buffer();
             net.minecraft.network.VarInt.write(buf, id);
             assertEquals(LicenseLock.OPEN, LicenseLock.STREAM_CODEC.decode(buf), "id " + id);

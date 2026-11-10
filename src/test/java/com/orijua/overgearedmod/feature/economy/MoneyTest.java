@@ -16,9 +16,12 @@ class MoneyTest {
     @Test
     void formatGroupsThousandsWithADot() {
         assertEquals("0", Money.format(0));
+        assertEquals("99", Money.format(99));
+        assertEquals("100", Money.format(100));
         assertEquals("999", Money.format(999));
         assertEquals("1.000", Money.format(1000));
         assertEquals("6.400", Money.format(6400));
+        assertEquals("999.999", Money.format(999_999));
         assertEquals("1.000.000", Money.format(1_000_000));
         assertEquals("-6.400", Money.format(-6400));
         assertEquals("-999", Money.format(-999));
