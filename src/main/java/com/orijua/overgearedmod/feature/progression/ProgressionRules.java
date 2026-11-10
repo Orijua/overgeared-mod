@@ -42,6 +42,17 @@ public final class ProgressionRules {
         return (int) Math.round(amount * (1 + bonus));
     }
 
+    /**
+     * {@code amount} of level XP raised by {@code percent} while rested, rounded, never above {@link Integer#MAX_VALUE};
+     * nothing changes for a gain that is not positive or a percent that is not.
+     */
+    public static int restedXp(int amount, int percent) {
+        if (amount <= 0 || percent <= 0) {
+            return amount;
+        }
+        return (int) Math.min(Integer.MAX_VALUE, Math.round(amount * (1 + percent / 100.0)));
+    }
+
     /** The smithing experience at which {@code level} starts (the inverse of {@link #smithingLevel}). */
     public static int smithingXpFor(int level) {
         return Math.max(0, level) * Math.max(0, level) * 10;

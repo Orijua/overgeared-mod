@@ -1,5 +1,8 @@
 package com.orijua.overgearedmod.feature.capsule;
 
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
+import com.orijua.overgearedmod.core.config.FatigueBalance;
+import com.orijua.overgearedmod.feature.fatigue.FatigueRules.SessionModifiers;
 import net.minecraft.core.BlockPos;
 
 import java.util.Optional;
@@ -56,5 +59,29 @@ public final class CapsuleRules {
     /** Whether the player is still close enough to the capsule to keep connecting. */
     public static boolean inReach(double distanceSquared) {
         return distanceSquared <= MAX_DISTANCE * MAX_DISTANCE;
+    }
+
+    /**
+     * How the capsule of this tier changes the session. The basic capsule is exactly {@link SessionModifiers#NEUTRAL}; the
+     * others stretch the session and speed up the recovery relative to the fatigue's numbers, and only the diamond one
+     * carries rested seconds.
+     */
+    public static SessionModifiers modifiers(CapsuleTier tier, FatigueBalance fatigue, CapsuleBalance capsule) {
+        if (tier == CapsuleTier.BASIC) {
+            return SessionModifiers.NEUTRAL;
+        }
+        double durationMul = capsule.sessionMinutes(tier, fatigue) / fatigue.sessionMinutes();
+        double recoveryMul = fatigue.recoveryMinutes() / capsule.recoveryMinutes(tier, fatigue);
+        int restedSeconds = tier == CapsuleTier.DIAMOND ? capsule.restedMinutes() * 60 : 0;
+        return new SessionModifiers(durationMul, recoveryMul, restedSeconds);
+    }
+
+    /**
+     * The rested seconds a connection starts with: those of the modifiers if the energy reaches the minimum (compared as
+     * floats, like the saved energy and {@code FatigueRules.canConnect}), otherwise none. It never adds to what the
+     * player already had.
+     */
+    public static int restedOnConnect(SessionModifiers modifiers, double energy, CapsuleBalance capsule) {
+        return (float) energy >= (float) capsule.restedMinEnergy() ? modifiers.restedSeconds() : 0;
     }
 }
