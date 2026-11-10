@@ -1,9 +1,12 @@
 package com.orijua.overgearedmod.feature.fatigue;
 
 import com.orijua.overgearedmod.Overgearedmod;
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.feature.capsule.CapsuleRules;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.capsule.CombatClock;
 import com.orijua.overgearedmod.feature.smelting.SmelterMenu;
 import com.orijua.overgearedmod.feature.smithing.SmithingAnvilMenu;
@@ -12,6 +15,7 @@ import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.fatigue.FatigueRules.Activity;
 import com.orijua.overgearedmod.feature.fatigue.FatigueRules.SessionModifiers;
 import com.orijua.overgearedmod.feature.notification.NotificationEvents;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import com.orijua.overgearedmod.feature.notification.SystemNotification.Kind;
 import com.orijua.overgearedmod.feature.smithing.ItemForgedEvent;
 import net.minecraft.network.chat.Component;
@@ -129,8 +133,8 @@ public final class FatigueService {
         Vec3 here = player.position();
         Vec3 before = LAST_POSITION.get(player.getUUID());
         Activity activity = activity(player, here, before);
-        double drain = satisfy ? FatigueRules.drainPerSecond(balance, activity, SessionModifiers.NEUTRAL) : 0.0;
-        OptionalDouble minutes = satisfy ? FatigueRules.minutesLeft(balance, energy(player), activity, SessionModifiers.NEUTRAL) : OptionalDouble.empty();
+        double drain = satisfy ? FatigueRules.drainPerSecond(balance, activity, modifiers(player)) : 0.0;
+        OptionalDouble minutes = satisfy ? FatigueRules.minutesLeft(balance, energy(player), activity, modifiers(player)) : OptionalDouble.empty();
         var last = CombatClock.last(player);
         int sinceCombat = last.isPresent() ? (int) Math.max(0, (player.server.getTickCount() - last.getAsLong()) / 20) : -1;
         return new FatigueDebugPayload(true, energy(player), activity.ordinal(), (float) drain,
@@ -222,7 +226,7 @@ public final class FatigueService {
             return;
         }
         double before = energy(player);
-        setEnergy(player, FatigueRules.afterForge(balance, before, SessionModifiers.NEUTRAL));
+        setEnergy(player, FatigueRules.afterForge(balance, before, modifiers(player)));
         warnIfCrossed(player, balance.warnAt(), before, energy(player));
     }
 
@@ -270,8 +274,36 @@ public final class FatigueService {
         return until != null && player.server.getTickCount() < until;
     }
 
-    /** The player has just connected to Satisfy: after a forced disconnection they start protected. */
-    public static void onConnected(ServerPlayer player) {
+    /**
+     * How this player's capsule changes the session: their last connection's tier (the basic one, neutral, if none).
+     * The rested seconds of a connection are on the attachment, not here.
+     */
+    public static SessionModifiers modifiers(ServerPlayer player) {
+        return CapsuleRules.modifiers(player.getData(ModAttachments.CAPSULE_TIER.get()), FatigueBalance.current(), CapsuleBalance.current());
+    }
+
+    /** Seconds of the rested bonus the player has left. */
+    public static int restedSeconds(ServerPlayer player) {
+        return player.getData(ModAttachments.RESTED_SECONDS.get());
+    }
+
+    private static void setRested(ServerPlayer player, int seconds) {
+        if (seconds != restedSeconds(player)) {
+            player.setData(ModAttachments.RESTED_SECONDS.get(), seconds);
+        }
+    }
+
+    /** One second of the rested bonus goes by, in Satisfy only (whatever the fatigue or the game mode). */
+    private static void tickRested(ServerPlayer player) {
+        if (player.isAlive() && Satisfy.is(player.level()) && restedSeconds(player) > 0) {
+            setRested(player, restedSeconds(player) - 1);
+        }
+    }
+
+    /** The player has just connected to Satisfy with a capsule of this tier: the rested bonus is set and, after a forced disconnection, they start protected. */
+    public static void onConnected(ServerPlayer player, CapsuleTier tier) {
+        setRested(player, CapsuleRules.restedOnConnect(CapsuleRules.modifiers(tier, FatigueBalance.current(), CapsuleBalance.current()),
+                energy(player), CapsuleBalance.current()));
         if (player.getData(ModAttachments.FATIGUE_FORCED_OUT.get())) {
             player.setData(ModAttachments.FATIGUE_FORCED_OUT.get(), false);
             PROTECTED_UNTIL.put(player.getUUID(), player.server.getTickCount() + (long) FatigueRules.PROTECTION_TICKS);
@@ -304,7 +336,7 @@ public final class FatigueService {
             return;
         }
         double seconds = Math.max(0.0, (clock.getAsLong() - since) / 1000.0);
-        setEnergy(player, FatigueRules.afterRecovery(balance, energy(player), SessionModifiers.NEUTRAL, seconds));
+        setEnergy(player, FatigueRules.afterRecovery(balance, energy(player), modifiers(player), seconds));
     }
 
     // ---- the second ----
@@ -315,6 +347,7 @@ public final class FatigueService {
      * disconnection.
      */
     public static void tickSecond(ServerPlayer player) {
+        tickRested(player);
         update(player);
         if (DEBUG_VIEWERS.contains(player.getUUID())) {
             sendDebug(player);
@@ -332,14 +365,14 @@ public final class FatigueService {
         if (WorldSide.of(player.level()) != WorldSide.SATISFY) {
             endGrace(player);
             LAST_POSITION.remove(player.getUUID());
-            setEnergy(player, FatigueRules.afterRecovery(balance, before, SessionModifiers.NEUTRAL, 1.0));
+            setEnergy(player, FatigueRules.afterRecovery(balance, before, modifiers(player), 1.0));
             return;
         }
         if (player.isCreative() || player.isSpectator()) {
             endGrace(player);
             return;
         }
-        setEnergy(player, FatigueRules.afterDrain(balance, before, activityOf(player), SessionModifiers.NEUTRAL, 1.0));
+        setEnergy(player, FatigueRules.afterDrain(balance, before, activityOf(player), modifiers(player), 1.0));
         double after = energy(player);
         if (after > 0.0) {
             endGrace(player);

@@ -226,6 +226,9 @@ public final class CapsuleService {
     public static void died(ServerPlayer player) {
         cancel(player, false);
         CapsuleState state = state(player);
+        if (Satisfy.is(player.level())) {
+            player.setData(ModAttachments.RESTED_SECONDS.get(), 0);
+        }
         if (Satisfy.is(player.level()) && state.isConnected()) {
             player.setData(ModAttachments.CAPSULE.get(), state.withoutBody());
             Overgearedmod.LOGGER.info("{} died in Satisfy: the body leaves the capsule", player.getGameProfile().getName());
@@ -243,6 +246,7 @@ public final class CapsuleService {
         switch (CapsuleRules.coherence(state, Satisfy.is(player.level()))) {
             case CONNECTED_OUTSIDE -> {
                 player.setData(ModAttachments.CAPSULE.get(), state.withoutBody());
+                player.setData(ModAttachments.RESTED_SECONDS.get(), 0);
                 Overgearedmod.LOGGER.warn("{} logged in outside Satisfy ({}) still connected to {}: the body is released",
                         player.getGameProfile().getName(), player.level().dimension().location(), state.capsule().orElse(null));
             }
@@ -256,6 +260,15 @@ public final class CapsuleService {
     /** Where the player would appear in Satisfy now. */
     public static Optional<CapsuleRules.Spawn> spawnFor(ServerPlayer player, ServerLevel satisfy) {
         return CapsuleRules.spawn(state(player).lastSave(), WorldSites.landingFor(satisfy.getSeed()));
+    }
+
+    /** The tier of the capsule block at {@code capsule}; the basic one if there is no capsule there. */
+    public static CapsuleTier tierAt(MinecraftServer server, GlobalPos capsule) {
+        ServerLevel level = server.getLevel(capsule.dimension());
+        if (level != null && level.getBlockState(capsule.pos()).getBlock() instanceof CapsuleBlock block) {
+            return block.tier();
+        }
+        return CapsuleTier.BASIC;
     }
 
     /** The body stays in {@code capsule}; the player appears in Satisfy. Returns false if already connected or there is nowhere to appear. */
@@ -282,6 +295,8 @@ public final class CapsuleService {
             Overgearedmod.LOGGER.error("{} cannot connect: the stored character cannot be read", player.getGameProfile().getName());
             return false;
         }
+        // The tier is read from the block before the trip; a capsule that is gone by now counts as the basic one.
+        CapsuleTier tier = tierAt(player.server, capsule);
         GlobalPos exit = GlobalPos.of(player.level().dimension(), player.blockPosition());
         // The state is saved before the trip (the arrival events may need it) and put back if the trip does not happen.
         CapsuleState before = state(player);
@@ -300,7 +315,8 @@ public final class CapsuleService {
             return false;
         }
         player.resetFallDistance();
-        FatigueService.onConnected(player);
+        player.setData(ModAttachments.CAPSULE_TIER.get(), tier);
+        FatigueService.onConnected(player, tier);
         player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.connected"), true);
         return true;
     }
@@ -329,6 +345,8 @@ public final class CapsuleService {
             return false;
         }
         player.resetFallDistance();
+        // The tier stays (the recovery keeps using it); the rested bonus does not outlive the connection.
+        player.setData(ModAttachments.RESTED_SECONDS.get(), 0);
         player.displayClientMessage(Component.translatable(reason == Reason.FATIGUE
                 ? "message.overgearedmod.capsule.disconnected_tired" : "message.overgearedmod.capsule.disconnected"), true);
         return true;
