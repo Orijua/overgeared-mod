@@ -3,10 +3,13 @@ package com.orijua.overgearedmod.feature.economy;
 import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
@@ -42,6 +45,49 @@ public final class TradeRules {
         public Component message() {
             return Component.translatable(langKey());
         }
+    }
+
+    /** A price multiplier of a single object, as the config writes it: {@code ns:path=N}. */
+    public record ItemMultiplier(ResourceLocation id, double multiplier) {
+        public String asString() {
+            return id + "=" + multiplier;
+        }
+    }
+
+    /** Reads {@code ns:path=N}; empty if the id is not a valid item id (a tag is not) or N is not a finite number from 0 to 100. */
+    public static Optional<ItemMultiplier> parseItemMultiplier(String text) {
+        if (text == null) {
+            return Optional.empty();
+        }
+        int equals = text.lastIndexOf('=');
+        if (equals < 1) {
+            return Optional.empty();
+        }
+        String idText = text.substring(0, equals).trim();
+        if (idText.startsWith("#")) {
+            return Optional.empty();
+        }
+        ResourceLocation id = ResourceLocation.tryParse(idText);
+        if (id == null || id.getPath().isEmpty()) {
+            return Optional.empty();
+        }
+        double multiplier;
+        try {
+            multiplier = Double.parseDouble(text.substring(equals + 1).trim());
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
+        return Double.isFinite(multiplier) && multiplier >= 0.0 && multiplier <= 100.0
+                ? Optional.of(new ItemMultiplier(id, multiplier)) : Optional.empty();
+    }
+
+    /** The multipliers of a config list: the invalid lines are skipped and, if an id repeats, the first one wins. */
+    public static Map<ResourceLocation, Double> itemMultipliers(List<? extends String> lines) {
+        Map<ResourceLocation, Double> multipliers = new LinkedHashMap<>();
+        for (String line : lines) {
+            parseItemMultiplier(line).ifPresent(entry -> multipliers.putIfAbsent(entry.id(), entry.multiplier()));
+        }
+        return multipliers;
     }
 
     /** The reference price of a piece with all its durability: see the six-argument form. */

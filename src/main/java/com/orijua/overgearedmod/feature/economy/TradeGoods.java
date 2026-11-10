@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.feature.equipment.EquipmentBonuses;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -36,8 +37,15 @@ public final class TradeGoods {
         return new TradeKey(TradeCategory.classify(stack::is), rating);
     }
 
-    /** The material multiplier: the vanilla tier of a tool or the material of an armor, else the config's other material. */
+    /**
+     * The material multiplier: the one the config gives to this very item (it replaces the material's), else the vanilla tier
+     * of a tool or the material of an armor, else the config's other material.
+     */
     public static double material(ItemStack stack, TradeBalance balance) {
+        Double own = balance.itemMultiplier().get(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+        if (own != null) {
+            return own;
+        }
         String name = null;
         if (stack.getItem() instanceof TieredItem tiered && tiered.getTier() instanceof Tiers tier) {
             name = tier.name().toLowerCase(Locale.ROOT);

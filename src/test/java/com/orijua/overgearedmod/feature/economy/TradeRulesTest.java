@@ -265,6 +265,37 @@ class TradeRulesTest {
     }
 
     @Test
+    void parseItemMultiplierReadsAnIdAndANumber() {
+        TradeRules.ItemMultiplier fracaso = TradeRules.parseItemMultiplier("overgearedmod:fracaso_sword=0.25").orElseThrow();
+        assertEquals("overgearedmod:fracaso_sword", fracaso.id().toString());
+        assertEquals(0.25, fracaso.multiplier());
+        assertEquals(2.0, TradeRules.parseItemMultiplier("  minecraft:iron_sword = 2  ").orElseThrow().multiplier());
+        assertEquals(0.0, TradeRules.parseItemMultiplier("minecraft:iron_sword=0").orElseThrow().multiplier());
+        assertEquals(100.0, TradeRules.parseItemMultiplier("minecraft:iron_sword=100").orElseThrow().multiplier());
+        assertEquals("overgearedmod:jaffa_sword=2.0", TradeRules.parseItemMultiplier("overgearedmod:jaffa_sword=2").orElseThrow().asString());
+    }
+
+    @Test
+    void parseItemMultiplierRejectsWhatIsNotAnObjectAndANumber() {
+        for (String bad : new String[]{"minecraft:iron_sword", "#minecraft:swords=2", "minecraft:iron_sword=NaN",
+                "minecraft:iron_sword=Infinity", "minecraft:iron_sword=-1", "minecraft:iron_sword=100.1", "minecraft:iron_sword=",
+                "minecraft:iron_sword=two", "=2", "minecraft:=2", "Not An Id=2", ""}) {
+            assertTrue(TradeRules.parseItemMultiplier(bad).isEmpty(), bad);
+        }
+        assertTrue(TradeRules.parseItemMultiplier(null).isEmpty());
+    }
+
+    @Test
+    void itemMultipliersSkipTheInvalidAndTheFirstRepeatedWins() {
+        Map<net.minecraft.resources.ResourceLocation, Double> m = TradeRules.itemMultipliers(
+                List.of("minecraft:iron_sword=2", "broken", "minecraft:iron_sword=5", "minecraft:bow=0.5", "minecraft:axe=NaN"));
+        assertEquals(2, m.size());
+        assertEquals(2.0, m.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace("iron_sword")));
+        assertEquals(0.5, m.get(net.minecraft.resources.ResourceLocation.withDefaultNamespace("bow")));
+        assertTrue(TradeRules.itemMultipliers(List.of()).isEmpty());
+    }
+
+    @Test
     void durabilityFactorIsLinearBetweenTheMinimumAndOne() {
         assertEquals(1.0, TradeRules.durabilityFactor(0, 100, 0.25));
         assertEquals(0.25, TradeRules.durabilityFactor(100, 100, 0.25));

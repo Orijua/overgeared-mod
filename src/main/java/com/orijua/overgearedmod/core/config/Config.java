@@ -224,6 +224,16 @@ public final class Config {
     private static final ModConfigSpec.LongValue TRADE_MAX_SELL_EMERALDS = BUILDER
             .comment("A sale that would pay more Satisfy emeralds than this is refused without touching the piece.")
             .defineInRange("maxSellEmeralds", T.maxSellEmeralds(), 64L, 100_000L);
+    private static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> TRADE_ITEM_MULTIPLIERS = BUILDER
+            .comment("Price multiplier of single objects, \"ns:path=N\" (N from 0 to 100). It replaces the one of the material, so a unique object",
+                    "(Fracaso, the Jaffa sword, the smithing hammers) does not weigh as iron or netherite just for its tier. Wrong lines are ignored;",
+                    "if an item repeats, the first line wins.")
+            .defineListAllowEmpty("itemMultipliers",
+                    T.itemMultiplier().entrySet().stream().sorted(java.util.Map.Entry.comparingByKey())
+                            .map(entry -> new com.orijua.overgearedmod.feature.economy.TradeRules.ItemMultiplier(entry.getKey(), entry.getValue()).asString())
+                            .toList(),
+                    () -> "minecraft:iron_sword=1.0",
+                    value -> value instanceof String text && com.orijua.overgearedmod.feature.economy.TradeRules.parseItemMultiplier(text).isPresent());
     private static final ModConfigSpec.DoubleValue TRADE_MIN_DURABILITY_FACTOR = BUILDER
             .comment("Price factor of a piece with no durability left (0 to 1). A new piece pays the full price; in between it is linear.")
             .defineInRange("minDurabilityFactor", T.minDurabilityFactor(), 0.0, 1.0);
@@ -366,7 +376,8 @@ public final class Config {
         materials.put("chainmail", TRADE_MATERIAL_CHAINMAIL.get());
         return new TradeBalance(prices, materials, TRADE_OTHER_MATERIAL.get(), TRADE_ENHANCEMENT_BONUS.get(), TRADE_SELL_SHARE.get(),
                 TRADE_SATURATION_STEP.get(), TRADE_SATURATION_FLOOR.get(),
-                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get(), TRADE_MIN_DURABILITY_FACTOR.get());
+                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get(), TRADE_MIN_DURABILITY_FACTOR.get(),
+                com.orijua.overgearedmod.feature.economy.TradeRules.itemMultipliers(TRADE_ITEM_MULTIPLIERS.get()));
     }
 
     static TerminalBalance terminalBalance() {

@@ -332,8 +332,8 @@ public final class TradeTests {
             category(helper, Items.CHAINMAIL_CHESTPLATE, TradeCategory.CHESTPLATE, 1.0);
             category(helper, Items.NETHERITE_LEGGINGS, TradeCategory.LEGGINGS, 3.0);
             category(helper, Items.IRON_HELMET, TradeCategory.HELMET, 1.0);
-            category(helper, ModItems.JAFFA_SWORD.get(), TradeCategory.SWORD, 1.0);
-            category(helper, ModItems.FRACASO_SWORD.get(), TradeCategory.SWORD, 3.0);
+            category(helper, ModItems.JAFFA_SWORD.get(), TradeCategory.SWORD, 2.0);
+            category(helper, ModItems.FRACASO_SWORD.get(), TradeCategory.SWORD, 0.25);
             category(helper, Items.IRON_HOE, TradeCategory.OTHER, 1.0);
             category(helper, Items.TRIDENT, TradeCategory.OTHER, 1.0);
             category(helper, ModItems.IRON_SMITHING_HAMMER.get(), TradeCategory.OTHER, 1.0);

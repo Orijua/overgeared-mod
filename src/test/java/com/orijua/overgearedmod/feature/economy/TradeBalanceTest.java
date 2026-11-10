@@ -1,12 +1,15 @@
 package com.orijua.overgearedmod.feature.economy;
 
+import com.orijua.overgearedmod.core.config.TerminalBalance;
 import com.orijua.overgearedmod.core.config.TradeBalance;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TradeBalanceTest {
@@ -35,7 +38,14 @@ class TradeBalanceTest {
     private static TradeBalance withMinDurability(double value) {
         TradeBalance d = TradeBalance.DEFAULT;
         return new TradeBalance(d.basePrice(), d.materialMultiplier(), d.otherMaterial(), d.enhancementBonus(), d.sellShare(),
-                d.saturationStep(), d.saturationFloor(), d.recoveryPerDay(), d.pressureCap(), d.maxSellEmeralds(), value);
+                d.saturationStep(), d.saturationFloor(), d.recoveryPerDay(), d.pressureCap(), d.maxSellEmeralds(), value, d.itemMultiplier());
+    }
+
+    private static TradeBalance withItemMultiplier(double value) {
+        TradeBalance d = TradeBalance.DEFAULT;
+        return new TradeBalance(d.basePrice(), d.materialMultiplier(), d.otherMaterial(), d.enhancementBonus(), d.sellShare(),
+                d.saturationStep(), d.saturationFloor(), d.recoveryPerDay(), d.pressureCap(), d.maxSellEmeralds(), d.minDurabilityFactor(),
+                Map.of(ResourceLocation.withDefaultNamespace("iron_sword"), value));
     }
 
     @Test
@@ -48,6 +58,33 @@ class TradeBalanceTest {
     }
 
     @Test
+    void theDefaultObjectMultipliersAreTheFourUniqueObjects() {
+        Map<ResourceLocation, Double> m = TradeBalance.DEFAULT.itemMultiplier();
+        assertEquals(4, m.size());
+        assertEquals(0.25, m.get(ResourceLocation.fromNamespaceAndPath("overgearedmod", "fracaso_sword")));
+        assertEquals(2.0, m.get(ResourceLocation.fromNamespaceAndPath("overgearedmod", "jaffa_sword")));
+        assertEquals(2.0, m.get(ResourceLocation.fromNamespaceAndPath("overgearedmod", "jaffa_smithing_hammer")));
+        assertEquals(3.0, m.get(ResourceLocation.fromNamespaceAndPath("overgearedmod", "mithril_smithing_hammer")));
+    }
+
+    @Test
+    void anObjectMultiplierMustBeAFiniteNumberFromZeroToOneHundred() {
+        assertThrows(IllegalArgumentException.class, () -> withItemMultiplier(-0.5));
+        assertThrows(IllegalArgumentException.class, () -> withItemMultiplier(Double.NaN));
+        assertThrows(IllegalArgumentException.class, () -> withItemMultiplier(Double.POSITIVE_INFINITY));
+        assertThrows(IllegalArgumentException.class, () -> withItemMultiplier(100.5));
+        assertEquals(0.0, withItemMultiplier(0.0).itemMultiplier().values().iterator().next());
+        assertEquals(100.0, withItemMultiplier(100.0).itemMultiplier().values().iterator().next());
+    }
+
+    @Test
+    void theObjectMultipliersNeverShareAnItemWithTheTerminalOffer() {
+        for (ResourceLocation id : TradeBalance.DEFAULT.itemMultiplier().keySet()) {
+            assertFalse(TerminalBalance.DEFAULT.offerItems().contains(id), id + " is in the daily offer");
+        }
+    }
+
+    @Test
     void currentIsTheDefaultsBeforeTheConfigLoads() {
         assertEquals(TradeBalance.DEFAULT, TradeBalance.current());
     }
@@ -55,7 +92,7 @@ class TradeBalanceTest {
     @Test
     void anOverrideAppliesOnlyWhileTheActionRuns() {
         TradeBalance changed = new TradeBalance(TradeBalance.DEFAULT.basePrice(), TradeBalance.DEFAULT.materialMultiplier(),
-                1.0, 0.10, 0.5, 0.95, 0.15, 2, 37, 10_000L, 0.25);
+                1.0, 0.10, 0.5, 0.95, 0.15, 2, 37, 10_000L, 0.25, TradeBalance.DEFAULT.itemMultiplier());
         TradeBalance[] seen = new TradeBalance[1];
         TradeBalance.withOverride(changed, () -> seen[0] = TradeBalance.current());
         assertEquals(changed, seen[0]);
