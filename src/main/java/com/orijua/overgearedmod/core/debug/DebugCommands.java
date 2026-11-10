@@ -29,6 +29,7 @@ import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
 import com.orijua.overgearedmod.feature.economy.LicenseOffer;
 import com.orijua.overgearedmod.feature.economy.LicenseShop;
 import com.orijua.overgearedmod.core.config.CapsuleBalance;
+import com.orijua.overgearedmod.feature.capsule.CapsuleRules;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
@@ -309,6 +310,15 @@ public final class DebugCommands {
                                                     player.setData(ModAttachments.RESTED_SECONDS.get(), seconds);
                                                     ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_rested", seconds), false);
                                                     return seconds;
+                                                })))
+                                .then(Commands.literal("cooldown")
+                                        .then(Commands.argument("seconds", IntegerArgumentType.integer(0, 86400))
+                                                .executes(ctx -> {
+                                                    ServerPlayer player = ctx.getSource().getPlayerOrException();
+                                                    int seconds = IntegerArgumentType.getInteger(ctx, "seconds");
+                                                    player.setData(ModAttachments.RESTED_COOLDOWN.get(), seconds);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule_cooldown", seconds), false);
+                                                    return seconds;
                                                 }))))
                         .then(Commands.literal("simulate")
                                 .then(Commands.literal("kill")
@@ -336,7 +346,8 @@ public final class DebugCommands {
             locks.append(locks.length() == 0 ? "" : ", ").append(offer.tier().getSerializedName()).append("=").append(offer.lock().name().toLowerCase());
         }
         source.sendSuccess(() -> Component.translatable("message.overgearedmod.debug_capsule", tier.tierName(),
-                FatigueService.restedSeconds(player), CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue)),
+                FatigueService.restedSeconds(player), CapsuleRules.cooldownLeft(FatigueService.restedCooldown(player), capsule),
+                CapsuleText.minutes(capsule.sessionMinutes(tier, fatigue)),
                 CapsuleText.minutes(capsule.recoveryMinutes(tier, fatigue)), locks.toString()), false);
         return 1;
     }

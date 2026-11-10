@@ -332,6 +332,46 @@ public final class CommandTests {
         helper.succeed();
     }
 
+    @GameTest(template = TestSupport.EMPTY)
+    public static void debugCapsuleCooldownIsSetAndShown(GameTestHelper helper) throws CommandSyntaxException {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule cooldown 120") == 120, "the wait is set");
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedCooldown(player) == 120, "and written");
+        List<Component> answers = new java.util.ArrayList<>();
+        net.minecraft.commands.CommandSource sink = new net.minecraft.commands.CommandSource() {
+            @Override
+            public void sendSystemMessage(Component message) {
+                answers.add(message);
+            }
+
+            @Override
+            public boolean acceptsSuccess() {
+                return true;
+            }
+
+            @Override
+            public boolean acceptsFailure() {
+                return true;
+            }
+
+            @Override
+            public boolean shouldInformAdmins() {
+                return false;
+            }
+        };
+        helper.getLevel().getServer().getCommands().getDispatcher()
+                .execute("satisfy debug capsule", player.createCommandSourceStack().withPermission(4).withSource(sink));
+        helper.assertTrue(answers.size() == 1 && answers.get(0).getContents() instanceof TranslatableContents contents
+                && contents.getKey().equals("message.overgearedmod.debug_capsule") && Integer.valueOf(120).equals(contents.getArgs()[2]),
+                "the info shows the wait: " + answers);
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule cooldown 86401"), "more than a day is refused");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule cooldown -1"), "negative is refused");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule cooldown"), "without seconds is not a command");
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule cooldown 0") == 0, "zero is accepted");
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedCooldown(player) == 0, "and clears it");
+        helper.succeed();
+    }
+
     private static boolean executeFails(GameTestHelper helper, ServerPlayer player, String command) {
         try {
             helper.getLevel().getServer().getCommands().getDispatcher().execute(command, player.createCommandSourceStack().withPermission(4));

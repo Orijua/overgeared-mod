@@ -49,4 +49,17 @@ class CapsuleTextTest {
                 () -> assertEquals("-", CapsuleText.minutes(Double.NaN)),
                 () -> assertEquals("-", CapsuleText.minutes(Double.POSITIVE_INFINITY)));
     }
+
+    @Test
+    void clockWritesMinutesAndSeconds() {
+        assertAll(
+                () -> assertEquals("00:00", CapsuleText.clock(0)),
+                () -> assertEquals("00:59", CapsuleText.clock(59)),
+                () -> assertEquals("01:00", CapsuleText.clock(60)),
+                () -> assertEquals("09:59", CapsuleText.clock(599)),
+                () -> assertEquals("30:00", CapsuleText.clock(1800)),
+                () -> assertEquals("1440:00", CapsuleText.clock(86_400)),
+                () -> assertEquals("00:00", CapsuleText.clock(-1)),
+                () -> assertEquals("00:00", CapsuleText.clock(Integer.MIN_VALUE)));
+    }
 }
