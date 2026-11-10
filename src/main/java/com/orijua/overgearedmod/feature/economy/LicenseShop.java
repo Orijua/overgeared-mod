@@ -26,7 +26,7 @@ public final class LicenseShop {
     }
 
     public enum Result {
-        OK, OK_DROPPED, NO_TERMINAL, IN_SATISFY, INVALID_TIER, STALE, DEBT_ACTIVE, NEEDS_ADVANCED, ALREADY_HAVE, NOT_ENOUGH_WON
+        OK, NO_TERMINAL, IN_SATISFY, INVALID_TIER, STALE, DEBT_ACTIVE, NEEDS_ADVANCED, ALREADY_HAVE, NOT_ENOUGH_WON, NO_ROOM
     }
 
     /** {@code won} charged for the license of {@code tier} (0 when nothing was bought). */
@@ -40,7 +40,6 @@ public final class LicenseShop {
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
             case OK -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.bought", name(outcome.tier()), outcome.won()));
-            case OK_DROPPED -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.dropped", name(outcome.tier()), outcome.won()));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));
             case INVALID_TIER -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.invalid_tier"));
@@ -49,6 +48,7 @@ public final class LicenseShop {
             case NEEDS_ADVANCED -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.needs_advanced"));
             case ALREADY_HAVE -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.already_have"));
             case NOT_ENOUGH_WON -> Optional.of(Component.translatable("message.overgearedmod.terminal.not_enough_won"));
+            case NO_ROOM -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.no_room"));
         };
     }
 
@@ -73,17 +73,28 @@ public final class LicenseShop {
         return List.copyOf(offers);
     }
 
-    /** Whether the player owns an advanced capsule or better: one in hand or inventory, or their last connection was with one. */
+    /** Whether the player owns an advanced capsule or better: one in hand, inventory or crafting grid, or their last connection was with one. */
     static boolean hasAdvanced(ServerPlayer player) {
         Inventory inventory = player.getInventory();
         return player.getData(ModAttachments.CAPSULE_TIER.get()).atLeast(CapsuleTier.ADVANCED)
-                || anyOf(inventory, ModItems.ADVANCED_CAPSULE.get()) || anyOf(inventory, ModItems.DIAMOND_CAPSULE.get());
+                || anyOf(inventory, ModItems.ADVANCED_CAPSULE.get()) || anyOf(inventory, ModItems.DIAMOND_CAPSULE.get())
+                || inGrid(player, ModItems.ADVANCED_CAPSULE.get()) || inGrid(player, ModItems.DIAMOND_CAPSULE.get());
     }
 
-    /** Whether the player carries the license of {@code tier}: in the inventory, the off hand or the cursor. */
+    /** Whether the player carries the license of {@code tier}: in the inventory, the off hand, the crafting grid or the cursor. */
     static boolean carriesLicense(ServerPlayer player, CapsuleTier tier) {
         Item license = CapsuleLicenseItem.stackFor(tier).getItem();
-        return anyOf(player.getInventory(), license) || player.containerMenu.getCarried().is(license);
+        return anyOf(player.getInventory(), license) || inGrid(player, license) || player.containerMenu.getCarried().is(license);
+    }
+
+    /** The 2x2 crafting grid of the player's own inventory screen. */
+    private static boolean inGrid(ServerPlayer player, Item item) {
+        for (ItemStack stack : player.inventoryMenu.getCraftSlots().getItems()) {
+            if (stack.is(item)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The main inventory (hotbar included) and the off hand. */
@@ -142,13 +153,14 @@ public final class LicenseShop {
         if (AccountService.won(player) < price) {
             return Outcome.of(Result.NOT_ENOUGH_WON, tier);
         }
-        AccountService.withdraw(player, price);
         ItemStack license = CapsuleLicenseItem.stackFor(tier);
-        boolean fitted = player.getInventory().add(license);
-        if (!fitted) {
-            player.drop(license, false);
+        Inventory inventory = player.getInventory();
+        if (inventory.getFreeSlot() == -1 && inventory.getSlotWithRemainingSpace(license) == -1) {
+            return Outcome.of(Result.NO_ROOM, tier);
         }
+        AccountService.withdraw(player, price);
+        inventory.add(license);
         player.inventoryMenu.sendAllDataToRemote();
-        return new Outcome(fitted ? Result.OK : Result.OK_DROPPED, tier, price);
+        return new Outcome(Result.OK, tier, price);
     }
 }

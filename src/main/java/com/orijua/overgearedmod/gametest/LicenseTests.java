@@ -197,22 +197,28 @@ public final class LicenseTests {
     }
 
     @GameTest(template = TestSupport.EMPTY)
-    public static void aFullInventoryDropsTheLicenseAtTheFeet(GameTestHelper helper) {
+    public static void aFullInventoryRefusesTheOrderBeforeCharging(GameTestHelper helper) {
         real(helper, () -> {
             ServerPlayer player = buyer(helper, SETTLED);
             for (int slot = 0; slot < 36; slot++) {
                 player.getInventory().setItem(slot, new ItemStack(Items.STONE, 64));
             }
+            List<ItemEntity> before = looseItems(helper, player);
             Outcome outcome = LicenseShop.buy(player, CapsuleTier.ADVANCED, 3000L, C);
-            assertResult(helper, Result.OK_DROPPED, outcome, "full inventory");
-            helper.assertTrue(AccountService.won(player) == 97_000L, "the Won is charged anyway");
-            helper.assertTrue(count(player, ModItems.ADVANCED_CAPSULE_LICENSE.get()) == 0, "nothing fitted");
-            List<ItemEntity> dropped = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(player.blockPosition()).inflate(4.0),
-                    entity -> entity.getItem().is(ModItems.ADVANCED_CAPSULE_LICENSE.get()));
-            helper.assertTrue(dropped.size() == 1, "the license is on the ground near the player: " + dropped.size());
-            dropped.forEach(ItemEntity::discard);
+            assertRefused(helper, player, outcome, Result.NO_ROOM, SETTLED, 0, 0, "full inventory");
+            helper.assertTrue(count(player, Items.STONE) == 36 * 64, "the inventory is untouched");
+            helper.assertTrue(looseItems(helper, player).size() == before.size(), "nothing was dropped on the ground");
+            // A second click does not charge either.
+            assertRefused(helper, player, LicenseShop.buy(player, CapsuleTier.ADVANCED, 3000L, C), Result.NO_ROOM, SETTLED, 0, 0, "second click");
+            // With one free slot it is bought.
+            player.getInventory().setItem(10, ItemStack.EMPTY);
+            assertResult(helper, Result.OK, LicenseShop.buy(player, CapsuleTier.ADVANCED, 3000L, C), "one free slot");
         });
         helper.succeed();
+    }
+
+    private static List<ItemEntity> looseItems(GameTestHelper helper, ServerPlayer player) {
+        return helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(player.blockPosition()).inflate(4.0));
     }
 
     // ---- Where it can be bought ----

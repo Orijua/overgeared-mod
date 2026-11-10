@@ -761,7 +761,7 @@
   "message.overgearedmod.terminal.bought_emeralds": "%s esmeraldas compradas: -%s Won",
   "message.overgearedmod.terminal.bought_piece": "Has comprado %s: -%s Won",
   "message.overgearedmod.terminal.license.bought": "Has comprado %s: -%s Won",
-  "message.overgearedmod.terminal.license.dropped": "Has comprado %s: -%s Won. Tu inventario está lleno: la licencia está a tus pies.",
+  "message.overgearedmod.terminal.license.no_room": "Haz hueco en el inventario",
   "message.overgearedmod.terminal.license.debt_active": "Salda la deuda para comprar la licencia avanzada.",
   "message.overgearedmod.terminal.license.needs_advanced": "Necesitas una cápsula avanzada.",
   "message.overgearedmod.terminal.license.already_have": "Ya llevas esta licencia.",
