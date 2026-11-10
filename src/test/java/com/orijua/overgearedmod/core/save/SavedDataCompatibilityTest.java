@@ -72,6 +72,7 @@ class SavedDataCompatibilityTest {
             Map.entry("capsule", CapsuleState.CODEC),
             Map.entry("capsule_tier", CapsuleTier.CODEC),
             Map.entry("rested_seconds", Codec.INT),
+            Map.entry("rested_cooldown", Codec.INT),
             Map.entry("starter_capsule_given", Codec.BOOL),
             Map.entry("work_day", Codec.LONG),
             Map.entry("offer_bought", OfferBought.CODEC),

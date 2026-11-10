@@ -35,6 +35,7 @@
     },
     capsule_tier: "diamond",
     rested_seconds: 300,
+    rested_cooldown: 1200,
     starter_capsule_given: 1b,
     work_day: 14L,
     offer_bought: {day: 14L, positions: [I; 3]},
