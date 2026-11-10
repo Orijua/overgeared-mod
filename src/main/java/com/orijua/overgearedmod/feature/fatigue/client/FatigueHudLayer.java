@@ -3,10 +3,12 @@ package com.orijua.overgearedmod.feature.fatigue.client;
 import com.orijua.overgearedmod.core.client.HudVisibility;
 import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.config.ClientConfig;
+import com.orijua.overgearedmod.core.config.CapsuleBalance;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.fatigue.ClientFatigue;
 import com.orijua.overgearedmod.feature.fatigue.FatigueRules;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.Util;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -48,12 +50,22 @@ public final class FatigueHudLayer implements LayeredDraw.Layer {
         return Component.translatable("hud.overgearedmod.fatigue", Math.round(energy * 100));
     }
 
+    /** The rested bonus as the player reads it ("Rested 09:59 (+10 % XP)"). */
+    public static Component restedText(int seconds) {
+        return Component.translatable("hud.overgearedmod.rested",
+                String.format("%02d:%02d", seconds / 60, seconds % 60), CapsuleBalance.current().restedXpPercent());
+    }
+
     @Override
     public void render(GuiGraphics graphics, DeltaTracker deltaTracker) {
         Minecraft minecraft = Minecraft.getInstance();
         LocalPlayer player = minecraft.player;
         FatigueBalance balance = FatigueBalance.current();
-        if (!balance.enabled() || !HudVisibility.showSurvivalBars(minecraft)) {
+        if (!HudVisibility.showSurvivalBars(minecraft)) {
+            return;
+        }
+        renderRested(graphics, minecraft, player);
+        if (!balance.enabled()) {
             return;
         }
         ClientFatigue.Display mode = ClientConfig.fatigueDisplay();
@@ -75,5 +87,19 @@ public final class FatigueHudLayer implements LayeredDraw.Layer {
         UiStyle.bar(graphics, left, top, WIDTH, 5, energy, color, alpha);
         Component text = energyText(energy);
         UiStyle.text(graphics, minecraft.font, text, left - 4 - minecraft.font.width(text), top - 2, UiStyle.withAlpha(color, alpha));
+    }
+
+    /** In Satisfy, while the diamond capsule's rested bonus lasts: one line on the right-hand column. */
+    private static void renderRested(GuiGraphics graphics, Minecraft minecraft, LocalPlayer player) {
+        int seconds = player.getData(ModAttachments.RESTED_SECONDS);
+        if (seconds <= 0 || !Satisfy.is(player.level())) {
+            return;
+        }
+        Gui gui = minecraft.gui;
+        Component text = restedText(seconds);
+        int right = graphics.guiWidth() / 2 + 91;
+        int top = graphics.guiHeight() - gui.rightHeight + 2;
+        gui.rightHeight += ROW_HEIGHT;
+        UiStyle.text(graphics, minecraft.font, text, right - minecraft.font.width(text), top - 2, UiStyle.GOOD);
     }
 }

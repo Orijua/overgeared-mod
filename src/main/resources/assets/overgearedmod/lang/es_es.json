@@ -31,6 +31,8 @@
   "message.overgearedmod.debug_fatigue_overlay_on": "Panel de fatiga activado",
   "message.overgearedmod.debug_fatigue_overlay_off": "Panel de fatiga desactivado",
   "hud.overgearedmod.fatigue": "%s %%",
+  "hud.overgearedmod.rested": "Descansado %s (+%s %% XP)",
+  "screen.overgearedmod.status.capsule_tier": "Cápsula: %s",
   "hud.overgearedmod.fatigue_grace.title": "Protocolo de seguridad",
   "hud.overgearedmod.fatigue_grace.safe": "Nada puede dañarte hasta desconectar",
   "screen.overgearedmod.fatigue": "Energía %s %% (~%s min)",
