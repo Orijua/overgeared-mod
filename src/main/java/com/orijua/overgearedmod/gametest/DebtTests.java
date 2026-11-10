@@ -511,7 +511,7 @@ public final class DebtTests {
         List<Component> shown = new ArrayList<>();
         helper.assertTrue(run(helper, player, "satisfy debug debt", 2, shown) == 1, "it answers");
         helper.assertTrue(shown.size() == 1 && shown.get(0).getContents() instanceof TranslatableContents contents
-                && contents.getKey().equals("message.overgearedmod.debug_debt") && contents.getArgs()[0] instanceof Number debt && debt.longValue() == 0,
+                && contents.getKey().equals("message.overgearedmod.debug_debt") && "0".equals(contents.getArgs()[0]),
                 "it shows the debt: " + shown);
 
         run(helper, player, "satisfy debug set debt 300", 2, new ArrayList<>());

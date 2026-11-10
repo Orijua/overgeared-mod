@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.core.registry.ModBlocks;
 import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.core.registry.ModRecipes;
+import com.orijua.overgearedmod.feature.economy.Money;
 import com.orijua.overgearedmod.feature.equipment.EquipmentService;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.notification.NotificationEvents;
@@ -365,7 +366,7 @@ public class ApprenticeSmith extends PathfinderMob {
             return false;
         }
         if (master.getInventory().countItem(ModItems.SATISFY_EMERALD.get()) < ApprenticeRules.DAILY_WAGE) {
-            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_no_emeralds", ApprenticeRules.DAILY_WAGE), true);
+            master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_no_emeralds", Money.format(ApprenticeRules.DAILY_WAGE)), true);
             return false;
         }
         master.getInventory().clearOrCountMatchingItems(stack -> stack.is(ModItems.SATISFY_EMERALD.get()), ApprenticeRules.DAILY_WAGE,

@@ -11,6 +11,7 @@ import com.orijua.overgearedmod.core.registry.ModDataComponents;
 import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.DebtState;
+import com.orijua.overgearedmod.feature.economy.Money;
 import com.orijua.overgearedmod.feature.economy.TradeGoods;
 import com.orijua.overgearedmod.feature.economy.TradeRules;
 import com.orijua.overgearedmod.feature.economy.TradeSaturation;
@@ -141,7 +142,7 @@ public class TradeTab extends SatisfyTab {
         }));
         int sellX = left + ALL_WIDTH + NONE_WIDTH + 8;
         int sellWidth = Math.max(20, width - BAR_SPACE - ALL_WIDTH - NONE_WIDTH - 8);
-        Component label = Component.translatable("screen.overgearedmod.trade.sell_selected", chosen.size(), total);
+        Component label = Component.translatable("screen.overgearedmod.trade.sell_selected", chosen.size(), Money.format(total));
         label = UiStyle.ellipsize(font(), label, sellWidth - 6);
         boolean active = !chosen.isEmpty() && allPayable(prices, balance);
         addWidget.accept(button(label, sellX, y, sellWidth, active, this::press));
@@ -196,7 +197,7 @@ public class TradeTab extends SatisfyTab {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.setScreen(new SatisfyConfirmScreen(minecraft.screen,
                 Component.translatable("screen.overgearedmod.trade.confirm_title"),
-                Component.translatable("screen.overgearedmod.trade.confirm_sell", count, total), send));
+                Component.translatable("screen.overgearedmod.trade.confirm_sell", count, Money.format(total)), send));
     }
 
     @Override
@@ -235,8 +236,8 @@ public class TradeTab extends SatisfyTab {
         long won = account.won();
         int emeralds = player().getInventory().countItem(ModItems.SATISFY_EMERALD.get());
         Component title = account.debtState() == DebtState.ACTIVE
-                ? Component.translatable("screen.overgearedmod.trade.balance_debt", won, emeralds, account.debt())
-                : Component.translatable("screen.overgearedmod.trade.balance", won, emeralds);
+                ? Component.translatable("screen.overgearedmod.trade.balance_debt", Money.format(won), Money.format(emeralds), Money.format(account.debt()))
+                : Component.translatable("screen.overgearedmod.trade.balance", Money.format(won), Money.format(emeralds));
         UiStyle.heading(graphics, font(), UiStyle.ellipsize(font(), title, width), left, top);
 
         List<Integer> slots = slots();
@@ -282,7 +283,7 @@ public class TradeTab extends SatisfyTab {
                 textX, y + 3, nameColor);
 
         long sell = isChosen && batchPrice != null ? batchPrice : TradeGoods.price(stack, saturation, today, balance);
-        Component price = Component.translatable("screen.overgearedmod.trade.sell_price", sell);
+        Component price = Component.translatable("screen.overgearedmod.trade.sell_price", Money.format(sell));
         graphics.drawString(font(), price, textX, y + 13, UiStyle.TEXT);
         int percent = TradeRules.saturationPercent(saturation.pressure(TradeGoods.key(stack), today, balance), balance);
         if (percent < 100) {

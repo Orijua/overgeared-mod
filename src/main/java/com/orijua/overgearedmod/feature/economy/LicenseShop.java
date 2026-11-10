@@ -39,7 +39,7 @@ public final class LicenseShop {
     /** The message for the player after an attempt; empty when there is nothing to say. */
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
-            case OK -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.bought", name(outcome.tier()), outcome.won()));
+            case OK -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.bought", name(outcome.tier()), Money.format(outcome.won())));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));
             case INVALID_TIER -> Optional.of(Component.translatable("message.overgearedmod.terminal.license.invalid_tier"));

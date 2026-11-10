@@ -20,6 +20,7 @@ import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.character.Characters;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.AccountService;
+import com.orijua.overgearedmod.feature.economy.Money;
 import com.orijua.overgearedmod.feature.fatigue.FatigueService;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
@@ -130,7 +131,7 @@ public final class DebugCommands {
                                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                                     long amount = LongArgumentType.getLong(ctx, "amount");
                                                     AccountService.setDebt(player, amount);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_set_debt", amount), false);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_set_debt", Money.format(amount)), false);
                                                     return 1;
                                                 })))
                                 .then(Commands.literal("fatigue")
@@ -148,7 +149,7 @@ public final class DebugCommands {
                                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                                     long amount = LongArgumentType.getLong(ctx, "amount");
                                                     AccountService.setWon(player, amount);
-                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_won", amount), false);
+                                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_won", Money.format(amount)), false);
                                                     return 1;
                                                 })))
                                 .then(Commands.literal("insight")
@@ -194,7 +195,7 @@ public final class DebugCommands {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                     Account account = AccountService.get(player);
                                     ctx.getSource().sendSuccess(() -> Component.translatable(
-                                            "message.overgearedmod.debug_account", account.won(), account.debt(),
+                                            "message.overgearedmod.debug_account", Money.format(account.won()), Money.format(account.debt()),
                                             Component.translatable("message.overgearedmod.debug_debt_state." + account.debtState().getSerializedName())), false);
                                     return 1;
                                 }))
@@ -202,7 +203,7 @@ public final class DebugCommands {
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                     Account account = AccountService.get(player);
-                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_debt", account.debt(),
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_debt", Money.format(account.debt()),
                                             Component.translatable("message.overgearedmod.debug_debt_state." + account.debtState().getSerializedName())), false);
                                     return 1;
                                 })
@@ -390,7 +391,7 @@ public final class DebugCommands {
                     ? "message.overgearedmod.debug_terminal_offer_yes" : "message.overgearedmod.debug_terminal_offer_no");
             ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_terminal_offer_entry", entry.position(),
                     net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(entry.stack().getItem()).toString(),
-                    rating == null ? "?" : rating.getSerializedName(), entry.price(), bought), false);
+                    rating == null ? "?" : rating.getSerializedName(), Money.format(entry.price()), bought), false);
         }
         return 1;
     }
