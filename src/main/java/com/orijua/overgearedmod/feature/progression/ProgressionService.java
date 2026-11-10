@@ -150,7 +150,8 @@ public final class ProgressionService {
             return;
         }
         PlayerStats stats = get(player);
-        set(player, stats.withSmithingXp(stats.smithingXp() + ProgressionRules.boostedSmithingXp(amount, titleSmithingXpBonus(player))));
+        long total = (long) stats.smithingXp() + ProgressionRules.boostedSmithingXp(amount, titleSmithingXpBonus(player));
+        set(player, stats.withSmithingXp((int) Math.min(Integer.MAX_VALUE, total)));
     }
 
     /** The sum of the {@code smithing_xp_bonus} of every title the player holds. */

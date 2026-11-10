@@ -39,8 +39,8 @@ public final class DebtService {
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
             case OK -> Optional.of(outcome.settled()
-                    ? Component.translatable("message.overgearedmod.terminal.debt_paid_off", outcome.paid())
-                    : Component.translatable("message.overgearedmod.terminal.debt_paid", outcome.paid(), outcome.left()));
+                    ? Component.translatable("message.overgearedmod.terminal.debt_paid_off", Money.format(outcome.paid()))
+                    : Component.translatable("message.overgearedmod.terminal.debt_paid", Money.format(outcome.paid()), Money.format(outcome.left())));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));
             case NO_DEBT -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_debt"));

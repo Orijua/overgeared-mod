@@ -11,13 +11,20 @@ final class TradeBalances {
 
     private static TradeBalance copy(double other, double step, double floor, int recovery, int cap, long maxSell) {
         return new TradeBalance(D.basePrice(), D.materialMultiplier(), other, D.enhancementBonus(), D.sellShare(),
-                step, floor, recovery, cap, maxSell);
+                step, floor, recovery, cap, maxSell, D.minDurabilityFactor(), D.itemMultiplier());
     }
 
     static TradeBalance withOtherMaterial(double value) {
         return copy(value, D.saturationStep(), D.saturationFloor(), D.recoveryPerDay(), D.pressureCap(), D.maxSellEmeralds());
     }
 
+
+    /** The defaults with the multipliers of single objects replaced. */
+    static TradeBalance withItemMultipliers(java.util.Map<net.minecraft.resources.ResourceLocation, Double> multipliers) {
+        return new TradeBalance(D.basePrice(), D.materialMultiplier(), D.otherMaterial(), D.enhancementBonus(), D.sellShare(),
+                D.saturationStep(), D.saturationFloor(), D.recoveryPerDay(), D.pressureCap(), D.maxSellEmeralds(),
+                D.minDurabilityFactor(), multipliers);
+    }
 
     static TradeBalance withMaxSellEmeralds(long value) {
         return copy(D.otherMaterial(), D.saturationStep(), D.saturationFloor(), D.recoveryPerDay(), D.pressureCap(), value);

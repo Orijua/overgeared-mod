@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.core.client.SatisfyButton;
 import com.orijua.overgearedmod.core.client.SatisfyConfirmScreen;
 import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.registry.ModItems;
+import com.orijua.overgearedmod.feature.economy.Money;
 import com.orijua.overgearedmod.feature.insight.InsightRules;
 import com.orijua.overgearedmod.feature.insight.Observation;
 import com.orijua.overgearedmod.feature.npc.ApprenticeActionPayload;
@@ -70,7 +71,7 @@ public final class ApprenticeScreen extends Screen {
 
     @Override
     protected void init() {
-        hint = font.split(Component.translatable("screen.overgearedmod.apprentice.hint", ApprenticeRules.DAILY_WAGE), WIDTH - 2 * PADDING);
+        hint = font.split(Component.translatable("screen.overgearedmod.apprentice.hint", Money.format(ApprenticeRules.DAILY_WAGE)), WIDTH - 2 * PADDING);
         top = 0;
         panelHeight = buttonsY() + 18 + 8 + hint.size() * 10 + PADDING;
         left = (width - WIDTH) / 2;
@@ -78,7 +79,7 @@ public final class ApprenticeScreen extends Screen {
         int buttonX = left + WIDTH - PADDING - BUTTON_WIDTH;
         cancel = rowButton(buttonX, 1, "screen.overgearedmod.apprentice.cancel", ApprenticeActionPayload.Action.CANCEL_ORDER);
         pay = rowButton(buttonX, 2, "screen.overgearedmod.apprentice.pay", ApprenticeActionPayload.Action.PAY_DAY);
-        pay.setTooltip(Tooltip.create(Component.translatable("screen.overgearedmod.apprentice.pay_tooltip", ApprenticeRules.DAILY_WAGE,
+        pay.setTooltip(Tooltip.create(Component.translatable("screen.overgearedmod.apprentice.pay_tooltip", Money.format(ApprenticeRules.DAILY_WAGE),
                 ApprenticeRules.MAX_PAID_DAYS)));
         // Assigning closes the window so the next right-click can pick the container.
         addRenderableWidget(Button.builder(Component.translatable("screen.overgearedmod.apprentice.assign"), b -> assign(ApprenticeActionPayload.Action.ASSIGN_MATERIALS))

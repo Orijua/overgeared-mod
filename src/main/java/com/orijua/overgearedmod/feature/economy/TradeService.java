@@ -141,9 +141,9 @@ public final class TradeService {
             }
         }
         if (sold == 1) {
-            NotificationEvents.send(player, Kind.TRADE, List.of(Component.translatable("notification.overgearedmod.trade.sold", lastName, paid)));
+            NotificationEvents.send(player, Kind.TRADE, List.of(Component.translatable("notification.overgearedmod.trade.sold", lastName, Money.format(paid))));
         } else if (sold > 1) {
-            NotificationEvents.send(player, Kind.TRADE, List.of(Component.translatable("notification.overgearedmod.trade.sold_many", sold, paid)));
+            NotificationEvents.send(player, Kind.TRADE, List.of(Component.translatable("notification.overgearedmod.trade.sold_many", sold, Money.format(paid))));
         }
         player.containerMenu.broadcastChanges();
         return new Batch(sold, paid, skipped, failed, first == null ? Result.SOLD : first);
@@ -172,7 +172,7 @@ public final class TradeService {
         Component name = slot >= 0 && slot < Inventory.INVENTORY_SIZE ? player.getInventory().getItem(slot).getHoverName() : Component.empty();
         Outcome outcome = sellOne(player, slot, today, expected, payout);
         if (outcome.result() == Result.SOLD || (outcome.result() == Result.FAILED && outcome.paid() > 0L)) {
-            NotificationEvents.send(player, Kind.TRADE, List.of(Component.translatable("notification.overgearedmod.trade.sold", name, outcome.paid())));
+            NotificationEvents.send(player, Kind.TRADE, List.of(Component.translatable("notification.overgearedmod.trade.sold", name, Money.format(outcome.paid()))));
         }
         player.containerMenu.broadcastChanges();
         return outcome;

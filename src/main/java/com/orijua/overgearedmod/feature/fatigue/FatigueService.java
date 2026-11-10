@@ -292,10 +292,30 @@ public final class FatigueService {
         }
     }
 
-    /** One second of the rested bonus goes by, in Satisfy only (whatever the fatigue or the game mode). */
+    /** Seconds before connecting can grant the rested bonus again, as saved (the config may have shortened it since). */
+    public static int restedCooldown(ServerPlayer player) {
+        return player.getData(ModAttachments.RESTED_COOLDOWN.get());
+    }
+
+    private static void setRestedCooldown(ServerPlayer player, int seconds) {
+        if (seconds != restedCooldown(player)) {
+            player.setData(ModAttachments.RESTED_COOLDOWN.get(), seconds);
+        }
+    }
+
+    /**
+     * One second of the rested bonus and of the wait for the next one goes by, in Satisfy only (whatever the fatigue or
+     * the game mode).
+     */
     private static void tickRested(ServerPlayer player) {
-        if (player.isAlive() && Satisfy.is(player.level()) && restedSeconds(player) > 0) {
+        if (!player.isAlive() || !Satisfy.is(player.level())) {
+            return;
+        }
+        if (restedSeconds(player) > 0) {
             setRested(player, restedSeconds(player) - 1);
+        }
+        if (restedCooldown(player) > 0) {
+            setRestedCooldown(player, CapsuleRules.tickDown(CapsuleRules.cooldownLeft(restedCooldown(player), CapsuleBalance.current())));
         }
     }
 
@@ -304,7 +324,11 @@ public final class FatigueService {
      * and, after a forced disconnection, they start protected.
      */
     public static void onConnected(ServerPlayer player) {
-        setRested(player, CapsuleRules.restedOnConnect(modifiers(player), energy(player), CapsuleBalance.current()));
+        CapsuleBalance balance = CapsuleBalance.current();
+        CapsuleRules.RestedGrant grant = CapsuleRules.onConnect(modifiers(player), energy(player),
+                CapsuleRules.cooldownLeft(restedCooldown(player), balance), balance);
+        setRested(player, grant.restedSeconds());
+        setRestedCooldown(player, grant.cooldownSeconds());
         if (player.getData(ModAttachments.FATIGUE_FORCED_OUT.get())) {
             player.setData(ModAttachments.FATIGUE_FORCED_OUT.get(), false);
             PROTECTED_UNTIL.put(player.getUUID(), player.server.getTickCount() + (long) FatigueRules.PROTECTION_TICKS);

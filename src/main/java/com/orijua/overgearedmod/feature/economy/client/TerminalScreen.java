@@ -15,6 +15,7 @@ import com.orijua.overgearedmod.feature.economy.ClientTerminal;
 import com.orijua.overgearedmod.feature.economy.DebtState;
 import com.orijua.overgearedmod.feature.economy.LicenseLock;
 import com.orijua.overgearedmod.feature.economy.LicenseOffer;
+import com.orijua.overgearedmod.feature.economy.Money;
 import com.orijua.overgearedmod.feature.economy.OfferEntry;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyEmeraldsPayload;
 import com.orijua.overgearedmod.feature.economy.TerminalBuyLicensePayload;
@@ -332,7 +333,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         FatigueBalance fatigue = FatigueBalance.current();
         CapsuleBalance capsule = CapsuleBalance.current();
         long won = player.getData(ModAttachments.ACCOUNT.get()).won();
-        Component wonText = Component.translatable("screen.overgearedmod.terminal.won", won);
+        Component wonText = Component.translatable("screen.overgearedmod.terminal.won", Money.format(won));
         int wonX = x + OFFER_X + OFFER_WIDTH - 4 - font.width(wonText);
         UiStyle.heading(graphics, font, UiStyle.ellipsize(font, Component.translatable("screen.overgearedmod.status.capsule_tier", tier.tierName()),
                 Math.max(40, wonX - 6 - (x + MARGIN))), x + MARGIN, y + 34);
@@ -354,9 +355,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             graphics.fill(rowX, rowY, x + OFFER_X + OFFER_WIDTH - 4, rowY + LICENSE_ROW - 2, hover ? 0x40FFFFFF : 0x20FFFFFF);
             graphics.renderItem(stack, rowX + 3, rowY + 6);
             graphics.drawString(font, UiStyle.ellipsize(font, stack.getHoverName(), rowWidth - 24), rowX + 24, rowY + 3, UiStyle.TEXT);
-            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.price", offer.price()), rowX + 24, rowY + 15, UiStyle.GOLD);
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.capsules.price", Money.format(offer.price())), rowX + 24, rowY + 15, UiStyle.GOLD);
             Component status = lockText(offer.lock());
-            int statusX = rowX + 24 + font.width(Component.translatable("screen.overgearedmod.terminal.capsules.price", offer.price())) + 8;
+            int statusX = rowX + 24 + font.width(Component.translatable("screen.overgearedmod.terminal.capsules.price", Money.format(offer.price()))) + 8;
             UiStyle.text(graphics, font, UiStyle.ellipsize(font, status, Math.max(20, rowX + rowWidth - statusX)), statusX, rowY + 15,
                     offer.lock() == LicenseLock.OPEN ? UiStyle.GOOD : UiStyle.BAD);
             if (hover) {
@@ -384,21 +385,21 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // Emeralds
         int room = state.characterAvailable() ? state.emeraldRoom() : 0;
         UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.emeralds"), x + MARGIN, y + 34);
-        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.unit_price", state.buyWonPerEmerald()),
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.unit_price", Money.format(state.buyWonPerEmerald())),
                 x + MARGIN, y + 46, UiStyle.MUTED);
-        Component number = Component.literal(Integer.toString(buySelected));
+        Component number = UiStyle.ellipsize(font, Component.literal(Money.format(buySelected)), 40);
         UiStyle.text(graphics, font, number, x + 33 + (40 - font.width(number)) / 2, y + 67, UiStyle.TEXT);
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.total",
-                TerminalRules.buyCost(buySelected, state.buyWonPerEmerald())), x + MARGIN, y + 88, UiStyle.TEXT);
+                Money.format(TerminalRules.buyCost(buySelected, state.buyWonPerEmerald()))), x + MARGIN, y + 88, UiStyle.TEXT);
         UiStyle.text(graphics, font, UiStyle.ellipsize(font, state.characterAvailable()
-                        ? Component.translatable("screen.overgearedmod.terminal.shop.room", room)
+                        ? Component.translatable("screen.overgearedmod.terminal.shop.room", Money.format(room))
                         : Component.translatable("screen.overgearedmod.terminal.no_character"), 140),
                 x + MARGIN, y + 100, state.characterAvailable() ? UiStyle.MUTED : NO_CHARACTER_COLOR);
         if (state.characterAvailable()) {
             UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.free_slots", state.freeSlots()),
                     x + MARGIN, y + 112, state.freeSlots() == 0 ? UiStyle.BAD : UiStyle.MUTED);
         }
-        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.won", won), x + MARGIN, y + 140, UiStyle.GOLD);
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.won", Money.format(won)), x + MARGIN, y + 140, UiStyle.GOLD);
         int noteY = y + 156;
         for (FormattedCharSequence line : font.split(Component.translatable("screen.overgearedmod.terminal.shop.note"), 140)) {
             graphics.drawString(font, line, x + MARGIN, noteY, UiStyle.MUTED);
@@ -422,7 +423,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             int nameColor = UiStyle.ratingNameColor(entry.stack());
             graphics.drawString(font, UiStyle.ellipsize(font, entry.stack().getHoverName().copy().withColor(nameColor), OFFER_WIDTH - 24 - 62),
                     rowX + 24, rowY + 2, nameColor);
-            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.price", entry.price()), rowX + 24, rowY + 11,
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.price", Money.format(entry.price())), rowX + 24, rowY + 11,
                     UiStyle.GOLD);
             if (state.boughtToday().contains(entry.position())) {
                 Component bought = Component.translatable("screen.overgearedmod.terminal.shop.bought");
@@ -464,9 +465,9 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         // Account
         UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.account"), x + MARGIN, y + 60);
         long won = player.getData(ModAttachments.ACCOUNT.get()).won();
-        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.won", won), x + MARGIN, y + 72, UiStyle.GOLD);
+        UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.won", Money.format(won)), x + MARGIN, y + 72, UiStyle.GOLD);
         Component storedText = state.characterAvailable()
-                ? Component.translatable("screen.overgearedmod.terminal.stored", stored)
+                ? Component.translatable("screen.overgearedmod.terminal.stored", Money.format(stored))
                 : Component.translatable("screen.overgearedmod.terminal.no_character");
         UiStyle.text(graphics, font, UiStyle.ellipsize(font, storedText, LEFT_WIDTH), x + MARGIN, y + 84,
                 state.characterAvailable() ? UiStyle.TEXT : NO_CHARACTER_COLOR);
@@ -475,11 +476,11 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         Account account = player.getData(ModAttachments.ACCOUNT.get());
         if (account.debtState() == DebtState.ACTIVE) {
             UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt"), x + MARGIN, y + 95);
-            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_left", account.debt()), x + MARGIN, y + 106,
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_left", Money.format(account.debt())), x + MARGIN, y + 106,
                     UiStyle.BAD);
-            Component number = Component.literal(Long.toString(debtSelected));
+            Component number = UiStyle.ellipsize(font, Component.literal(Money.format(debtSelected)), 40);
             UiStyle.text(graphics, font, number, x + 33 + (40 - font.width(number)) / 2, y + 123, UiStyle.TEXT);
-            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_total", debtSelected), x + MARGIN, y + 160,
+            UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_total", Money.format(debtSelected)), x + MARGIN, y + 160,
                     UiStyle.MUTED);
         } else if (account.debtState() == DebtState.SETTLED) {
             UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt"), x + MARGIN, y + 95);
@@ -491,8 +492,8 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         ItemStack icon = state.icon();
         long quota = AccountRules.quota(account, state.workPay(), state.debtQuotaPercent());
         UiStyle.heading(graphics, font, quota > 0
-                ? Component.translatable("screen.overgearedmod.terminal.work_debt", state.workPay())
-                : Component.translatable("screen.overgearedmod.terminal.work", state.workPay()), x + RIGHT_X, y + 60);
+                ? Component.translatable("screen.overgearedmod.terminal.work_debt", Money.format(state.workPay()))
+                : Component.translatable("screen.overgearedmod.terminal.work", Money.format(state.workPay())), x + RIGHT_X, y + 60);
         graphics.renderItem(icon, x + RIGHT_X, y + 72);
         String key = "screen.overgearedmod.terminal.order." + order.id().toLanguageKey().replace('/', '.');
         Component name = Component.translatableWithFallback(key, icon.getHoverName().getString());
@@ -502,7 +503,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
                 have >= order.count() ? UiStyle.GOOD : UiStyle.MUTED);
         if (quota > 0) {
             UiStyle.text(graphics, font, UiStyle.ellipsize(font, Component.translatable("screen.overgearedmod.terminal.work_split",
-                    state.workPay() - quota, quota), 134), x + RIGHT_X, y + 138, UiStyle.MUTED);
+                    Money.format(state.workPay() - quota), Money.format(quota)), 134), x + RIGHT_X, y + 138, UiStyle.MUTED);
         }
         if (worked) {
             UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.done"), x + RIGHT_X, y + 110, UiStyle.GOOD);

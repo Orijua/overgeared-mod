@@ -227,6 +227,7 @@ public final class CapsuleService {
         cancel(player, false);
         CapsuleState state = state(player);
         if (Satisfy.is(player.level())) {
+            // The wait for the next rested bonus (RESTED_COOLDOWN) is kept on purpose: dying is not a way around it.
             player.setData(ModAttachments.RESTED_SECONDS.get(), 0);
         }
         if (Satisfy.is(player.level()) && state.isConnected()) {
@@ -246,6 +247,7 @@ public final class CapsuleService {
         switch (CapsuleRules.coherence(state, Satisfy.is(player.level()))) {
             case CONNECTED_OUTSIDE -> {
                 player.setData(ModAttachments.CAPSULE.get(), state.withoutBody());
+                // RESTED_COOLDOWN is kept: logging in outside Satisfy is not a way around the wait either.
                 player.setData(ModAttachments.RESTED_SECONDS.get(), 0);
                 Overgearedmod.LOGGER.warn("{} logged in outside Satisfy ({}) still connected to {}: the body is released",
                         player.getGameProfile().getName(), player.level().dimension().location(), state.capsule().orElse(null));
@@ -345,7 +347,8 @@ public final class CapsuleService {
             return false;
         }
         player.resetFallDistance();
-        // The tier stays (the recovery keeps using it); the rested bonus does not outlive the connection.
+        // The tier stays (the recovery keeps using it); the rested bonus does not outlive the connection, but the wait
+        // for the next one (RESTED_COOLDOWN) does: disconnecting and connecting again must not restart the bonus.
         player.setData(ModAttachments.RESTED_SECONDS.get(), 0);
         player.displayClientMessage(Component.translatable(reason == Reason.FATIGUE
                 ? "message.overgearedmod.capsule.disconnected_tired" : "message.overgearedmod.capsule.disconnected"), true);

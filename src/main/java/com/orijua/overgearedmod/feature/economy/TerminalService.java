@@ -64,10 +64,10 @@ public final class TerminalService {
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
             case OK -> Optional.of(outcome.settled()
-                    ? Component.translatable("message.overgearedmod.terminal.worked_settled", outcome.won())
+                    ? Component.translatable("message.overgearedmod.terminal.worked_settled", Money.format(outcome.won()))
                     : outcome.toDebt() > 0
-                    ? Component.translatable("message.overgearedmod.terminal.worked_debt", outcome.won(), outcome.toDebt())
-                    : Component.translatable("message.overgearedmod.terminal.worked", outcome.won()));
+                    ? Component.translatable("message.overgearedmod.terminal.worked_debt", Money.format(outcome.won()), Money.format(outcome.toDebt()))
+                    : Component.translatable("message.overgearedmod.terminal.worked", Money.format(outcome.won())));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));
             case STALE -> Optional.of(Component.translatable("message.overgearedmod.terminal.stale"));

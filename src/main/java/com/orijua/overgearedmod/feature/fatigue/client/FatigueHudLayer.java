@@ -4,6 +4,7 @@ import com.orijua.overgearedmod.core.client.HudVisibility;
 import com.orijua.overgearedmod.core.client.UiStyle;
 import com.orijua.overgearedmod.core.config.ClientConfig;
 import com.orijua.overgearedmod.core.config.CapsuleBalance;
+import com.orijua.overgearedmod.feature.capsule.CapsuleText;
 import com.orijua.overgearedmod.core.config.FatigueBalance;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.feature.fatigue.ClientFatigue;
@@ -53,7 +54,7 @@ public final class FatigueHudLayer implements LayeredDraw.Layer {
     /** The rested bonus as the player reads it ("Rested 09:59 (+10 % XP)"). */
     public static Component restedText(int seconds) {
         return Component.translatable("hud.overgearedmod.rested",
-                String.format("%02d:%02d", seconds / 60, seconds % 60), CapsuleBalance.current().restedXpPercent());
+                CapsuleText.clock(seconds), CapsuleBalance.current().restedXpPercent());
     }
 
     @Override
