@@ -57,8 +57,16 @@ public final class CapsuleTierTests {
                 () -> FatigueBalance.withOverride(FatigueBalance.DEFAULT, () -> CapsuleBalance.withOverride(CapsuleBalance.DEFAULT, body)));
     }
 
-    private static boolean near(double a, double b) {
-        return Math.abs(a - b) < 1e-3;
+    /**
+     * The energy is saved as a float and rewritten every second, so a sum of seconds is exact only up to the float's
+     * rounding (below 2e-6 after 60 writes, so 1e-5 is plenty and still tells the tiers apart by far).
+     */
+    private static boolean nearEnergy(double a, double b) {
+        return nearEnergy(a, b, 1e-5);
+    }
+
+    private static boolean nearEnergy(double a, double b, double tolerance) {
+        return Math.abs(a - b) < tolerance;
     }
 
     private static CapsuleTier tier(ServerPlayer player) {
@@ -79,17 +87,6 @@ public final class CapsuleTierTests {
     }
 
     // ---- The tier of the connection ----
-
-    @GameTest(template = TestSupport.EMPTY)
-    public static void connectingFromEachBlockSetsTheTier(GameTestHelper helper) {
-        inSatisfy(helper, () -> {
-            for (CapsuleTier tier : CapsuleTier.values()) {
-                ServerPlayer player = connected(helper, tier, 1.0);
-                helper.assertTrue(tier(player) == tier, "connecting from the " + tier + " capsule: " + tier(player));
-            }
-        });
-        helper.succeed();
-    }
 
     @GameTest(template = TestSupport.EMPTY)
     public static void aPlayerWithoutConnectionsIsBasic(GameTestHelper helper) {
@@ -118,10 +115,16 @@ public final class CapsuleTierTests {
         helper.setBlock(CAPSULE, block(CapsuleTier.DIAMOND));
         CapsuleTests.inSatisfy(helper, helper.absolutePos(new BlockPos(1, 1, 1)), () -> {
             // No Satisfy landing known: the connection is refused before anything is written.
-            com.orijua.overgearedmod.feature.world.WorldSites.forgetLanding(helper.getLevel().getSeed());
-            helper.assertFalse(CapsuleService.connect(player, at(helper)), "nowhere to land");
-            helper.assertTrue(tier(player) == CapsuleTier.ADVANCED, "the tier is as it was");
-            helper.assertTrue(rested(player) == 0, "and nothing is rested");
+            long seed = helper.getLevel().getSeed();
+            var landingBefore = com.orijua.overgearedmod.feature.world.WorldSites.landingFor(seed);
+            com.orijua.overgearedmod.feature.world.WorldSites.forgetLanding(seed);
+            try {
+                helper.assertFalse(CapsuleService.connect(player, at(helper)), "nowhere to land");
+                helper.assertTrue(tier(player) == CapsuleTier.ADVANCED, "the tier is as it was");
+                helper.assertTrue(rested(player) == 0, "and nothing is rested");
+            } finally {
+                landingBefore.ifPresent(pos -> com.orijua.overgearedmod.feature.world.WorldSites.rememberLanding(seed, pos));
+            }
         });
         helper.succeed();
     }
@@ -143,7 +146,7 @@ public final class CapsuleTierTests {
     }
 
     @GameTest(template = TestSupport.EMPTY)
-    public static void everyTierCanStartTheWait(GameTestHelper helper) {
+    public static void everyBlockConnectsWithItsTierAfterTheWait(GameTestHelper helper) {
         inSatisfy(helper, () -> {
             for (CapsuleTier tier : CapsuleTier.values()) {
                 ServerPlayer player = TestSupport.fakePlayer(helper);
@@ -151,7 +154,7 @@ public final class CapsuleTierTests {
                 CapsuleService.start(player, at(helper));
                 CapsuleTests.tickMany(player, CapsuleRules.CONNECT_TICKS);
                 helper.assertTrue(CapsuleService.state(player).isConnected(), "the " + tier + " capsule connects after the wait");
-                helper.assertTrue(tier(player) == tier, "with its tier");
+                helper.assertTrue(tier(player) == tier, "the " + tier + " capsule sets its tier: " + tier(player));
             }
         });
         helper.succeed();
@@ -159,25 +162,32 @@ public final class CapsuleTierTests {
 
     // ---- Session and recovery ----
 
+    /**
+     * Energy lost by a player who plays for 60 seconds: the first second is normal play (no earlier position to compare),
+     * the other 59 are standing still (rest, 0.8 of the drain).
+     */
     @GameTest(template = TestSupport.EMPTY)
     public static void sixtySecondsOfPlayCostLessWithABetterCapsule(GameTestHelper helper) {
         inSatisfy(helper, () -> {
+            double[] sessionMinutes = {40.0, 55.0, 75.0};
             double[] lost = new double[CapsuleTier.values().length];
             for (CapsuleTier tier : CapsuleTier.values()) {
+                double perSecond = 1.0 / (sessionMinutes[tier.ordinal()] * 60.0);
                 ServerPlayer player = TestSupport.fakePlayer(helper);
                 player.setData(ModAttachments.CAPSULE_TIER.get(), tier);
                 FatigueService.setEnergy(player, 1.0);
                 FatigueService.tickSecond(player);
-                if (tier == CapsuleTier.ADVANCED) {
-                    helper.assertTrue(near(1.0 - FatigueService.energy(player), 1.0 / (55 * 60)), "the first second costs 1/(55*60): " + FatigueService.energy(player));
-                }
+                helper.assertTrue(nearEnergy(1.0 - FatigueService.energy(player), perSecond),
+                        tier + ": the first second costs 1/(" + sessionMinutes[tier.ordinal()] + "*60) = " + perSecond + " but cost " + (1.0 - FatigueService.energy(player)));
                 for (int i = 1; i < 60; i++) {
                     FatigueService.tickSecond(player);
                 }
                 lost[tier.ordinal()] = 1.0 - FatigueService.energy(player);
+                double expected = (1.0 + 59 * 0.8) * perSecond;
+                helper.assertTrue(nearEnergy(lost[tier.ordinal()], expected),
+                        tier + ": 60 seconds cost " + expected + " (1 normal + 59 resting) but cost " + lost[tier.ordinal()]);
             }
-            helper.assertTrue(near(lost[CapsuleTier.BASIC.ordinal()] / lost[CapsuleTier.ADVANCED.ordinal()], 55.0 / 40.0), "advanced lasts 55/40 of basic");
-            helper.assertTrue(near(lost[CapsuleTier.BASIC.ordinal()] / lost[CapsuleTier.DIAMOND.ordinal()], 75.0 / 40.0), "diamond lasts 75/40 of basic");
+            helper.assertTrue(lost[0] > lost[1] && lost[1] > lost[2], "a better capsule loses less in the same time: " + java.util.Arrays.toString(lost));
         });
         helper.succeed();
     }
@@ -192,16 +202,24 @@ public final class CapsuleTierTests {
         });
         ServerPlayer player = holder[0];
         FatigueService.setEnergy(player, 0.0);
-        inRealWorld(helper, () -> {
-            for (int i = 0; i < 4 * 60; i++) {
-                FatigueService.tickSecond(player);
-            }
-            helper.assertTrue(near(FatigueService.energy(player), 0.5), "four minutes refill half of eight: " + FatigueService.energy(player));
-            for (int i = 0; i < 4 * 60; i++) {
-                FatigueService.tickSecond(player);
-            }
-            helper.assertTrue(near(FatigueService.energy(player), 1.0), "eight minutes refill it: " + FatigueService.energy(player));
+        // The recovery by the second must not read the wall clock: a clock that fails when asked proves it.
+        FatigueService.setClock(() -> {
+            throw new IllegalStateException("tickSecond must not read the wall clock");
         });
+        try {
+            inRealWorld(helper, () -> {
+                for (int i = 0; i < 4 * 60; i++) {
+                    FatigueService.tickSecond(player);
+                }
+                helper.assertTrue(nearEnergy(FatigueService.energy(player), 0.5), "four minutes refill half of eight: " + FatigueService.energy(player));
+                for (int i = 0; i < 4 * 60; i++) {
+                    FatigueService.tickSecond(player);
+                }
+                helper.assertTrue(nearEnergy(FatigueService.energy(player), 1.0, 5e-5), "eight minutes refill it: " + FatigueService.energy(player));
+            });
+        } finally {
+            FatigueService.restoreClock();
+        }
         helper.succeed();
     }
 
@@ -217,7 +235,7 @@ public final class CapsuleTierTests {
                 FatigueService.onLogout(player);
                 now[0] += 4 * 60 * 1000L;
                 FatigueService.onLogin(player);
-                helper.assertTrue(near(FatigueService.energy(player), 0.7), "four minutes at the advanced rate refill half: " + FatigueService.energy(player));
+                helper.assertTrue(nearEnergy(FatigueService.energy(player), 0.7), "four minutes at the advanced rate refill half: " + FatigueService.energy(player));
             });
         } finally {
             FatigueService.restoreClock();
@@ -342,20 +360,73 @@ public final class CapsuleTierTests {
     }
 
     @GameTest(template = TestSupport.EMPTY)
-    public static void restedRaisesLevelXpButNotSmithingXp(GameTestHelper helper) {
+    public static void withoutRestedTheLevelXpIsAsAwarded(GameTestHelper helper) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         inSatisfy(helper, () -> {
             int xp = ProgressionService.get(player).xp();
             ProgressionService.awardXp(player, 10);
             helper.assertTrue(ProgressionService.get(player).xp() == xp + 10, "not rested: 10");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void restedRaisesLevelXpByThePercentAndRounds(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        inSatisfy(helper, () -> {
             player.setData(ModAttachments.RESTED_SECONDS.get(), 60);
-            xp = ProgressionService.get(player).xp();
+            int xp = ProgressionService.get(player).xp();
             ProgressionService.awardXp(player, 10);
-            helper.assertTrue(ProgressionService.get(player).xp() == xp + 11, "rested: 11 (+10 %)");
+            helper.assertTrue(ProgressionService.get(player).xp() == xp + 11, "rested: 10 becomes 11 (+10 %)");
+            xp = ProgressionService.get(player).xp();
+            ProgressionService.awardXp(player, 15);
+            helper.assertTrue(ProgressionService.get(player).xp() == xp + 17, "rested: 15 becomes 17 (16.5 rounds up)");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void restedXpFollowsTheConfiguredPercentAndSkipsSmithingXp(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        CapsuleBalance half = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 50, 0.9);
+        CapsuleTests.inSatisfy(helper, helper.absolutePos(new BlockPos(1, 1, 1)), () -> CapsuleBalance.withOverride(half, () -> {
+            player.setData(ModAttachments.RESTED_SECONDS.get(), 60);
+            int xp = ProgressionService.get(player).xp();
+            ProgressionService.awardXp(player, 10);
+            helper.assertTrue(ProgressionService.get(player).xp() == xp + 15, "rested at +50 %: 10 becomes 15");
             int smithing = ProgressionService.get(player).smithingXp();
             ProgressionService.addSmithingXp(player, 10);
             helper.assertTrue(ProgressionService.get(player).smithingXp() == smithing + 10, "smithing XP is the same rested or not");
+        }));
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void dyingInTheRealWorldKeepsTheRestedSeconds(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.RESTED_SECONDS.get(), 300);
+        inRealWorld(helper, () -> {
+            CapsuleService.died(player);
+            helper.assertTrue(rested(player) == 300, "only a death in Satisfy ends the rested: " + rested(player));
         });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void zeroRestedMinutesGrantsNothingEvenToTheDiamondCapsule(GameTestHelper helper) {
+        CapsuleBalance none = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 0, 10, 0.9);
+        inSatisfy(helper, () -> CapsuleBalance.withOverride(none, () ->
+                helper.assertTrue(rested(connected(helper, CapsuleTier.DIAMOND, 1.0)) == 0, "restedMinutes 0: no rested")));
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theFatigueOffStillGrantsTheRestedOnConnecting(GameTestHelper helper) {
+        FatigueBalance off = new FatigueBalance(false, 40.0, 0.8, 2.0, 20.0, 10.0, 0.25, 15, java.util.List.of(0.15, 0.08, 0.02), 0.30);
+        inSatisfy(helper, () -> FatigueBalance.withOverride(off, () -> {
+            ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 1.0);
+            helper.assertTrue(rested(player) == 600, "fatigue.enabled=false does not stop the bonus: " + rested(player));
+        }));
         helper.succeed();
     }
 
