@@ -6,6 +6,8 @@ When a version is released, its section is renamed from `[Unreleased]` to `[x.y.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-10
+
 First public preview. Start a **new world**: the Satisfy dimension and its places are only generated in new worlds.
 
 ### Added
