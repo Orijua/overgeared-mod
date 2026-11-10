@@ -18,6 +18,15 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// Game tests (src/gametest) live in their own source set: they see the mod's code and load as part of the mod in
+// development, but the jar task only packs `main`, so they are never shipped to players.
+sourceSets {
+    gametest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
 neoForge {
     // Specify the version of NeoForge to use.
     version = project.neo_version
@@ -35,6 +44,8 @@ neoForge {
     runs {
         client {
             client()
+            // With the game tests on the classpath, so that /test works while developing.
+            sourceSet = sourceSets.gametest
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -51,6 +62,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
+            sourceSet = sourceSets.gametest
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 
@@ -87,6 +99,7 @@ neoForge {
         // but multi mod projects should define one per mod
         "${mod_id}" {
             sourceSet(sourceSets.main)
+            sourceSet(sourceSets.gametest)
         }
     }
 }
@@ -125,6 +138,7 @@ dependencies {
 
 // Minecraft classes (e.g. RandomSource) are also on the unit test classpath.
 neoForge.addModdingDependenciesTo(sourceSets.test)
+neoForge.addModdingDependenciesTo(sourceSets.gametest)
 
 test {
     useJUnitPlatform()
