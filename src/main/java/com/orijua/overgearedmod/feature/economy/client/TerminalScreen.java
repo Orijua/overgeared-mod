@@ -387,12 +387,12 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.emeralds"), x + MARGIN, y + 34);
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.unit_price", Money.format(state.buyWonPerEmerald())),
                 x + MARGIN, y + 46, UiStyle.MUTED);
-        Component number = Component.literal(Integer.toString(buySelected));
+        Component number = UiStyle.ellipsize(font, Component.literal(Money.format(buySelected)), 40);
         UiStyle.text(graphics, font, number, x + 33 + (40 - font.width(number)) / 2, y + 67, UiStyle.TEXT);
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.shop.total",
                 Money.format(TerminalRules.buyCost(buySelected, state.buyWonPerEmerald()))), x + MARGIN, y + 88, UiStyle.TEXT);
         UiStyle.text(graphics, font, UiStyle.ellipsize(font, state.characterAvailable()
-                        ? Component.translatable("screen.overgearedmod.terminal.shop.room", room)
+                        ? Component.translatable("screen.overgearedmod.terminal.shop.room", Money.format(room))
                         : Component.translatable("screen.overgearedmod.terminal.no_character"), 140),
                 x + MARGIN, y + 100, state.characterAvailable() ? UiStyle.MUTED : NO_CHARACTER_COLOR);
         if (state.characterAvailable()) {
@@ -467,7 +467,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
         long won = player.getData(ModAttachments.ACCOUNT.get()).won();
         UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.won", Money.format(won)), x + MARGIN, y + 72, UiStyle.GOLD);
         Component storedText = state.characterAvailable()
-                ? Component.translatable("screen.overgearedmod.terminal.stored", stored)
+                ? Component.translatable("screen.overgearedmod.terminal.stored", Money.format(stored))
                 : Component.translatable("screen.overgearedmod.terminal.no_character");
         UiStyle.text(graphics, font, UiStyle.ellipsize(font, storedText, LEFT_WIDTH), x + MARGIN, y + 84,
                 state.characterAvailable() ? UiStyle.TEXT : NO_CHARACTER_COLOR);
@@ -478,7 +478,7 @@ public class TerminalScreen extends AbstractContainerScreen<TerminalMenu> {
             UiStyle.heading(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt"), x + MARGIN, y + 95);
             UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_left", Money.format(account.debt())), x + MARGIN, y + 106,
                     UiStyle.BAD);
-            Component number = Component.literal(Long.toString(debtSelected));
+            Component number = UiStyle.ellipsize(font, Component.literal(Money.format(debtSelected)), 40);
             UiStyle.text(graphics, font, number, x + 33 + (40 - font.width(number)) / 2, y + 123, UiStyle.TEXT);
             UiStyle.text(graphics, font, Component.translatable("screen.overgearedmod.terminal.debt_total", Money.format(debtSelected)), x + MARGIN, y + 160,
                     UiStyle.MUTED);

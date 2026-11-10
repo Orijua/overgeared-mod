@@ -61,7 +61,7 @@ public final class TerminalShop {
     public static Optional<Component> message(Outcome outcome) {
         return switch (outcome.result()) {
             case OK -> Optional.of(outcome.amount() > 0
-                    ? Component.translatable("message.overgearedmod.terminal.bought_emeralds", outcome.amount(), Money.format(outcome.won()))
+                    ? Component.translatable("message.overgearedmod.terminal.bought_emeralds", Money.format(outcome.amount()), Money.format(outcome.won()))
                     : Component.translatable("message.overgearedmod.terminal.bought_piece", outcome.bought().getHoverName(), Money.format(outcome.won())));
             case NO_TERMINAL -> Optional.empty();
             case IN_SATISFY -> Optional.of(Component.translatable("message.overgearedmod.terminal.no_signal"));

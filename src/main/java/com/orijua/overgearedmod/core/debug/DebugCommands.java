@@ -166,7 +166,7 @@ public final class DebugCommands {
                                 .executes(ctx -> {
                                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                                     TerminalState state = TerminalService.state(player, java.util.Optional.empty());
-                                    Component stored = state.characterAvailable() ? Component.literal(Integer.toString(state.storedEmeralds()))
+                                    Component stored = state.characterAvailable() ? Component.literal(Money.format(state.storedEmeralds()))
                                             : Component.translatable("message.overgearedmod.debug_terminal_no_character");
                                     Component workDay = state.workDay() == Long.MIN_VALUE
                                             ? Component.translatable("message.overgearedmod.debug_terminal_never") : Component.literal(Long.toString(state.workDay()));
