@@ -286,6 +286,45 @@ public final class Config {
         BUILDER.pop();
     }
 
+    static {
+        BUILDER.push("capsule");
+    }
+
+    private static final CapsuleBalance CAPSULE = CapsuleBalance.DEFAULT;
+    private static final ModConfigSpec.DoubleValue CAPSULE_ADVANCED_SESSION_MINUTES = BUILDER
+            .comment("The capsule tiers (the mod's own design, not the canon's). The basic capsule uses the [fatigue] numbers as they are;",
+                    "if fatigue.sessionMinutes is higher than these, the advanced capsule lasts less than the basic one (not checked).",
+                    "Real minutes of normal play from full energy to empty with the advanced capsule.")
+            .defineInRange("advancedSessionMinutes", CAPSULE.advancedSessionMinutes(), 1.0, CapsuleBalance.MAX_SESSION_MINUTES);
+    private static final ModConfigSpec.DoubleValue CAPSULE_ADVANCED_RECOVERY_MINUTES = BUILDER
+            .comment("Real minutes to refill from empty in the real world after an advanced session.")
+            .defineInRange("advancedRecoveryMinutes", CAPSULE.advancedRecoveryMinutes(), CapsuleBalance.MIN_RECOVERY_MINUTES, CapsuleBalance.MAX_SESSION_MINUTES);
+    private static final ModConfigSpec.DoubleValue CAPSULE_DIAMOND_SESSION_MINUTES = BUILDER
+            .comment("Real minutes of normal play from full energy to empty with the diamond capsule.")
+            .defineInRange("diamondSessionMinutes", CAPSULE.diamondSessionMinutes(), 1.0, CapsuleBalance.MAX_SESSION_MINUTES);
+    private static final ModConfigSpec.DoubleValue CAPSULE_DIAMOND_RECOVERY_MINUTES = BUILDER
+            .comment("Real minutes to refill from empty in the real world after a diamond session.")
+            .defineInRange("diamondRecoveryMinutes", CAPSULE.diamondRecoveryMinutes(), CapsuleBalance.MIN_RECOVERY_MINUTES, CapsuleBalance.MAX_SESSION_MINUTES);
+    private static final ModConfigSpec.LongValue CAPSULE_ADVANCED_LICENSE_WON = BUILDER
+            .comment("Won the advanced capsule license costs at the terminal.")
+            .defineInRange("advancedLicenseWon", CAPSULE.advancedLicenseWon(), 1L, CapsuleBalance.MAX_LICENSE_WON);
+    private static final ModConfigSpec.LongValue CAPSULE_DIAMOND_LICENSE_WON = BUILDER
+            .comment("Won the diamond capsule license costs at the terminal.")
+            .defineInRange("diamondLicenseWon", CAPSULE.diamondLicenseWon(), 1L, CapsuleBalance.MAX_LICENSE_WON);
+    private static final ModConfigSpec.IntValue CAPSULE_RESTED_MINUTES = BUILDER
+            .comment("Minutes of the \"rested\" bonus a diamond connection grants (only with enough energy). 0 turns it off.")
+            .defineInRange("restedMinutes", CAPSULE.restedMinutes(), 0, CapsuleBalance.MAX_RESTED_MINUTES);
+    private static final ModConfigSpec.IntValue CAPSULE_RESTED_XP_PERCENT = BUILDER
+            .comment("Extra level XP, in percent, while rested (smithing XP is not affected).")
+            .defineInRange("restedXpPercent", CAPSULE.restedXpPercent(), 0, CapsuleBalance.MAX_RESTED_XP_PERCENT);
+    private static final ModConfigSpec.DoubleValue CAPSULE_RESTED_MIN_ENERGY = BUILDER
+            .comment("The energy (0 to 1) needed when connecting with the diamond capsule to get the rested bonus.")
+            .defineInRange("restedMinEnergy", CAPSULE.restedMinEnergy(), 0.0, 1.0);
+
+    static {
+        BUILDER.pop();
+    }
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config() {
@@ -341,6 +380,14 @@ public final class Config {
                 .toList();
         return new TerminalBalance(TERMINAL_WON_PER_EMERALD.get(), TERMINAL_WORK_PAY.get(), orders, TERMINAL_BUY_WON_PER_EMERALD.get(),
                 TERMINAL_BUY_MULTIPLIER.get(), TERMINAL_OFFER_PER_RANK.get(), TERMINAL_OFFER_MAX_RATING.get(), offerItems);
+    }
+
+    static CapsuleBalance capsuleBalance() {
+        return new CapsuleBalance(
+                CAPSULE_ADVANCED_SESSION_MINUTES.get(), CAPSULE_ADVANCED_RECOVERY_MINUTES.get(),
+                CAPSULE_DIAMOND_SESSION_MINUTES.get(), CAPSULE_DIAMOND_RECOVERY_MINUTES.get(),
+                CAPSULE_ADVANCED_LICENSE_WON.get(), CAPSULE_DIAMOND_LICENSE_WON.get(),
+                CAPSULE_RESTED_MINUTES.get(), CAPSULE_RESTED_XP_PERCENT.get(), CAPSULE_RESTED_MIN_ENERGY.get());
     }
 
     static DebtBalance debtBalance() {
