@@ -224,6 +224,9 @@ public final class Config {
     private static final ModConfigSpec.LongValue TRADE_MAX_SELL_EMERALDS = BUILDER
             .comment("A sale that would pay more Satisfy emeralds than this is refused without touching the piece.")
             .defineInRange("maxSellEmeralds", T.maxSellEmeralds(), 64L, 100_000L);
+    private static final ModConfigSpec.DoubleValue TRADE_MIN_DURABILITY_FACTOR = BUILDER
+            .comment("Price factor of a piece with no durability left (0 to 1). A new piece pays the full price; in between it is linear.")
+            .defineInRange("minDurabilityFactor", T.minDurabilityFactor(), 0.0, 1.0);
 
     static {
         BUILDER.pop();
@@ -363,7 +366,7 @@ public final class Config {
         materials.put("chainmail", TRADE_MATERIAL_CHAINMAIL.get());
         return new TradeBalance(prices, materials, TRADE_OTHER_MATERIAL.get(), TRADE_ENHANCEMENT_BONUS.get(), TRADE_SELL_SHARE.get(),
                 TRADE_SATURATION_STEP.get(), TRADE_SATURATION_FLOOR.get(),
-                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get());
+                TRADE_RECOVERY_PER_DAY.get(), TRADE_PRESSURE_CAP.get(), TRADE_MAX_SELL_EMERALDS.get(), TRADE_MIN_DURABILITY_FACTOR.get());
     }
 
     static TerminalBalance terminalBalance() {

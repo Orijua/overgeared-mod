@@ -47,10 +47,15 @@ public final class TradeGoods {
         return name == null ? balance.otherMaterial() : balance.materialMultiplier().getOrDefault(name, balance.otherMaterial());
     }
 
+    /** The price factor of the durability the stack has left (1 for a piece without durability). */
+    public static double durability(ItemStack stack, TradeBalance balance) {
+        return TradeRules.durabilityFactor(stack.getDamageValue(), stack.getMaxDamage(), balance.minDurabilityFactor());
+    }
+
     public static long reference(ItemStack stack, TradeBalance balance) {
         ItemRating rating = Objects.requireNonNull(stack.get(ModDataComponents.ITEM_RATING), "the stack has no rating");
         return TradeRules.reference(rating, material(stack, balance), stack.getOrDefault(ModDataComponents.ENHANCEMENT, 0),
-                EquipmentBonuses.isWeapon(stack), balance);
+                EquipmentBonuses.isWeapon(stack), durability(stack, balance), balance);
     }
 
     /** What the stack pays today in Satisfy emeralds, with the pressure the saturation has on its key. */

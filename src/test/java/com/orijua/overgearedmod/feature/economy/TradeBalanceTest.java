@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TradeBalanceTest {
     @Test
@@ -28,6 +29,22 @@ class TradeBalanceTest {
         assertEquals(2, b.recoveryPerDay());
         assertEquals(37, b.pressureCap());
         assertEquals(10_000L, b.maxSellEmeralds());
+        assertEquals(0.25, b.minDurabilityFactor());
+    }
+
+    private static TradeBalance withMinDurability(double value) {
+        TradeBalance d = TradeBalance.DEFAULT;
+        return new TradeBalance(d.basePrice(), d.materialMultiplier(), d.otherMaterial(), d.enhancementBonus(), d.sellShare(),
+                d.saturationStep(), d.saturationFloor(), d.recoveryPerDay(), d.pressureCap(), d.maxSellEmeralds(), value);
+    }
+
+    @Test
+    void theMinimumDurabilityFactorMustBeInZeroToOne() {
+        assertThrows(IllegalArgumentException.class, () -> withMinDurability(-0.01));
+        assertThrows(IllegalArgumentException.class, () -> withMinDurability(1.01));
+        assertThrows(IllegalArgumentException.class, () -> withMinDurability(Double.NaN));
+        assertEquals(0.0, withMinDurability(0.0).minDurabilityFactor());
+        assertEquals(1.0, withMinDurability(1.0).minDurabilityFactor());
     }
 
     @Test
@@ -38,7 +55,7 @@ class TradeBalanceTest {
     @Test
     void anOverrideAppliesOnlyWhileTheActionRuns() {
         TradeBalance changed = new TradeBalance(TradeBalance.DEFAULT.basePrice(), TradeBalance.DEFAULT.materialMultiplier(),
-                1.0, 0.10, 0.5, 0.95, 0.15, 2, 37, 10_000L);
+                1.0, 0.10, 0.5, 0.95, 0.15, 2, 37, 10_000L, 0.25);
         TradeBalance[] seen = new TradeBalance[1];
         TradeBalance.withOverride(changed, () -> seen[0] = TradeBalance.current());
         assertEquals(changed, seen[0]);

@@ -44,11 +44,33 @@ public final class TradeRules {
         }
     }
 
-    /** The reference price: base by rating, times the material, plus a share per enhancement level (weapons only); at least 1. */
+    /** The reference price of a piece with all its durability: see the six-argument form. */
     public static long reference(ItemRating rating, double material, int enhancement, boolean weapon, TradeBalance balance) {
+        return reference(rating, material, enhancement, weapon, 1.0, balance);
+    }
+
+    /**
+     * The reference price: base by rating, times the material, plus a share per enhancement level (weapons only), times the
+     * {@code durability} factor ({@link #durabilityFactor}) before the one rounding down; at least 1.
+     */
+    public static long reference(ItemRating rating, double material, int enhancement, boolean weapon, double durability, TradeBalance balance) {
         double levels = weapon ? Math.max(0, enhancement) : 0;
-        double value = balance.basePrice().getOrDefault(rating, 1) * material * (1.0 + balance.enhancementBonus() * levels);
+        double value = balance.basePrice().getOrDefault(rating, 1) * material * (1.0 + balance.enhancementBonus() * levels) * durability;
         return Math.max(1L, Money.floor(value));
+    }
+
+    /**
+     * The price factor of the durability left: {@code minFactor} with none left, 1 with all of it, linear in between. A piece
+     * with no durability ({@code maxDamage <= 0}) or a negative damage counts as new; more damage than the maximum, as broken.
+     */
+    public static double durabilityFactor(int damage, int maxDamage, double minFactor) {
+        if (maxDamage <= 0 || damage < 0) {
+            return 1.0;
+        }
+        if (damage > maxDamage) {
+            return minFactor;
+        }
+        return minFactor + (1.0 - minFactor) * ((double) (maxDamage - damage) / maxDamage);
     }
 
     /** The price factor for a pressure: one step per point, never below the floor; a negative pressure is none. */

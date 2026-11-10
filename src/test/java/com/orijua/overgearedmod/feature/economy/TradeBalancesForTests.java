@@ -12,7 +12,7 @@ final class TradeBalancesForTests {
     static TradeBalance of(double otherMaterial, double sellShare, double saturationStep,
                            double saturationFloor, int recoveryPerDay, int pressureCap, long maxSellEmeralds) {
         return new TradeBalance(D.basePrice(), D.materialMultiplier(), otherMaterial, D.enhancementBonus(), sellShare,
-                saturationStep, saturationFloor, recoveryPerDay, pressureCap, maxSellEmeralds);
+                saturationStep, saturationFloor, recoveryPerDay, pressureCap, maxSellEmeralds, D.minDurabilityFactor());
     }
 
     static TradeBalance withRecoveryPerDay(int value) {

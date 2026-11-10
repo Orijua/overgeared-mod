@@ -265,6 +265,32 @@ class TradeRulesTest {
     }
 
     @Test
+    void durabilityFactorIsLinearBetweenTheMinimumAndOne() {
+        assertEquals(1.0, TradeRules.durabilityFactor(0, 100, 0.25));
+        assertEquals(0.25, TradeRules.durabilityFactor(100, 100, 0.25));
+        assertEquals(0.625, TradeRules.durabilityFactor(50, 100, 0.25));
+        assertEquals(0.0, TradeRules.durabilityFactor(100, 100, 0.0));
+    }
+
+    @Test
+    void durabilityFactorEdgeCases() {
+        assertEquals(1.0, TradeRules.durabilityFactor(5, 0, 0.25), "no durability counts as new");
+        assertEquals(1.0, TradeRules.durabilityFactor(5, -3, 0.25));
+        assertEquals(1.0, TradeRules.durabilityFactor(-1, 100, 0.25), "negative damage counts as new");
+        assertEquals(0.25, TradeRules.durabilityFactor(500, 100, 0.25), "more damage than the maximum is broken");
+        assertEquals(1.0, TradeRules.durabilityFactor(77, 100, 1.0), "a minimum of 1 means wear never matters");
+    }
+
+    @Test
+    void durabilityEntersTheReferenceBeforeTheSingleRounding() {
+        assertEquals(12, TradeRules.reference(ItemRating.RARE, 1.0, 0, false, 1.0, B));
+        assertEquals(7, TradeRules.reference(ItemRating.RARE, 1.0, 0, false, 0.625, B));
+        assertEquals(3, TradeRules.reference(ItemRating.RARE, 1.0, 0, false, 0.25, B));
+        assertEquals(1, TradeRules.reference(ItemRating.NORMAL, 0.5, 0, false, 0.0, B), "a broken piece still pays at least 1");
+        assertEquals(TradeRules.reference(ItemRating.EPIC, 2.0, 3, true, B), TradeRules.reference(ItemRating.EPIC, 2.0, 3, true, 1.0, B));
+    }
+
+    @Test
     void referenceMatchesExactArithmetic() {
         for (ItemRating rating : ItemRating.values()) {
             for (Map.Entry<String, Double> material : B.materialMultiplier().entrySet()) {
