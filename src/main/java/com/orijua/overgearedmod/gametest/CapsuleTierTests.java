@@ -16,6 +16,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -77,11 +78,11 @@ public final class CapsuleTierTests {
         return FatigueService.restedSeconds(player);
     }
 
-    /** A connection from a block of {@code tier} with {@code energy}; returns the player. */
     private static int cooldown(ServerPlayer player) {
         return player.getData(ModAttachments.RESTED_COOLDOWN.get());
     }
 
+    /** A connection from a block of {@code tier} with {@code energy}; returns the player. */
     private static ServerPlayer connected(GameTestHelper helper, CapsuleTier tier, double energy) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         helper.setBlock(CAPSULE, block(tier));
@@ -593,6 +594,77 @@ public final class CapsuleTierTests {
                 helper.assertTrue(cooldown(player) == 0, "0 minutes frees it: " + cooldown(player));
             });
         });
+        helper.succeed();
+    }
+
+    /** The wait runs while the player is in Satisfy whatever the game mode: spectating or creative does not freeze it. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theWaitCountsDownInSpectatorAndCreativeToo(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.RESTED_COOLDOWN.get(), 100);
+        inSatisfy(helper, () -> {
+            try {
+                player.setGameMode(GameType.SPECTATOR);
+                FatigueService.tickSecond(player);
+                helper.assertTrue(cooldown(player) == 99, "spectator: one second gone: " + cooldown(player));
+                player.setGameMode(GameType.CREATIVE);
+                FatigueService.tickSecond(player);
+                helper.assertTrue(cooldown(player) == 98, "creative: one more second gone: " + cooldown(player));
+            } finally {
+                player.setGameMode(GameType.SURVIVAL);
+            }
+        });
+        helper.succeed();
+    }
+
+    /** Raising the configured wait never lengthens a wait already running; lowering it later cuts it and it goes on counting. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void raisingTheWaitDoesNotLengthenAStoredOneAndCuttingItKeepsCounting(GameTestHelper helper) {
+        CapsuleBalance anHour = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.9, 60);
+        CapsuleBalance fiveMinutes = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.9, 5);
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.RESTED_COOLDOWN.get(), 1800);
+        inSatisfy(helper, () -> {
+            CapsuleBalance.withOverride(anHour, () -> {
+                FatigueService.tickSecond(player);
+                helper.assertTrue(cooldown(player) == 1799, "60 minutes do not stretch the stored 1800: " + cooldown(player));
+            });
+            CapsuleBalance.withOverride(fiveMinutes, () -> {
+                FatigueService.tickSecond(player);
+                helper.assertTrue(cooldown(player) == 299, "cut to 300 and one second gone: " + cooldown(player));
+                FatigueService.tickSecond(player);
+                helper.assertTrue(cooldown(player) == 298, "and it goes on counting: " + cooldown(player));
+            });
+        });
+        helper.succeed();
+    }
+
+    /**
+     * resetAll uses removeData on the synced wait: NeoForge 21.1 syncs a removal to the owner too ("if there is currently
+     * no attachment, the removal is synced"), so the Status tab does not keep showing a wait that is gone.
+     */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void resettingEverythingTellsTheClientTheWaitIsGone(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        java.util.List<net.neoforged.neoforge.network.payload.SyncAttachmentsPayload> sent = new java.util.ArrayList<>();
+        new net.minecraft.server.network.ServerGamePacketListenerImpl(player.server,
+                new net.minecraft.network.Connection(net.minecraft.network.protocol.PacketFlow.CLIENTBOUND), player,
+                net.minecraft.server.network.CommonListenerCookie.createInitial(player.getGameProfile(), false)) {
+            @Override
+            public void send(net.minecraft.network.protocol.Packet<?> packet) {
+                if (packet instanceof net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket custom
+                        && custom.payload() instanceof net.neoforged.neoforge.network.payload.SyncAttachmentsPayload payload) {
+                    sent.add(payload);
+                }
+            }
+        };
+        player.setData(ModAttachments.RESTED_COOLDOWN.get(), 900);
+        sent.clear();
+        ModAttachments.resetAll(player);
+        boolean removalSynced = sent.stream().anyMatch(payload -> payload.types().contains(ModAttachments.RESTED_COOLDOWN.get())
+                && payload.syncPayload().length > 0 && payload.syncPayload()[0] == 0);
+        helper.assertTrue(removalSynced, "the removal of the wait reached the owner: " + sent.size() + " sync packets");
+        helper.assertTrue(cooldown(player) == 0, "and the server reads the default again: " + cooldown(player));
         helper.succeed();
     }
 
