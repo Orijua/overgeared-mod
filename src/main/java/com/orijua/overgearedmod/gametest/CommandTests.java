@@ -323,6 +323,12 @@ public final class CommandTests {
         helper.assertTrue(execute(helper, player, "satisfy debug capsule") == 1, "the info still answers");
         helper.assertTrue(executeFails(helper, player, "satisfy debug capsule rested 86401"), "more than a day is refused");
         helper.assertTrue(executeFails(helper, player, "satisfy debug capsule rested -1"), "negative is refused");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule tier"), "a tier without its name is not a command");
+        helper.assertTrue(executeFails(helper, player, "satisfy debug capsule rested"), "rested without seconds is not a command");
+        helper.assertTrue(execute(helper, player, "satisfy debug capsule rested 86400") == 86400, "exactly a day is accepted");
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedSeconds(player) == 86400, "and written");
+        execute(helper, player, "satisfy debug capsule rested 0");
+        helper.assertTrue(com.orijua.overgearedmod.feature.fatigue.FatigueService.restedSeconds(player) == 0, "zero is accepted and clears it");
         helper.succeed();
     }
 
