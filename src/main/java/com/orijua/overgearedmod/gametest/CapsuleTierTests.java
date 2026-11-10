@@ -78,6 +78,10 @@ public final class CapsuleTierTests {
     }
 
     /** A connection from a block of {@code tier} with {@code energy}; returns the player. */
+    private static int cooldown(ServerPlayer player) {
+        return player.getData(ModAttachments.RESTED_COOLDOWN.get());
+    }
+
     private static ServerPlayer connected(GameTestHelper helper, CapsuleTier tier, double energy) {
         ServerPlayer player = TestSupport.fakePlayer(helper);
         helper.setBlock(CAPSULE, block(tier));
@@ -320,8 +324,13 @@ public final class CapsuleTierTests {
         inSatisfy(helper, () -> {
             ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 1.0);
             player.setData(ModAttachments.RESTED_SECONDS.get(), 300);
+            player.setData(ModAttachments.RESTED_COOLDOWN.get(), 0);
             FatigueService.onConnected(player);
             helper.assertTrue(rested(player) == 600, "it is set, not added: " + rested(player));
+            player.setData(ModAttachments.RESTED_SECONDS.get(), 300);
+            player.setData(ModAttachments.RESTED_COOLDOWN.get(), 100);
+            FatigueService.onConnected(player);
+            helper.assertTrue(rested(player) == 0 && cooldown(player) == 100, "with a wait running it grants nothing: " + rested(player));
         });
         helper.succeed();
     }
@@ -437,6 +446,162 @@ public final class CapsuleTierTests {
         player.setData(ModAttachments.RESTED_SECONDS.get(), 300);
         ModAttachments.resetAll(player);
         helper.assertTrue(tier(player) == CapsuleTier.BASIC && rested(player) == 0, "back to basic and not rested");
+        helper.succeed();
+    }
+
+    // ---- The wait for the next rested bonus ----
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theDiamondCapsuleGrantsTheRestedAndOpensTheWait(GameTestHelper helper) {
+        inSatisfy(helper, () -> {
+            ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 1.0);
+            helper.assertTrue(rested(player) == 600, "rested 600: " + rested(player));
+            helper.assertTrue(cooldown(player) == 1800, "wait 1800: " + cooldown(player));
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void disconnectingAndConnectingAgainDoesNotRestartTheRested(GameTestHelper helper) {
+        inSatisfy(helper, () -> {
+            ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 1.0);
+            helper.assertTrue(CapsuleService.disconnect(player, CapsuleService.Reason.MANUAL), "it disconnects");
+            helper.assertTrue(cooldown(player) == 1800, "the wait survives disconnecting: " + cooldown(player));
+            FatigueService.setEnergy(player, 1.0);
+            helper.assertTrue(CapsuleService.connect(player, at(helper)), "it connects again");
+            helper.assertTrue(rested(player) == 0, "no new rested: " + rested(player));
+            helper.assertTrue(cooldown(player) == 1800, "the wait goes on: " + cooldown(player));
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void theWaitCountsDownInSatisfyOnlyAndNotWhenDead(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.RESTED_COOLDOWN.get(), 100);
+        inRealWorld(helper, () -> {
+            FatigueService.tickSecond(player);
+            helper.assertTrue(cooldown(player) == 100, "it does not run in the real world: " + cooldown(player));
+        });
+        inSatisfy(helper, () -> {
+            FatigueService.tickSecond(player);
+            helper.assertTrue(cooldown(player) == 99, "one second in Satisfy: " + cooldown(player));
+            player.setHealth(0.0f);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(cooldown(player) == 99, "dead: it does not run: " + cooldown(player));
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void whenTheWaitEndsConnectingGrantsTheRestedAgain(GameTestHelper helper) {
+        inSatisfy(helper, () -> {
+            ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 1.0);
+            player.setData(ModAttachments.RESTED_COOLDOWN.get(), 1);
+            FatigueService.tickSecond(player);
+            helper.assertTrue(cooldown(player) == 0, "the wait ended: " + cooldown(player));
+            FatigueService.tickSecond(player);
+            helper.assertTrue(cooldown(player) == 0, "and never goes below 0: " + cooldown(player));
+            FatigueService.onConnected(player);
+            helper.assertTrue(rested(player) == 600 && cooldown(player) == 1800, "rested again: " + rested(player) + ", " + cooldown(player));
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aWaitOfZeroMinutesAlwaysGrantsTheRested(GameTestHelper helper) {
+        CapsuleBalance noWait = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.9, 0);
+        inSatisfy(helper, () -> CapsuleBalance.withOverride(noWait, () -> {
+            ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 1.0);
+            helper.assertTrue(rested(player) == 600 && cooldown(player) == 0, "no wait is opened: " + cooldown(player));
+            helper.assertTrue(CapsuleService.disconnect(player, CapsuleService.Reason.MANUAL), "it disconnects");
+            FatigueService.setEnergy(player, 1.0);
+            helper.assertTrue(CapsuleService.connect(player, at(helper)), "it connects again");
+            helper.assertTrue(rested(player) == 600, "rested again at once: " + rested(player));
+        }));
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void connectingWithLowEnergyOpensNoWait(GameTestHelper helper) {
+        inSatisfy(helper, () -> {
+            ServerPlayer player = connected(helper, CapsuleTier.DIAMOND, 0.85);
+            helper.assertTrue(rested(player) == 0 && cooldown(player) == 0, "nothing granted, no wait: " + cooldown(player));
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void dyingInSatisfyKeepsTheWait(GameTestHelper helper) {
+        inSatisfy(helper, () -> {
+            ServerPlayer old = connected(helper, CapsuleTier.DIAMOND, 1.0);
+            CapsuleService.died(old);
+            ServerPlayer fresh = TestSupport.fakePlayer(helper);
+            fresh.restoreFrom(old, false);
+            helper.assertTrue(cooldown(fresh) == 1800, "the wait is carried over a death: " + cooldown(fresh));
+            helper.assertTrue(rested(fresh) == 0, "the bonus is not");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void leavingTheGameInsideSatisfyKeepsTheWait(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        long[] now = {1_000_000L};
+        FatigueService.setClock(() -> now[0]);
+        try {
+            inSatisfy(helper, () -> {
+                player.setData(ModAttachments.RESTED_COOLDOWN.get(), 900);
+                FatigueService.onLogout(player);
+                now[0] += 60 * 60 * 1000L;
+                FatigueService.onLogin(player);
+                helper.assertTrue(cooldown(player) == 900, "the wait is kept: " + cooldown(player));
+            });
+        } finally {
+            FatigueService.restoreClock();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void turningUpOutsideStillConnectedKeepsTheWait(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        GlobalPos capsule = at(helper);
+        GlobalPos exit = GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(new BlockPos(1, 1, 0)));
+        player.setData(ModAttachments.RESTED_COOLDOWN.get(), 900);
+        inRealWorld(helper, () -> {
+            player.setData(ModAttachments.CAPSULE.get(), CapsuleState.EMPTY.connected(capsule, exit));
+            CapsuleService.reconcile(player);
+            helper.assertTrue(cooldown(player) == 900, "reconciling keeps the wait: " + cooldown(player));
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void loweringTheConfiguredWaitShortensARunningOne(GameTestHelper helper) {
+        CapsuleBalance fiveMinutes = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.9, 5);
+        CapsuleBalance noWait = new CapsuleBalance(55, 8, 75, 6, 3000, 15000, 10, 10, 0.9, 0);
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.RESTED_COOLDOWN.get(), 1800);
+        inSatisfy(helper, () -> {
+            CapsuleBalance.withOverride(fiveMinutes, () -> {
+                FatigueService.tickSecond(player);
+                helper.assertTrue(cooldown(player) == 299, "clamped to 300 and one second gone: " + cooldown(player));
+            });
+            CapsuleBalance.withOverride(noWait, () -> {
+                FatigueService.tickSecond(player);
+                helper.assertTrue(cooldown(player) == 0, "0 minutes frees it: " + cooldown(player));
+            });
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void resettingEverythingClearsTheWait(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.setData(ModAttachments.RESTED_COOLDOWN.get(), 900);
+        ModAttachments.resetAll(player);
+        helper.assertTrue(cooldown(player) == 0, "resetAll clears the wait: " + cooldown(player));
         helper.succeed();
     }
 }

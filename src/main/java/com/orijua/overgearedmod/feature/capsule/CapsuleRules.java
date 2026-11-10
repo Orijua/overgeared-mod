@@ -84,4 +84,34 @@ public final class CapsuleRules {
     public static int restedOnConnect(SessionModifiers modifiers, double energy, CapsuleBalance capsule) {
         return (float) energy >= (float) capsule.restedMinEnergy() ? modifiers.restedSeconds() : 0;
     }
+
+    /** What a connection does with the rested bonus: the seconds it starts with and the seconds of wait that follow. */
+    public record RestedGrant(int restedSeconds, int cooldownSeconds) {
+    }
+
+    /**
+     * What connecting gives. While a wait is running ({@code cooldownLeft} > 0) there is no bonus and the wait goes on as
+     * it is. Otherwise the bonus is the one of {@link #restedOnConnect} and, only if it was granted (more than 0 seconds),
+     * the wait starts; a connection that grants nothing (low energy, another tier) never opens one.
+     */
+    public static RestedGrant onConnect(SessionModifiers modifiers, double energy, int cooldownLeft, CapsuleBalance capsule) {
+        if (cooldownLeft > 0) {
+            return new RestedGrant(0, cooldownLeft);
+        }
+        int granted = restedOnConnect(modifiers, energy, capsule);
+        return new RestedGrant(granted, granted > 0 ? capsule.restedCooldownMinutes() * 60 : 0);
+    }
+
+    /**
+     * The wait that really remains: what is saved, within 0 and the configured wait (lowering the config shortens a wait
+     * already running, and 0 frees it).
+     */
+    public static int cooldownLeft(int saved, CapsuleBalance capsule) {
+        return Math.max(0, Math.min(saved, capsule.restedCooldownMinutes() * 60));
+    }
+
+    /** One second of the wait goes by; it never drops below 0. */
+    public static int tickDown(int seconds) {
+        return Math.max(0, seconds - 1);
+    }
 }
