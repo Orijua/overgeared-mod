@@ -226,8 +226,8 @@ public final class Config {
             .defineInRange("maxSellEmeralds", T.maxSellEmeralds(), 64L, 100_000L);
     private static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> TRADE_ITEM_MULTIPLIERS = BUILDER
             .comment("Price multiplier of single objects, \"ns:path=N\" (N from 0 to 100). It replaces the one of the material, so a unique object",
-                    "(Fracaso, the Jaffa sword, the smithing hammers) does not weigh as iron or netherite just for its tier. Wrong lines are ignored;",
-                    "if an item repeats, the first line wins.")
+                    "(Fracaso, the Jaffa sword, the smithing hammers) does not weigh as iron or netherite just for its tier. A wrong line is",
+                    "dropped when NeoForge corrects the file (and if no line is left, the default list comes back); if an item repeats, the first line wins.")
             .defineListAllowEmpty("itemMultipliers",
                     T.itemMultiplier().entrySet().stream().sorted(java.util.Map.Entry.comparingByKey())
                             .map(entry -> new com.orijua.overgearedmod.feature.economy.TradeRules.ItemMultiplier(entry.getKey(), entry.getValue()).asString())

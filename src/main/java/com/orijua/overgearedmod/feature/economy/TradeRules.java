@@ -81,7 +81,10 @@ public final class TradeRules {
                 ? Optional.of(new ItemMultiplier(id, multiplier)) : Optional.empty();
     }
 
-    /** The multipliers of a config list: the invalid lines are skipped and, if an id repeats, the first one wins. */
+    /**
+     * The multipliers of a config list: the invalid lines are skipped and, if an id repeats, the first one wins. (In the
+     * real config NeoForge already drops the wrong lines when it corrects the file; this stays as the second guard.)
+     */
     public static Map<ResourceLocation, Double> itemMultipliers(List<? extends String> lines) {
         Map<ResourceLocation, Double> multipliers = new LinkedHashMap<>();
         for (String line : lines) {
