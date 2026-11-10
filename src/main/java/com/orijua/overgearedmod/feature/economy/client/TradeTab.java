@@ -284,13 +284,17 @@ public class TradeTab extends SatisfyTab {
 
         long sell = isChosen && batchPrice != null ? batchPrice : TradeGoods.price(stack, saturation, today, balance);
         Component price = Component.translatable("screen.overgearedmod.trade.sell_price", Money.format(sell));
-        graphics.drawString(font(), price, textX, y + 13, UiStyle.TEXT);
         int percent = TradeRules.saturationPercent(saturation.pressure(TradeGoods.key(stack), today, balance), balance);
         List<Component> tip = new ArrayList<>();
         if (percent < 100) {
-            graphics.drawString(font(), Component.translatable("screen.overgearedmod.trade.saturation", percent),
-                    textX + font().width(price) + 4, y + 13, UiStyle.BAD);
+            // The "(NN %)" keeps its place at the end of the row; a long price gives way (with "…") so neither leaves the row.
+            Component saturationText = Component.translatable("screen.overgearedmod.trade.saturation", percent);
+            Component shownPrice = UiStyle.ellipsize(font(), price, Math.max(20, maxWidth - 4 - font().width(saturationText)));
+            graphics.drawString(font(), shownPrice, textX, y + 13, UiStyle.TEXT);
+            graphics.drawString(font(), saturationText, textX + font().width(shownPrice) + 4, y + 13, UiStyle.BAD);
             tip.add(Component.translatable("screen.overgearedmod.trade.tip.saturation"));
+        } else {
+            graphics.drawString(font(), UiStyle.ellipsize(font(), price, maxWidth), textX, y + 13, UiStyle.TEXT);
         }
         int wear = TradeRules.durabilityPercent(TradeGoods.durability(stack, balance));
         if (wear < 100) {
