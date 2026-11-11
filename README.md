@@ -4,7 +4,7 @@ An unofficial, fan-made Minecraft mod (NeoForge 1.21.1) based on the web novel a
 
 > **Unofficial fan project.** This mod is not affiliated with, endorsed by, sponsored by or approved by Park Saenal, the publishers or licensors of *Overgeared*, Mojang or Microsoft. *Overgeared*, its characters, places and names belong to their respective owners. See [Fan project notice](#fan-project-notice).
 
-**Status: in development (0.x).** There is no public release yet; saves from development builds are not guaranteed to load in later ones.
+**Status: in development (0.x).** The first public preview, [v0.1.0](https://github.com/Orijua/overgeared-mod/releases/tag/v0.1.0), is out; saves from pre-release versions are not guaranteed to load in later ones.
 
 ## What it is
 
@@ -30,7 +30,7 @@ More classes, the full continent of the novel and multiplayer features (parties,
 
 ## Installation
 
-1. Download the mod jar (no public release yet; build it with `./gradlew build`, the jar is in `build/libs`).
+1. Download the mod jar from the [latest release](https://github.com/Orijua/overgeared-mod/releases) (or build it with `./gradlew build`; the jar is in `build/libs`).
 2. Put it in the `mods` folder of a NeoForge 1.21.1 instance.
 3. Start a **new world**: the Satisfy dimension and its places are only generated in new worlds.
 
@@ -49,7 +49,7 @@ More classes, the full continent of the novel and multiplayer features (parties,
 
 ## AI usage notice
 
-This project is developed with the assistance of AI tools (code, tests, documentation and design ideas). The author directs, reviews and is responsible for what is published.
+This project is developed with the assistance of AI tools (code, tests, documentation, design ideas and some textures). The author directs, reviews and is responsible for what is published.
 
 ## License
 
