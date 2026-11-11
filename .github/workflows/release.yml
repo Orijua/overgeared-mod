@@ -1,11 +1,14 @@
-# Builds and publishes a release when a version tag (v0.1.0, v1.2.3...) is pushed: checks that the tag matches
-# `mod_version`, takes the notes from the tag's section of CHANGELOG.md, runs the same checks as the CI and attaches the
-# jar to a GitHub release (marked as pre-release while the version starts with 0.). See RELEASING.md.
+# Builds and publishes a release, either when a version tag (v0.1.0, v1.2.3...) is pushed or when someone runs the
+# workflow by hand from the Actions tab (Run workflow, on the main branch: it creates the tag v<mod_version> itself).
+# It checks that the tag matches `mod_version`, takes the notes from that version's section of CHANGELOG.md, runs the same
+# checks as the CI and attaches the jar to a GitHub release (marked as pre-release while the version starts with 0.).
+# See RELEASING.md.
 name: Release
 
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,17 +17,32 @@ jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # By hand, only from main: a release is never built from a feature branch.
+    if: github.event_name == 'push' || github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check that the tag matches the mod version
+      - name: Work out the tag and check it against the mod version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           MOD_VERSION="$(grep '^mod_version=' gradle.properties | cut -d= -f2)"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            TAG="$GITHUB_REF_NAME"
+          else
+            TAG="v$MOD_VERSION"
+          fi
+          VERSION="${TAG#v}"
           if [ "$VERSION" != "$MOD_VERSION" ]; then
-            echo "::error::The tag is $GITHUB_REF_NAME but gradle.properties says mod_version=$MOD_VERSION"
+            echo "::error::The tag is $TAG but gradle.properties says mod_version=$MOD_VERSION"
             exit 1
           fi
+          # A run by hand must not overwrite a version that is already published.
+          if [ "$GITHUB_REF_TYPE" != "tag" ] && gh release view "$TAG" > /dev/null 2>&1; then
+            echo "::error::$TAG is already released: raise mod_version (and the changelog) first"
+            exit 1
+          fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Take the release notes from CHANGELOG.md
@@ -54,5 +72,5 @@ jobs:
         run: |
           FLAGS=""
           case "$VERSION" in 0.*) FLAGS="--prerelease" ;; esac
-          gh release create "$GITHUB_REF_NAME" "build/libs/overgearedmod-${VERSION}.jar" \
-            --title "$GITHUB_REF_NAME" --notes-file release-notes.md $FLAGS
+          gh release create "$TAG" "build/libs/overgearedmod-${VERSION}.jar" \
+            --target "$GITHUB_SHA" --title "$TAG" --notes-file release-notes.md $FLAGS
