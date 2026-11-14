@@ -9,6 +9,7 @@ import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.npc.ApprenticeAssignments;
 import com.orijua.overgearedmod.feature.npc.ApprenticeContractItem;
 import com.orijua.overgearedmod.feature.npc.ApprenticeMaterials;
+import com.orijua.overgearedmod.feature.npc.ApprenticeRoster;
 import com.orijua.overgearedmod.feature.npc.ApprenticeSmith;
 import com.orijua.overgearedmod.feature.npc.Illumination;
 import com.orijua.overgearedmod.feature.npc.MasteryStage;
@@ -26,6 +27,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -328,6 +333,83 @@ public final class ApprenticeTests {
         apprentice.cancelOrder(player);
         helper.assertTrue(apprentice.order().isEmpty() && apprentice.shownOrder().isEmpty(), "cancelled");
         apprentice.discard();
+        helper.succeed();
+    }
+
+    /** Hires {@code count} apprentices for a player of smithing level 50 + 10 per extra one. */
+    private static ServerPlayer masterWith(GameTestHelper helper, int allowed) {
+        return smithOfLevel(helper, 40 + 10 * allowed);
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aKilledApprenticeFreesHisSlot(GameTestHelper helper) {
+        ServerPlayer player = masterWith(helper, 2);
+        BlockPos at = helper.absolutePos(STAND);
+        ApprenticeSmith first = ApprenticeContractItem.hire(player, at).orElseThrow();
+        ApprenticeSmith second = ApprenticeContractItem.hire(player, at).orElseThrow();
+        Workshop.report(player, first);
+        helper.assertTrue(Workshop.entries(player).stream().anyMatch(e -> e.apprentice().equals(first.getUUID())), "he is in the Workshop tab");
+        helper.assertTrue(ApprenticeContractItem.hire(player, at).isEmpty(), "full: no third");
+
+        first.remove(Entity.RemovalReason.KILLED);
+        ApprenticeSmith third = ApprenticeContractItem.hire(player, at).orElse(null);
+        helper.assertTrue(third != null, "the dead one's place is free again");
+        helper.assertFalse(player.getData(ModAttachments.APPRENTICES).contains(first.getUUID()), "he is off the list");
+        helper.assertTrue(player.getData(ModAttachments.APPRENTICES).size() == 2, "two on the list");
+        helper.assertTrue(Workshop.entries(player).stream().noneMatch(e -> e.apprentice().equals(first.getUUID())), "and out of the Workshop tab");
+        second.discard();
+        third.discard();
+        ApprenticeRoster.apply(player);
+        helper.succeed();
+    }
+
+    /** The master is not around (a fake player is not in the level's player list): the loss waits for his login. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aKilledApprenticeOfAnOfflineMasterIsFreedAtLogin(GameTestHelper helper) {
+        ServerPlayer player = masterWith(helper, 1);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        Workshop.report(player, apprentice);
+        apprentice.remove(Entity.RemovalReason.KILLED);
+        helper.assertTrue(player.getData(ModAttachments.APPRENTICES).contains(apprentice.getUUID()), "still listed while he is away");
+        helper.assertTrue(ApprenticeRoster.apply(player) == 1, "the login frees one");
+        helper.assertTrue(player.getData(ModAttachments.APPRENTICES).isEmpty(), "the list is empty");
+        helper.assertTrue(Workshop.entries(player).isEmpty(), "and so is the Workshop tab");
+        helper.assertTrue(ApprenticeRoster.apply(player) == 0, "it is applied once");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void unloadingTheChunkIsNotADeath(GameTestHelper helper) {
+        ServerPlayer player = masterWith(helper, 1);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        apprentice.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+        helper.assertTrue(ApprenticeRoster.apply(player) == 0, "nothing to free");
+        helper.assertTrue(player.getData(ModAttachments.APPRENTICES).contains(apprentice.getUUID()), "he stays on the list");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aDismissedApprenticeIsNotReportedAsLost(GameTestHelper helper) {
+        ServerPlayer player = masterWith(helper, 1);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        apprentice.dismiss(player);
+        helper.assertTrue(player.getData(ModAttachments.APPRENTICES).isEmpty(), "off the list");
+        helper.assertTrue(ApprenticeRoster.apply(player) == 0, "and not pending either");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aDeadApprenticeDropsHisHammer(GameTestHelper helper) {
+        ServerPlayer player = masterWith(helper, 1);
+        ApprenticeSmith apprentice = ApprenticeContractItem.hire(player, helper.absolutePos(STAND)).orElseThrow();
+        apprentice.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.DIAMOND));
+        Vec3 where = apprentice.position();
+        apprentice.remove(Entity.RemovalReason.KILLED);
+        List<ItemEntity> dropped = helper.getLevel().getEntitiesOfClass(ItemEntity.class, new AABB(where, where).inflate(3),
+                item -> item.getItem().is(Items.DIAMOND));
+        helper.assertTrue(dropped.size() == 1, "his hammer falls where he died, got " + dropped.size());
+        dropped.forEach(ItemEntity::discard);
+        ApprenticeRoster.apply(player);
         helper.succeed();
     }
 }

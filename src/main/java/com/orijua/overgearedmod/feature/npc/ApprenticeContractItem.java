@@ -57,6 +57,7 @@ public class ApprenticeContractItem extends Item {
             SatisfyOnly.warn(player);
             return Optional.empty();
         }
+        ApprenticeRoster.apply(player); // the ones who died meanwhile no longer take a place
         List<UUID> hired = player.getData(ModAttachments.APPRENTICES);
         int level = ProgressionService.effectiveSmithingLevel(player);
         if (hired.size() >= ApprenticeRules.allowedApprentices(level)) {
