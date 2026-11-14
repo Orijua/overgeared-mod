@@ -170,6 +170,35 @@ public final class CharacterTests {
         helper.succeed();
     }
 
+    /**
+     * The sample of a real stored character (saves/samples/character_vault_full.snbt, with inventory and Ender chest): it
+     * is readable, and entering its world swaps it in. The stored character of the v1 fixture is not a readable one.
+     */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aRealStoredCharacterSampleIsReadableAndSwapsIn(GameTestHelper helper) {
+        CompoundTag sample;
+        try (java.io.InputStream in = CharacterTests.class.getResourceAsStream("/saves/samples/character_vault_full.snbt")) {
+            sample = net.minecraft.nbt.TagParser.parseTag(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException | com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+        CharacterVault sampleVault = CharacterVault.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, sample).getOrThrow();
+        helper.assertTrue(CharacterSnapshot.isReadable(sampleVault.stored().orElseThrow()), "the sample is a readable snapshot");
+
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().setItem(0, new ItemStack(Items.EMERALD, 2));
+        player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(WorldSide.REAL, sampleVault.stored().orElseThrow()));
+        helper.assertTrue(Characters.canCross(player, WorldSide.SATISFY), "it can be crossed to");
+        in(helper, WorldSide.SATISFY, () -> {
+            helper.assertTrue(Characters.settle(player) == Characters.Result.SWAPPED, "entering Satisfy swaps the sample in");
+            helper.assertTrue(count(player, Items.BREAD) == 12 && count(player, Items.IRON_SWORD) == 1, "the sample's inventory is carried");
+            helper.assertTrue(player.getEnderChestInventory().countItem(Items.DIAMOND) == 5, "and its Ender chest");
+            helper.assertTrue(player.experienceLevel == 4, "and its experience level");
+            helper.assertTrue(count(player, Items.EMERALD) == 0, "what they carried before is stored");
+        });
+        helper.succeed();
+    }
+
     // ---- Step 2: settle and the hooks ----
 
     /** What {@code WorldSeparation.cross} gives back is what the swap did, so the callers can react to a failure. */

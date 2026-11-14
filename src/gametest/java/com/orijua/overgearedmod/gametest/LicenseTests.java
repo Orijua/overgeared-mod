@@ -118,6 +118,30 @@ public final class LicenseTests {
         helper.succeed();
     }
 
+    /** The edge of the price: exactly 3.000 Won buys it and leaves the account at 0. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void exactlyThePriceBuysTheAdvancedLicense(GameTestHelper helper) {
+        real(helper, () -> {
+            ServerPlayer player = buyer(helper, new Account(3000L, 0L, DebtState.SETTLED));
+            Outcome outcome = LicenseShop.buy(player, CapsuleTier.ADVANCED, 3000L, C);
+            assertResult(helper, Result.OK, outcome, "3.000 Won");
+            helper.assertTrue(AccountService.won(player) == 0L, "the account is left at 0, got " + AccountService.won(player));
+            helper.assertTrue(count(player, ModItems.ADVANCED_CAPSULE_LICENSE.get()) == 1, "and the license delivered");
+        });
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void anAccountAtTheMaximumBuysWithoutOverflowing(GameTestHelper helper) {
+        real(helper, () -> {
+            ServerPlayer player = buyer(helper, new Account(Long.MAX_VALUE, 0L, DebtState.SETTLED));
+            Outcome outcome = LicenseShop.buy(player, CapsuleTier.ADVANCED, 3000L, C);
+            assertResult(helper, Result.OK, outcome, "Long.MAX_VALUE Won");
+            helper.assertTrue(AccountService.won(player) == Long.MAX_VALUE - 3000L, "only the price is charged, got " + AccountService.won(player));
+        });
+        helper.succeed();
+    }
+
     // ---- The diamond license ----
 
     @GameTest(template = TestSupport.EMPTY)
