@@ -56,6 +56,15 @@ public final class Workshop {
         return before == ApprenticeSmith.Status.WORKING && after != ApprenticeSmith.Status.WORKING && after != ApprenticeSmith.Status.NO_ORDER;
     }
 
+    /** An apprentice who is no longer (dismissed, dead, gone): off his master's list of apprentices and his Workshop tab. */
+    public static void release(ServerPlayer master, UUID apprentice) {
+        List<UUID> hired = new ArrayList<>(master.getData(ModAttachments.APPRENTICES));
+        if (hired.remove(apprentice)) {
+            master.setData(ModAttachments.APPRENTICES, List.copyOf(hired));
+        }
+        forget(master, apprentice);
+    }
+
     public static void forget(ServerPlayer master, UUID apprentice) {
         List<WorkshopEntry> entries = new ArrayList<>(entries(master));
         if (entries.removeIf(entry -> entry.apprentice().equals(apprentice))) {

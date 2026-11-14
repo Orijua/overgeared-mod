@@ -12,6 +12,10 @@ import com.orijua.overgearedmod.feature.capsule.LevelProbe;
 import com.orijua.overgearedmod.feature.capsule.SafeSpot;
 import com.orijua.overgearedmod.feature.capsule.StarterCapsule;
 import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
+import com.orijua.overgearedmod.feature.character.CharacterSnapshot;
+import com.orijua.overgearedmod.feature.character.CharacterVault;
+import com.orijua.overgearedmod.feature.character.Characters;
+import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.pagma.PagmaBook;
 import com.orijua.overgearedmod.feature.progression.PlayerStats;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
@@ -88,6 +92,47 @@ public final class CapsuleTests {
 
     private static GlobalPos at(GameTestHelper helper, BlockPos relative) {
         return GlobalPos.of(helper.getLevel().dimension(), helper.absolutePos(relative));
+    }
+
+    /** Arriving but not being able to swap characters is not a connection: the player goes back and nothing changes. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aConnectionWhoseSwapFailsGoesBack(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 3));
+        player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(WorldSide.REAL, CharacterSnapshot.empty()));
+        BlockPos bairan = helper.absolutePos(new BlockPos(1, 1, 1));
+        inSatisfy(helper, bairan, () -> {
+            CapsuleState before = CapsuleService.state(player);
+            Characters.applierForTests((p, tag) -> {
+                throw new IllegalStateException("test: the character cannot be applied");
+            });
+            try {
+                helper.assertFalse(CapsuleService.connect(player, at(helper, new BlockPos(0, 1, 0))), "the connection is undone");
+            } finally {
+                Characters.applierForTests(null);
+            }
+            helper.assertTrue(CapsuleService.state(player).equals(before), "the capsule state is as before");
+            helper.assertTrue(player.getInventory().countItem(Items.DIAMOND) == 3, "they keep their things");
+            helper.assertTrue(Characters.vault(player).live().equals(Optional.of(WorldSide.REAL)), "still carrying the real character");
+        });
+        helper.succeed();
+    }
+
+    /** With the real character unreadable a voluntary disconnection is refused (a forced one, by fatigue, goes through). */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aDisconnectionWithAnUnreadableRealCharacterIsRefused(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        BlockPos bairan = helper.absolutePos(new BlockPos(1, 1, 1));
+        inSatisfy(helper, bairan, () -> {
+            helper.assertTrue(CapsuleService.connect(player, at(helper, new BlockPos(0, 1, 0))), "it connects");
+            CapsuleState connected = CapsuleService.state(player);
+            player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(WorldSide.SATISFY, new CompoundTag()));
+            for (CapsuleService.Reason reason : new CapsuleService.Reason[] {CapsuleService.Reason.MANUAL, CapsuleService.Reason.LOGOUT}) {
+                helper.assertFalse(CapsuleService.disconnect(player, reason), "refused (" + reason + ")");
+                helper.assertTrue(CapsuleService.state(player).equals(connected), "the state is intact (" + reason + ")");
+            }
+        });
+        helper.succeed();
     }
 
     @GameTest(template = TestSupport.EMPTY)

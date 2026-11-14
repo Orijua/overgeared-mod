@@ -10,6 +10,8 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.util.FakePlayer;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
+import java.util.function.BiConsumer;
+
 /**
  * The player has two characters, one per world (see {@link WorldSide}), and carries the one of the world they are in.
  * {@link #settle} is the ONLY place that moves their things: it compares which world's things they carry
@@ -22,7 +24,15 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
  * <p>The swap happens on the server thread in one call, so the autosave (which runs between ticks) never sees half of it.
  */
 public final class Characters {
+    /** What puts a stored character on the player; only tests replace it (see {@link #applierForTests}). */
+    private static volatile BiConsumer<ServerPlayer, CompoundTag> applier = CharacterSnapshot::apply;
+
     private Characters() {
+    }
+
+    /** For tests: replaces the step that applies the incoming character (to make it fail); {@code null} puts it back. */
+    public static void applierForTests(BiConsumer<ServerPlayer, CompoundTag> replacement) {
+        applier = replacement != null ? replacement : CharacterSnapshot::apply;
     }
 
     /** What {@link #settle} did. */
@@ -92,7 +102,7 @@ public final class Characters {
         player.closeContainer();
         CompoundTag outgoing = CharacterSnapshot.capture(player);
         try {
-            CharacterSnapshot.apply(player, incoming);
+            applier.accept(player, incoming);
         } catch (RuntimeException e) {
             // Half applied: put back what was there so nothing is duplicated or lost, and keep the vault as it was.
             Overgearedmod.LOGGER.error("Could not restore the {} character of {}: undoing", want, player.getGameProfile().getName(), e);

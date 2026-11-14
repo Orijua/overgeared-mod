@@ -4,6 +4,8 @@ import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.save.SaveMigrations;
 import com.orijua.overgearedmod.core.save.SaveMigrations.Step;
+import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
+import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.progression.PlayerStats;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -61,6 +63,23 @@ public final class SaveTests {
                 var type = NeoForgeRegistries.ATTACHMENT_TYPES.get(id(name));
                 if (type != null && !player.hasData(type)) {
                     lost.add("v" + version + " " + name);
+                }
+            }
+            if (version == 1) {
+                // Not only present: the values of the fixture are what the player reads back.
+                PlayerStats stats = stats(player);
+                if (stats.level() != 12 || stats.xp() != 340 || stats.smithingXp() != 1500) {
+                    lost.add("v1 player_stats read back as " + stats);
+                }
+                Account account = player.getData(ModAttachments.ACCOUNT.get());
+                if (account.won() != 6400L || account.debt() != 250000L) {
+                    lost.add("v1 account read back as " + account);
+                }
+                if (player.getData(ModAttachments.CAPSULE_TIER.get()) != CapsuleTier.DIAMOND) {
+                    lost.add("v1 capsule_tier read back as " + player.getData(ModAttachments.CAPSULE_TIER.get()));
+                }
+                if (!player.getData(ModAttachments.HEARD_RUMORS.get()).equals(List.of(id("north_end_cave")))) {
+                    lost.add("v1 heard_rumors read back as " + player.getData(ModAttachments.HEARD_RUMORS.get()));
                 }
             }
         }

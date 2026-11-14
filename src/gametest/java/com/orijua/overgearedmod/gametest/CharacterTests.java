@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.feature.character.CharacterSnapshot;
 import com.orijua.overgearedmod.feature.character.CharacterVault;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.character.Characters;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.AccountService;
@@ -169,7 +170,58 @@ public final class CharacterTests {
         helper.succeed();
     }
 
+    /**
+     * The sample of a real stored character (saves/samples/character_vault_full.snbt, with inventory and Ender chest): it
+     * is readable, and entering its world swaps it in. The stored character of the v1 fixture is not a readable one.
+     */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aRealStoredCharacterSampleIsReadableAndSwapsIn(GameTestHelper helper) {
+        CompoundTag sample;
+        try (java.io.InputStream in = CharacterTests.class.getResourceAsStream("/saves/samples/character_vault_full.snbt")) {
+            sample = net.minecraft.nbt.TagParser.parseTag(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException | com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+            throw new IllegalStateException(e);
+        }
+        CharacterVault sampleVault = CharacterVault.CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, sample).getOrThrow();
+        helper.assertTrue(CharacterSnapshot.isReadable(sampleVault.stored().orElseThrow()), "the sample is a readable snapshot");
+
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().setItem(0, new ItemStack(Items.EMERALD, 2));
+        player.setData(ModAttachments.CHARACTER_VAULT.get(), CharacterVault.of(WorldSide.REAL, sampleVault.stored().orElseThrow()));
+        helper.assertTrue(Characters.canCross(player, WorldSide.SATISFY), "it can be crossed to");
+        in(helper, WorldSide.SATISFY, () -> {
+            helper.assertTrue(Characters.settle(player) == Characters.Result.SWAPPED, "entering Satisfy swaps the sample in");
+            helper.assertTrue(count(player, Items.BREAD) == 12 && count(player, Items.IRON_SWORD) == 1, "the sample's inventory is carried");
+            helper.assertTrue(player.getEnderChestInventory().countItem(Items.DIAMOND) == 5, "and its Ender chest");
+            helper.assertTrue(player.experienceLevel == 4, "and its experience level");
+            helper.assertTrue(count(player, Items.EMERALD) == 0, "what they carried before is stored");
+        });
+        helper.succeed();
+    }
+
     // ---- Step 2: settle and the hooks ----
+
+    /** What {@code WorldSeparation.cross} gives back is what the swap did, so the callers can react to a failure. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void crossReturnsTheSettleResult(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 5));
+        in(helper, WorldSide.REAL, () -> helper.assertTrue(WorldSeparation.cross(player, () -> { }) == Characters.Result.ADOPTED, "adopted at first"));
+        in(helper, WorldSide.SATISFY, () -> {
+            Characters.applierForTests((p, tag) -> {
+                throw new IllegalStateException("test: the character cannot be applied");
+            });
+            try {
+                helper.assertTrue(WorldSeparation.cross(player, () -> { }) == Characters.Result.FAILED, "a swap that throws is reported");
+            } finally {
+                Characters.applierForTests(null);
+            }
+            helper.assertTrue(count(player, Items.DIAMOND) == 5, "and they keep what they had");
+            helper.assertTrue(Characters.vault(player).live().equals(Optional.of(WorldSide.REAL)), "the vault is as it was");
+            helper.assertTrue(WorldSeparation.cross(player, () -> { }) == Characters.Result.SWAPPED, "the next one works");
+        });
+        helper.succeed();
+    }
 
     /** Runs {@code body} with the test level playing the given world, then puts the test default back. */
     private static void in(GameTestHelper helper, WorldSide side, Runnable body) {

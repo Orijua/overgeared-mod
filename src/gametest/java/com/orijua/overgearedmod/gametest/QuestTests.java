@@ -2,21 +2,30 @@ package com.orijua.overgearedmod.gametest;
 
 import com.orijua.overgearedmod.Overgearedmod;
 import com.orijua.overgearedmod.core.registry.ModAttachments;
+import com.orijua.overgearedmod.core.registry.ModDataComponents;
+import com.orijua.overgearedmod.core.registry.ModItems;
 import com.orijua.overgearedmod.feature.equipment.ItemRating;
 import com.orijua.overgearedmod.feature.npc.BlacksmithNpc;
 import com.orijua.overgearedmod.feature.npc.VillageChiefNpc;
 import com.orijua.overgearedmod.feature.progression.ClassService;
 import com.orijua.overgearedmod.feature.progression.ProgressionService;
+import com.orijua.overgearedmod.feature.quest.LoanGuard;
 import com.orijua.overgearedmod.feature.quest.PlayerQuests;
 import com.orijua.overgearedmod.feature.quest.QuestService;
+import com.orijua.overgearedmod.feature.world.Satisfy;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+import java.util.List;
 
 @GameTestHolder(Overgearedmod.MODID)
 @PrefixGameTestTemplate(false)
@@ -162,6 +171,103 @@ public final class QuestTests {
         PlayerQuests quests = QuestService.get(player);
         helper.assertFalse(quests.isTracked(ZOMBIE_PLAGUE), "a claimed quest leaves the HUD");
         helper.assertTrue(quests.timesCompleted(ZOMBIE_PLAGUE) == 1, "and its completion is counted");
+        helper.succeed();
+    }
+
+    private static final ResourceLocation TALENTS = Overgearedmod.id("bairan_talents");
+
+    private static ItemStack loan(ResourceLocation quest) {
+        ItemStack sword = new ItemStack(ModItems.RULERS_SWORD.get());
+        sword.set(ModDataComponents.LOANED_FOR, quest);
+        return sword;
+    }
+
+    private static VillageChiefNpc talentsChief(GameTestHelper helper, ServerPlayer player) {
+        VillageChiefNpc chief = TestSupport.chief(helper);
+        player.moveTo(chief.position());
+        TestSupport.completed(player, "watch_commander");
+        return chief;
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aLoanInTheEnderChestIsReclaimedOnAbandon(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        VillageChiefNpc chief = talentsChief(helper, player);
+        helper.assertTrue(QuestService.accept(player, TALENTS, chief) == QuestService.Result.SUCCESS, "accepted");
+        player.getEnderChestInventory().addItem(loan(TALENTS));
+        player.containerMenu.setCarried(loan(TALENTS));
+        helper.assertTrue(QuestService.abandon(player, TALENTS) == QuestService.Result.SUCCESS, "abandoned");
+        helper.assertTrue(player.getEnderChestInventory().countItem(ModItems.RULERS_SWORD.get()) == 0, "none left in the Ender chest");
+        helper.assertTrue(player.containerMenu.getCarried().isEmpty(), "none left on the cursor");
+        helper.assertTrue(player.getInventory().countItem(ModItems.RULERS_SWORD.get()) == 0, "none left in the inventory");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aLoanInsideACarriedShulkerBoxIsReclaimed(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        VillageChiefNpc chief = talentsChief(helper, player);
+        QuestService.accept(player, TALENTS, chief);
+        ItemStack box = new ItemStack(Items.SHULKER_BOX);
+        box.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(loan(TALENTS), new ItemStack(Items.BREAD))));
+        player.getInventory().setItem(0, box);
+        QuestService.abandon(player, TALENTS);
+        helper.assertTrue(box.get(DataComponents.CONTAINER).nonEmptyStream().noneMatch(s -> s.is(ModItems.RULERS_SWORD.get())), "the box holds no loan");
+        helper.assertTrue(box.get(DataComponents.CONTAINER).nonEmptyStream().anyMatch(s -> s.is(Items.BREAD)), "the rest of the box stays");
+        helper.succeed();
+    }
+
+    /** The old sword (left on the ground, in a chest...) picked up again after re-accepting is a duplicate: it goes. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void reacceptingDoesNotDuplicateTheLoan(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        VillageChiefNpc chief = talentsChief(helper, player);
+        QuestService.accept(player, TALENTS, chief);
+        ItemStack old = loan(TALENTS); // the first sword, out of the inventory
+        player.getInventory().clearContent();
+        QuestService.abandon(player, TALENTS);
+        helper.assertTrue(QuestService.accept(player, TALENTS, chief) == QuestService.Result.SUCCESS, "accepted again");
+        player.getInventory().add(old);
+        helper.assertTrue(player.getInventory().countItem(ModItems.RULERS_SWORD.get()) == 2, "two swords before the purge");
+        helper.assertTrue(LoanGuard.purge(player) == 1, "one purged");
+        helper.assertTrue(player.getInventory().countItem(ModItems.RULERS_SWORD.get()) == 1, "only one is left");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aLoanWithoutItsQuestIsPurged(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().add(loan(TALENTS));
+        player.getEnderChestInventory().addItem(loan(TALENTS));
+        helper.assertTrue(LoanGuard.purge(player) == 2, "both stacks purged");
+        helper.assertTrue(player.getInventory().countItem(ModItems.RULERS_SWORD.get()) == 0, "none in the inventory");
+        helper.assertTrue(player.getEnderChestInventory().countItem(ModItems.RULERS_SWORD.get()) == 0, "none in the Ender chest");
+        player.getInventory().add(new ItemStack(ModItems.RULERS_SWORD.get())); // not a loan: it is theirs
+        helper.assertTrue(LoanGuard.purge(player) == 0, "what is not lent stays");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aLoanIsKeptWhileItsQuestIsActive(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        VillageChiefNpc chief = talentsChief(helper, player);
+        QuestService.accept(player, TALENTS, chief);
+        helper.assertTrue(LoanGuard.purge(player) == 0, "nothing to purge");
+        helper.assertTrue(player.getInventory().countItem(ModItems.RULERS_SWORD.get()) == 1, "the lent sword stays");
+        helper.succeed();
+    }
+
+    @GameTest(template = TestSupport.EMPTY)
+    public static void aLoanOutsideSatisfyIsNotTouched(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().add(loan(TALENTS));
+        Satisfy.standIn(null);
+        try {
+            helper.assertTrue(LoanGuard.purge(player) == 0, "the purge does not run in the real world");
+        } finally {
+            Satisfy.restoreStandIn();
+        }
+        helper.assertTrue(player.getInventory().countItem(ModItems.RULERS_SWORD.get()) == 1, "untouched");
         helper.succeed();
     }
 }

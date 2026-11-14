@@ -25,8 +25,8 @@ import java.util.function.Consumer;
 
 /**
  * {@code /satisfy logout}: the countdown, the refusal after combat and every way it is cancelled. The test level
- * plays Satisfy; ticks are given by hand (a fake player does not tick). {@code forgetAll()} clears the tables of every
- * player: it is only safe in these tests because their bodies are synchronous (no other test runs in the middle).
+ * plays Satisfy; ticks are given by hand (a fake player does not tick). each test clears only its own player's
+ * tables ({@code forget(player)}); {@code forgetAll()} is left to the one test that is about it.
  */
 @GameTestHolder(Overgearedmod.MODID)
 @PrefixGameTestTemplate(false)
@@ -68,7 +68,7 @@ public final class LogoutTests {
                 helper.assertTrue(CapsuleService.state(player).capsule().isPresent() == bodyStays,
                         what + ": nobody was disconnected (the body " + (bodyStays ? "is" : "is not") + " in the capsule)");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
                 CapsuleService.cancel(player, false);
             }
         });
@@ -82,7 +82,7 @@ public final class LogoutTests {
                 helper.assertTrue(LogoutService.start(player) == LogoutService.Start.NOT_IN_SATISFY, "the real world");
                 helper.assertFalse(LogoutService.isCountingDown(player), "no countdown");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();
@@ -100,7 +100,7 @@ public final class LogoutTests {
                 LogoutService.markCombat(player, now - LogoutRules.DANGER_TICKS);
                 helper.assertTrue(LogoutService.start(player) == LogoutService.Start.STARTED, "60 ticks ago: allowed");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();
@@ -114,7 +114,7 @@ public final class LogoutTests {
                 damage(player);
                 helper.assertTrue(LogoutService.start(player) == LogoutService.Start.IN_DANGER, "just hurt: refused");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();
@@ -129,7 +129,7 @@ public final class LogoutTests {
                 NeoForge.EVENT_BUS.post(new LivingDamageEvent.Post(zombie, new DamageContainer(player.damageSources().playerAttack(player), 1f)));
                 helper.assertTrue(LogoutService.start(player) == LogoutService.Start.IN_DANGER, "just hit a mob: refused");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();
@@ -150,7 +150,7 @@ public final class LogoutTests {
                 helper.assertTrue(CapsuleService.state(player).capsule().isEmpty(), "the body is back");
                 helper.assertTrue(CapsuleService.state(player).lastSave().isPresent(), "and the spot is saved");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
                 CapsuleService.cancel(player, false);
             }
         });
@@ -171,7 +171,7 @@ public final class LogoutTests {
                 tickMany(player, 1);
                 helper.assertTrue(CapsuleService.state(player).capsule().isEmpty(), "60 ticks from the first call: done");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
                 CapsuleService.cancel(player, false);
             }
         });
@@ -224,7 +224,8 @@ public final class LogoutTests {
                 helper.assertTrue(CapsuleService.state(first).lastSave().isEmpty() && CapsuleService.state(second).lastSave().isEmpty(),
                         "and nobody was disconnected");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(first);
+                LogoutService.forget(second);
             }
         });
         helper.succeed();
@@ -240,7 +241,7 @@ public final class LogoutTests {
                 NeoForge.EVENT_BUS.post(new LivingDamageEvent.Post(zombie, new DamageContainer(player.damageSources().playerAttack(player), 1f)));
                 helper.assertTrue(LogoutService.isCountingDown(player), "hitting a mob does not cancel it");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();
@@ -260,7 +261,7 @@ public final class LogoutTests {
                 }
                 helper.assertFalse(LogoutService.isCountingDown(player), "the tick cancels it");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();
@@ -280,7 +281,7 @@ public final class LogoutTests {
                 helper.assertTrue(CapsuleService.state(player).lastSave().isEmpty(), "nothing was saved");
                 helper.assertTrue(CapsuleService.state(player).capsule().isPresent(), "and nobody was disconnected");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
                 CapsuleService.cancel(player, false);
             }
         });
@@ -299,7 +300,7 @@ public final class LogoutTests {
                 tickMany(player, 5);
                 helper.assertTrue(LogoutService.isCountingDown(player), "still counting");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();
@@ -319,7 +320,7 @@ public final class LogoutTests {
                 helper.assertTrue(CapsuleService.state(player).lastSave().equals(java.util.Optional.of(where)), "the spot is saved");
                 helper.assertTrue(CapsuleService.state(player).capsule().isEmpty(), "and there is still no body");
             } finally {
-                LogoutService.forgetAll();
+                LogoutService.forget(player);
             }
         });
         helper.succeed();

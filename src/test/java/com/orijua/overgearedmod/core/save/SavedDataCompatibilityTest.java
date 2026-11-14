@@ -4,7 +4,9 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.orijua.overgearedmod.feature.capsule.CapsuleState;
 import com.orijua.overgearedmod.feature.capsule.CapsuleTier;
+import com.orijua.overgearedmod.feature.character.CharacterSnapshot;
 import com.orijua.overgearedmod.feature.character.CharacterVault;
+import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.OfferBought;
 import com.orijua.overgearedmod.feature.economy.TradeSaturation;
@@ -19,6 +21,7 @@ import com.orijua.overgearedmod.feature.skill.PlayerSkills;
 import com.orijua.overgearedmod.feature.winston.ContestState;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
@@ -143,6 +146,113 @@ class SavedDataCompatibilityTest {
         }
 
         assertTrue(failures.isEmpty(), "the fixture is not today's saved shape:\n" + String.join("\n", failures));
+    }
+
+    // ---- Partial, extra and extreme saves (the fixtures above are always complete) ----
+
+    /** A field a newer version added is ignored by an older reader: the save loads and the field is not written back. */
+    @Test
+    void anUnknownExtraFieldIsIgnored() throws Exception {
+        CompoundTag stats = fixture(SaveMigrations.CURRENT).getCompound("player_stats").copy();
+        stats.putInt("field_from_the_future", 99);
+
+        PlayerStats loaded = PlayerStats.CODEC.parse(NbtOps.INSTANCE, stats).getOrThrow();
+
+        assertEquals(12, loaded.level());
+        assertTrue(!((CompoundTag) roundTrip(PlayerStats.CODEC, stats)).contains("field_from_the_future"));
+    }
+
+    /**
+     * A required field that is missing makes the whole value fail to parse. In the game the attachment then goes back
+     * to its default (the player starts that data again), which is the accepted behaviour: if it should be tolerated,
+     * that is a change of the codec (optionalFieldOf with a default), not of this test.
+     */
+    @Test
+    void aMissingRequiredFieldFailsToParse() throws Exception {
+        CompoundTag stats = fixture(SaveMigrations.CURRENT).getCompound("player_stats").copy();
+        stats.remove("level");
+
+        assertTrue(PlayerStats.CODEC.parse(NbtOps.INSTANCE, stats).error().isPresent());
+    }
+
+    @Test
+    void aCapsuleStateWithACapsuleButNoExitLoads() throws Exception {
+        CompoundTag state = new CompoundTag();
+        state.put("capsule", fixture(SaveMigrations.CURRENT).getCompound("capsule").get("capsule").copy());
+
+        CapsuleState loaded = CapsuleState.CODEC.parse(NbtOps.INSTANCE, state).getOrThrow();
+
+        assertTrue(loaded.isConnected());
+        assertTrue(loaded.exit().isEmpty());
+    }
+
+    @Test
+    void aCapsuleStateInAnUnknownDimensionStillLoads() throws Exception {
+        CompoundTag state = fixture(SaveMigrations.CURRENT).getCompound("capsule").copy();
+        CompoundTag capsule = state.getCompound("capsule").copy();
+        capsule.putString("dimension", "some_removed_mod:nowhere");
+        state.put("capsule", capsule);
+
+        CapsuleState loaded = CapsuleState.CODEC.parse(NbtOps.INSTANCE, state).getOrThrow();
+
+        assertEquals("some_removed_mod:nowhere", loaded.capsule().orElseThrow().dimension().location().toString());
+        assertEquals(state, roundTrip(CapsuleState.CODEC, state));
+    }
+
+    @Test
+    void aVaultWithAFullStoredInventoryRoundTrips() {
+        ListTag inventory = new ListTag();
+        for (int slot = 0; slot < 41; slot++) {
+            CompoundTag item = new CompoundTag();
+            item.putByte("Slot", (byte) slot);
+            item.putString("id", "minecraft:iron_sword");
+            item.putInt("count", 1);
+            CompoundTag components = new CompoundTag();
+            components.putString("minecraft:custom_name", "\"Sword " + slot + "\"");
+            item.put("components", components);
+            inventory.add(item);
+        }
+        CompoundTag stored = new CompoundTag();
+        stored.put("ender_chest", new ListTag());
+        stored = CharacterSnapshot.withInventory(stored, inventory);
+        CharacterVault vault = CharacterVault.of(WorldSide.REAL, stored);
+
+        Tag saved = CharacterVault.CODEC.encodeStart(NbtOps.INSTANCE, vault).getOrThrow();
+        CharacterVault loaded = CharacterVault.CODEC.parse(NbtOps.INSTANCE, saved).getOrThrow();
+
+        assertEquals(vault, loaded);
+        assertEquals(41, CharacterSnapshot.inventory(loaded.stored().orElseThrow()).size());
+        assertTrue(CharacterSnapshot.isReadable(loaded.stored().orElseThrow()));
+    }
+
+    // ---- The sample of a real vault (the v1 fixture's stored character is not one) ----
+
+    /**
+     * The {@code stored} of the v1 fixture only has a few loose values: it has no inventory or Ender chest, so it is
+     * NOT a readable snapshot (a swap would be refused). That is fine for what v1 guards (the shape of the vault), and
+     * v1 is never edited; the readable sample is saves/samples/character_vault_full.snbt.
+     */
+    @Test
+    void theStoredCharacterOfV1IsNotAReadableSnapshot() throws Exception {
+        CharacterVault v1 = CharacterVault.CODEC.parse(NbtOps.INSTANCE, fixture(1).get("character_vault")).getOrThrow();
+
+        assertTrue(!CharacterSnapshot.isReadable(v1.stored().orElseThrow()));
+    }
+
+    @Test
+    void theFullVaultSampleIsReadable() throws Exception {
+        CharacterVault vault = CharacterVault.CODEC.parse(NbtOps.INSTANCE, sample("character_vault_full")).getOrThrow();
+
+        assertEquals(java.util.Optional.of(WorldSide.SATISFY), vault.live());
+        assertTrue(CharacterSnapshot.isReadable(vault.stored().orElseThrow()));
+        assertEquals(4, CharacterSnapshot.inventory(vault.stored().orElseThrow()).size());
+    }
+
+    private static Tag sample(String name) throws Exception {
+        try (InputStream in = SavedDataCompatibilityTest.class.getResourceAsStream("/saves/samples/" + name + ".snbt")) {
+            assertNotNull(in, "saves/samples/" + name + ".snbt is missing");
+            return TagParser.parseTag(new String(in.readAllBytes(), StandardCharsets.UTF_8));
+        }
     }
 
     private static <T> Tag roundTrip(Codec<T> codec, Tag tag) {

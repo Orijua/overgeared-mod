@@ -5,6 +5,7 @@ import com.orijua.overgearedmod.core.registry.ModAttachments;
 import com.orijua.overgearedmod.core.registry.ModDatapackRegistries;
 import com.orijua.overgearedmod.feature.notification.NotificationEvents;
 import com.orijua.overgearedmod.feature.notification.SystemNotification.Kind;
+import com.orijua.overgearedmod.feature.world.Satisfy;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,7 +21,7 @@ import java.util.List;
 
 /**
  * Quests with a time limit ({@code time_limit_days}): the clock is the overworld's day time, so sleeping through the
- * night counts as time passing. Once a second each player's deadlines are checked: with one day left a system window
+ * night counts as time passing. Once a second each player's deadlines are checked (only while in Satisfy; in the real world they wait): with one day left a system window
  * warns them, and when the time runs out the quest fails for good.
  */
 public final class QuestDeadlines {
@@ -57,11 +58,15 @@ public final class QuestDeadlines {
     private static void onTick(PlayerTickEvent.Post event) {
         if (event.getEntity() instanceof ServerPlayer player && player.tickCount % CHECK_TICKS == 0) {
             check(player);
+            LoanGuard.purge(player);
         }
     }
 
     /** Warns about the quests on their last day and fails those whose time ran out. */
     public static void check(ServerPlayer player) {
+        if (!Satisfy.is(player.level())) {
+            return; // the quests only run in Satisfy: in the real world the deadline waits
+        }
         PlayerQuests quests = QuestService.get(player);
         if (quests.deadlines().isEmpty()) {
             return;

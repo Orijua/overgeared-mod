@@ -1,0 +1,22 @@
+{
+    live: "satisfy",
+    stored: {
+        data_version: 3955,
+        inventory: [
+            {Slot: 0b, id: "minecraft:iron_sword", count: 1, components: {"minecraft:custom_name": '"Sample sword"'}},
+            {Slot: 1b, id: "minecraft:bread", count: 12},
+            {Slot: 100b, id: "minecraft:iron_boots", count: 1},
+            {Slot: -106b, id: "minecraft:shield", count: 1}
+        ],
+        ender_chest: [
+            {Slot: 0b, id: "minecraft:diamond", count: 5}
+        ],
+        xp_level: 4,
+        xp_progress: 0.5f,
+        xp_total: 30,
+        health: 18.0f,
+        absorption: 0.0f,
+        effects: [],
+        food: {foodLevel: 15, foodSaturationLevel: 2.5f, foodExhaustionLevel: 0.0f, foodTickTimer: 0}
+    }
+}

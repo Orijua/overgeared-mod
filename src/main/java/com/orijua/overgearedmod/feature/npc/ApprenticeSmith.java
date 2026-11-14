@@ -120,6 +120,8 @@ public class ApprenticeSmith extends PathfinderMob {
     /** The containers his master can assign him. */
     public enum Slot { MATERIALS, OUTPUT }
 
+    /** Set when his master dismissed him: leaving is then no loss to report. */
+    private boolean dismissed;
     private String baseName = "";
     private int smithingXp = ApprenticeRules.STARTING_XP;
     private int masterLevel = ApprenticeRules.FIRST_APPRENTICE_LEVEL;
@@ -485,12 +487,48 @@ public class ApprenticeSmith extends PathfinderMob {
     public void dismiss(ServerPlayer master) {
         returnHammer(master);
         returnMaterials(master);
-        List<UUID> hired = new ArrayList<>(master.getData(ModAttachments.APPRENTICES));
-        hired.remove(getUUID());
-        master.setData(ModAttachments.APPRENTICES, List.copyOf(hired));
-        Workshop.forget(master, getUUID());
+        dismissed = true;
+        Workshop.release(master, getUUID());
         master.displayClientMessage(Component.translatable("message.overgearedmod.apprentice_dismissed", getDisplayName()), false);
         discard();
+    }
+
+    /**
+     * Killed or discarded without being dismissed (/kill, the void, a creative player, a command): his place is freed
+     * (now if his master is online, otherwise when he next logs in) and what he held (his hammer, the materials of the
+     * piece on the anvil) goes back to his master, or falls where he stood. Unloading with the chunk or the player,
+     * or changing dimension, is not a loss.
+     */
+    @Override
+    public void remove(RemovalReason reason) {
+        boolean lost = !isRemoved() && !dismissed && (reason == RemovalReason.KILLED || reason == RemovalReason.DISCARDED);
+        if (lost && level() instanceof ServerLevel level && !level.isClientSide) {
+            Optional<UUID> owner = entityData.get(DATA_OWNER);
+            ServerPlayer master = master();
+            if (master != null) {
+                returnHammer(master);
+                returnMaterials(master);
+                Workshop.release(master, getUUID());
+            } else {
+                dropHeld(level);
+                owner.ifPresent(id -> ApprenticeRoster.get(level.getServer()).markLost(getUUID(), id));
+            }
+        }
+        super.remove(reason);
+    }
+
+    /** Nobody to give his things to: they fall where he stood. */
+    private void dropHeld(ServerLevel level) {
+        ItemStack hammer = getMainHandItem();
+        if (!hammer.isEmpty()) {
+            setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            spawnAtLocation(hammer);
+        }
+        for (ItemStack stack : onAnvil) {
+            spawnAtLocation(stack);
+        }
+        onAnvil.clear();
+        workTicks = 0;
     }
 
     @Override

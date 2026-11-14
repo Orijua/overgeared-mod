@@ -33,6 +33,7 @@ import com.orijua.overgearedmod.feature.insight.Observation;
 import com.orijua.overgearedmod.feature.mob.MobLevelEvents;
 import com.orijua.overgearedmod.feature.notification.NotificationEvents;
 import com.orijua.overgearedmod.feature.npc.ApprenticeAssignments;
+import com.orijua.overgearedmod.feature.npc.ApprenticeRoster;
 import com.orijua.overgearedmod.feature.npc.Illumination;
 import com.orijua.overgearedmod.feature.pagma.AshurBetrayal;
 import com.orijua.overgearedmod.feature.pagma.LegendTitle;
@@ -108,6 +109,7 @@ public class Overgearedmod {
         StartingVillage.register(NeoForge.EVENT_BUS);
         NorthEndCaveProtection.register(NeoForge.EVENT_BUS);
         ApprenticeAssignments.register(NeoForge.EVENT_BUS);
+        ApprenticeRoster.register(NeoForge.EVENT_BUS);
         Illumination.register(NeoForge.EVENT_BUS);
         Observation.register(NeoForge.EVENT_BUS);
         AshurBetrayal.register(NeoForge.EVENT_BUS);
