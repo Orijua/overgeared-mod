@@ -13,20 +13,25 @@ import com.orijua.overgearedmod.feature.quest.goal.DeliverGoal;
 import com.orijua.overgearedmod.feature.quest.goal.Goal;
 import com.orijua.overgearedmod.feature.quest.goal.PlayerCounters;
 import com.orijua.overgearedmod.feature.skill.SkillService;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
 public final class QuestService {
@@ -155,14 +160,76 @@ public final class QuestService {
         }
     }
 
-    /** Takes back, from the inventory, everything lent for quest {@code id}. Returns how many stacks. */
+    /**
+     * Takes back everything lent for quest {@code id}: from the inventory, the Ender chest, the cursor, the crafting
+     * grid and what is inside shulker boxes and bundles being carried. Returns how many stacks.
+     */
     public static int reclaimLoans(ServerPlayer player, ResourceLocation id) {
-        Inventory inventory = player.getInventory();
+        return sweep(player, stack -> id.equals(stack.get(ModDataComponents.LOANED_FOR)));
+    }
+
+    /** Removes from everywhere a player keeps things on them the stacks that match {@code remove}. Returns how many. */
+    static int sweep(ServerPlayer player, Predicate<ItemStack> remove) {
+        int taken = clear(player.getInventory(), remove) + clear(player.getEnderChestInventory(), remove)
+                + clear(player.inventoryMenu.getCraftSlots(), remove);
+        ItemStack carried = player.containerMenu.getCarried();
+        if (remove.test(carried)) {
+            player.containerMenu.setCarried(ItemStack.EMPTY);
+            taken++;
+        } else {
+            taken += strip(carried, remove);
+        }
+        return taken;
+    }
+
+    private static int clear(Container container, Predicate<ItemStack> remove) {
         int taken = 0;
-        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
-            if (id.equals(inventory.getItem(slot).get(ModDataComponents.LOANED_FOR))) {
-                inventory.setItem(slot, ItemStack.EMPTY);
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stack = container.getItem(slot);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            if (remove.test(stack)) {
+                container.setItem(slot, ItemStack.EMPTY);
                 taken++;
+            } else {
+                taken += strip(stack, remove);
+            }
+        }
+        return taken;
+    }
+
+    /** Removes the matching stacks from inside a shulker box or a bundle. Returns how many. */
+    private static int strip(ItemStack holder, Predicate<ItemStack> remove) {
+        int taken = 0;
+        ItemContainerContents box = holder.get(DataComponents.CONTAINER);
+        if (box != null) {
+            List<ItemStack> kept = new ArrayList<>();
+            int before = 0;
+            for (ItemStack inside : box.nonEmptyItems()) {
+                before++;
+                if (!remove.test(inside)) {
+                    kept.add(inside.copy());
+                }
+            }
+            if (kept.size() != before) {
+                taken += before - kept.size();
+                holder.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(kept));
+            }
+        }
+        BundleContents bundle = holder.get(DataComponents.BUNDLE_CONTENTS);
+        if (bundle != null) {
+            List<ItemStack> kept = new ArrayList<>();
+            int before = 0;
+            for (ItemStack inside : bundle.items()) {
+                before++;
+                if (!remove.test(inside)) {
+                    kept.add(inside.copy());
+                }
+            }
+            if (kept.size() != before) {
+                taken += before - kept.size();
+                holder.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(kept));
             }
         }
         return taken;
