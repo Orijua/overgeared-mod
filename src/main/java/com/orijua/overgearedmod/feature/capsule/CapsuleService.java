@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -306,8 +307,21 @@ public final class CapsuleService {
         BlockPos at = spawn.get().pos();
         Overgearedmod.LOGGER.info("{} connects to Satisfy at {} ({})", player.getGameProfile().getName(), at, spawn.get().source());
         BlockPos free = freeSpot(satisfy.get(), at, "connection", player);
-        WorldSeparation.cross(player, () ->
+        ServerLevel from = player.serverLevel();
+        Vec3 fromPos = player.position();
+        float fromYaw = player.getYRot();
+        Characters.Result swap = WorldSeparation.cross(player, () ->
                 player.teleportTo(satisfy.get(), free.getX() + 0.5, free.getY(), free.getZ() + 0.5, player.getYRot(), 0.0f));
+        if (Satisfy.is(player.level()) && swap == Characters.Result.FAILED) {
+            // Arrived, but still carrying the real world's things: back where they were; nothing moved in the vault.
+            goBack(player, from, fromPos, fromYaw);
+            player.setData(ModAttachments.CAPSULE.get(), before);
+            PacketDistributor.sendToPlayer(player, new CapsuleConnectingPayload(0));
+            player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.character_unreadable"), true);
+            Overgearedmod.LOGGER.error("{} could not swap characters on arriving in Satisfy: the connection is undone",
+                    player.getGameProfile().getName());
+            return false;
+        }
         if (!Satisfy.is(player.level())) {
             // Something (another mod) cancelled the trip: the player is still in the real world.
             player.setData(ModAttachments.CAPSULE.get(), before);
@@ -331,6 +345,13 @@ public final class CapsuleService {
         if (!Satisfy.is(player.level())) {
             return false;
         }
+        // Fatigue forces the disconnection; every other reason is the player's own choice and can be refused.
+        boolean forced = reason == Reason.FATIGUE;
+        if (!forced && !Characters.canCross(player, WorldSide.REAL)) {
+            player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.character_unreadable"), true);
+            Overgearedmod.LOGGER.error("{} cannot disconnect: the stored real character cannot be read", player.getGameProfile().getName());
+            return false;
+        }
         CapsuleState before = state(player);
         player.setData(ModAttachments.CAPSULE.get(), before.disconnected(player.blockPosition()));
         Overgearedmod.LOGGER.info("{} disconnects from Satisfy ({})", player.getGameProfile().getName(), reason);
@@ -338,8 +359,26 @@ public final class CapsuleService {
         Destination destination = destination(player.server, before.exit(), player.getRespawnDimension(), player.getRespawnPosition());
         ServerLevel target = destination.level();
         BlockPos free = freeSpot(target, destination.pos(), "disconnection", player);
-        WorldSeparation.cross(player, () ->
+        ServerLevel from = player.serverLevel();
+        Vec3 fromPos = player.position();
+        float fromYaw = player.getYRot();
+        Characters.Result swap = WorldSeparation.cross(player, () ->
                 player.teleportTo(target, free.getX() + 0.5, free.getY(), free.getZ() + 0.5, player.getYRot(), 0.0f));
+        if (player.level() == target && swap == Characters.Result.FAILED) {
+            if (!forced) {
+                // A voluntary disconnection is undone: the player stays in Satisfy with their Satisfy things.
+                goBack(player, from, fromPos, fromYaw);
+                player.setData(ModAttachments.CAPSULE.get(), before);
+                player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.character_unreadable"), true);
+                Overgearedmod.LOGGER.error("{} could not swap characters on leaving Satisfy: the disconnection is undone",
+                        player.getGameProfile().getName());
+                return false;
+            }
+            // A forced one (fatigue) goes through anyway; the swap is tried again at the next dimension change, respawn or login.
+            player.displayClientMessage(Component.translatable("message.overgearedmod.capsule.character_unreadable"), true);
+            Overgearedmod.LOGGER.error("{} left Satisfy still carrying its things (forced by {}): the swap is retried later",
+                    player.getGameProfile().getName(), reason);
+        }
         if (player.level() != target) {
             // Something (another mod) cancelled the trip: the player is still in Satisfy, so the body stays where it was.
             player.setData(ModAttachments.CAPSULE.get(), before);
@@ -353,6 +392,11 @@ public final class CapsuleService {
         player.displayClientMessage(Component.translatable(reason == Reason.FATIGUE
                 ? "message.overgearedmod.capsule.disconnected_tired" : "message.overgearedmod.capsule.disconnected"), true);
         return true;
+    }
+
+    /** Takes the player back to where a crossing started (the swap of characters failed, so they are undoing the trip). */
+    private static void goBack(ServerPlayer player, ServerLevel level, Vec3 pos, float yaw) {
+        WorldSeparation.cross(player, () -> player.teleportTo(level, pos.x, pos.y, pos.z, yaw, 0.0f));
     }
 
     /** Where a disconnection leads: a level and the spot wanted in it (before looking for a free one nearby). */

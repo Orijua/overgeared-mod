@@ -7,6 +7,7 @@ import com.orijua.overgearedmod.feature.character.CharacterSnapshot;
 import com.orijua.overgearedmod.feature.character.CharacterVault;
 import com.orijua.overgearedmod.feature.character.WorldSide;
 import com.orijua.overgearedmod.feature.capsule.CapsuleService;
+import com.orijua.overgearedmod.feature.capsule.WorldSeparation;
 import com.orijua.overgearedmod.feature.character.Characters;
 import com.orijua.overgearedmod.feature.economy.Account;
 import com.orijua.overgearedmod.feature.economy.AccountService;
@@ -170,6 +171,28 @@ public final class CharacterTests {
     }
 
     // ---- Step 2: settle and the hooks ----
+
+    /** What {@code WorldSeparation.cross} gives back is what the swap did, so the callers can react to a failure. */
+    @GameTest(template = TestSupport.EMPTY)
+    public static void crossReturnsTheSettleResult(GameTestHelper helper) {
+        ServerPlayer player = TestSupport.fakePlayer(helper);
+        player.getInventory().setItem(0, new ItemStack(Items.DIAMOND, 5));
+        in(helper, WorldSide.REAL, () -> helper.assertTrue(WorldSeparation.cross(player, () -> { }) == Characters.Result.ADOPTED, "adopted at first"));
+        in(helper, WorldSide.SATISFY, () -> {
+            Characters.applierForTests((p, tag) -> {
+                throw new IllegalStateException("test: the character cannot be applied");
+            });
+            try {
+                helper.assertTrue(WorldSeparation.cross(player, () -> { }) == Characters.Result.FAILED, "a swap that throws is reported");
+            } finally {
+                Characters.applierForTests(null);
+            }
+            helper.assertTrue(count(player, Items.DIAMOND) == 5, "and they keep what they had");
+            helper.assertTrue(Characters.vault(player).live().equals(Optional.of(WorldSide.REAL)), "the vault is as it was");
+            helper.assertTrue(WorldSeparation.cross(player, () -> { }) == Characters.Result.SWAPPED, "the next one works");
+        });
+        helper.succeed();
+    }
 
     /** Runs {@code body} with the test level playing the given world, then puts the test default back. */
     private static void in(GameTestHelper helper, WorldSide side, Runnable body) {

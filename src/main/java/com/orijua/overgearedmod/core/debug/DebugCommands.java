@@ -484,8 +484,12 @@ public final class DebugCommands {
         }
         // Facing the place: the landing is in front of it.
         // A debug crossing between the real world and Satisfy is allowed (operators only).
-        WorldSeparation.cross(player, () ->
+        Characters.Result swap = WorldSeparation.cross(player, () ->
                 player.teleportTo(satisfy, landing.getX() + 0.5, landing.getY(), landing.getZ() + 0.5, found.yaw(), 0.0f));
+        if (swap == Characters.Result.FAILED) {
+            // The player is there but still carries the other world's things; the next dimension change, respawn or login retries.
+            ctx.getSource().sendFailure(Component.translatable("message.overgearedmod.capsule.character_unreadable"));
+        }
         ctx.getSource().sendSuccess(() -> Component.translatable("message.overgearedmod.debug_goto", site,
                 landing.getX(), landing.getY(), landing.getZ()), false);
         return 1;

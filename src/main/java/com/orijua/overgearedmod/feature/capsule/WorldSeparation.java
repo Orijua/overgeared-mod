@@ -29,12 +29,13 @@ public final class WorldSeparation {
     /**
      * The way a player changes world: closes their menu in the world they leave, teleports with crossing allowed, and
      * then makes them carry the character of the world they are in ({@link Characters#settle}). If the trip did not
-     * happen (another mod cancelled it) the world is the same and nothing is swapped.
+     * happen (another mod cancelled it) the world is the same and nothing is swapped. Returns what the swap did: on
+     * {@code FAILED} the player is in the new world still carrying the other one's things, and the caller decides.
      */
-    public static void cross(ServerPlayer player, Runnable teleport) {
+    public static Characters.Result cross(ServerPlayer player, Runnable teleport) {
         Characters.prepareCrossing(player);
         crossing(teleport);
-        Characters.settle(player);
+        return Characters.settle(player);
     }
 
     /** Runs {@code teleport} with crossing between the two worlds allowed; always restored afterwards. */
